@@ -1,0 +1,20 @@
+[
+    {
+        "name": "pydss_simulation",
+        "description": "Runs a PyDSS simulation on a DISCO auto-generated configuration.",
+        "job_execution_module": "disco.extensions.pydss_simulation.pydss_simulation",
+        "job_execution_class": "PyDssSimulation",
+        "job_configuration_module": "disco.extensions.pydss_simulation.pydss_configuration",
+        "job_configuration_class": "PyDssConfiguration",
+        "cli_module": "disco.extensions.pydss_simulation.cli"
+    },
+    {
+        "name": "automated_upgrade_simulation",
+        "description": "Runs automated upgrade simulation using PyDSS on DISCO auto-generated configuration.",
+        "job_execution_module": "disco.extensions.automated_upgrade_simulation.automated_upgrade_simulation",
+        "job_execution_class": "AutomatedUpgradeSimulation",
+        "job_configuration_module": "disco.extensions.automated_upgrade_simulation.automated_upgrade_configuration",
+        "job_configuration_class": "AutomatedUpgradeConfiguration",
+        "cli_module": "disco.extensions.automated_upgrade_simulation.cli"
+    }
+]
