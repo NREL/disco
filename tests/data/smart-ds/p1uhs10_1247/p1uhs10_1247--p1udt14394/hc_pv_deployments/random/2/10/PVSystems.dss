@@ -1,0 +1,15 @@
+// PV Scenario for 1384.1320000000005 kW total size, Scenario type random, Deployment 2 and penetration 10% (PV to load ratio) 
+! =====================PV SCENARIO FILE==============================
+! ===================== SMALL PV ==============================
+New PVSystem.p1ulv9126_1_2_3_pv phases=3 bus1=p1ulv9126.1.2.3 kv=0.48 irradiance=1 Pmpp=136.32 pctPmpp=100 kVA=136.32 conn=delta %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 
+New PVSystem.p1ulv40580_1_2_pv phases=2 bus1=p1ulv40580.1.2 kv=0.208 irradiance=1 Pmpp=30.6 pctPmpp=100 kVA=30.6 conn=delta %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 
+New PVSystem.p1ulv12018_1_2_pv phases=2 bus1=p1ulv12018.1.2 kv=0.208 irradiance=1 Pmpp=6.097 pctPmpp=100 kVA=6.097 conn=delta %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 
+New PVSystem.p1udt15908_1_2_3_pv phases=3 bus1=p1udt15908.1.2.3 kv=12.47 irradiance=1 Pmpp=200 pctPmpp=100 kVA=200 conn=delta %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 
+New PVSystem.p1ulv38041_1_2_pv phases=2 bus1=p1ulv38041.1.2 kv=0.208 irradiance=1 Pmpp=30.32 pctPmpp=100 kVA=30.32 conn=delta %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 
+New PVSystem.p1ulv55630_1_2_pv phases=2 bus1=p1ulv55630.1.2 kv=0.208 irradiance=1 Pmpp=26.38 pctPmpp=100 kVA=26.38 conn=delta %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 
+New PVSystem.p1ulv44348_1_2_pv phases=2 bus1=p1ulv44348.1.2 kv=0.208 irradiance=1 Pmpp=27.18 pctPmpp=100 kVA=27.18 conn=delta %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 
+New PVSystem.p1ulv30405_1_2_pv phases=2 bus1=p1ulv30405.1.2 kv=0.208 irradiance=1 Pmpp=29.7 pctPmpp=100 kVA=29.7 conn=delta %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 
+New PVSystem.p1ulv58832_1_2_pv phases=2 bus1=p1ulv58832.1.2 kv=0.208 irradiance=1 Pmpp=16.9 pctPmpp=100 kVA=16.9 conn=delta %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 
+New PVSystem.p1ulv46293_1_2_pv phases=2 bus1=p1ulv46293.1.2 kv=0.208 irradiance=1 Pmpp=42.537 pctPmpp=100 kVA=42.537 conn=delta %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 
+! ===================== LARGE PV ==============================
+New PVSystem.p1udt12897_1_2_3_pv phases=3 bus1=p1udt12897.1.2.3 kv=12.47 irradiance=1 Pmpp=519.05 pctPmpp=100 kVA=519.05 conn=delta %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 
