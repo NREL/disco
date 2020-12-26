@@ -3,10 +3,11 @@
 import logging
 import logging.config
 import os
+import shutil
 
 import click
 
-from jade.exceptions import UserAbort
+from jade.exceptions import InvalidParameter, UserAbort
 from disco.enums import Scale, Placement
 
 
@@ -51,6 +52,16 @@ def _handle_simulation_scripts(ctx, _, value):
             raise
 
     return value
+
+
+def handle_existing_dir(directory, force):
+    """Deletes existing directory if force is True."""
+    if os.path.exists(directory):
+        if force:
+            shutil.rmtree(directory)
+            os.mkdir(directory)
+        else:
+            raise InvalidParameter(f"directory={directory} exists. Set --force to overwrite")
 
 
 def proceed_with_user_permission(ctx, message):

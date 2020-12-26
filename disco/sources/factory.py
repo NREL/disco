@@ -21,6 +21,23 @@ SUPPORTED_FORMATS = {
 }
 
 
+def list_subcommands(input_path):
+    """List the available subcommands for the source model at input_path.
+
+    Parameters
+    ----------
+    input_path : str
+        filename or directory, depending on source data type
+
+    Returns
+    -------
+    list
+
+    """
+    source_model = make_source_model(input_path)
+    return source_model.list_subcommands()
+
+
 def make_source_model(input_path):
     """Construct the correct source model for input_path.
 
@@ -33,6 +50,11 @@ def make_source_model(input_path):
     -------
     class
         derived from BaseSourceDataModel
+
+    Raises
+    ------
+    InvalidConfiguration
+        Raised if the format is not specified or supported.
 
     """
     if os.path.isdir(input_path):

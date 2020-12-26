@@ -131,7 +131,7 @@ class OpenDssDeploymentModel(DiscoBaseModel):
     deployment_file: str = Field(
         title="deployment_file",
         description="The path to the PV deployment file.",
-        max_length=120,
+        max_length=150,
         example_value="model-inputs/J1/PVDeployments/deployment_001.dss",
     )
     substation: str = Field(
