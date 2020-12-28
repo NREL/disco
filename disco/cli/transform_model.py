@@ -56,9 +56,9 @@ def show_help_and_exit():
     print("Usage: disco transform-model [OPTIONS] INPUT_PATH COMMAND [ARGS]...")
     print("\ninput_path must be specified to determine available commands\n")
     print("Examples:\n")
-    print("disco transform-models ~/source-data --help")
-    print("disco transform-models ~/source-data SnapshotImpactAnalysis --help")
-    print("disco transform-models ~/source-data SnapshotImpactAnalysis --output snapshot-models")
+    print("disco transform-model ~/source-data --help")
+    print("disco transform-model ~/source-data snapshot-impact-analysis --help")
+    print("disco transform-model ~/source-data snapshot-impact-analysis --output snapshot-models")
     sys.exit(0)
 
 
