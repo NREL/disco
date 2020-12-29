@@ -361,12 +361,12 @@ class SourceTree2Model(BaseOpenDssModel):
             if deployments == ("all",):
                 _deployments = inputs.list_deployments(key)
             else:
-                _deployments = deployments
+                _deployments = [int(x) for x in deployments]
             for deployment in _deployments:
                 if penetration_levels == ("all",):
                     levels = inputs.list_penetration_levels(key, deployment)
                 else:
-                    levels = penetration_levels
+                    levels = [int(x) for x in penetration_levels]
                 for level in levels:
                     deployment_file = inputs.get_deployment_file(key, deployment, level)
                     data = {
