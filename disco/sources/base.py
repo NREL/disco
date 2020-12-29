@@ -13,43 +13,29 @@ from disco.models.base import OpenDssDeploymentModel
 SOURCE_CONFIGURATION_FILENAME = "configurations.json"
 
 DEFAULT_SNAPSHOT_IMPACT_ANALYSIS_PARAMS = {
-    "simulation_params": {
-        "start_time": "2020-06-17T15:00:00",
-        "end_time": "2020-06-17T15:00:00",
-        "simulation_type": SimulationType.SNAPSHOT.value,
-    },
+    "output_dir": "snapshot-impact-analysis-models",
+    "start_time": "2020-06-17T15:00:00",
+    "end_time": "2020-06-17T15:00:00",
+    "simulation_type": SimulationType.SNAPSHOT.value,
 }
 
 DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS = {
-    "model_params": {
-        "pv_profile": None,
-    },
-    "simulation_params": {
-        "start_time": "2020-06-17T15:00:00",
-        "end_time": "2020-06-24T15:00:00",
-        "simulation_type": SimulationType.QSTS.value,
-        "step_resolution": 900,
-    },
+    "output_dir": "time-series-impact-analysis-models",
+    "start_time": "2020-06-17T15:00:00",
+    "end_time": "2020-06-24T15:00:00",
+    "simulation_type": SimulationType.QSTS.value,
+    "step_resolution": 900,
 }
 
 DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS = {
-    "model_params": {
-        "cost_database": "DISCO_cost_database.xlsx",
-        "params_file": "upgrade-params.toml",
-        "sequential_upgrade": False,
-        "nearest_redirect": False,
-    },
-    "simulation_params": {
-        "start_time": "2020-06-17T15:00:00",
-        "end_time": "2020-06-17T15:00:00",
-        "simulation_type": SimulationType.SNAPSHOT.value,
-    },
-}
-
-DEFAULT_SELECTIONS_BY_TYPE = {
-    AnalysisType.SnapshotImpactAnalysis: DEFAULT_SNAPSHOT_IMPACT_ANALYSIS_PARAMS,
-    AnalysisType.TimeSeriesImpactAnalysis: DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS,
-    AnalysisType.UpgradeCostAnalysis: DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS,
+    "output_dir": "upgrade-cost-analysis-models",
+    "cost_database": "DISCO_cost_database.xlsx",
+    "params_file": "upgrade-params.toml",
+    "sequential_upgrade": False,
+    "nearest_redirect": False,
+    "start_time": "2020-06-17T15:00:00",
+    "end_time": "2020-06-17T15:00:00",
+    "simulation_type": SimulationType.SNAPSHOT.value,
 }
 
 logger = logging.getLogger(__name__)
@@ -59,23 +45,27 @@ class BaseSourceDataModel(ABC):
     """Base class for source data models"""
 
     @staticmethod
-    def get_default_transformation_selections(analysis_type):
-        """Return default selections for a transformation.
-
-        Parameters
-        ----------
-        analysis_type : AnalysisType
+    @abstractmethod
+    def get_transform_subcommand(name):
+        """Return the click transform-model command.
 
         Returns
         -------
-        dict
+        click.command
 
         """
-        defaults = DEFAULT_SELECTIONS_BY_TYPE.get(analysis_type)
-        if defaults is None:
-            raise InvalidParameter(f"{analysis_type} is not supported")
 
-        return defaults
+    @staticmethod
+    @abstractmethod
+    def list_transform_subcommands():
+        """List the available click transform-model subcommands.
+
+        Returns
+        -------
+        list
+            List of click command objects
+
+        """
 
     @classmethod
     @abstractmethod
@@ -199,7 +189,8 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
         if not os.path.exists(workspace.master_file):
             self._create_common_files(workspace)
         deployment_file = self._create_deployment_file(
-            name, workspace, pv_profile=pv_profile)
+            name, workspace, pv_profile=pv_profile
+        )
         return OpenDssDeploymentModel.validate(
             dict(
                 deployment_file=deployment_file,
@@ -239,7 +230,9 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
             dst_file = os.path.join(dst_dir, name)
             shutil.copyfile(src_file, dst_file)
             if os.path.splitext(dst_file)[1] in (".dss", ".txt"):
-                BaseOpenDssModel.fix_data_file_references(os.path.abspath(src_dir), dst_file)
+                BaseOpenDssModel.fix_data_file_references(
+                    os.path.abspath(src_dir), dst_file
+                )
 
     def _create_deployment_file(self, name, workspace, pv_profile=None):
         """Create deployment dss file.
@@ -256,7 +249,9 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
             If dict, keys are PVSystem names and values are profile names.
 
         """
-        deployment_file = os.path.join(workspace.pv_deployments_directory, name + ".dss")
+        deployment_file = os.path.join(
+            workspace.pv_deployments_directory, name + ".dss"
+        )
         if not self.pv_locations:
             with open(deployment_file, "w") as fw:
                 fw.write(f"Redirect {workspace.master_file}\n\n")
@@ -292,6 +287,7 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
         # Example line:
         # New Loadshape.Residential1234 npts=123456 minterval=5 mult=[file=../BuildingData/Dataset_12_34/Residential/RES1234/LoadProfiles/12345.csv]
         regex = re.compile(r"file=([\.\w/\\-]+)")
+
         def replace_func(match):
             path = os.path.normpath(match.group(1).replace("\\", "/"))
             new_path = "file=" + os.path.normpath(os.path.join(src_dir, path))
@@ -303,10 +299,12 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
                 print(line, end="")
                 logger.debug("line=%s", line)
 
+
 class OpenDssFeederWorkspace:
     """Defines a feeder and all dependent OpenDSS files."""
+
     def __init__(self, feeder_directory):
-        #self._substation = substation
+        # self._substation = substation
         self._feeder_directory = feeder_directory
         self._create_directories()
 

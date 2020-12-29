@@ -14,7 +14,13 @@ from disco.cli.common import handle_existing_dir
 from disco.enums import Placement, SimulationType
 from disco.models.base import PyDSSControllerModel
 from disco.models.snapshot_impact_analysis_model import SnapshotImpactAnalysisModel
-from disco.sources.base import BaseOpenDssModel, SOURCE_CONFIGURATION_FILENAME
+from disco.models.time_series_impact_analysis_model import TimeSeriesImpactAnalysisModel
+from disco.sources.base import (
+    BaseOpenDssModel,
+    SOURCE_CONFIGURATION_FILENAME,
+    DEFAULT_SNAPSHOT_IMPACT_ANALYSIS_PARAMS,
+    DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS,
+)
 from .source_tree_1_model_inputs import SourceTree1ModelInputs
 
 
@@ -91,14 +97,14 @@ def common_options(func):
 @click.option(
     "-s",
     "--start",
-    default="2020-06-17T15:00:00.000",
+    default=DEFAULT_SNAPSHOT_IMPACT_ANALYSIS_PARAMS["start_time"],
     show_default=True,
     help="simulation start time",
 )
 @click.option(
     "-o",
     "--output",
-    default="snapshot-impact-analysis-models",
+    default=DEFAULT_SNAPSHOT_IMPACT_ANALYSIS_PARAMS["output_dir"],
     show_default=True,
     help="output directory",
 )
@@ -144,21 +150,21 @@ def snapshot_impact_analysis(
 @click.option(
     "-s",
     "--start",
-    default="2020-06-17T15:00:00.000",
+    default=DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS["start_time"],
     show_default=True,
     help="simulation start time",
 )
 @click.option(
     "-e",
     "--end",
-    default="2020-06-24T15:00:00.000",
+    default=DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS["end_time"],
     show_default=True,
     help="simulation end time",
 )
 @click.option(
     "-r",
     "--resolution",
-    default=900,
+    default=DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS["step_resolution"],
     type=int,
     show_default=True,
     help="simulation step resolution in seconds",
@@ -166,7 +172,7 @@ def snapshot_impact_analysis(
 @click.option(
     "-o",
     "--output",
-    default="time-series-impact-analysis-models",
+    default=DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS["output_dir"],
     show_default=True,
     help="output directory",
 )
@@ -198,7 +204,7 @@ def time_series_impact_analysis(
         input_path=input_path,
         output_path=output,
         simulation_params=simulation_params,
-        simulation_model=SnapshotImpactAnalysisModel,
+        simulation_model=TimeSeriesImpactAnalysisModel,
         substations=substations,
         feeders=feeders,
         placements=placements,
@@ -215,7 +221,7 @@ class SourceTree1Model(BaseOpenDssModel):
     """OpenDSS Model for Source Tree 1"""
 
     DEPLOYMENT_FILE = "PVSystems.dss"
-    SUBCOMMANDS = {
+    TRANSFORM_SUBCOMMANDS = {
         "snapshot-impact-analysis": snapshot_impact_analysis,
         "time-series-impact-analysis": time_series_impact_analysis,
     }
@@ -244,15 +250,14 @@ class SourceTree1Model(BaseOpenDssModel):
         assert not data, str(data)
 
     @staticmethod
-    def get_subcommand(name):
-        """Return a click command for name."""
-        if name not in SourceTree1Model.SUBCOMMANDS:
+    def get_transform_subcommand(name):
+        if name not in SourceTree1Model.TRANSFORM_SUBCOMMANDS:
             raise InvalidParameter(f"{name} is not supported")
-        return SourceTree1Model.SUBCOMMANDS[name]
+        return SourceTree1Model.TRANSFORM_SUBCOMMANDS[name]
 
     @staticmethod
-    def list_subcommands():
-        return sorted(list(SourceTree1Model.SUBCOMMANDS.keys()))
+    def list_transform_subcommands():
+        return sorted(list(SourceTree1Model.TRANSFORM_SUBCOMMANDS.keys()))
 
     @property
     def substation(self):

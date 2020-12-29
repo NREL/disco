@@ -12,6 +12,7 @@ from disco.sources.factory import list_subcommands, make_source_model
 
 class TransformCli(click.MultiCommand):
     """Custom CLI to dynamically detect subcommands from an input argument."""
+
     def __init__(self, *args, **kwargs):
         super(TransformCli, self).__init__(*args, **kwargs)
         self.input_path = None
@@ -19,7 +20,7 @@ class TransformCli(click.MultiCommand):
 
     def list_commands(self, ctx):
         self.check_input_path()
-        return self.source_type.list_subcommands()
+        return self.source_type.list_transform_subcommands()
 
     def get_command(self, ctx, name):
         self.check_input_path()
@@ -28,14 +29,14 @@ class TransformCli(click.MultiCommand):
 
         if name not in self.list_commands(ctx):
             raise click.BadArgumentUsage(f"{name} is not a valid command")
-        return self.source_type.get_subcommand(name)
+        return self.source_type.get_transform_subcommand(name)
 
     def check_input_path(self):
         if self.source_type is None:
             show_help_and_exit()
 
     def show_subcommand_help_and_exit(self):
-        commands = self.source_type.list_subcommands()
+        commands = self.source_type.list_transform_subcommands()
         input_path = self.input_path
         print("\nAvailable analysis types: {}\n".format(" ".join(commands)))
         print("For additional help run one of the following:")
@@ -51,14 +52,18 @@ def input_path_cb(ctx, param, value):
 
 
 def show_help_and_exit():
-    print("Transforms source data specified by INPUT_PATH into DISCO models.\n"
-          "Subcommands are dependent on the source data type.\n")
+    print(
+        "Transforms source data specified by INPUT_PATH into DISCO models.\n"
+        "Subcommands are dependent on the source data type.\n"
+    )
     print("Usage: disco transform-model [OPTIONS] INPUT_PATH COMMAND [ARGS]...")
     print("\ninput_path must be specified to determine available commands\n")
     print("Examples:\n")
     print("disco transform-model ~/source-data --help")
     print("disco transform-model ~/source-data snapshot-impact-analysis --help")
-    print("disco transform-model ~/source-data snapshot-impact-analysis --output snapshot-models")
+    print(
+        "disco transform-model ~/source-data snapshot-impact-analysis --output snapshot-models"
+    )
     sys.exit(0)
 
 

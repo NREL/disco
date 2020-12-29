@@ -22,12 +22,10 @@ def test_pydss_simulation(cleanup):
 
     os.environ["FAKE_HPC_CLUSTER"] = "True"
     num_jobs = 4
-    defaults_cmd = f"{TRANSFORM_DEFAULTS} tests/data/smart-ds SnapshotImpactAnalysis -c {TRANSFORM_CONFIG}"
-    transform_cmd = f"{TRANSFORM_JOBS} {TRANSFORM_CONFIG} -f -o {MODELS_DIR}"
+    transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds snapshot-impact-analysis -F -o {MODELS_DIR}"
     config_cmd = f"{CONFIG_JOBS} snapshot-impact-analysis {MODELS_DIR} -c {CONFIG_FILE}"
     submit_cmd = f"{SUBMIT_JOBS} {CONFIG_FILE} --output={OUTPUT} -p 1"
 
-    assert run_command(defaults_cmd) == 0
     assert run_command(transform_cmd) == 0
     assert run_command(config_cmd) == 0
     assert run_command(submit_cmd) == 0
@@ -68,9 +66,7 @@ def verify_results(output_dir, num_jobs):
 
 
 def test_recalculate_kva(cleanup):
-    defaults_cmd = f"{TRANSFORM_DEFAULTS} tests/data/smart-ds SnapshotImpactAnalysis -c {TRANSFORM_CONFIG}"
-    transform_cmd = f"{TRANSFORM_JOBS} {TRANSFORM_CONFIG} -f -o {MODELS_DIR}"
-    assert run_command(defaults_cmd) == 0
+    transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds snapshot-impact-analysis -F -o {MODELS_DIR}"
     assert run_command(transform_cmd) == 0
 
     inputs = PyDssInputs(MODELS_DIR)

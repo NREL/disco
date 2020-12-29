@@ -22,7 +22,7 @@ SUPPORTED_FORMATS = {
 
 
 def list_subcommands(input_path):
-    """List the available subcommands for the source model at input_path.
+    """List the available transform subcommands for the source model.
 
     Parameters
     ----------
@@ -35,7 +35,7 @@ def list_subcommands(input_path):
 
     """
     source_model = make_source_model(input_path)
-    return source_model.list_subcommands()
+    return source_model.list_transform_subcommands()
 
 
 def make_source_model(input_path):

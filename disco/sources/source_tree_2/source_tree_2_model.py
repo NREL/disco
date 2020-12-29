@@ -6,30 +6,240 @@ import json
 import logging
 import os
 
+import click
+
 from jade.utils.utils import ExtendedJSONEncoder
 from PyDSS.common import ControllerType
-from disco.enums import Placement, Scale
+from disco.cli.common import handle_existing_dir
+from disco.enums import Placement, Scale, SimulationType
 from disco.models.base import PyDSSControllerModel
-from disco.sources.base import BaseSourceDataModel, BaseOpenDssModel, \
-    SOURCE_CONFIGURATION_FILENAME
+from disco.models.snapshot_impact_analysis_model import SnapshotImpactAnalysisModel
+from disco.sources.base import (
+    BaseSourceDataModel,
+    BaseOpenDssModel,
+    SOURCE_CONFIGURATION_FILENAME,
+    DEFAULT_SNAPSHOT_IMPACT_ANALYSIS_PARAMS,
+    DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS,
+)
 from .source_tree_2_model_inputs import SourceTree2ModelInputs
 
 
 logger = logging.getLogger(__name__)
 
 
+COMMON_OPTIONS = (
+    click.option(
+        "-f",
+        "--feeders",
+        default=["all"],
+        multiple=True,
+        show_default=True,
+        help="feeders to add; use ('all',) to auto-detect and add all feeders",
+    ),
+    click.option(
+        "-d",
+        "--dc-ac-ratios",
+        default=["all"],
+        multiple=True,
+        show_default=True,
+        help="DC/AC ratios to add; use ('all',) to auto-detect and add all DC/AC ratios",
+    ),
+    click.option(
+        "-s",
+        "--scales",
+        default=["all"],
+        multiple=True,
+        show_default=True,
+        help="scales to add; use ('all',) to auto-detect and add all scales",
+    ),
+    click.option(
+        "-p",
+        "--placements",
+        default=["all"],
+        multiple=True,
+        show_default=True,
+        help="placements to add; use ('all',) to auto-detect and add all placements",
+    ),
+    click.option(
+        "-d",
+        "--deployments",
+        default=["all"],
+        multiple=True,
+        show_default=True,
+        help="deployments to add; use ('all',) to auto-detect and add all deployments",
+    ),
+    click.option(
+        "-l",
+        "--penetration-levels",
+        default=["all"],
+        multiple=True,
+        show_default=True,
+        help="penetration-levels to add; use ('all',) to auto-detect and add all penetration-levels",
+    ),
+    click.option(
+        "-m",
+        "--master-file",
+        default="Master_noPV.dss",
+        show_default=True,
+        help="Master file for the OpenDSS model",
+    ),
+    click.option(
+        "-F",
+        "--force",
+        help="overwrite existing directory",
+        is_flag=True,
+        default=False,
+        show_default=True,
+    ),
+)
+
+
+def common_options(func):
+    for option in reversed(COMMON_OPTIONS):
+        func = option(func)
+    return func
+
+
+@click.command()
+@common_options
+@click.option(
+    "-s",
+    "--start",
+    default=DEFAULT_SNAPSHOT_IMPACT_ANALYSIS_PARAMS["start_time"],
+    show_default=True,
+    help="simulation start time",
+)
+@click.option(
+    "-o",
+    "--output",
+    default=DEFAULT_SNAPSHOT_IMPACT_ANALYSIS_PARAMS["output_dir"],
+    show_default=True,
+    help="output directory",
+)
+@click.pass_context
+def snapshot_impact_analysis(
+    ctx,
+    feeders,
+    dc_ac_ratios,
+    scales,
+    placements,
+    deployments,
+    penetration_levels,
+    master_file,
+    force,
+    start,
+    output,
+):
+    """Transform input data for a snapshot simulation"""
+    input_path = ctx.parent.params["input_path"]
+    handle_existing_dir(output, force)
+    simulation_params = {
+        "start_time": start,
+        "end_time": start,
+        "step_resolution": 900,
+        "simulation_type": SimulationType.SNAPSHOT,
+    }
+    SourceTree2Model.transform(
+        input_path=input_path,
+        output_path=output,
+        simulation_params=simulation_params,
+        simulation_model=SnapshotImpactAnalysisModel,
+        feeders=feeders,
+        dc_ac_ratios=dc_ac_ratios,
+        scales=scales,
+        placements=placements,
+        deployments=deployments,
+        penetration_levels=penetration_levels,
+        master_file=master_file,
+    )
+    print(f"Transformed data from {input_path} to {output} for SnapshotImpactAnalysis.")
+
+
+@click.command()
+@common_options
+@click.option(
+    "-s",
+    "--start",
+    default=DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS["start_time"],
+    show_default=True,
+    help="simulation start time",
+)
+@click.option(
+    "-e",
+    "--end",
+    default=DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS["end_time"],
+    show_default=True,
+    help="simulation end time",
+)
+@click.option(
+    "-r",
+    "--resolution",
+    default=DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS["step_resolution"],
+    type=int,
+    show_default=True,
+    help="simulation step resolution in seconds",
+)
+@click.option(
+    "-o",
+    "--output",
+    default=DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS["output_dir"],
+    show_default=True,
+    help="output directory",
+)
+@click.option(
+    "--pv-profile",
+    default=None,
+    type=str,
+    help="profile to use for all PV Systems",
+)
+@click.pass_context
+def time_series_impact_analysis(
+    ctx,
+    feeders,
+    dc_ac_ratios,
+    scales,
+    placements,
+    deployments,
+    penetration_levels,
+    master_file,
+    force,
+    start,
+    end,
+    resolution,
+    output,
+    pv_profile,
+):
+    """Transform input data for a time series simulation"""
+    input_path = ctx.parent.params["input_path"]
+    handle_existing_dir(output, force)
+    simulation_params = {
+        "start_time": start,
+        "end_time": end,
+        "step_resolution": resolution,
+        "simulation_type": SimulationType.QSTS,
+    }
+    SourceTree2Model.transform(
+        input_path=input_path,
+        output_path=output,
+        simulation_params=simulation_params,
+        simulation_model=SnapshotImpactAnalysisModel,
+        feeders=feeders,
+        dc_ac_ratios=dc_ac_ratios,
+        scales=scales,
+        placements=placements,
+        deployments=deployments,
+        penetration_levels=penetration_levels,
+        master_file=master_file,
+        pv_profile=pv_profile,
+    )
+    print(
+        f"Transformed data from {input_path} to {output} for TimeSeriesImpactAnalysis."
+    )
+
+
 class SourceTree2Model(BaseOpenDssModel):
     """Source Type 2 Feeder Model Inputs Class"""
 
-    DEFAULT_SELECTIONS = {
-        "feeders": ["all"],
-        "dc_ac_ratios": ["all"],
-        "scales": ["all"],
-        "placements": ["all"],
-        "deployments": ["all"],
-        "penetration_levels": ["all"],
-        "master_file": "Master_noPV.dss",
-    }
     def __init__(self, data):
         data = copy.deepcopy(data)
         self._path = data.pop("path")
@@ -44,17 +254,15 @@ class SourceTree2Model(BaseOpenDssModel):
         self._opendss_directory = data.pop("opendss_directory")
         self._pv_locations = data.pop("pv_locations")
         self._name = self.make_name(
-            self._feeder, self._dcac, self._scale, self._placement,
-            self._deployment, self._penetration_level,
+            self._feeder,
+            self._dcac,
+            self._scale,
+            self._placement,
+            self._deployment,
+            self._penetration_level,
         )
         data.pop("deployment_file")
         assert not data, str(data)
-
-    @staticmethod
-    def get_default_transformation_selections(analysis_type):
-        defaults = BaseSourceDataModel.get_default_transformation_selections(analysis_type)
-        defaults.update({"model_params": SourceTree2Model.DEFAULT_SELECTIONS})
-        return defaults
 
     @property
     def dc_ac_ratio(self):
@@ -96,43 +304,42 @@ class SourceTree2Model(BaseOpenDssModel):
         )
 
     @classmethod
-    def transform(cls, config, simulation_model, output_path):
-        def get_val(name):
-            val = config["model_params"][name]
-            if val == ["all"]:
-                return "all"
-            return val
-
-        input_path = config["input_path"]
-        feeders = get_val("feeders")
-        dcac_ratios = get_val("dcac_ratios")
-        scales = get_val("scales")
-        placements = get_val("placements")
-        deployments = get_val("deployments")
-        penetration_levels = get_val("penetration_levels")
-        master_file = config["model_params"]["master_file"]
-        pv_profile = config["model_params"].get("pv_profile")
-        simulation_params = config["simulation_params"]
-
+    def transform(
+        cls,
+        input_path,
+        output_path,
+        simulation_model,
+        simulation_params,
+        feeders=("all",),
+        dc_ac_ratios=("all",),
+        scales=("all",),
+        placements=("all",),
+        deployments=("all",),
+        penetration_levels=("all",),
+        master_file="Master.dss",
+        pv_profile=None,
+    ):
         inputs = SourceTree2ModelInputs(input_path)
 
-        if feeders == "all":
+        if feeders == ("all",):
             feeders = inputs.list_feeders()
-        if dcac_ratios == "all":
-            dcac_ratios = inputs.list_dcac_ratios()
-        elif not isinstance(dcac_ratios[0], float):
-            dcac_ratios = [float(x) for x in dcac_ratios]
-        if scales == "all":
+        if dc_ac_ratios == ("all",):
+            dc_ac_ratios = inputs.list_dcac_ratios()
+        elif not isinstance(dc_ac_ratios[0], float):
+            dc_ac_ratios = [float(x) for x in dc_ac_ratios]
+        if scales == ("all",):
             scales = inputs.list_scales()
         elif not isinstance(scales[0], Scale):
             scales = [Scale(x) for x in scales]
-        if placements == "all":
+        if placements == ("all",):
             placements = inputs.list_placements()
         elif not isinstance(placements[0], float):
             placements = [Placement(x) for x in placements]
 
         config = []
-        for feeder, dcac, scale, placement in itertools.product(feeders, dcac_ratios, scales, placements):
+        for feeder, dcac, scale, placement in itertools.product(
+            feeders, dc_ac_ratios, scales, placements
+        ):
             key = inputs.create_key(feeder, dcac, scale, placement)
             if deployments == "all":
                 _deployments = inputs.list_deployments(key)
@@ -161,7 +368,9 @@ class SourceTree2Model(BaseOpenDssModel):
                     }
                     model = cls(data)
                     path = os.path.join(output_path, feeder)
-                    out_deployment = model.create_deployment(model.name, path, pv_profile=pv_profile)
+                    out_deployment = model.create_deployment(
+                        model.name, path, pv_profile=pv_profile
+                    )
                     item = {
                         "deployment": out_deployment,
                         "simulation": simulation_params,
