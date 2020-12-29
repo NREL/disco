@@ -8,6 +8,7 @@ import os
 
 import click
 
+from jade.exceptions import InvalidParameter
 from jade.utils.utils import ExtendedJSONEncoder
 from PyDSS.common import ControllerType
 from disco.cli.common import handle_existing_dir
@@ -240,6 +241,11 @@ def time_series_impact_analysis(
 class SourceTree2Model(BaseOpenDssModel):
     """Source Type 2 Feeder Model Inputs Class"""
 
+    TRANSFORM_SUBCOMMANDS = {
+        "snapshot-impact-analysis": snapshot_impact_analysis,
+        "time-series-impact-analysis": time_series_impact_analysis,
+    }
+
     def __init__(self, data):
         data = copy.deepcopy(data)
         self._path = data.pop("path")
@@ -303,6 +309,16 @@ class SourceTree2Model(BaseOpenDssModel):
             name="volt-var",
         )
 
+    @staticmethod
+    def get_transform_subcommand(name):
+        if name not in SourceTree2Model.TRANSFORM_SUBCOMMANDS:
+            raise InvalidParameter(f"{name} is not supported")
+        return SourceTree2Model.TRANSFORM_SUBCOMMANDS[name]
+
+    @staticmethod
+    def list_transform_subcommands():
+        return sorted(list(SourceTree2Model.TRANSFORM_SUBCOMMANDS.keys()))
+
     @classmethod
     def transform(
         cls,
@@ -341,12 +357,12 @@ class SourceTree2Model(BaseOpenDssModel):
             feeders, dc_ac_ratios, scales, placements
         ):
             key = inputs.create_key(feeder, dcac, scale, placement)
-            if deployments == "all":
+            if deployments == ("all",):
                 _deployments = inputs.list_deployments(key)
             else:
                 _deployments = deployments
             for deployment in _deployments:
-                if penetration_levels == "all":
+                if penetration_levels == ("all",):
                     levels = inputs.list_penetration_levels(key, deployment)
                 else:
                     levels = penetration_levels
