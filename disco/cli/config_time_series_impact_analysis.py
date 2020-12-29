@@ -59,7 +59,8 @@ def time_series_impact_analysis(
     """Create JADE configuration for time series impact analysis."""
     level = logging.DEBUG if verbose else logging.INFO
     setup_logging(__name__, None, console_level=level)
-    post_process = JobPostProcess("disco.analysis", "TimeSeriesImpactAnalysis")
+    # TODO
+    #post_process = JobPostProcess("disco.analysis", "TimeSeriesImpactAnalysis")
 
     simulation_config = PyDssConfiguration.get_default_pydss_simulation_config()
     simulation_config["Project"]["Simulation Type"] = SimulationType.QSTS.value
@@ -72,7 +73,7 @@ def time_series_impact_analysis(
     config = PyDssConfiguration.auto_config(
         inputs,
         simulation_config=simulation_config,
-        job_post_process=post_process,
+        #job_post_process=post_process,
         scenarios=scenarios,
         estimated_exec_secs_per_job=ESTIMATED_EXEC_SECS_PER_JOB,
     )

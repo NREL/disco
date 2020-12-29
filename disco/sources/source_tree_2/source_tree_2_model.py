@@ -15,6 +15,7 @@ from disco.cli.common import handle_existing_dir
 from disco.enums import Placement, Scale, SimulationType
 from disco.models.base import PyDSSControllerModel
 from disco.models.snapshot_impact_analysis_model import SnapshotImpactAnalysisModel
+from disco.models.time_series_impact_analysis_model import TimeSeriesImpactAnalysisModel
 from disco.sources.base import (
     BaseSourceDataModel,
     BaseOpenDssModel,
@@ -223,7 +224,7 @@ def time_series_impact_analysis(
         input_path=input_path,
         output_path=output,
         simulation_params=simulation_params,
-        simulation_model=SnapshotImpactAnalysisModel,
+        simulation_model=TimeSeriesImpactAnalysisModel,
         feeders=feeders,
         dc_ac_ratios=dc_ac_ratios,
         scales=scales,
