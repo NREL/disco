@@ -66,7 +66,7 @@ def common_options(func):
 @click.option(
     "-o",
     "--output",
-    default="epri-snapshot-impact-analysis-models",
+    default=DEFAULT_SNAPSHOT_IMPACT_ANALYSIS_PARAMS["output_dir"],
     show_default=True,
     help="output directory",
 )
@@ -124,7 +124,7 @@ def snapshot_impact_analysis(ctx, feeders, force, start, output):
 @click.option(
     "-o",
     "--output",
-    default="epri-time-series-impact-analysis-models",
+    default=DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS["output_dir"],
     show_default=True,
     help="output directory",
 )
