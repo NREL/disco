@@ -8,6 +8,8 @@ import zipfile
 from urllib.parse import urlparse
 from urllib.request import urlopen
 
+from jade.utils.utils import dump_data
+
 
 logger = logging.getLogger(__name__)
 
@@ -71,3 +73,16 @@ def download_epri_feeder_opendss_data(feeder, output_directory=None):
         raise
 
     return opendss_directory
+
+
+def define_epri_source_format(output_directory=None):
+    data = {
+        "type": "EpriModel"
+    }
+    
+    if output_directory and os.path.exists(output_directory):
+        filename = os.path.join(output_directory, "format.toml")
+    else:
+        filename = "format.toml"
+    
+    dump_data(data, filename)
