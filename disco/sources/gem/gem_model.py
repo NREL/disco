@@ -25,7 +25,7 @@ COMMON_OPTIONS = (
         is_flag=True,
         default=False,
         show_default=True,
-    )
+    ),
 )
 
 def common_options(func):
