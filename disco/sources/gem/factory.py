@@ -11,7 +11,7 @@ def read_config_data(config_file):
     """Return a model generator based on the config file."""
     data = load_data(config_file)
 
-    if data["type"] == "OpenDSS":
+    if data["type"] == "GemModel":
         cls = OpenDssGenerator
     else:
         raise InvalidParameter(f"unsupported model type {data['type']}")

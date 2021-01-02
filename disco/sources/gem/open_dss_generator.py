@@ -144,8 +144,6 @@ class OpenDssGenerator(ModelInputDataInterface):
         if jobs:
             self._create_config_file(jobs)
 
-        define_gem_source_format(output_directory=output_dir)
-
         logger.info("Done generating data in %s", output_dir)
 
     def _create_config_file(self, jobs):
@@ -477,16 +475,3 @@ def comment_out_solve(line, *args, **_):
     if match:
         return "!Solve"
     return line
-
-
-def define_gem_source_format(output_directory=None):
-    data = {
-        "type": "GemModel"
-    }
-    
-    if output_directory and os.path.exists(output_directory):
-        filename = os.path.join(output_directory, "format.toml")
-    else:
-        filename = "format.toml"
-    
-    dump_data(data, filename)

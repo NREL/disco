@@ -17,8 +17,25 @@ from .factory import read_config_data
 logger = logging.getLogger(__name__)
 
 
+COMMON_OPTIONS = (
+    click.option(
+        "-F",
+        "--force",
+        help="overwrite existing directory",
+        is_flag=True,
+        default=False,
+        show_default=True,
+    )
+)
+
+def common_options(func):
+    for option in reversed(COMMON_OPTIONS):
+        func = option(func)
+    return func
+
+
 @click.command()
-@click.argument("gem_file")
+@common_options
 @click.option(
     "-o",
     "--output",
@@ -26,8 +43,11 @@ logger = logging.getLogger(__name__)
     show_default=True,
     help="output directory",
 )
-def snapshot_impact_analysis(gem_file, output):
+@click.pass_context
+def snapshot_impact_analysis(ctx, force, output):
     """Transform input data for a snapshot impact analysis simulation"""
+    input_path = ctx.parent.params["input_path"]
+    handle_existing_dir(output, force)
     GemModel.transform(
         input_file=gem_file,
         output_path=output,
