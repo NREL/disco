@@ -9,6 +9,7 @@ import shutil
 import click
 
 from jade.exceptions import InvalidParameter
+from disco.cli.common import handle_existing_dir
 from disco.models.snapshot_impact_analysis_model import SnapshotImpactAnalysisModel
 from disco.sources.base import BaseOpenDssModel, DEFAULT_SNAPSHOT_IMPACT_ANALYSIS_PARAMS
 from .factory import read_config_data
@@ -49,10 +50,11 @@ def snapshot_impact_analysis(ctx, force, output):
     input_path = ctx.parent.params["input_path"]
     handle_existing_dir(output, force)
     GemModel.transform(
-        input_file=gem_file,
+        input_file=input_path,
         output_path=output,
         simulation_model=SnapshotImpactAnalysisModel,
     )
+    print(f"Transformed data from {input_path} to {output} for SnapshotImpactAnalysis.")
 
 
 class GemModel(BaseOpenDssModel):
