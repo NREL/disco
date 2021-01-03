@@ -15,11 +15,13 @@ from disco.enums import Placement, SimulationType
 from disco.models.base import PyDSSControllerModel
 from disco.models.snapshot_impact_analysis_model import SnapshotImpactAnalysisModel
 from disco.models.time_series_impact_analysis_model import TimeSeriesImpactAnalysisModel
+from disco.models.upgrade_cost_analysis_model import UpgradeCostAnalysisModel
 from disco.sources.base import (
     BaseOpenDssModel,
     SOURCE_CONFIGURATION_FILENAME,
     DEFAULT_SNAPSHOT_IMPACT_ANALYSIS_PARAMS,
     DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS,
+    DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS
 )
 from .source_tree_1_model_inputs import SourceTree1ModelInputs
 
@@ -217,6 +219,59 @@ def time_series_impact_analysis(
     )
 
 
+@click.command()
+@common_options
+@click.option(
+    "-s",
+    "--start",
+    default=DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS["start_time"],
+    show_default=True,
+    help="simulation start time",
+)
+@click.option(
+    "-o",
+    "--output",
+    default=DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS["output_dir"],
+    show_default=True,
+    help="output directory"
+)
+@click.pass_context
+def upgrade_cost_analysis(
+    ctx,
+    substations,
+    feeders,
+    placements,
+    deployments,
+    penetration_levels,
+    master_file,
+    force,
+    start,
+    output
+):
+    """Transform input data for an automated upgrade simulation"""
+    input_path = ctx.parent.params["input_path"]
+    handle_existing_dir(output, force)
+    simulation_params = {
+        "start_time": start,
+        "end_time": start,
+        "step_resolution": 900,
+        "simulation_type": SimulationType.SNAPSHOT,
+    }
+    SourceTree1Model.transform(
+        input_path=input_path,
+        output_path=output,
+        simulation_params=simulation_params,
+        simulation_model=UpgradeCostAnalysisModel,
+        substations=substations,
+        feeders=feeders,
+        placements=placements,
+        deployments=deployments,
+        penetration_levels=penetration_levels,
+        master_file=master_file,
+    )
+    print(f"Transformed data from {input_path} to {output} for UpgradeCostAnalysis.")
+
+
 class SourceTree1Model(BaseOpenDssModel):
     """OpenDSS Model for Source Tree 1"""
 
@@ -224,6 +279,7 @@ class SourceTree1Model(BaseOpenDssModel):
     TRANSFORM_SUBCOMMANDS = {
         "snapshot-impact-analysis": snapshot_impact_analysis,
         "time-series-impact-analysis": time_series_impact_analysis,
+        "upgrade-cost-analysis": upgrade_cost_analysis
     }
 
     def __init__(self, data):
@@ -389,6 +445,7 @@ class SourceTree1Model(BaseOpenDssModel):
                         "simulation": simulation_params,
                         "name": model.name,
                         "model_type": simulation_model.__name__,
+                        "job_order": level
                     }
                     config.append(simulation_model.validate(item).dict())
 
