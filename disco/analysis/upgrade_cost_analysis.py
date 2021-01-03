@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class UpgradeCostAnalysis(Analysis):
 
     INPUTS = [
-        Input("unit_cost_data_file", CustomType(str), "DISCO_cost_database.xlsx")
+        Input("unit_cost_data_file", CustomType(str), "generic_cost_database_v1.xlsx")
     ]
 
     def run(self, output, *args, **kwargs):
