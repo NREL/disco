@@ -115,7 +115,7 @@ class SourceTree2ModelInputs(JobInputsInterface):
         )
 
         if not os.path.exists(filename):
-            raise InvalidParameter("file does not exist: {filename}")
+            raise InvalidParameter(f"file does not exist: {filename}")
         return filename
 
     def get_dss_filename(self, feeder, filename):

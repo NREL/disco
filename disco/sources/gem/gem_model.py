@@ -6,23 +6,61 @@ import logging
 import os
 import shutil
 
-from disco.sources.base import BaseOpenDssModel
+import click
+
+from jade.exceptions import InvalidParameter
+from disco.models.snapshot_impact_analysis_model import SnapshotImpactAnalysisModel
+from disco.sources.base import BaseOpenDssModel, DEFAULT_SNAPSHOT_IMPACT_ANALYSIS_PARAMS
 from .factory import read_config_data
 
 
 logger = logging.getLogger(__name__)
 
 
+@click.command()
+@click.argument("gem_file")
+@click.option(
+    "-o",
+    "--output",
+    default=DEFAULT_SNAPSHOT_IMPACT_ANALYSIS_PARAMS["output_dir"],
+    show_default=True,
+    help="output directory",
+)
+def snapshot_impact_analysis(gem_file, output):
+    """Transform input data for a snapshot impact analysis simulation"""
+    GemModel.transform(
+        input_file=gem_file,
+        output_path=output,
+        simulation_model=SnapshotImpactAnalysisModel,
+    )
+
+
 class GemModel(BaseOpenDssModel):
     """GEM Feeder Model Inputs Class"""
+
+    TRANSFORM_SUBCOMMANDS = {
+        "snapshot-impact-analysis": snapshot_impact_analysis,
+    }
 
     @property
     def substation(self):
         return None
 
+    @staticmethod
+    def get_transform_subcommand(name):
+        """Return a click command for name."""
+        if name not in GemModel.TRANSFORM_SUBCOMMANDS:
+            raise InvalidParameter(f"{name} is not supported")
+        return GemModel.TRANSFORM_SUBCOMMANDS[name]
+
+    @staticmethod
+    def list_transform_subcommands():
+        return sorted(list(GemModel.TRANSFORM_SUBCOMMANDS.keys()))
+
     @classmethod
-    def transform(cls, input_file, output_path, simulation_model,
-                  include_pv_systems=True):
+    def transform(
+        cls, input_file, output_path, simulation_model, include_pv_systems=True
+    ):
         """Transform GEM input data to a DISCO data model.
 
         Parameters
@@ -35,4 +73,5 @@ class GemModel(BaseOpenDssModel):
             shutil.rmtree(output_path)
         os.makedirs(output_path)
         read_config_data(input_file).generate_output_data(
-            output_path, include_pv_systems, simulation_model)
+            output_path, include_pv_systems, simulation_model
+        )

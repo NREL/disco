@@ -7,19 +7,144 @@ import json
 import logging
 import os
 
+import click
+
+from jade.exceptions import InvalidParameter
 from jade.utils.utils import ExtendedJSONEncoder
 
 from PyDSS.common import ControllerType
+from disco.enums import SimulationType
 from disco.models.base import PyDSSControllerModel
-from disco.sources.base import BaseOpenDssModel, SOURCE_CONFIGURATION_FILENAME
+from disco.models.snapshot_impact_analysis_model import SnapshotImpactAnalysisModel
+from disco.models.time_series_impact_analysis_model import TimeSeriesImpactAnalysisModel
+from disco.sources.base import (
+    BaseOpenDssModel,
+    SOURCE_CONFIGURATION_FILENAME,
+    DEFAULT_SNAPSHOT_IMPACT_ANALYSIS_PARAMS,
+    DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS,
+)
 
 
 logger = logging.getLogger(__name__)
 
 
+COMMON_OPTIONS = (
+    click.option(
+        "-f",
+        "--feeders",
+        default=["all"],
+        multiple=True,
+        show_default=True,
+        help="feeders to add; use 'all' to auto-detect and add all feeders",
+    ),
+)
+
+def common_options(func):
+    for option in reversed(COMMON_OPTIONS):
+        func = option(func)
+    return func
+
+
+@click.command()
+@click.argument("input_path")
+@common_options
+@click.option(
+    "-s",
+    "--start",
+    default=DEFAULT_SNAPSHOT_IMPACT_ANALYSIS_PARAMS["start_time"],
+    show_default=True,
+    help="simulation start time",
+)
+@click.option(
+    "-o",
+    "--output",
+    default="epri-snapshot-impact-analysis-models",
+    show_default=True,
+    help="output directory",
+)
+def snapshot_impact_analysis(input_path, feeders, start, output):
+    """Transform input data for a snapshot simulation"""
+    simulation_params = {
+        "start_time": start,
+        "end_time": start,
+        "step_resolution": 900,
+        "simulation_type": SimulationType.SNAPSHOT,
+    }
+
+    EpriModel.transform(
+        input_path=input_path,
+        output_path=output,
+        simulation_params=simulation_params,
+        simulation_model=SnapshotImpactAnalysisModel,
+        feeders=feeders,
+    )
+
+
+@click.command()
+@click.argument("input_path")
+@common_options
+@click.option(
+    "-s",
+    "--start",
+    default=DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS["start_time"],
+    show_default=True,
+    help="simulation start time",
+)
+@click.option(
+    "-e",
+    "--end",
+    default=DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS["end_time"],
+    show_default=True,
+    help="simulation end time",
+)
+@click.option(
+    "-o",
+    "--output",
+    default=DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS["output_dir"],
+    show_default=True,
+    help="output directory",
+)
+@click.option(
+    "-p",
+    "--pv-profile",
+    type=str,
+    help="load shape profile name to apply to all PVSystems",
+)
+@click.option(
+    "-r",
+    "--resolution",
+    default=DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS["step_resolution"],
+    type=int,
+    show_default=True,
+    help="simulation step resolution in seconds",
+)
+def time_series_impact_analysis(
+    input_path, feeders, start, end, output, pv_profile, resolution
+):
+    """Transform input data for a time series simulation"""
+    simulation_params = {
+        "start_time": start,
+        "end_time": end,
+        "step_resolution": resolution,
+        "simulation_type": SimulationType.QSTS,
+    }
+    EpriModel.transform(
+        input_path=input_path,
+        output_path=output,
+        simulation_params=simulation_params,
+        simulation_model=TimeSeriesImpactAnalysisModel,
+        feeders=feeders,
+        pv_profile=pv_profile,
+    )
+
+
 class EpriModel(BaseOpenDssModel):
     """EPRI Feeder Model Inputs Class"""
 
+    TRANSFORM_SUBCOMMANDS = {
+        "snapshot-impact-analysis": snapshot_impact_analysis,
+        "time-series-impact-analysis": time_series_impact_analysis,
+    }
     MASTER_FILENAME_BY_FEEDER = {
         "J1": "Master_noPV.dss",
         "K1": "Master_NoPV.dss",
@@ -83,16 +208,36 @@ class EpriModel(BaseOpenDssModel):
             name="volt-var",
         )
 
+    @staticmethod
+    def get_transform_subcommand(name):
+        if name not in EpriModel.TRANSFORM_SUBCOMMANDS:
+            raise InvalidParameter(f"{name} is not supported")
+        return EpriModel.TRANSFORM_SUBCOMMANDS[name]
+
+    @staticmethod
+    def list_transform_subcommands():
+        return sorted(list(EpriModel.TRANSFORM_SUBCOMMANDS.keys()))
+
     @classmethod
-    def transform(cls, input_path, output_path, simulation_params,
-                  simulation_model, feeders=("all",), existing_pv=True,
-                  pv_profile=None):
+    def transform(
+        cls,
+        input_path,
+        output_path,
+        simulation_params,
+        simulation_model,
+        feeders=("all",),
+        existing_pv=True,
+        pv_profile=None,
+    ):
         config = []
         os.makedirs(output_path, exist_ok=True)
 
         if feeders == ("all",):
-            feeders = [x for x in os.listdir(input_path)
-                       if os.path.isdir(os.path.join(input_path, x))]
+            feeders = [
+                x
+                for x in os.listdir(input_path)
+                if os.path.isdir(os.path.join(input_path, x))
+            ]
 
         for i, feeder in enumerate(feeders):
             pv_locations = []
