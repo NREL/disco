@@ -392,6 +392,7 @@ class SourceTree1Model(BaseOpenDssModel):
                     }
                     config.append(simulation_model.validate(item).dict())
 
+        os.makedirs(output_path, exist_ok=True)
         filename = os.path.join(output_path, SOURCE_CONFIGURATION_FILENAME)
         with open(filename, "w") as f_out:
             json.dump(config, f_out, indent=2, cls=ExtendedJSONEncoder)

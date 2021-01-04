@@ -20,7 +20,7 @@ def test_snapshot_impact_analysis(cleanup):
     """For each job, gather outputs and generate desired output CSV files."""
     base = os.path.join(DISCO_PATH, "extensions", "pydss_simulation")
     config_file = PIPELINE_CONFIG
-    transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds snapshot-impact-analysis -F -o {MODELS_DIR}"
+    transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations snapshot-impact-analysis -F -o {MODELS_DIR}"
     create_sim_config = f"disco config snapshot-impact-analysis {MODELS_DIR} -c config-stage1.json"
     create_merge_config = os.path.join(base, "create_merge_feeders_results.py")
     pipeline_cmd = f"jade pipeline create \"{create_sim_config}\" {create_merge_config} -c {config_file}"
