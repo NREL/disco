@@ -14,15 +14,15 @@ SOURCE_CONFIGURATION_FILENAME = "configurations.json"
 
 DEFAULT_SNAPSHOT_IMPACT_ANALYSIS_PARAMS = {
     "output_dir": "snapshot-impact-analysis-models",
-    "start_time": "2020-06-17T15:00:00",
-    "end_time": "2020-06-17T15:00:00",
+    "start_time": "2020-01-01T00:00:00",
+    "end_time": "2020-01-08T00:00:00",
     "simulation_type": SimulationType.SNAPSHOT.value,
 }
 
 DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS = {
     "output_dir": "time-series-impact-analysis-models",
-    "start_time": "2020-06-17T15:00:00",
-    "end_time": "2020-06-24T15:00:00",
+    "start_time": "2020-01-01T00:00:00",
+    "end_time": "2020-01-08T00:00:00",
     "simulation_type": SimulationType.QSTS.value,
     "step_resolution": 900,
 }
@@ -33,8 +33,8 @@ DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS = {
     "params_file": "upgrade-params.toml",
     "sequential_upgrade": False,
     "nearest_redirect": False,
-    "start_time": "2020-06-17T15:00:00",
-    "end_time": "2020-06-17T15:00:00",
+    "start_time": "2020-01-01T00:00:00",
+    "end_time": "2020-01-08T00:00:00",
     "simulation_type": SimulationType.SNAPSHOT.value,
 }
 

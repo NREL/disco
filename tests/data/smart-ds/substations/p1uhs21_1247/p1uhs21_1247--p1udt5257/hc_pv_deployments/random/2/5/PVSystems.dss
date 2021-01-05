@@ -1,0 +1,4 @@
+// PV Scenario for 28.724999999999994 kW total size, Scenario type random, Deployment 2 and penetration 5% (PV to load ratio) 
+! =====================PV SCENARIO FILE==============================
+New PVSystem.p1ulv29261_1_2_pv phases=2 bus1=p1ulv29261.1.2 kv=0.208 irradiance=1 Pmpp=23.22 pctPmpp=100 kVA=23.22 conn=delta %cutin=0.1 %cutout=0.1 Vmaxpu=1.2  
+New PVSystem.p1ulv19767_1_2_pv phases=2 bus1=p1ulv19767.1.2 kv=0.208 irradiance=1 Pmpp=5.505 pctPmpp=100 kVA=5.505 conn=delta %cutin=0.1 %cutout=0.1 Vmaxpu=1.2  

@@ -1,0 +1,196 @@
+{
+  "pv_systems": [
+    {
+      "name": "p1ulv29261_1_2_pv",
+      "pydss_controller": {
+        "controller_type": "PvController",
+        "name": "volt-var"
+      },
+      "pv_profile": "res_376976_pu"
+    },
+    {
+      "name": "p1ulv19767_1_2_pv",
+      "pydss_controller": {
+        "controller_type": "PvController",
+        "name": "volt-var"
+      },
+      "pv_profile": "res_530417_pu"
+    },
+    {
+      "name": "p1ulv53232_1_2_pv",
+      "pydss_controller": {
+        "controller_type": "PvController",
+        "name": "volt-var"
+      },
+      "pv_profile": "res_268766_pu"
+    },
+    {
+      "name": "p1ulv4595_1_2_pv",
+      "pydss_controller": {
+        "controller_type": "PvController",
+        "name": "volt-var"
+      },
+      "pv_profile": "res_240883_pu"
+    },
+    {
+      "name": "p1ulv2723_1_2_pv",
+      "pydss_controller": {
+        "controller_type": "PvController",
+        "name": "volt-var"
+      },
+      "pv_profile": "com_42489_pu"
+    },
+    {
+      "name": "p1ulv37000_1_2_pv",
+      "pydss_controller": {
+        "controller_type": "PvController",
+        "name": "volt-var"
+      },
+      "pv_profile": "res_240883_pu"
+    },
+    {
+      "name": "p1ulv45758_1_2_pv",
+      "pydss_controller": {
+        "controller_type": "PvController",
+        "name": "volt-var"
+      },
+      "pv_profile": "res_32458_pu"
+    },
+    {
+      "name": "p1ulv44471_1_2_pv",
+      "pydss_controller": {
+        "controller_type": "PvController",
+        "name": "volt-var"
+      },
+      "pv_profile": "res_32458_pu"
+    },
+    {
+      "name": "p1ulv64357_1_2_pv",
+      "pydss_controller": {
+        "controller_type": "PvController",
+        "name": "volt-var"
+      },
+      "pv_profile": "res_376152_pu"
+    },
+    {
+      "name": "p1ulv24237_1_2_pv",
+      "pydss_controller": {
+        "controller_type": "PvController",
+        "name": "volt-var"
+      },
+      "pv_profile": "res_347994_pu"
+    },
+    {
+      "name": "p1ulv36321_1_2_pv",
+      "pydss_controller": {
+        "controller_type": "PvController",
+        "name": "volt-var"
+      },
+      "pv_profile": "res_240883_pu"
+    },
+    {
+      "name": "p1ulv31790_1_2_pv",
+      "pydss_controller": {
+        "controller_type": "PvController",
+        "name": "volt-var"
+      },
+      "pv_profile": "res_331403_pu"
+    },
+    {
+      "name": "p1ulv5237_1_2_pv",
+      "pydss_controller": {
+        "controller_type": "PvController",
+        "name": "volt-var"
+      },
+      "pv_profile": "res_32458_pu"
+    },
+    {
+      "name": "p1ulv15856_1_2_pv",
+      "pydss_controller": {
+        "controller_type": "PvController",
+        "name": "volt-var"
+      },
+      "pv_profile": "com_42489_pu"
+    },
+    {
+      "name": "p1ulv63094_1_2_pv",
+      "pydss_controller": {
+        "controller_type": "PvController",
+        "name": "pf1"
+      },
+      "pv_profile": "com_42489_pu"
+    },
+    {
+      "name": "p1ulv57596_1_2_3_pv",
+      "pydss_controller": {
+        "controller_type": "PvController",
+        "name": "volt-var"
+      },
+      "pv_profile": "res_376976_pu"
+    },
+    {
+      "name": "p1ulv57547_1_2_pv",
+      "pydss_controller": {
+        "controller_type": "PvController",
+        "name": "volt-var"
+      },
+      "pv_profile": "res_237151_pu"
+    },
+    {
+      "name": "p1ulv12765_1_2_pv",
+      "pydss_controller": {
+        "controller_type": "PvController",
+        "name": "volt-var"
+      },
+      "pv_profile": "res_349965_pu"
+    },
+    {
+      "name": "p1ulv64358_1_2_pv",
+      "pydss_controller": {
+        "controller_type": "PvController",
+        "name": "volt-var"
+      },
+      "pv_profile": "res_53470_pu"
+    },
+    {
+      "name": "p1ulv29904_1_2_pv",
+      "pydss_controller": {
+        "controller_type": "PvController",
+        "name": "volt-var"
+      },
+      "pv_profile": "res_314771_pu"
+    },
+    {
+      "name": "p1ulv61814_1_2_pv",
+      "pydss_controller": {
+        "controller_type": "PvController",
+        "name": "volt-var"
+      },
+      "pv_profile": "res_123286_pu"
+    },
+    {
+      "name": "p1ulv62436_1_2_pv",
+      "pydss_controller": {
+        "controller_type": "PvController",
+        "name": "volt-var"
+      },
+      "pv_profile": "res_123286_pu"
+    },
+    {
+      "name": "p1ulv17169_1_2_pv",
+      "pydss_controller": {
+        "controller_type": "PvController",
+        "name": "volt-var"
+      },
+      "pv_profile": "res_314771_pu"
+    },
+    {
+      "name": "p1ulv59420_1_2_pv",
+      "pydss_controller": {
+        "controller_type": "PvController",
+        "name": "volt-var"
+      },
+      "pv_profile": "res_190447_pu"
+    }
+  ]
+}
