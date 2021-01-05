@@ -23,7 +23,7 @@ def test_upgrade_cost_analysis(cleanup):
     """Should create post_process results of upgrade cost analysis"""
     # transform-model
     tranform_cmd = (
-        f"{TRANSFORM_MODEL} tests/data/smart-ds "
+        f"{TRANSFORM_MODEL} tests/data/smart-ds/substations/ "
         f"upgrade-cost-analysis -F -o {MODELS_DIR}"
     )
     assert run_command(tranform_cmd) == 0
