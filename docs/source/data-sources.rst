@@ -2,10 +2,10 @@
 Data Sources
 ************
 
-DISCO currently supports several types of data sources, namely GEM, EPRI, 
-SourceTree1, SourceTree2. The following sectinos show how to 
-prepare the source feeder models which are used as *input paths* for transforming
-models with given analysis type.
+DISCO currently supports OpenDSS models stored in several source formats,
+namely GEM, EPRI, SourceTree1, SourceTree2. The following sections show how to
+prepare the source feeder models which are used as *input paths* for
+transforming models with a given analysis type.
 
 
 .. _GEM_JSON_Schema:
@@ -13,17 +13,17 @@ models with given analysis type.
 GEM Model
 =========
 
-GEM data locates on HPC, the user need to create a ``gem-file.json`` for DISCO 
-to extract and transform the models on HPC. The descriptor schema defined in 
-``gem-file.json`` describes all feeders and their possible deployments. 
-An example JSON file,
+A GEM config file (JSON) contains paths to source models on a filesystem along with
+descriptor schema that describe all feeders and their possible deployments. 
+
+Here is an example JSON file:
 
 .. code-block:: json
 
   {
     "include_voltage_deviation": false,
     "path_base": "gem/feeder_models",
-    "type": "OpenDSS",
+    "type": "GemModel",
     "feeders": [
       {
         "base_case": "deployment0",
@@ -95,13 +95,12 @@ EPRI Model
 ==========
 
 The source URL of EPRI J1, K1, and M1 feeder models is 
-https://dpv.epri.com/feeder_models.html. You can download the source data by
-using this command,
+https://dpv.epri.com/feeder_models.html. You can download the source data with
+this command:
 
 .. code-block:: bash
 
-  $ mkdir epri-feeders
-  $ disco download-source epri J1 K1 M1 ./epri-feeders
+  $ disco download-source epri J1 K1 M1 --directory ./epri-feeders
 
 
 .. _SourceTree1Model:

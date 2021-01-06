@@ -2,36 +2,33 @@
 Overview
 ********
 
-This section gives an overview about DISCO, what DISCO can do, what DISCO workflow
-looks like, and the main steps to run DISCO workflow.
+This section gives an overview about DISCO and its workflows.
 
-DISCO can be used for distributed grid system simulation with further analysis.
-The analysis types are shown below, behind the scenes, PyDSS support the simulations
-for each type of analysis.
+DISCO can be used for distributed grid system simulation analysis.
+The analysis types are:
 
 * snapshot impact analysis
 * hosting capacity analysis (based on snapshot impact analysis results)
 * time series impact analysis
 * upgrade cost analysis
 
-The diagram below shows the DISCO workflow,
+The diagram below shows the DISCO workflow:
 
 .. image:: images/DISCO-Workflow.png
    :align: center
 
 As shown from the diagram, the main steps to run an analysis workflow are:
 
-* Prepare the OpenDSS models with given data source.
-* Transform the source OpenDSS models into DISCO models with deployments.
-* Configure JADE jobs using DISCO with prepared DISCO models as inputs.
-* Submit jobs using JADE, and wait for job completion.
+* Prepare the OpenDSS models with a given data source.
+* Transform the source OpenDSS models into DISCO models.
+* Configure JADE jobs with the DISCO models.
+* Run the jobs with JADE.
 
 
 Data Sources
 ============
 
-Currengly, DISCO supports several types of data sources (or feeders) in OpenDSS 
-data formats.
+DISCO supports OpenDSS models in several data formats:
 
 #. GEM Model, Grid-connected Energy systems Modeling
 
@@ -46,28 +43,27 @@ Transform Model
 ===============
 
 Given an analysis type, the source OpenDSS models need to be transformed into 
-DISCO models which then could be used as inputs for configuring JADE jobs.
+DISCO models which then can be used as inputs for configuring JADE jobs.
 
 
 Config Jobs
 ===========
 
-DISCO has implemented abstract classes in JADE used for configuring jobs, it 
-take standard DISCO models as inputs, the generate configuration JSON file.
+DISCO configures JADE jobs from standard DISCO models for specific analysis
+types. The output is a configuration JSON file.
 
 
 Submit Jobs
 ===========
 
-With job configuration file, then JADE commands can be used for job submission on
-running hosts, the hosts could be computers, laptops, or HPC. The jobs would be
-running in batch, and creates output directory after completion.
+JADE parallelizes execution of the jobs on a local computer or an HPC.
+Execution on an HPC is highly configurable depending on the job resource
+requirements.
 
 
 Result Analysis
 ===============
 
-After job runs finished, JADE can assist with job analysis, including the status
-of the jobs - success or failed; the execution time of the jobs; the statics of 
-compute resources the jobs used; and if there were any errors or events happen, 
-etc.
+After jobs complete JADE can assist with analysis by showing summaries of
+individual job status, errors and events, job execution times, and compute
+resource utilization statistics.

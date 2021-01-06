@@ -9,7 +9,7 @@ Full Snapshot Impact and Hosting Capacity Analysis
 
 To simplify the full run of ``SnapshotImpactAnalysis`` and ``HostingCapacityAnalysis``, we have
 created a `pipeline <https://nrel.github.io/jade/pipeline.html>`_
-that will run all of these steps at once:
+that will run all of these steps:
 
 .. code-block:: bash
 
@@ -24,7 +24,7 @@ This will generate ``pipeline.toml``, which will generate a ``SnapshotImpactAnal
 run it, generate a second JADE config to merge the impact analysis results into per-feeder CSVs,
 and then run that.
 
-So, running:
+This command will execute the pipeline:
 
 .. code-block:: bash
 

@@ -2,8 +2,8 @@
 Debugging Issues
 ****************
 
-In this section, we are going to talk about the ways around DISCO/JADE for debugging
-issues encountered during the simulation/analysis processes.
+This section describes debugging techniques for issues encountered during the
+simulation/analysis processes.
 
 Using JADE
 ==========
@@ -13,13 +13,14 @@ Please refer to JADE documentation - https://nrel.github.io/jade/tutorial.html#d
 Using PyDSS
 ===========
 
-DISCO creates a PyDSS project directory for each simulation job which has the 
-following results,
+DISCO creates a PyDSS project directory for each simulation job. On successful
+completion the directory will have the following contents:
 
 * ``project.zip``
 * ``store.h5``
 
-If unzip the ``project.zip`` file, the you can find similar content listed below:
+If there was an error then the directory contents will be unzipped. Here is
+example content:
 
 .. code-block:: bash
 
