@@ -3,12 +3,12 @@ Snapshot Impact Analysis
 
 The following steps show how to conduct *snapshot impact analysis* using DISCO.
 This tutorial assumes there's an existing ``snapshot-impact-analysis-models`` 
-directory generated from ``transform-model`` command in the current working 
+directory generated from the ``transform-model`` command in the current working 
 directory.
 
 **1. Config Jobs**
 
-Check the ``--help`` function for snapshot impact analysis options,
+Check the ``--help`` option for snapshot impact analysis options.
 
 .. code-block:: bash
 
@@ -25,7 +25,7 @@ Check the ``--help`` function for snapshot impact analysis options,
     --help                       Show this message and exit.
 
 Given an output directory from ``transform-model``, we use this command below to 
-config the snapshot impact analysis jobs.
+configure the snapshot impact analysis jobs.
 
 .. code-block:: bash
 

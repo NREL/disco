@@ -2,21 +2,21 @@
 Quick Start
 ***********
 
-To get quick started about how to use DISCO, this tutorial will show an example
-by using SMART-DS models with snapshot impact analysis.
+This tutorial will show an example by using SMART-DS models with snapshot
+impact analysis.
 
 Source Data
 ===========
 
 Suppose the DISCO repo is downloaded to ``~/disco`` directory, where the
-SMART-DS data locates in the directory - ``tests/data/smart-ds/substations/``.
+SMART-DS data is located in the directory ``tests/data/smart-ds/substations/``.
 
 
 Transform Model
 ===============
 
 Given snapshot impact analysis type, DISCO takes directory inputs of SMART-DS 
-models and transform them into DISCO models.
+models and transforms them into DISCO models.
 
 .. code-block:: bash
 
@@ -43,7 +43,7 @@ A job config file named ``config.json`` was created.
 Submit Jobs
 ===========
 
-The ``config.json`` could be submitted through JADE command,
+Then ``config.json`` can be submitted through JADE.
 
 .. code-block:: bash
 
@@ -51,19 +51,19 @@ The ``config.json`` could be submitted through JADE command,
 
 .. note::
 
-    If you are submitting jobs on HPC, you'll need ``hpc_config.toml`` file which
-    can be found in the root of JADE, copy and modify the as necessary. 
+    If you are submitting jobs on HPC, you'll need the ``hpc_config.toml`` file
+    which can be found in the root of JADE. Copy and modify it as necessary. 
     Refer to `JADE instructions 
     <https://nrel.github.io/jade/tutorial.html#cli-execution>`_ 
     to submit and run the jobs.
 
-Then, the submitted jobs run on the computer (or HPC) util finish, and generate
-an output directory named ``output``.
+Then, the submitted jobs run to completion and generate an output directory
+named ``output``.
 
 Result Analysis
 ===============
 
-To get a quick summary of job results using JADE,
+To get a quick summary of job results using JADE:
 
 .. code-block:: bash
     
@@ -89,4 +89,5 @@ To get a quick summary of job results using JADE,
     Min execution time (s): 23.06
     Max execution time (s): 23.07
 
-This is the complete workflow for conducting snapshot impact analysis on EPRI feeders.
+This is the complete workflow for conducting snapshot impact analysis on
+SMART_DS feeders.

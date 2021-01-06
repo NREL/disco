@@ -1,19 +1,19 @@
 Upgrade Cost Analysis
 =====================
 
-After running ``transform-model`` command on source, then we get the well-prepared 
-DISCO models, with which as inputs we can then configure the jobs,
+After running the ``transform-model`` command on source models to get standard
+DISCO models we can configure the jobs for customized analysis.
 
 * run single upgrade cost analysis if ``job_order`` field in model is ``null``;
 * or if ``job_order`` specified, run sequential upgrade cost analysis.
 
-The following steps show how to conduct upgrade cost analysis using DISCO modeles 
+The following steps show how to conduct upgrade cost analysis using DISCO models 
 - ``upgrade-cost-analysis-models`` generated from ``transform-model``.
 
 **1. Config Jobs**
 
-We use DISCO ``disco config`` command to config jobs. 
-you can help get what options we need here with ``--help`` option.
+We use DISCO ``disco config`` command to configure jobs. 
+The ``--help`` option shows all available functionality.
 
 .. code-block:: bash
 
@@ -34,7 +34,7 @@ you can help get what options we need here with ``--help`` option.
     --verbose                 Enable debug logging.
     --help                    Show this message and exit.
 
-* **disco-database**: the path to the *unit cost database file*, the default is 
+* **disco-database**: The path to the *unit cost database file*. The default is 
   ``~/disco/disco/analysis/generic_cost_database_v1.xlsx``.
 
 * **show-params**: an option for showing the upgrade parameters from 
@@ -103,7 +103,7 @@ You can cutomize the values by editing this params file manually, then save.
 * **config-file**: the output config file, by default, it's ``config.json``.
 
 
-After we learned the parameters, then we are going to create the job configs for
+After configuring the parameters we are going to create the job configs for
 upgrade cost analysis.
 
 **- Single upgrade cost analysis**
@@ -123,12 +123,12 @@ which will create a ``config.json`` file,
     $ disco config upgrade-cost-analysis upgrade-cost-analysis-models --sequential-upgrade
     $ disco config upgrade-cost-analysis upgrade-cost-analysis-models --sequential-upgrade --nearest-redirect
 
-* **sequential-upgrade**: the value is ``true`` or ``flase``, default is ``false``. 
-  If ``true``, it'll run upgrades sequentially based on the job order. The job 
+* **sequential-upgrade**: the value is ``true`` or ``false``, default is ``false``. 
+  If ``true``, it will run upgrades sequentially based on the job order. The job 
   order is determined by ``job_order`` value in model inputs, please 
   make sure the values are provided if ``sequential-upgrade`` is 
-  ``true``.Then upgrade simulations runs from lower level of ``job_order`` 
-  to higher level within feeder.
+  ``true``. Then upgrade simulation runs from lower level of ``job_order`` 
+  to higher level within each feeder.
 
 * **nearest-redirect**, by default ``false``, it means DISCO redirects the 
   upgrade DSS files from all lower-order jobs. If ``true``, DISCO will redirect 
@@ -141,7 +141,7 @@ which will create a ``config.json`` file,
 
 **2. Submit Jobs**
 
-Now, our ``config.json`` is created, too submit jobs, use JADE command below:
+Now, our ``config.json`` is created. Use the JADE command below to submit jobs.
 
 .. code-block:: bash
 
@@ -216,16 +216,4 @@ The ``post-process-results.json`` looks like this,
 
 The ``post_process`` subfolder contains the CSV files as shown in the JSON ``outputs`` section above.
 
-Done! You've already run the *upgrade cost analysis* with DISCO and JADE successfully.
-
-
-**4. Logging DISCO**
-
-JADE provides funcationality of logging ``disco``, if DISCO related logging messages do not show up,
-please add the logger ``disco`` to JADE via this command:
-
-.. code-block:: bash
-
-    jade extensions add-logger disco
-
-Now, more logging messages should help you identify the reasons of job failure if any.
+Done! You've already run the *upgrade cost analysis* successfully.

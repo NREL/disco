@@ -1,7 +1,7 @@
 Time Series Impact Analysis
 ===========================
 
-Check the ``time-series-impact-analysis`` command with ``--help`` first,
+Check the ``time-series-impact-analysis`` command with ``--help`` first.
 
 .. code-block:: bash
 
@@ -23,7 +23,7 @@ Check the ``time-series-impact-analysis`` command with ``--help`` first,
 **1. Cofig Jobs**
 
 Assume in current directory, we have a *time-series-imapct-analysis-models* directory
-generated from ``transform-model`` command.
+generated from the ``transform-model`` command.
 
 .. code-block:: bash
 
@@ -31,7 +31,7 @@ generated from ``transform-model`` command.
 
 **2. Sumbit Jobs**
 
-Submit jobs via JADE,
+Submit jobs via JADE
 
 .. code-block:: bash
 
@@ -39,7 +39,7 @@ Submit jobs via JADE,
 
 **3. Job Analysis**
 
-Job analysis via JADE,
+Job analysis via JADE
 
 .. code-block:: bash
 

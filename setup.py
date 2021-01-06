@@ -6,8 +6,16 @@ import logging
 from codecs import open
 from setuptools import setup, find_packages
 from setuptools.command.develop import develop
+from setuptools.command.install import install
 from subprocess import check_call
 import shlex
+import sys
+
+try:
+    from jade.utils.subprocess_manager import run_command
+except ImportError:
+    print("jade must be installed prior to installing disco")
+    sys.exit(1)
 
 logger = logging.getLogger(__name__)
 
@@ -16,11 +24,31 @@ def read_lines(filename):
     with open(filename) as f_in:
         return f_in.readlines()
 
-
 try:
     from pypandoc import convert_text
 except ImportError:
     convert_text = lambda string, *args, **kwargs: string
+
+
+class PostDevelopCommand(develop):
+    """Post-installation for development mode."""
+    def run(self):
+        develop.run(self)
+        install_jade_extensions()
+
+
+class PostInstallCommand(install):
+    """Post-installation for installation mode."""
+    def run(self):
+        install.run(self)
+        install_jade_extensions()
+
+
+def install_jade_extensions():
+    ext = os.path.join(here, "disco", "extensions", "jade_extensions.json")
+    run_command(f"jade extensions register {ext}")
+    run_command("jade extensions add-logger disco")
+
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -62,4 +90,5 @@ setup(
     ],
     test_suite="tests",
     install_requires=read_lines("requirements.txt"),
+    cmdclass={"install": PostInstallCommand, "develop": PostDevelopCommand},
 )

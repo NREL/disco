@@ -51,13 +51,6 @@ Then activate the Python environment, and install JADE,
     # If you will also be developing DISCO code then include dev packages.
     $ pip install -e . -r dev-requirements.txt
 
-4. Register the JADE extensions implemented in DISCO, and add logger.
-
-.. code-block:: bash
-
-    $ jade extensions register disco/disco/extensions/jade_extensions.json
-    $ jade extensions add-logger disco
-
 Now, the Conda environment ``<env-name>`` is ready to use.
 To deactivate it, use commands below:
 

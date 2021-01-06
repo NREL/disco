@@ -2,20 +2,19 @@
 Transform Models
 ****************
 
-
 Transform Model Help
 ====================
 
-Based on the source OpenDSS models prepared, we are going to transfom the raw 
-models into DISCO models by using ``disco transform-model``, so that DISCO can
-perform simulation and analysis based on the transformed models.
+This process transforms user OpenDSS models into a format understood by DISCO
+so that it can perform simulation and analysis with the models.
 
-Given an input path of data source, DISCO can determine the types of analysis 
-it supports. The input path can be:
+Given an input path of source data DISCO can determine the types of analysis 
+it supports. The input path can be one of:
 
-    * a GEM file, the JSON schema definition could be found here - :ref:`GEM_JSON_Schema`.
-    * or, a directory path which contains the ``format.toml`` with souce type definition.
+    * a GEM config file; the JSON schema definition is here - :ref:`GEM_JSON_Schema`.
+    * a directory path which contains a ``format.toml`` with a source type definition.
       The source types are:
+
       - EpriModel
       - SourceTree1Model
       - SourceTree2Model
@@ -23,8 +22,8 @@ it supports. The input path can be:
 Input File
 ----------
 
-The ``--help`` option could help figure out what types of analysis the source
-models support. For example, if the input path is a GEM file,
+The ``--help`` option displays the types of analysis the source models support.
+For example, if the input path is a GEM file:
 
 .. code-block:: bash
 
@@ -40,7 +39,7 @@ models support. For example, if the input path is a GEM file,
 Input Directory
 ---------------
 
-If the input path is a directory, for example, with ``type = typeSourceTree1Model``
+If the input path is a directory, for example, with ``type = SourceTree1Model``
 in *format.toml*.
 
 .. code-block:: bash
@@ -61,11 +60,10 @@ DISCO Model in Depth
 PyDSS Controllers
 -----------------
 
-If you have custom *controllers* that needs to be applied to simulation,
+If you have custom *controllers* that need to be applied to simulation,
 please make the controllers are registered via PyDSS first.
 
-Suppose we have particular controller settings defined in a ``my-custom-controllers.toml`` file,
-for example,
+Suppose we have particular controller settings defined in a ``my-custom-controllers.toml`` file:
 
 .. code-block:: python
 
@@ -133,7 +131,7 @@ the analysis models.
 
 *Show Schema*
 
-The input confiugations in JOSN should meet the specifications of job defined 
+The input configurations in JSON should meet the specifications defined 
 by DISCO. To show the schema of a given analysis type, for example, 
 ``SnapshotImpactAnalysisModel`` using this command with ``--mode show-schema``
 option,
@@ -181,14 +179,13 @@ A data example may be more straightforward, use ``--mode show-example`` option,
 Validate Inputs
 ---------------
 
-If you want to repare the models mannually, after the config file gets prepared,
-suppose ``disco-models/configurations.json``, then it needs to be validated and 
-make sure they meet the specifications defined in schema.
+If you want to prepare the models manually then you must generate them in a
+JSON file and then validate them to make sure they match the schema.
 
 .. code-block:: bash
 
     $ disco simulation-models validate-file disco-models/configurations.json
 
-The ``ValidationError`` may raise if any input does not meet the specification 
-defined by DISCO. If that happens, then need to check the error messages,
-and correct the inputs config. You may need to repeat util the validation success.
+The ``ValidationError`` will be raised if any input does not meet the
+specification defined by DISCO. The error messages should provide corrective
+action.
