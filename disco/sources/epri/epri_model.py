@@ -11,8 +11,9 @@ import click
 
 from jade.exceptions import InvalidParameter
 from jade.utils.utils import ExtendedJSONEncoder
-
 from PyDSS.common import ControllerType
+
+from disco.cli.common import handle_existing_dir
 from disco.enums import SimulationType
 from disco.models.base import PyDSSControllerModel
 from disco.models.snapshot_impact_analysis_model import SnapshotImpactAnalysisModel
@@ -37,6 +38,14 @@ COMMON_OPTIONS = (
         show_default=True,
         help="feeders to add; use 'all' to auto-detect and add all feeders",
     ),
+    click.option(
+        "-F",
+        "--force",
+        help="overwrite existing directory",
+        is_flag=True,
+        default=False,
+        show_default=True
+    )
 )
 
 def common_options(func):
@@ -46,7 +55,6 @@ def common_options(func):
 
 
 @click.command()
-@click.argument("input_path")
 @common_options
 @click.option(
     "-s",
@@ -58,19 +66,21 @@ def common_options(func):
 @click.option(
     "-o",
     "--output",
-    default="epri-snapshot-impact-analysis-models",
+    default=DEFAULT_SNAPSHOT_IMPACT_ANALYSIS_PARAMS["output_dir"],
     show_default=True,
     help="output directory",
 )
-def snapshot_impact_analysis(input_path, feeders, start, output):
+@click.pass_context
+def snapshot_impact_analysis(ctx, feeders, force, start, output):
     """Transform input data for a snapshot simulation"""
+    input_path = ctx.parent.params["input_path"]
+    handle_existing_dir(output, force)
     simulation_params = {
         "start_time": start,
         "end_time": start,
         "step_resolution": 900,
         "simulation_type": SimulationType.SNAPSHOT,
     }
-
     EpriModel.transform(
         input_path=input_path,
         output_path=output,
@@ -78,10 +88,10 @@ def snapshot_impact_analysis(input_path, feeders, start, output):
         simulation_model=SnapshotImpactAnalysisModel,
         feeders=feeders,
     )
+    print(f"Transformed data from {input_path} to {output} for SnapshotImpactAnalysis.")
 
 
 @click.command()
-@click.argument("input_path")
 @common_options
 @click.option(
     "-s",
@@ -98,13 +108,6 @@ def snapshot_impact_analysis(input_path, feeders, start, output):
     help="simulation end time",
 )
 @click.option(
-    "-o",
-    "--output",
-    default=DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS["output_dir"],
-    show_default=True,
-    help="output directory",
-)
-@click.option(
     "-p",
     "--pv-profile",
     type=str,
@@ -118,10 +121,20 @@ def snapshot_impact_analysis(input_path, feeders, start, output):
     show_default=True,
     help="simulation step resolution in seconds",
 )
+@click.option(
+    "-o",
+    "--output",
+    default=DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS["output_dir"],
+    show_default=True,
+    help="output directory",
+)
+@click.pass_context
 def time_series_impact_analysis(
-    input_path, feeders, start, end, output, pv_profile, resolution
+    ctx, feeders, force, start, end, pv_profile, resolution, output
 ):
     """Transform input data for a time series simulation"""
+    input_path = ctx.parent.params["input_path"]
+    handle_existing_dir(output, force)
     simulation_params = {
         "start_time": start,
         "end_time": end,
@@ -135,6 +148,9 @@ def time_series_impact_analysis(
         simulation_model=TimeSeriesImpactAnalysisModel,
         feeders=feeders,
         pv_profile=pv_profile,
+    )
+    print(
+        f"Transformed data from {input_path} to {output} for TimeSeriesImpactAnalysis."
     )
 
 

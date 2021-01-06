@@ -1,0 +1,116 @@
+Automated Upgrade Simulation
+============================
+
+You can perform `Automated Upgrade Simulation` by using 
+``automated_upgrade_simulation`` extension, it implements the following classes 
+by inheritating the base classes in JADE,
+
+* ``AutomatedUpgradeInputs``
+* ``AutomatedUpgradeParameters``
+* ``AutomatedUpgradeConfiguration``
+* ``AutomatedUpgradeSimulation``
+
+With DISCO commands, the steps can be described below:
+
+1. Generate DISCO models
+
+.. code-block:: bash
+
+    $ disco transform-model <source> <source-data-inputs> upgrade-cost-analysis
+
+2. Generate job configuration file
+
+.. code-block:: bash
+
+    $ disco config upgrade-cost-analysis <disco-upgrade-cost-analysis-models> 
+
+
+4. Submit jobs via JADE
+
+.. code-block:: bash
+
+    $ jade submit-jobs <config.json> -o <output-directory>
+
+
+Upgrade Parameters
+------------------
+
+To run automated upgrade simulation, the following parameters may need to be 
+coustomized, here are the default values in ``upgrade-params.toml`` file.
+
+.. code-block:: bash
+
+    $ disco config upgrade-cost-analysis --show-params .
+    Thermal Upgrade Config
+    ----------
+    Parameter                 Value
+    line_loading_limit      : 19.0
+    dt_loading_limit        : 1.0
+    line_safety_margin      : 1.5
+    xfmr_safety_margin      : 1.5
+    nominal_voltage         : 120
+    max_iterations          : 20
+    create_upgrade_plots    : false
+    tps_to_test             : [0.2, 1.8, 0.1, 0.9]
+    create_upgrades_library : true
+    upgrade_library_path    :
+
+    Voltage Upgrade Config
+    ----------
+    Parameter                     Value
+    target_v                    : 1
+    initial_voltage_upper_limit : 1.0583
+    initial_voltage_lower_limit : 0.9167
+    final_voltage_upper_limit   : 1.05
+    final_voltage_lower_limit   : 0.95
+    nominal_voltage             : 120
+    nominal_pu_voltage          : 1
+    tps_to_test                 : [0.2, 1.3, 0.1, 0.9]
+    create_topology_plots       : false
+    cap_sweep_voltage_gap       : 1
+    reg_control_bands           : [1, 2]
+    reg_v_delta                 : 0.5
+    max_regulators              : 4
+    use_ltc_placement           : true
+    thermal_scenario_name       : ThermalUpgrade
+
+    Upgrade params from 'upgrade-params.toml'.
+
+
+You can edit this file and provide customized values if need, or create your own
+parameter files and specify command ``disco config upgrade-cost-analysis`` 
+with ``--params-file`` option.
+
+
+PyDSS Scenarios
+---------------
+
+* Thermal Upgrade
+* Voltage Upgrade
+
+In PyDSS, voltage upgrade scenario refers to thermal upgrade scenario by using
+the scenario name, that is, `ThermalUpgrade` here which could not be changed
+in configuration.
+
+Job Order
+---------
+
+If you need to run the upgrade simulation in sequential order, for example, the
+order is based on penetration levels or time sequences, then you need to provide
+the ``job_order`` value for the model inputs,
+
+.. code-block:: bash
+
+    {
+        "feeder": "J1",
+        "deployment": {
+            ...
+            "job_order": 1
+        },
+        "simulation_type": "Snapshot"
+        ...
+    }
+
+After jobs were submitted, the job would run in order from low level to high
+level of ``job_order``. The upgrade files generated from low-level jobs would be
+redirected to high-level jobs during runtime.
