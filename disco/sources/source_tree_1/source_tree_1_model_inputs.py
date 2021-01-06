@@ -72,7 +72,9 @@ class SourceTree1ModelInputs(JobInputsInterface):
         Returns
         -------
         dict
+
             dictionary layout::
+
                 {
                     (Substation, Feeder, Placement) : {
                         deployments: Set(

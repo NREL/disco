@@ -408,14 +408,17 @@ class Feeder:
 
     def create_feeder_tag(self):
         """A TEMP solution of creating feeder tag from opendss_location.
-        Examples
-        --------
-        opendss_location = (
-            "/project/xxx/run2/distribution/xxx/feeder_models/"
-            "opendss/xxx/scenarios/xxx/"
-            "2050/2010-07-10_15-00-00-000/X/456/xxx"
-        )
-        tag = 2050__2010-07-10_15-00-00-000__X__456
+
+        Suppose the directory structure is like this::
+
+            opendss_location = (
+                "/project/xxx/run2/distribution/xxx/feeder_models/"
+                "opendss/xxx/scenarios/xxx/"
+                "2050/2010-07-10_15-00-00-000/X/456/xxx"
+            )
+
+        The tag would become "2050__2010-07-10_15-00-00-000__X__456"
+
         """
         path = pathlib.Path(self.opendss_location)
         parents = [p.name for p in path.parents if p.name]
