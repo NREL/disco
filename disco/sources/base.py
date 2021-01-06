@@ -6,6 +6,7 @@ import shutil
 from abc import ABC, abstractmethod
 
 from jade.exceptions import InvalidParameter
+from disco.analysis import GENERIC_COST_DATABASE
 from disco.enums import AnalysisType, SimulationType
 from disco.models.base import OpenDssDeploymentModel
 
@@ -29,7 +30,7 @@ DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS = {
 
 DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS = {
     "output_dir": "upgrade-cost-analysis-models",
-    "cost_database": "DISCO_cost_database.xlsx",
+    "cost_database": GENERIC_COST_DATABASE,
     "params_file": "upgrade-params.toml",
     "sequential_upgrade": False,
     "nearest_redirect": False,
