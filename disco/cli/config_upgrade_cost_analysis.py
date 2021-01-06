@@ -12,6 +12,7 @@ from jade.loggers import setup_logging
 from jade.jobs.job_post_process import JobPostProcess
 from jade.utils.utils import dump_data, load_data
 
+from disco.analysis import GENERIC_COST_DATABASE
 from disco.extensions.automated_upgrade_simulation.automated_upgrade_configuration import \
     AutomatedUpgradeConfiguration
 from disco.extensions.automated_upgrade_simulation.automated_upgrade_inputs import \
@@ -25,7 +26,7 @@ from disco.pydss.pydss_configuration_upgrade import ThermalUpgradeConfiguration,
 @click.option(
     "-d", "--cost-database",
     type=click.Path(exists=True),
-    default="DISCO_cost_database.xlsx",
+    default=GENERIC_COST_DATABASE,
     show_default=True,
     help="The unit cost database spreadsheet."
 )
@@ -82,7 +83,7 @@ def upgrade_cost_analysis(
     level = logging.DEBUG if verbose else logging.INFO
     setup_logging(__name__, None, console_level=level)
 
-    if params_file == "upgrade-params.toml" and not os.path.exists(params_file):
+    if not os.path.exists(params_file):
         params = {
             "thermal_upgrade_config": ThermalUpgradeConfiguration().defaults,
             "voltage_upgrade_config": VoltageUpgradeConfiguration().defaults

@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class UpgradeCostAnalysis(Analysis):
 
     INPUTS = [
-        Input("unit_cost_data_file", CustomType(str), "DISCO_cost_database.xlsx")
+        Input("unit_cost_data_file", CustomType(str), "generic_cost_database_v1.xlsx")
     ]
 
     def run(self, output, *args, **kwargs):
@@ -168,7 +168,7 @@ class UpgradeCostAnalysis(Analysis):
                     # print(k)
                     new_xfmr_kva = upgrade_df[k]["new"][1]["wdg_kvas"][
                         0
-                    ]  # TODO: decide how to handle oh vs ug for LA100
+                    ]  # TODO: decide how to handle oh vs ug for GEM
                     new_xfmr_count = upgrade_df[k]["new"][
                         0
                     ]  # count of new transformers added to address overload.

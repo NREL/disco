@@ -157,5 +157,3 @@ transform_config.toml
 
 # PyDSS
 PyDSS/*
-
-*.xlsx
