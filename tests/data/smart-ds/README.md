@@ -1,5 +1,2 @@
-The purpose of this dataset is to test the DISCO code, not simulation results.
-
-This data was copied from a SMART-DS Austin dataset. Some files have been
-modified to keep the overall size small. Simulation results may be
-non-sensical.
+This data was copied from a SMART-DS Austin dataset. It includes a small number
+of deployment scenarios for the purpose of testing DISCO code paths.
