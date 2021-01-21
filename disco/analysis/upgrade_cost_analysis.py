@@ -430,11 +430,11 @@ class UpgradeCostAnalysis(Analysis):
         sub_LTC_settings_change_unit_cost = unit_costs_controls.loc[
             "LTC setpoint change"
         ].total_cost
-        new_line_reg_unit_cost = (
-            unit_costs_vreg[unit_costs_vreg.voltage_class_kV == voltage_class]
-            .loc["new voltage regulator"]
-            .total_cost
-        )
+        targets = unit_costs_vreg[unit_costs_vreg.voltage_class_kV == voltage_class]
+        if targets.shape[0] == 0:
+            new_line_reg_unit_cost = 0
+        else:
+            new_line_reg_unit_cost = targets.loc["new voltage regulator"].total_cost
         new_controller_unit_cost = unit_costs_controls.loc[
             "replace voltage regulator controller"
         ].total_cost
