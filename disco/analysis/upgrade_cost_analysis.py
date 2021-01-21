@@ -109,11 +109,11 @@ class UpgradeCostAnalysis(Analysis):
                     line_count = upgrade_df[k]["new"][
                         0
                     ]  # count of new lines added to address overload. Often 1, but could be > 1 with severe overloads
-                    new_line_cost_per_line = new_line_len_m * float(
+                    new_line_cost_per_line = new_line_len_m * (
                         unit_cost_lines[
                             unit_cost_lines["description"] == "new_line"
                         ].cost_per_m
-                    )
+                    ).astype(float)
                     new_line_cost = line_count * new_line_cost_per_line
 
                 elif upgrade_df[k]["new"][0] == 0:
