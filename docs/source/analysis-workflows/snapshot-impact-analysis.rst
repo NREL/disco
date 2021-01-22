@@ -29,7 +29,7 @@ configure the snapshot impact analysis jobs.
 
 .. code-block:: bash
 
-    $ disco config snapshot-impact-analysis --config-file config.json
+    $ disco config snapshot-impact-analysis snapshot-impact-analysis-models --config-file config.json
 
 It generates the ``config.json`` for JADE to submit jobs.
 
