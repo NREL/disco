@@ -12,6 +12,10 @@ It generates a directory named ``snapshot-impact-analysis-models`` with transfor
 This tutorial assumes you also output the transformed models into ``snapshot-impact-analysis-models``,
 with the models, we can run *hosting capacity analysis* based on *snapshot impact analysis*.
 
+
+Config Pipeline
+---------------
+
 To simplify the full run of *hosting capacity analysis* and *snapshot impact analysis*, we have
 created a `pipeline <https://nrel.github.io/jade/pipeline.html>`_
 that will run all of these steps:
@@ -20,7 +24,17 @@ that will run all of these steps:
 
     $ jade pipeline create \
       "disco config snapshot-impact-analysis snapshot-impact-analysis-models -c config-stage1.json" \
-      "~/disco/disco/extensions/pydss_simulation/create_merge_feeders_results.py"
+      "<path-of-DISCO-repo-cloned>/disco/extensions/pydss_simulation/create_merge_feeders_results.py"
+
+If you are on HPC, then the HPC config file is required, you can configure it using
+the option ``--submit-params``, like below:
+
+.. code-block:: bash
+
+    $ jade pipeline create \
+      "disco config snapshot-impact-analysis snapshot-impact-analysis-models -c config-stage1.json" \
+      "<path-of-DISCO-repo-cloned>/disco/extensions/pydss_simulation/create_merge_feeders_results.py"
+      --submit-params --hpc-config=<your-hpc-config.toml>
 
 The command above generates a pipeline configuration file ``pipeline.toml``, 
 which contains two commands for configuring two stages. In stage 1, it will generate
@@ -30,18 +44,18 @@ analysis results into per-feeder CSVs, and then run that.
 
 .. note::
 
-    Here, we assume the DISCO repo was cloned to ``~/disco`` directory. Another,
-    the config file ouput from stage 1 need to be ``config-stage1.json``.
+    The config file ouput from stage 1 need to be ``config-stage1.json``.
+    Refer to the JADE documentation to configure and optimize execution on the HPC
+    - https://nrel.github.io/jade/tutorial.html#hpc-configuration.
+
+Submit Pipeline
+---------------
 
 This command will execute the pipeline:
 
 .. code-block:: bash
 
     $ jade pipeline submit pipeline.toml
-
-.. note::
-
-    Refer to the JADE documentation to optimize execution on the HPC.
 
 The final feeder-specific output csvs will show up in ``./output/output-stage2/job-outputs``.
 
