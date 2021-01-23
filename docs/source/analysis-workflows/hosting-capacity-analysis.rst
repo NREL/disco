@@ -1,38 +1,61 @@
 Hosting Capacity Analysis
 =========================
 
-This tutorial assumes there is a ``snapshot-impact-analysis-models`` folder in 
-the current working directory, and that DISCO was cloned to ``~/disco``.
+In previous section, we learned how to transform model with *snapshot impact 
+analysis* by using this command,
 
-Full Snapshot Impact and Hosting Capacity Analysis
---------------------------------------------------
+.. code-block:: bash
 
-To simplify the full run of ``SnapshotImpactAnalysis`` and ``HostingCapacityAnalysis``, we have
+    $ disco transform-model ~/disco/tests/data/smart-ds/substations snapshot-impact-analysis
+
+It generates a directory named ``snapshot-impact-analysis-models`` with transformed models.
+This tutorial assumes you also output the transformed models into ``snapshot-impact-analysis-models``,
+with the models, we can run *hosting capacity analysis* based on *snapshot impact analysis*.
+
+
+Config Pipeline
+---------------
+
+To simplify the full run of *hosting capacity analysis* and *snapshot impact analysis*, we have
 created a `pipeline <https://nrel.github.io/jade/pipeline.html>`_
 that will run all of these steps:
 
 .. code-block:: bash
 
-    $ jade pipeline create ~/disco/disco/extensions/pydss_simulation/create_pydss_simulation_config.py \
-        ~/disco/disco/extensions/pydss_simulation/create_merge_feeders_results.py
-    # Optional - to pass overrides to `SnapshotImpactAnalysis`:
-    # $ jade pipeline create \
-    #     "~/disco/disco/extensions/pydss_simulation/create_pydss_simulation_config.py over_voltage=1.5" \
-    #     ~/disco/disco/extensions/pydss_simulation/create_merge_feeders_results.py
+    $ jade pipeline create \
+      "disco config snapshot-impact-analysis snapshot-impact-analysis-models -c config-stage1.json" \
+      "<path-of-DISCO-repo-cloned>/disco/extensions/pydss_simulation/create_merge_feeders_results.py"
 
-This will generate ``pipeline.toml``, which will generate a ``SnapshotImpactAnalysis`` config,
-run it, generate a second JADE config to merge the impact analysis results into per-feeder CSVs,
-and then run that.
+If you are on HPC, then the HPC config file is required, you can configure it using
+the option ``--submit-params``, like below:
+
+.. code-block:: bash
+
+    $ jade pipeline create \
+      "disco config snapshot-impact-analysis snapshot-impact-analysis-models -c config-stage1.json" \
+      "<path-of-DISCO-repo-cloned>/disco/extensions/pydss_simulation/create_merge_feeders_results.py"
+      --submit-params --hpc-config=<your-hpc-config.toml>
+
+The command above generates a pipeline configuration file ``pipeline.toml``, 
+which contains two commands for configuring two stages. In stage 1, it will generate
+a snapshot impact analysis config ``config-stage1.json``, and run it. 
+In following stage 2, it will generate a second JADE config to merge the impact 
+analysis results into per-feeder CSVs, and then run that.
+
+.. note::
+
+    The config file ouput from stage 1 need to be ``config-stage1.json``.
+    Refer to the JADE documentation to configure and optimize execution on the HPC
+    - https://nrel.github.io/jade/tutorial.html#hpc-configuration.
+
+Submit Pipeline
+---------------
 
 This command will execute the pipeline:
 
 .. code-block:: bash
 
     $ jade pipeline submit pipeline.toml
-
-.. note::
-
-    Refer to the JADE documentation to optimize execution on the HPC.
 
 The final feeder-specific output csvs will show up in ``./output/output-stage2/job-outputs``.
 
