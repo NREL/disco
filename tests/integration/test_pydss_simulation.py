@@ -21,7 +21,7 @@ def test_pydss_simulation(cleanup):
         os.environ.pop("NREL_CLUSTER")
 
     os.environ["FAKE_HPC_CLUSTER"] = "True"
-    num_jobs = 4
+    num_jobs = 5
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations snapshot-impact-analysis -F -o {MODELS_DIR}"
     config_cmd = f"{CONFIG_JOBS} snapshot-impact-analysis {MODELS_DIR} -c {CONFIG_FILE}"
     submit_cmd = f"{SUBMIT_JOBS} {CONFIG_FILE} --output={OUTPUT} -p 1"

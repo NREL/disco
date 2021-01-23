@@ -169,6 +169,45 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
                     line = "!" + line
                 print(line, end="")
 
+    def create_base_case(self, name, outdir):
+        """Create a base case with no added PV.
+
+        Parameters
+        ----------
+        name : str
+            The job name
+        outdir : str
+            The base directory of opendss feeder model.
+
+        Returns
+        -------
+        OpenDssDeploymentModel
+
+        """
+        workspace = OpenDssFeederWorkspace(outdir)
+        if not os.path.exists(workspace.master_file):
+            self._create_common_files(workspace)
+
+        deployment_file = os.path.join(
+            workspace.pv_deployments_directory, name + ".dss"
+        )
+        with open(deployment_file, "w") as fw:
+            fw.write(f"Redirect {workspace.master_file}\n")
+            fw.write("\nSolve\n")
+
+        return OpenDssDeploymentModel.validate(
+            dict(
+                deployment_file=deployment_file,
+                substation=self.substation,
+                feeder=self.feeder,
+                dc_ac_ratio=self.dc_ac_ratio,
+                directory=outdir,
+                kva_to_kw_rating=self.kva_to_kw_rating,
+                project_data=self.project_data,
+                pydss_controllers=self.pydss_controllers,
+            )
+        )
+
     def create_deployment(self, name, outdir, pv_profile=None):
         """Create the deployment.
 

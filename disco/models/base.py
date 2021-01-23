@@ -287,6 +287,11 @@ class BaseAnalysisModel(DiscoBaseModel):
 class ImpactAnalysisBaseModel(BaseAnalysisModel, abc.ABC):
     """A base model for impact analysis types."""
 
+    base_case: Optional[str] = Field(
+        title="base_case",
+        description="The base simulation job which has no added PV.",
+        max_length=255,
+    )
     deployment: OpenDssDeploymentModel = Field(
         title="deployment",
         description="PV deployment on feeder",

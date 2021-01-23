@@ -12,7 +12,7 @@ from jade.exceptions import InvalidParameter
 from jade.utils.utils import ExtendedJSONEncoder
 from disco.cli.common import handle_existing_dir
 from disco.enums import Placement, SimulationType
-from disco.models.base import PyDSSControllerModel
+from disco.models.base import PyDSSControllerModel, ImpactAnalysisBaseModel
 from disco.models.snapshot_impact_analysis_model import SnapshotImpactAnalysisModel
 from disco.models.time_series_impact_analysis_model import TimeSeriesImpactAnalysisModel
 from disco.models.upgrade_cost_analysis_model import UpgradeCostAnalysisModel
@@ -295,13 +295,19 @@ class SourceTree1Model(BaseOpenDssModel):
         self._opendss_directory = data.pop("opendss_directory")
         self._pv_locations = data.pop("pv_locations")
         self._pydss_controllers = data.pop("pydss_controllers")
-        self._name = self.make_name(
-            self._substation,
-            self._feeder,
-            self._placement,
-            self._deployment,
-            self._penetration_level,
-        )
+        if data.pop("is_base_case"):
+            self._name = self.make_base_case_name(
+                self._substation,
+                self._feeder,
+            )
+        else:
+            self._name = self.make_name(
+                self._substation,
+                self._feeder,
+                self._placement,
+                self._deployment,
+                self._penetration_level,
+            )
         data.pop("deployment_file")
         assert not data, str(data)
 
@@ -377,9 +383,41 @@ class SourceTree1Model(BaseOpenDssModel):
             placements = [Placement(x) for x in placements]
 
         config = []
+        base_cases = set()
         for substation, feeder, placement in itertools.product(
             substations, feeders, placements
         ):
+            base_case_name = SourceTree1Model.make_base_case_name(substation, feeder)
+            if base_case_name not in base_cases and issubclass(simulation_model, ImpactAnalysisBaseModel):
+                data = {
+                    "path": input_path,
+                    "substation": substation,
+                    "feeder": feeder,
+                    "master": master_file,
+                    "placement": None,
+                    "deployment": None,
+                    "penetration_level": None,
+                    "deployment_file": None,
+                    "loadshape_directory": None,
+                    "opendss_directory": inputs.get_opendss_directory(
+                        substation, feeder
+                    ),
+                    "pv_locations": [],
+                    "pydss_controllers": None,
+                    "is_base_case": True,
+                }
+                model = cls(data)
+                path = os.path.join(output_path, substation, feeder)
+                out_deployment = model.create_base_case(base_case_name, path)
+                item = {
+                    "deployment": out_deployment,
+                    "simulation": simulation_params,
+                    "name": base_case_name,
+                    "model_type": simulation_model.__name__,
+                    "job_order": 0,
+                }
+                config.append(simulation_model.validate(item).dict())
+                base_cases.add(base_case_name)
             key = inputs.create_key(substation, feeder, placement)
             if deployments == ("all",):
                 _deployments = inputs.list_deployments(key)
@@ -432,6 +470,7 @@ class SourceTree1Model(BaseOpenDssModel):
                         ),
                         "pv_locations": [deployment_file],
                         "pydss_controllers": pydss_controller,
+                        "is_base_case": False,
                     }
                     # TODO DT: add pv_profiles to models?
                     # TODO DT: change 'deployment' to 'sample', per Kwami
@@ -458,4 +497,9 @@ class SourceTree1Model(BaseOpenDssModel):
     @staticmethod
     def make_name(substation, feeder, placement, deployment, penetration_level):
         fields = (substation, feeder, placement, deployment, penetration_level)
+        return "__".join([str(x) for x in fields])
+
+    @staticmethod
+    def make_base_case_name(substation, feeder):
+        fields = (substation, feeder, -1, -1, -1)
         return "__".join([str(x) for x in fields])

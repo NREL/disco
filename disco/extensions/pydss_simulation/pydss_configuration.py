@@ -64,9 +64,8 @@ class PyDssConfiguration(PyDssConfigurationBase):
             if job.name == base_case:
                 assert base_case_index not in base_cases
                 base_cases[base_case_index] = job.name
-            else:
-                if base_case_index in base_cases:
-                    job.add_blocking_job(base_cases[base_case_index])
+            elif base_case_index in base_cases:
+                job.add_blocking_job(base_cases[base_case_index])
 
     def create_from_result(self, job, output_dir):
         return self.job_execution_class().create(

@@ -5,7 +5,7 @@ import logging
 
 from jade.jobs.job_parameters_interface import JobParametersInterface
 from disco.models.factory import make_model
-from disco.models.snapshot_impact_analysis_model import SnapshotImpactAnalysisModel
+from disco.models.base import ImpactAnalysisBaseModel
 
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ class DeploymentParameters(JobParametersInterface):
     @property
     def base_case(self):
         """Return the base case or None."""
-        if isinstance(self._model, SnapshotImpactAnalysisModel):
+        if isinstance(self._model, ImpactAnalysisBaseModel):
             return self._model.base_case
         return None
 

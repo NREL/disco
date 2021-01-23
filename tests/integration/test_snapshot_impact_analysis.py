@@ -5,7 +5,7 @@ import subprocess
 
 from jade.result import ResultsSummary
 from jade.utils.subprocess_manager import run_command
-from jade.utils.utils import load_data
+from jade.utils.utils import dump_data, load_data
 
 from disco.extensions.pydss_simulation.pydss_configuration import PyDssConfiguration
 import disco
@@ -34,6 +34,9 @@ def test_snapshot_impact_analysis(cleanup):
     # check result
     data = load_data(config_file)
     assert len(data["stages"]) == 2
+    for stage in data["stages"]:
+        stage["submit-params"]["--poll-interval"] = 1
+    dump_data(data, config_file)
 
     assert run_command(submit_cmd) == 0
 
@@ -42,7 +45,7 @@ def test_snapshot_impact_analysis(cleanup):
     result_summary = ResultsSummary(stage1_output_path)
     results = result_summary.list_results()
 
-    assert len(results) == 4
+    assert len(results) == 5
     for result in results:
         assert result.status == "finished"
         assert result.return_code == 0
