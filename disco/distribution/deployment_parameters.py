@@ -6,6 +6,9 @@ import logging
 from jade.jobs.job_parameters_interface import JobParametersInterface
 from disco.models.factory import make_model
 from disco.models.base import ImpactAnalysisBaseModel
+from disco.models.snapshot_impact_analysis_model import SnapshotImpactAnalysisModel
+from disco.models.time_series_impact_analysis_model import TimeSeriesImpactAnalysisModel
+from disco.models.upgrade_cost_analysis_model import UpgradeCostAnalysisModel
 
 
 logger = logging.getLogger(__name__)
@@ -16,12 +19,21 @@ class DeploymentParameters(JobParametersInterface):
 
     parameters_type = namedtuple("DeploymentKeys", "name")
     DEFAULT_STEP_RESOLUTION = 900
+    _EXTENSIONS = {
+        SnapshotImpactAnalysisModel: "pydss_simulation",
+        TimeSeriesImpactAnalysisModel: "pydss_simulation",
+        UpgradeCostAnalysisModel: "automated_upgrade_simulation",
+    }
 
     def __init__(self, data):
         self._model = make_model(data)
 
     def __repr__(self):
         return self.name
+
+    @property
+    def extension(self):
+        return self._EXTENSIONS[type(self._model)]
 
     @property
     def model(self):
@@ -46,7 +58,9 @@ class DeploymentParameters(JobParametersInterface):
 
     def serialize(self):
         """Serialize deployment into a dictionary."""
-        return self._model.dict()
+        data = self._model.dict()
+        data["extension"] = self.extension
+        return data
 
     @classmethod
     def deserialize(cls, data):

@@ -71,8 +71,8 @@ def test_recalculate_kva(cleanup):
 
     inputs = PyDssInputs(MODELS_DIR)
     key = inputs.list_keys()[0]
-    config = PyDssConfiguration(inputs)
-    job = config.inputs.get_job(key)
+    config = PyDssConfiguration()
+    job = inputs.get_job(key)
     config.add_job(job)
 
     simulation = PyDssSimulation.create(config.pydss_inputs,

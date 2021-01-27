@@ -17,18 +17,9 @@ logger = logging.getLogger(__name__)
 class PyDssConfiguration(PyDssConfigurationBase):
     """Represents the configuration options for a PyDSS simulation."""
 
-    def __init__(self, inputs, **kwargs):
-        """Constructs PyDssConfiguration.
-
-        Parameters
-        ----------
-        inputs : str | PyDssInputs
-            path to PyDss-inputs-outputs directory or PyDssInputs object
-
-        """
-        super(PyDssConfiguration, self).__init__(
-            inputs, DeploymentParameters, "pydss_simulation", **kwargs,
-        )
+    def __init__(self, **kwargs):
+        """Constructs PyDssConfiguration."""
+        super(PyDssConfiguration, self).__init__(**kwargs)
         self._scenario_names = []
 
     @classmethod
@@ -36,8 +27,8 @@ class PyDssConfiguration(PyDssConfigurationBase):
         """Create a configuration from all available inputs."""
         if isinstance(inputs, str):
             inputs = PyDssInputs(inputs)
-        config = cls(inputs, **kwargs)
-        for job in config.inputs.iter_jobs():
+        config = cls(**kwargs)
+        for job in inputs.iter_jobs():
             config.add_job(job)
 
         if simulation_config is None:
@@ -68,8 +59,8 @@ class PyDssConfiguration(PyDssConfigurationBase):
                 job.add_blocking_job(base_cases[base_case_index])
 
     def create_from_result(self, job, output_dir):
-        return self.job_execution_class().create(
-            self.get_job_inputs(), job, output=output_dir)
+        cls = self.job_execution_class(job.extension)
+        return cls.create(self.pydss_inputs, job, output=output_dir)
 
     def list_feeders(self):
         """Return a list of unique feeders in the config.

@@ -260,14 +260,17 @@ class SourceTree2Model(BaseOpenDssModel):
         self._loadshape_directory = data.pop("loadshape_directory")
         self._opendss_directory = data.pop("opendss_directory")
         self._pv_locations = data.pop("pv_locations")
-        self._name = self.make_name(
-            self._feeder,
-            self._dcac,
-            self._scale,
-            self._placement,
-            self._deployment,
-            self._penetration_level,
-        )
+        if data.pop("is_base_case"):
+            self._name = self.make_base_case_name(self._feeder, self._dcac)
+        else:
+            self._name = self.make_name(
+                self._feeder,
+                self._dcac,
+                self._scale,
+                self._placement,
+                self._deployment,
+                self._penetration_level,
+            )
         data.pop("deployment_file")
         assert not data, str(data)
 
@@ -382,6 +385,7 @@ class SourceTree2Model(BaseOpenDssModel):
                         "loadshape_directory": inputs.get_loadshape_directory(feeder),
                         "opendss_directory": inputs.get_opendss_directory(feeder),
                         "pv_locations": [deployment_file],
+                        "is_base_case": False,
                     }
                     model = cls(data)
                     path = os.path.join(output_path, feeder)
@@ -404,4 +408,9 @@ class SourceTree2Model(BaseOpenDssModel):
     @staticmethod
     def make_name(feeder, dcac, scale, placement, deployment, penetration_level):
         fields = (feeder, dcac, scale, placement, deployment, penetration_level)
+        return "__".join([str(x) for x in fields])
+
+    @staticmethod
+    def make_base_case_name(feeder, dcac):
+        fields = (feeder, dcac, -1, -1, -1)
         return "__".join([str(x) for x in fields])
