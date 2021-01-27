@@ -46,11 +46,11 @@ in *format.toml*.
 
     $ disco transform-model tests/data/smart-ds/substations/ --help
 
-    Available analysis types: snapshot-impact-analysis time-series-impact-analysis upgrade-cost-analysis
+    Available analysis types: snapshot-impact-analysis time-series upgrade-cost-analysis
 
     For additional help run one of the following:
         disco transform-model tests/data/smart-ds/substations/ snapshot-impact-analysis --help
-        disco transform-model tests/data/smart-ds/substations/ time-series-impact-analysis --help
+        disco transform-model tests/data/smart-ds/substations/ time-series --help
         disco transform-model tests/data/smart-ds/substations/ upgrade-cost-analysis --help
 
 

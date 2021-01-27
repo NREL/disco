@@ -14,7 +14,7 @@ from disco.cli.common import handle_existing_dir
 from disco.enums import Placement, SimulationType
 from disco.models.base import PyDSSControllerModel, ImpactAnalysisBaseModel
 from disco.models.snapshot_impact_analysis_model import SnapshotImpactAnalysisModel
-from disco.models.time_series_impact_analysis_model import TimeSeriesImpactAnalysisModel
+from disco.models.time_series_analysis_model import TimeSeriesAnalysisModel
 from disco.models.upgrade_cost_analysis_model import UpgradeCostAnalysisModel
 from disco.sources.base import (
     BaseOpenDssModel,
@@ -179,7 +179,7 @@ def snapshot_impact_analysis(
     help="output directory",
 )
 @click.pass_context
-def time_series_impact_analysis(
+def time_series(
     ctx,
     substations,
     feeders,
@@ -206,7 +206,7 @@ def time_series_impact_analysis(
         input_path=input_path,
         output_path=output,
         simulation_params=simulation_params,
-        simulation_model=TimeSeriesImpactAnalysisModel,
+        simulation_model=TimeSeriesAnalysisModel,
         substations=substations,
         feeders=feeders,
         placements=placements,
@@ -278,7 +278,7 @@ class SourceTree1Model(BaseOpenDssModel):
     DEPLOYMENT_FILE = "PVSystems.dss"
     TRANSFORM_SUBCOMMANDS = {
         "snapshot-impact-analysis": snapshot_impact_analysis,
-        "time-series-impact-analysis": time_series_impact_analysis,
+        "time-series": time_series,
         "upgrade-cost-analysis": upgrade_cost_analysis
     }
 

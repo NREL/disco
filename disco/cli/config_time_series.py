@@ -32,6 +32,20 @@ logger = logging.getLogger(__name__)
     help="JADE config file to create",
 )
 @click.option(
+    "-h", "--hosting-capacity",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Enable hosting capacity computations",
+)
+@click.option(
+    "-i", "--impact-analysis",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Enable impact analysis computations",
+)
+@click.option(
     "-r",
     "--reports-filename",
     default=os.path.join(
@@ -39,7 +53,7 @@ logger = logging.getLogger(__name__)
         "disco",
         "extensions",
         "pydss_simulation",
-        "time_series_impact_analysis_reports.toml",
+        "time_series_reports.toml",
     ),
     show_default=True,
     help="PyDSS report options",
@@ -50,17 +64,26 @@ logger = logging.getLogger(__name__)
     default=False,
     help="Enable debug logging",
 )
-def time_series_impact_analysis(
+def time_series(
     inputs,
     config_file,
+    hosting_capacity,
+    impact_analysis,
     reports_filename=None,
     verbose=False,
 ):
-    """Create JADE configuration for time series impact analysis."""
+    """Create JADE configuration for time series simulations."""
     level = logging.DEBUG if verbose else logging.INFO
     setup_logging(__name__, None, console_level=level)
-    # TODO
-    #post_process = JobPostProcess("disco.analysis", "TimeSeriesImpactAnalysis")
+
+    if hosting_capacity and impact_analysis:
+        print("hosting_capacity and impact_analysis cannot both be set")
+        sys.exit(1)
+
+    if hosting_capacity or impact_analysis:
+        post_process = JobPostProcess("disco.analysis", "TimeSeriesImpactAnalysis").serialize()
+    else:
+        post_process = None
 
     simulation_config = PyDssConfiguration.get_default_pydss_simulation_config()
     simulation_config["Project"]["Simulation Type"] = SimulationType.QSTS.value
@@ -73,7 +96,7 @@ def time_series_impact_analysis(
     config = PyDssConfiguration.auto_config(
         inputs,
         simulation_config=simulation_config,
-        #job_post_process=post_process,
+        job_post_process_config=post_process,
         scenarios=scenarios,
         estimated_exec_secs_per_job=ESTIMATED_EXEC_SECS_PER_JOB,
     )

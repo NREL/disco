@@ -17,7 +17,7 @@ from disco.cli.common import handle_existing_dir
 from disco.enums import SimulationType
 from disco.models.base import PyDSSControllerModel
 from disco.models.snapshot_impact_analysis_model import SnapshotImpactAnalysisModel
-from disco.models.time_series_impact_analysis_model import TimeSeriesImpactAnalysisModel
+from disco.models.time_series_analysis_model import TimeSeriesAnalysisModel
 from disco.sources.base import (
     BaseOpenDssModel,
     SOURCE_CONFIGURATION_FILENAME,
@@ -129,7 +129,7 @@ def snapshot_impact_analysis(ctx, feeders, force, start, output):
     help="output directory",
 )
 @click.pass_context
-def time_series_impact_analysis(
+def time_series(
     ctx, feeders, force, start, end, pv_profile, resolution, output
 ):
     """Transform input data for a time series simulation"""
@@ -145,7 +145,7 @@ def time_series_impact_analysis(
         input_path=input_path,
         output_path=output,
         simulation_params=simulation_params,
-        simulation_model=TimeSeriesImpactAnalysisModel,
+        simulation_model=TimeSeriesAnalysisModel,
         feeders=feeders,
         pv_profile=pv_profile,
     )
@@ -159,7 +159,7 @@ class EpriModel(BaseOpenDssModel):
 
     TRANSFORM_SUBCOMMANDS = {
         "snapshot-impact-analysis": snapshot_impact_analysis,
-        "time-series-impact-analysis": time_series_impact_analysis,
+        "time-series": time_series,
     }
     MASTER_FILENAME_BY_FEEDER = {
         "J1": "Master_noPV.dss",

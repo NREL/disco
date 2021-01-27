@@ -22,4 +22,5 @@ The following sections show the analysis workflow for each in detail.
    analysis-workflows/snapshot-impact-analysis
    analysis-workflows/hosting-capacity-analysis
    analysis-workflows/time-series-impact-analysis
+   analysis-workflows/time-series-hosting-capacity
    analysis-workflows/upgrade-cost-analysis

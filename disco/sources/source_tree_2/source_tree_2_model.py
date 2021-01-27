@@ -15,7 +15,7 @@ from disco.cli.common import handle_existing_dir
 from disco.enums import Placement, Scale, SimulationType
 from disco.models.base import PyDSSControllerModel
 from disco.models.snapshot_impact_analysis_model import SnapshotImpactAnalysisModel
-from disco.models.time_series_impact_analysis_model import TimeSeriesImpactAnalysisModel
+from disco.models.time_series_analysis_model import TimeSeriesAnalysisModel
 from disco.sources.base import (
     BaseSourceDataModel,
     BaseOpenDssModel,
@@ -195,7 +195,7 @@ def snapshot_impact_analysis(
     help="profile to use for all PV Systems",
 )
 @click.pass_context
-def time_series_impact_analysis(
+def time_series(
     ctx,
     feeders,
     dc_ac_ratios,
@@ -224,7 +224,7 @@ def time_series_impact_analysis(
         input_path=input_path,
         output_path=output,
         simulation_params=simulation_params,
-        simulation_model=TimeSeriesImpactAnalysisModel,
+        simulation_model=TimeSeriesAnalysisModel,
         feeders=feeders,
         dc_ac_ratios=dc_ac_ratios,
         scales=scales,
@@ -244,7 +244,7 @@ class SourceTree2Model(BaseOpenDssModel):
 
     TRANSFORM_SUBCOMMANDS = {
         "snapshot-impact-analysis": snapshot_impact_analysis,
-        "time-series-impact-analysis": time_series_impact_analysis,
+        "time-series": time_series,
     }
 
     def __init__(self, data):

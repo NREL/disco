@@ -7,7 +7,7 @@ from jade.jobs.job_parameters_interface import JobParametersInterface
 from disco.models.factory import make_model
 from disco.models.base import ImpactAnalysisBaseModel
 from disco.models.snapshot_impact_analysis_model import SnapshotImpactAnalysisModel
-from disco.models.time_series_impact_analysis_model import TimeSeriesImpactAnalysisModel
+from disco.models.time_series_analysis_model import TimeSeriesAnalysisModel
 from disco.models.upgrade_cost_analysis_model import UpgradeCostAnalysisModel
 
 
@@ -21,7 +21,7 @@ class DeploymentParameters(JobParametersInterface):
     DEFAULT_STEP_RESOLUTION = 900
     _EXTENSIONS = {
         SnapshotImpactAnalysisModel: "pydss_simulation",
-        TimeSeriesImpactAnalysisModel: "pydss_simulation",
+        TimeSeriesAnalysisModel: "pydss_simulation",
         UpgradeCostAnalysisModel: "automated_upgrade_simulation",
     }
 
