@@ -35,6 +35,5 @@ def compute_snapshot_impact_analysis(feeder, jade_runtime_output, verbose=False)
     config_file = os.path.join(jade_runtime_output, CONFIG_FILE)
     config = PyDssConfiguration.deserialize(config_file)
     inputs = config.get_user_data("impact_analysis_inputs")
-    # TODO: this doesn't handle failed jobs
     analysis = SnapshotImpactAnalysis(feeder, overrides=inputs["thresholds"])
     analysis.run(jade_runtime_output)

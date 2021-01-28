@@ -141,7 +141,8 @@ class PyDssConfiguration(PyDssConfigurationBase):
         """
         feeders = set()
         for job in self.iter_jobs():
-            feeders.add(job.feeder)
+            if job.extension in DeploymentParameters.list_extensions():
+                feeders.add(job.feeder)
 
         return list(feeders)
 

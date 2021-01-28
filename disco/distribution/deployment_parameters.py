@@ -31,6 +31,11 @@ class DeploymentParameters(JobParametersInterface):
     def __repr__(self):
         return self.name
 
+    @staticmethod
+    def list_extensions():
+        # this may need to be extended to all JobParametersInterface classes
+        return list(DeploymentParameters._EXTENSIONS)
+
     @property
     def extension(self):
         return self._EXTENSIONS[type(self._model)]

@@ -14,7 +14,7 @@ from disco.models.base import OpenDssDeploymentModel
 SOURCE_CONFIGURATION_FILENAME = "configurations.json"
 
 DEFAULT_SNAPSHOT_IMPACT_ANALYSIS_PARAMS = {
-    "output_dir": "snapshot-impact-analysis-models",
+    "output_dir": "snapshot-models",
     "start_time": "2020-01-01T00:00:00",
     "end_time": "2020-01-08T00:00:00",
     "simulation_type": SimulationType.SNAPSHOT.value,

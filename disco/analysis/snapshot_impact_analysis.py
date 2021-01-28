@@ -9,6 +9,7 @@ import numpy as np
 from pandas import DataFrame
 
 from jade.common import JOBS_OUTPUT_DIR
+from jade.jobs.results_aggregator import ResultsAggregator
 from jade.utils.utils import dump_data
 
 from PyDSS.pydss_results import PyDssResults
@@ -23,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 class SnapshotImpactAnalysis(Analysis):
     """Snapshot impact analysis class with default values"""
+    # Values are overridden by impact_analysis_inputs.toml in our workflow.
     INPUTS = [
         Input('over_voltage', CustomType(float), 1.05),
         Input('under_voltage', CustomType(float), 0.95),
@@ -49,9 +51,15 @@ class SnapshotImpactAnalysis(Analysis):
         """
         base_config = os.path.join(output, 'config.json')
         config = PyDssConfiguration.deserialize(base_config)
+        results = ResultsAggregator.list_results(output)
+        result_lookup = {x.name: x for x in results}
+        jobs_output = os.path.join(output, JOBS_OUTPUT_DIR)
         for job in config.iter_jobs():
             if isinstance(job, DeploymentParameters) and job.model.deployment.feeder == self._feeder:
-                self._run_job(config, job, os.path.join(output, JOBS_OUTPUT_DIR))
+                if result_lookup[job.name].return_code != 0:
+                    logger.info("Skip failed job %s", job.name)
+                    continue
+                self._run_job(config, job, jobs_output)
 
     def _run_job(self, config, job, output):
         simulation = config.create_from_result(job, output)
