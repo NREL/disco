@@ -1,10 +1,14 @@
 """Contains functionality to configure PyDss simulations."""
 
 import logging
+from collections import defaultdict
 
 from jade.exceptions import InvalidParameter
+from jade.extensions.generic_command.generic_command_parameters import GenericCommandParameters
 from jade.utils.utils import load_data
+
 from disco.distribution.deployment_parameters import DeploymentParameters
+from disco.enums import SimulationType
 from disco.exceptions import PyDssJobException
 from disco.pydss.pydss_configuration_base import PyDssConfigurationBase
 from disco.pydss.common import ConfigType
@@ -21,6 +25,71 @@ class PyDssConfiguration(PyDssConfigurationBase):
         """Constructs PyDssConfiguration."""
         super(PyDssConfiguration, self).__init__(**kwargs)
         self._scenario_names = []
+
+    def add_hosting_capacity_job(self, simulation_type, impact_analysis_jobs):
+        """Add post-processing jobs for hosting capacity.
+
+        Parameters
+        ----------
+        simulation_type : SimulationType
+        impact_analysis_jobs : list
+            Names of impact analysis jobs
+
+        """
+        if simulation_type == SimulationType.SNAPSHOT:
+            command = "compute-snapshot-hosting-capacity"
+        elif simulation_type == SimulationType.QSTS:
+            command = "compute-time-series-hosting-capacity"
+        else:
+            assert False, simulation_type
+
+        cmd = f"disco-internal {command}"
+        job = GenericCommandParameters(
+            command=cmd,
+            job_id=command,
+            blocked_by=impact_analysis_jobs,
+            append_output_dir=True,
+        )
+        self.add_job(job)
+
+    def add_impact_analysis_jobs(self, simulation_type):
+        """Add post-processing jobs for impact analysis.
+
+        Parameters
+        ----------
+        simulation_type : SimulationType
+
+        Returns
+        -------
+        list
+            Names of impact analysis jobs
+
+        """
+        if simulation_type == SimulationType.SNAPSHOT:
+            command = "compute-snapshot-impact-analysis"
+        elif simulation_type == SimulationType.QSTS:
+            command = "compute-time-series-impact-analysis"
+        else:
+            assert False, simulation_type
+
+        feeders = defaultdict(list)
+        for job in self.iter_jobs():
+            feeders[job.model.deployment.feeder].append(job.name)
+
+        job_names = []
+        for feeder, blocking_jobs in feeders.items():
+            cmd = f"disco-internal {command} {feeder}"
+            name = f"{feeder}-{command}"
+            job = GenericCommandParameters(
+                command=cmd,
+                job_id=name,
+                blocked_by=blocking_jobs,
+                append_output_dir=True,
+            )
+            self.add_job(job)
+            job_names.append(name)
+
+        return job_names
 
     @classmethod
     def auto_config(cls, inputs, simulation_config=None, scenarios=None, **kwargs):

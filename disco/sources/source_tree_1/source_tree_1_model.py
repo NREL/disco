@@ -415,6 +415,7 @@ class SourceTree1Model(BaseOpenDssModel):
                     "name": base_case_name,
                     "model_type": simulation_model.__name__,
                     "job_order": 0,
+                    "is_base_case": True,
                 }
                 config.append(simulation_model.validate(item).dict())
                 base_cases.add(base_case_name)
@@ -486,6 +487,8 @@ class SourceTree1Model(BaseOpenDssModel):
                         "model_type": simulation_model.__name__,
                         "job_order": level
                     }
+                    if issubclass(simulation_model, ImpactAnalysisBaseModel):
+                        item["base_case"] = base_case_name
                     config.append(simulation_model.validate(item).dict())
 
         os.makedirs(output_path, exist_ok=True)
