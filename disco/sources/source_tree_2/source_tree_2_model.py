@@ -119,7 +119,7 @@ def common_options(func):
     help="output directory",
 )
 @click.pass_context
-def snapshot_impact_analysis(
+def snapshot(
     ctx,
     feeders,
     dc_ac_ratios,
@@ -243,7 +243,7 @@ class SourceTree2Model(BaseOpenDssModel):
     """Source Type 2 Feeder Model Inputs Class"""
 
     TRANSFORM_SUBCOMMANDS = {
-        "snapshot-impact-analysis": snapshot_impact_analysis,
+        "snapshot-impact-analysis": snapshot,
         "time-series": time_series,
     }
 

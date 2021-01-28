@@ -111,7 +111,7 @@ def common_options(func):
     help="output directory",
 )
 @click.pass_context
-def snapshot_impact_analysis(
+def snapshot(
     ctx,
     substations,
     feeders,
@@ -277,7 +277,7 @@ class SourceTree1Model(BaseOpenDssModel):
 
     DEPLOYMENT_FILE = "PVSystems.dss"
     TRANSFORM_SUBCOMMANDS = {
-        "snapshot-impact-analysis": snapshot_impact_analysis,
+        "snapshot": snapshot,
         "time-series": time_series,
         "upgrade-cost-analysis": upgrade_cost_analysis
     }

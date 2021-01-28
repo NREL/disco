@@ -116,4 +116,4 @@ def time_series(
             config.add_hosting_capacity_job(SimulationType.QSTS, ia_jobs)
 
     config.dump(filename=config_file)
-    print(f"Created {config_file} for TimeSeriesImpactAnalysis")
+    print(f"Created {config_file} for TimeSeries Analysis")

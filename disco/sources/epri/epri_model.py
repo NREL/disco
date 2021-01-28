@@ -71,7 +71,7 @@ def common_options(func):
     help="output directory",
 )
 @click.pass_context
-def snapshot_impact_analysis(ctx, feeders, force, start, output):
+def snapshot(ctx, feeders, force, start, output):
     """Transform input data for a snapshot simulation"""
     input_path = ctx.parent.params["input_path"]
     handle_existing_dir(output, force)
@@ -158,7 +158,7 @@ class EpriModel(BaseOpenDssModel):
     """EPRI Feeder Model Inputs Class"""
 
     TRANSFORM_SUBCOMMANDS = {
-        "snapshot-impact-analysis": snapshot_impact_analysis,
+        "snapshot": snapshot,
         "time-series": time_series,
     }
     MASTER_FILENAME_BY_FEEDER = {

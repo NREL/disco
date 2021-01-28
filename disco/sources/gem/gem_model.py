@@ -50,7 +50,7 @@ def common_options(func):
     help="output directory",
 )
 @click.pass_context
-def snapshot_impact_analysis(ctx, force, output):
+def snapshot(ctx, force, output):
     """Transform input data for a snapshot impact analysis simulation"""
     input_path = ctx.parent.params["input_path"]
     handle_existing_dir(output, force)
@@ -88,7 +88,7 @@ class GemModel(BaseOpenDssModel):
     """GEM Feeder Model Inputs Class"""
 
     TRANSFORM_SUBCOMMANDS = {
-        "snapshot-impact-analysis": snapshot_impact_analysis,
+        "snapshot": snapshot,
         "upgrade-cost-analysis": upgrade_cost_analysis
     }
 

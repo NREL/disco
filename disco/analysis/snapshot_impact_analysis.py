@@ -8,9 +8,12 @@ import re
 import numpy as np
 from pandas import DataFrame
 
+from jade.common import JOBS_OUTPUT_DIR
 from jade.utils.utils import dump_data
+
 from PyDSS.pydss_results import PyDssResults
 from disco.analysis import Analysis, Input
+from disco.distribution.deployment_parameters import DeploymentParameters
 from disco.exceptions import AnalysisRunException
 from disco.extensions.pydss_simulation.pydss_configuration import PyDssConfiguration
 from disco.utils.custom_type import CustomType
@@ -31,9 +34,10 @@ class SnapshotImpactAnalysis(Analysis):
         Input('transformer_overload_2', CustomType('percent'), 100),
     ]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, feeder, *args, **kwargs):
         self._include_voltage_deviation = False
         super(SnapshotImpactAnalysis, self).__init__(*args, **kwargs)
+        self._feeder = feeder
 
     def run(self, output, **kwargs):
         """Run snapshot impact analysis
@@ -43,9 +47,13 @@ class SnapshotImpactAnalysis(Analysis):
         output : directory containing job outputs
 
         """
-        base_config = os.path.join(output, '..', 'config.json')
+        base_config = os.path.join(output, 'config.json')
         config = PyDssConfiguration.deserialize(base_config)
-        job = config.get_job(self._job_name)
+        for job in config.iter_jobs():
+            if isinstance(job, DeploymentParameters) and job.model.deployment.feeder == self._feeder:
+                self._run_job(config, job, os.path.join(output, JOBS_OUTPUT_DIR))
+
+    def _run_job(self, config, job, output):
         simulation = config.create_from_result(job, output)
         results = PyDssResults(simulation.pydss_project_path)
         scenario = results.scenarios[0]
