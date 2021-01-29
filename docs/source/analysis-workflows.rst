@@ -10,7 +10,7 @@ batches of jobs, or a pipeline of batches.
 The supported analysis in post-process include:
 
 * Snapshot Impact Analysis
-* Hosting Capacity Analysis (based on snapshot impact analysis results)
+* Snapshot Hosting Capacity Analysis (based on snapshot impact analysis results)
 * Time Series Impact Analysis
 * Upgrade Cost Analysis
 
@@ -20,7 +20,6 @@ The following sections show the analysis workflow for each in detail.
    :maxdepth: 2
 
    analysis-workflows/snapshot-impact-analysis
-   analysis-workflows/hosting-capacity-analysis
+   analysis-workflows/snapshot-hosting-capacity
    analysis-workflows/time-series-impact-analysis
-   analysis-workflows/time-series-hosting-capacity
    analysis-workflows/upgrade-cost-analysis

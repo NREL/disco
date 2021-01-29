@@ -53,7 +53,7 @@ logger = logging.getLogger(__name__)
         "impact_analysis_inputs.toml",
     ),
     show_default=True,
-    help="PyDSS report options",
+    help="impact analysis inputs",
 )
 @click.option(
     "-e",
