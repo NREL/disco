@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 @click.group()
 def cli():
-    """Entry point"""
+    """DISCO internal commands"""
 
 
 cli.add_command(compute_snapshot_hosting_capacity)
