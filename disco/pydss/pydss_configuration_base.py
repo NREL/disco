@@ -79,23 +79,10 @@ class PyDssConfigurationBase(DistributionConfiguration):
     """Represents the configuration options for a PyDSS simulation."""
 
     def __init__(self,
-                 inputs,
                  #add_pmpp_if_missing, # TODO
-                 job_parameters_class,
-                 extension_name,
                  **kwargs):
-        """Constructs PyDssConfiguration.
-
-        Parameters
-        ----------
-        inputs : str | JobInputsInterface
-            path to inputs directory or JobInputsInterface object
-
-        """
-        super(PyDssConfigurationBase, self).__init__(inputs,
-                                                     job_parameters_class,
-                                                     extension_name,
-                                                     **kwargs)
+        """Constructs PyDssConfiguration."""
+        super(PyDssConfigurationBase, self).__init__(**kwargs)
 
         # Kinda hacky, but this enables PyDssConfiguration.deserialize().
         if "pydss_inputs" in kwargs:
@@ -116,9 +103,6 @@ class PyDssConfigurationBase(DistributionConfiguration):
 
         """
         return copy.deepcopy(self._pydss_inputs)
-
-    def get_job_inputs(self):
-        return self.pydss_inputs
 
     def _get_config(self, config_type):
         config = self._pydss_inputs.get(config_type)
@@ -147,7 +131,6 @@ class PyDssConfigurationBase(DistributionConfiguration):
             )
 
     def _serialize(self, data):
-        data["inputs_directory"] = self.base_directory
         data["pydss_inputs"] = self.serialize_pydss_inputs(self._pydss_inputs)
 
     def get_pydss_config(self, config_type):

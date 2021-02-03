@@ -34,13 +34,12 @@ def auto_config(inputs, **kwargs):
 
 def run(config_file, name, output, output_format, verbose):
     """Runs a PyDSS auto-generated scenario."""
-    config_file = config_file
     config = create_config_from_file(config_file, do_not_deserialize_jobs=True)
     job = config.get_job(name)
 
     print(get_cli_string())
 
-    simulation = PyDssSimulation.create(config.get_job_inputs(),
+    simulation = PyDssSimulation.create(config.pydss_inputs,
                                         job,
                                         output=output)
     try:

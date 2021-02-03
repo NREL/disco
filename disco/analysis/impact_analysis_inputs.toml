@@ -1,0 +1,9 @@
+[thresholds]
+over_voltage = 1.05
+under_voltage = 0.95
+over_voltage_conservative = 1.05833
+under_voltage_conservative = 0.91667
+line_overload_1 = 100
+line_overload_2 = 100
+transformer_overload_1 = 100
+transformer_overload_2 = 100

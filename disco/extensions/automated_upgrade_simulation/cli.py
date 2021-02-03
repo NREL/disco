@@ -56,7 +56,7 @@ def run(config_file, name, output, output_format, verbose):
 
     print(get_cli_string())
     simulation = AutomatedUpgradeSimulation(
-        pydss_inputs=config.get_job_inputs(),
+        pydss_inputs=config.pydss_inputs,
         job_global_config=config.job_global_config,
         job=job,
         output=output

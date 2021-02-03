@@ -11,28 +11,17 @@ from disco.extensions.automated_upgrade_simulation.automated_upgrade_parameters 
 class AutomatedUpgradeConfiguration(PyDssConfigurationBase):
     """Represents the configuration options for automatic upgrade analysis"""
 
-    def __init__(self, inputs, **kwargs):
-        """Construct automatic upgrade configuration
-
-        Parameters
-        ----------
-        inputs : str | :obj:`PyDssInputs`
-            Path to PyDss-inputs-outputs directory or :class:`PyDssInputs` object.
-        """
-        super(AutomatedUpgradeConfiguration, self).__init__(
-            inputs=inputs,
-            job_parameters_class=AutomatedUpgradeParameters,
-            extension_name="automated_upgrade_simulation",
-            **kwargs
-        )
+    def __init__(self, **kwargs):
+        """Construct automatic upgrade configuration"""
+        super(AutomatedUpgradeConfiguration, self).__init__(**kwargs)
 
     @classmethod
     def auto_config(cls, inputs, simulation_config=None, scenarios=None, **kwargs):
         """Create a configuration from all available inputs."""
         if isinstance(inputs, str):
             inputs = AutomatedUpgradeInputs(inputs)
-        config = cls(inputs, **kwargs)
-        for job in config.inputs.iter_jobs():
+        config = cls(**kwargs)
+        for job in inputs.iter_jobs():
             config.add_job(job)
 
         if simulation_config is None:
@@ -49,5 +38,5 @@ class AutomatedUpgradeConfiguration(PyDssConfigurationBase):
         return config
 
     def create_from_result(self, job, output_dir):
-        return self.job_execution_class().create(
-            self.get_job_inputs(), job, output=output_dir)
+        cls = self.job_execution_class(job.extension)
+        return cls.create(job, output=output_dir)
