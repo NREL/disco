@@ -59,7 +59,7 @@ def snapshot(ctx, force, output):
         output_path=output,
         simulation_model=SnapshotImpactAnalysisModel,
     )
-    print(f"Transformed data from {input_path} to {output} for SnapshotImpactAnalysis.")
+    print(f"Transformed data from {input_path} to {output} for Snapshot Analysis.")
 
 
 @click.command()

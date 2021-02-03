@@ -29,10 +29,10 @@ For example, if the input path is a GEM file:
 
     $ disco transform-model ./gem-file.json --help
 
-    Available analysis types: snapshot-impact-analysis upgrade-cost-analysis
+    Available analysis types: snapshot upgrade-cost-analysis
 
     For additional help run one of the following:
-        disco transform-model ./gem-file.json snapshot-impact-analysis --help
+        disco transform-model ./gem-file.json snapshot --help
         disco transform-model ./gem-file.json upgrade-cost-analysis --help
 
 
@@ -46,10 +46,10 @@ in *format.toml*.
 
     $ disco transform-model tests/data/smart-ds/substations/ --help
 
-    Available analysis types: snapshot-impact-analysis time-series upgrade-cost-analysis
+    Available analysis types: snapshot time-series upgrade-cost-analysis
 
     For additional help run one of the following:
-        disco transform-model tests/data/smart-ds/substations/ snapshot-impact-analysis --help
+        disco transform-model tests/data/smart-ds/substations/ snapshot --help
         disco transform-model tests/data/smart-ds/substations/ time-series --help
         disco transform-model tests/data/smart-ds/substations/ upgrade-cost-analysis --help
 

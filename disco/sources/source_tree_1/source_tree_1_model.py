@@ -144,7 +144,7 @@ def snapshot(
         penetration_levels=penetration_levels,
         master_file=master_file,
     )
-    print(f"Transformed data from {input_path} to {output} for SnapshotImpactAnalysis.")
+    print(f"Transformed data from {input_path} to {output} for Snapshot Analysis.")
 
 
 @click.command()
@@ -215,7 +215,7 @@ def time_series(
         master_file=master_file,
     )
     print(
-        f"Transformed data from {input_path} to {output} for TimeSeriesImpactAnalysis."
+        f"Transformed data from {input_path} to {output} for TimeSeries Analysis."
     )
 
 

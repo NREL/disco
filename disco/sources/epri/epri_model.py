@@ -88,7 +88,7 @@ def snapshot(ctx, feeders, force, start, output):
         simulation_model=SnapshotImpactAnalysisModel,
         feeders=feeders,
     )
-    print(f"Transformed data from {input_path} to {output} for SnapshotImpactAnalysis.")
+    print(f"Transformed data from {input_path} to {output} for Snapshot Analysis.")
 
 
 @click.command()
@@ -150,7 +150,7 @@ def time_series(
         pv_profile=pv_profile,
     )
     print(
-        f"Transformed data from {input_path} to {output} for TimeSeriesImpactAnalysis."
+        f"Transformed data from {input_path} to {output} for TimeSeries Analysis."
     )
 
 

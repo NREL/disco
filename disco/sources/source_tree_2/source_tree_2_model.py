@@ -154,7 +154,7 @@ def snapshot(
         penetration_levels=penetration_levels,
         master_file=master_file,
     )
-    print(f"Transformed data from {input_path} to {output} for SnapshotImpactAnalysis.")
+    print(f"Transformed data from {input_path} to {output} for Snapshot Analysis.")
 
 
 @click.command()
@@ -235,7 +235,7 @@ def time_series(
         pv_profile=pv_profile,
     )
     print(
-        f"Transformed data from {input_path} to {output} for TimeSeriesImpactAnalysis."
+        f"Transformed data from {input_path} to {output} for TimeSeries Analysis."
     )
 
 
@@ -243,7 +243,7 @@ class SourceTree2Model(BaseOpenDssModel):
     """Source Type 2 Feeder Model Inputs Class"""
 
     TRANSFORM_SUBCOMMANDS = {
-        "snapshot-impact-analysis": snapshot,
+        "snapshot": snapshot,
         "time-series": time_series,
     }
 
