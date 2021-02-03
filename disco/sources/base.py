@@ -29,7 +29,7 @@ DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS = {
 }
 
 DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS = {
-    "output_dir": "upgrade-cost-analysis-models",
+    "output_dir": "upgrade-models",
     "cost_database": GENERIC_COST_DATABASE,
     "params_file": "upgrade-params.toml",
     "sequential_upgrade": False,

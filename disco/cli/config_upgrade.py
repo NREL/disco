@@ -4,6 +4,7 @@ Create Jade configuration for simulation jobs.
 
 import logging
 import os
+import sys
 
 import click
 
@@ -69,7 +70,7 @@ from disco.pydss.pydss_configuration_upgrade import ThermalUpgradeConfiguration,
     default=False,
     help="Enable debug logging."
 )
-def upgrade_cost_analysis(
+def upgrade(
         inputs,
         cost_database,
         params_file,

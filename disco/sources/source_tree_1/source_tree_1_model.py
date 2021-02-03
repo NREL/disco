@@ -236,7 +236,7 @@ def time_series(
     help="output directory"
 )
 @click.pass_context
-def upgrade_cost_analysis(
+def upgrade(
     ctx,
     substations,
     feeders,
@@ -279,7 +279,7 @@ class SourceTree1Model(BaseOpenDssModel):
     TRANSFORM_SUBCOMMANDS = {
         "snapshot": snapshot,
         "time-series": time_series,
-        "upgrade-cost-analysis": upgrade_cost_analysis
+        "upgrade": upgrade
     }
 
     def __init__(self, data):

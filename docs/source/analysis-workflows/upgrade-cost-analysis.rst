@@ -8,7 +8,7 @@ DISCO models we can configure the jobs for customized analysis.
 * or if ``job_order`` specified, run sequential upgrade cost analysis.
 
 The following steps show how to conduct upgrade cost analysis using DISCO models 
-- ``upgrade-cost-analysis-models`` generated from ``transform-model``.
+- ``upgrade-models`` generated from ``transform-model``.
 
 **1. Config Jobs**
 
@@ -17,8 +17,8 @@ The ``--help`` option shows all available functionality.
 
 .. code-block:: bash
 
-    $ disco config upgrade-cost-analysis --help
-    Usage: disco config upgrade-cost-analysis [OPTIONS] INPUTS
+    $ disco config upgrade --help
+    Usage: disco config upgrade [OPTIONS] INPUTS
 
     Create JADE configuration for upgrade cost analysis.
 
@@ -28,8 +28,8 @@ The ``--help`` option shows all available functionality.
     -p, --params-file PATH    Thermal & Voltage upgrade parameters file.
                                 [default: upgrade-params.toml]
     --show-params             Show the default upgrade parameters in file.
-    -s, --sequential-upgrade  Enable sequential upgrades.
     -n, --nearest-redirect    Redirect DSS files from nearest lower-order jobs.
+    -s, --sequential-upgrade  Enable sequential upgrades.
     -c, --config-file PATH    JADE config file to create  [default: config.json]
     --verbose                 Enable debug logging.
     --help                    Show this message and exit.
@@ -44,7 +44,7 @@ The ``--help`` option shows all available functionality.
 
 .. code-block:: bash
 
-    $ disco config upgrade-cost-analysis --show-params .
+    $ disco config upgrade --show-params .
     Thermal Upgrade Config
     ----------
     Parameter                 Value
@@ -108,20 +108,20 @@ upgrade cost analysis.
 
 **- Single upgrade cost analysis**
 
-Run ``disco config upgrade-cost-analysis`` to generate the job configuration file,
+Run ``disco config upgrade`` to generate the job configuration file,
 which will create a ``config.json`` file,
 
 .. code-block:: bash
 
-    $ disco config upgrade-cost-analysis upgrade-cost-analysis-models
+    $ disco config upgrade upgrade-models
 
 
-**- Sequential Upgrade Analysis with considering job order**
+**- Sequential upgrade cost analysis**
 
 .. code-block:: bash
 
-    $ disco config upgrade-cost-analysis upgrade-cost-analysis-models --sequential-upgrade
-    $ disco config upgrade-cost-analysis upgrade-cost-analysis-models --sequential-upgrade --nearest-redirect
+    $ disco config upgrade --sequential-upgrade upgrade-models 
+    $ disco config upgrade --sequential-upgrade --nearest-redirect upgrade-models
 
 * **sequential-upgrade**: the value is ``true`` or ``false``, default is ``false``. 
   If ``true``, it will run upgrades sequentially based on the job order. The job 
