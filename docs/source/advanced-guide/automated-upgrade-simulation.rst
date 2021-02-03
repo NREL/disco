@@ -22,7 +22,7 @@ Here are the steps to run the simulation:
 
 .. code-block:: bash
 
-    $ disco config upgrade --single-upgrade <upgrade-models>
+    $ disco config upgrade <upgrade-models>
 
 
 4. Submit jobs via JADE

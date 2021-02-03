@@ -23,14 +23,13 @@ The ``--help`` option shows all available functionality.
     Create JADE configuration for upgrade cost analysis.
 
     Options:
-    -s, --single-upgrade      Enable single upgrades.
-    -S, --sequential-upgrade  Enable sequential upgrades.
     -d, --cost-database PATH  The unit cost database spreadsheet.  [default:
                                 ~/disco/disco/analysis/generic_cost_database_v1.xlsx]
     -p, --params-file PATH    Thermal & Voltage upgrade parameters file.
                                 [default: upgrade-params.toml]
     --show-params             Show the default upgrade parameters in file.
     -n, --nearest-redirect    Redirect DSS files from nearest lower-order jobs.
+    -s, --sequential-upgrade  Enable sequential upgrades.
     -c, --config-file PATH    JADE config file to create  [default: config.json]
     --verbose                 Enable debug logging.
     --help                    Show this message and exit.
@@ -114,7 +113,7 @@ which will create a ``config.json`` file,
 
 .. code-block:: bash
 
-    $ disco config upgrade --single-upgrade upgrade-models
+    $ disco config upgrade upgrade-models
 
 
 **- Sequential upgrade cost analysis**
