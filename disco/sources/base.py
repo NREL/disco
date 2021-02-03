@@ -14,14 +14,14 @@ from disco.models.base import OpenDssDeploymentModel
 SOURCE_CONFIGURATION_FILENAME = "configurations.json"
 
 DEFAULT_SNAPSHOT_IMPACT_ANALYSIS_PARAMS = {
-    "output_dir": "snapshot-impact-analysis-models",
+    "output_dir": "snapshot-models",
     "start_time": "2020-01-01T00:00:00",
     "end_time": "2020-01-08T00:00:00",
     "simulation_type": SimulationType.SNAPSHOT.value,
 }
 
 DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS = {
-    "output_dir": "time-series-impact-analysis-models",
+    "output_dir": "time-series-models",
     "start_time": "2020-01-01T00:00:00",
     "end_time": "2020-01-08T00:00:00",
     "simulation_type": SimulationType.QSTS.value,
@@ -168,6 +168,45 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
                 if line.lower().startswith("solve"):
                     line = "!" + line
                 print(line, end="")
+
+    def create_base_case(self, name, outdir):
+        """Create a base case with no added PV.
+
+        Parameters
+        ----------
+        name : str
+            The job name
+        outdir : str
+            The base directory of opendss feeder model.
+
+        Returns
+        -------
+        OpenDssDeploymentModel
+
+        """
+        workspace = OpenDssFeederWorkspace(outdir)
+        if not os.path.exists(workspace.master_file):
+            self._create_common_files(workspace)
+
+        deployment_file = os.path.join(
+            workspace.pv_deployments_directory, name + ".dss"
+        )
+        with open(deployment_file, "w") as fw:
+            fw.write(f"Redirect {workspace.master_file}\n")
+            fw.write("\nSolve\n")
+
+        return OpenDssDeploymentModel.validate(
+            dict(
+                deployment_file=deployment_file,
+                substation=self.substation,
+                feeder=self.feeder,
+                dc_ac_ratio=self.dc_ac_ratio,
+                directory=outdir,
+                kva_to_kw_rating=self.kva_to_kw_rating,
+                project_data=self.project_data,
+                pydss_controllers=self.pydss_controllers,
+            )
+        )
 
     def create_deployment(self, name, outdir, pv_profile=None):
         """Create the deployment.

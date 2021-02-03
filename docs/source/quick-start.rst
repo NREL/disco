@@ -20,22 +20,22 @@ models and transforms them into DISCO models.
 
 .. code-block:: bash
 
-    $ disco transform-model ~/disco/tests/data/smart-ds/substations/ snapshot-impact-analysis
-    Transformed data from ~/disco/tests/data/smart-ds/substations/ to snapshot-impact-analysis-models for SnapshotImpactAnalysis.
+    $ disco transform-model ~/disco/tests/data/smart-ds/substations/ snapshot
+    Transformed data from ~/disco/tests/data/smart-ds/substations/ to snapshot-models for Snapshot Analysis.
 
-By default, it generates a directory named ``snapshot-impact-analysis-models``
+By default, it generates a directory named ``snapshot-models``
 with transformed models, i.e. DISCO mdoels.
 
 
 Config Jobs
 ===========
 
-Then config jobs using DISCO with ``snapshot-impact-analysis`` command,
+Then config jobs using DISCO with ``snapshot`` command,
 
 .. code-block:: bash
 
-    $ disco config snapshot-impact-analysis ./snapshot-impact-analysis-models
-    Created config.json for SnapshotImpactAnalysis
+    $ disco config snapshot ./snapshot-models
+    Created config.json for Snapshot Analysis
 
 A job config file named ``config.json`` was created.
 

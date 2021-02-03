@@ -9,11 +9,6 @@ from .base import ImpactAnalysisBaseModel
 
 class SnapshotImpactAnalysisModel(ImpactAnalysisBaseModel):
     """Data model for snapshot impact analysis"""
-    base_case: Optional[str] = Field(
-        title="base_case",
-        description="The base simulation job.",
-        max_length=255,
-    )
     include_voltage_deviation: Optional[bool] = Field(
         title="include_voltage_deviation",
         default=False,

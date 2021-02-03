@@ -14,8 +14,8 @@ from jade.utils.timing_utils import timed_info
 from jade.utils.utils import dump_data, modify_file, get_filenames_by_ext, \
     ExtendedJSONEncoder
 from disco.enums import SimulationType
-from disco.models.base import OpenDssDeploymentModel, PyDSSControllerModel
-from disco.models.snapshot_impact_analysis_model import SnapshotImpactAnalysisModel
+from disco.models.base import OpenDssDeploymentModel, PyDSSControllerModel, \
+    ImpactAnalysisBaseModel
 from disco.models.upgrade_cost_analysis_model import UpgradeCostAnalysisModel
 from disco.sources.base import SOURCE_CONFIGURATION_FILENAME
 from disco.sources.gem.model_input_interface import ModelInputDataInterface
@@ -361,7 +361,7 @@ class OpenDssGenerator(ModelInputDataInterface):
             "model_type": simulation_model.__name__,
             "job_order": deployment.job_order
         }
-        if simulation_model == SnapshotImpactAnalysisModel:
+        if issubclass(simulation_model, ImpactAnalysisBaseModel):
             data["base_case"] = inputs.feeder.base_case
         if simulation_model == UpgradeCostAnalysisModel:
             upgrade_paths = [
