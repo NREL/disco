@@ -76,11 +76,12 @@ def test_snapshot_impact_analysis(cleanup):
 
 def test_snapshot_hosting_capacity(cleanup):
     """For each job, gather outputs and generate desired output CSV files."""
+    os.environ["FAKE_HPC_CLUSTER"] = "True"
     base = os.path.join(DISCO_PATH, "extensions", "pydss_simulation")
     config_file = CONFIG_FILE
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations snapshot -F -o {MODELS_DIR}"
     config_cmd = f"{CONFIG_JOBS} snapshot --hosting-capacity {MODELS_DIR} -c {CONFIG_FILE}"
-    submit_cmd = f"jade submit-jobs {config_file} -o {OUTPUT}"
+    submit_cmd = f"jade submit-jobs {config_file} -o {OUTPUT} -p1"
 
     assert run_command(transform_cmd) == 0
     assert run_command(config_cmd) == 0
