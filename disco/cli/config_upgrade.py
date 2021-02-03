@@ -4,6 +4,7 @@ Create Jade configuration for simulation jobs.
 
 import logging
 import os
+import sys
 
 import click
 
@@ -23,6 +24,18 @@ from disco.pydss.pydss_configuration_upgrade import ThermalUpgradeConfiguration,
 
 @click.command()
 @click.argument("inputs")
+@click.option(
+    "-s", "--single-upgrade",
+    is_flag=True,
+    default=False,
+    help="Enable single upgrades."
+)
+@click.option(
+    "-S", "--sequential-upgrade",
+    is_flag=True,
+    default=False,
+    help="Enable sequential upgrades."
+)
 @click.option(
     "-d", "--cost-database",
     type=click.Path(exists=True),
@@ -45,12 +58,6 @@ from disco.pydss.pydss_configuration_upgrade import ThermalUpgradeConfiguration,
     help="Show the default upgrade parameters in file."
 )
 @click.option(
-    "-s", "--sequential-upgrade",
-    is_flag=True,
-    default=False,
-    help="Enable sequential upgrades."
-)
-@click.option(
     "-n", "--nearest-redirect",
     is_flag=True,
     default=False,
@@ -69,12 +76,13 @@ from disco.pydss.pydss_configuration_upgrade import ThermalUpgradeConfiguration,
     default=False,
     help="Enable debug logging."
 )
-def upgrade_cost_analysis(
+def upgrade(
         inputs,
+        single_upgrade,
+        sequential_upgrade,
         cost_database,
         params_file,
         show_params,
-        sequential_upgrade,
         nearest_redirect,
         config_file,
         verbose=False
@@ -82,6 +90,17 @@ def upgrade_cost_analysis(
     """Create JADE configuration for upgrade cost analysis."""
     level = logging.DEBUG if verbose else logging.INFO
     setup_logging(__name__, None, console_level=level)
+
+    if single_upgrade and sequential_upgrade:
+        print("--single-upgrade and --sequential-upgrade cannot both be set")
+        sys.exit(1)
+    
+    if show_params:
+        single_upgrade = True
+    
+    if not single_upgrade and not sequential_upgrade:
+        print("--single-upgrade or --sequential-upgrade must be set")
+        sys.exit(1)
 
     if not os.path.exists(params_file):
         params = {
