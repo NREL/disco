@@ -15,7 +15,7 @@ from disco.cli.common import handle_existing_dir
 from disco.enums import Placement, Scale, SimulationType
 from disco.models.base import PyDSSControllerModel
 from disco.models.snapshot_impact_analysis_model import SnapshotImpactAnalysisModel
-from disco.models.time_series_impact_analysis_model import TimeSeriesImpactAnalysisModel
+from disco.models.time_series_analysis_model import TimeSeriesAnalysisModel
 from disco.sources.base import (
     BaseSourceDataModel,
     BaseOpenDssModel,
@@ -119,7 +119,7 @@ def common_options(func):
     help="output directory",
 )
 @click.pass_context
-def snapshot_impact_analysis(
+def snapshot(
     ctx,
     feeders,
     dc_ac_ratios,
@@ -154,7 +154,7 @@ def snapshot_impact_analysis(
         penetration_levels=penetration_levels,
         master_file=master_file,
     )
-    print(f"Transformed data from {input_path} to {output} for SnapshotImpactAnalysis.")
+    print(f"Transformed data from {input_path} to {output} for Snapshot Analysis.")
 
 
 @click.command()
@@ -195,7 +195,7 @@ def snapshot_impact_analysis(
     help="profile to use for all PV Systems",
 )
 @click.pass_context
-def time_series_impact_analysis(
+def time_series(
     ctx,
     feeders,
     dc_ac_ratios,
@@ -224,7 +224,7 @@ def time_series_impact_analysis(
         input_path=input_path,
         output_path=output,
         simulation_params=simulation_params,
-        simulation_model=TimeSeriesImpactAnalysisModel,
+        simulation_model=TimeSeriesAnalysisModel,
         feeders=feeders,
         dc_ac_ratios=dc_ac_ratios,
         scales=scales,
@@ -235,7 +235,7 @@ def time_series_impact_analysis(
         pv_profile=pv_profile,
     )
     print(
-        f"Transformed data from {input_path} to {output} for TimeSeriesImpactAnalysis."
+        f"Transformed data from {input_path} to {output} for TimeSeries Analysis."
     )
 
 
@@ -243,8 +243,8 @@ class SourceTree2Model(BaseOpenDssModel):
     """Source Type 2 Feeder Model Inputs Class"""
 
     TRANSFORM_SUBCOMMANDS = {
-        "snapshot-impact-analysis": snapshot_impact_analysis,
-        "time-series-impact-analysis": time_series_impact_analysis,
+        "snapshot": snapshot,
+        "time-series": time_series,
     }
 
     def __init__(self, data):
@@ -260,14 +260,17 @@ class SourceTree2Model(BaseOpenDssModel):
         self._loadshape_directory = data.pop("loadshape_directory")
         self._opendss_directory = data.pop("opendss_directory")
         self._pv_locations = data.pop("pv_locations")
-        self._name = self.make_name(
-            self._feeder,
-            self._dcac,
-            self._scale,
-            self._placement,
-            self._deployment,
-            self._penetration_level,
-        )
+        if data.pop("is_base_case"):
+            self._name = self.make_base_case_name(self._feeder, self._dcac)
+        else:
+            self._name = self.make_name(
+                self._feeder,
+                self._dcac,
+                self._scale,
+                self._placement,
+                self._deployment,
+                self._penetration_level,
+            )
         data.pop("deployment_file")
         assert not data, str(data)
 
@@ -382,6 +385,7 @@ class SourceTree2Model(BaseOpenDssModel):
                         "loadshape_directory": inputs.get_loadshape_directory(feeder),
                         "opendss_directory": inputs.get_opendss_directory(feeder),
                         "pv_locations": [deployment_file],
+                        "is_base_case": False,
                     }
                     model = cls(data)
                     path = os.path.join(output_path, feeder)
@@ -404,4 +408,9 @@ class SourceTree2Model(BaseOpenDssModel):
     @staticmethod
     def make_name(feeder, dcac, scale, placement, deployment, penetration_level):
         fields = (feeder, dcac, scale, placement, deployment, penetration_level)
+        return "__".join([str(x) for x in fields])
+
+    @staticmethod
+    def make_base_case_name(feeder, dcac):
+        fields = (feeder, dcac, -1, -1, -1)
         return "__".join([str(x) for x in fields])

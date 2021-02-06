@@ -16,13 +16,13 @@ Here are the steps to run the simulation:
 
 .. code-block:: bash
 
-    $ disco transform-model <source> <source-data-inputs> upgrade-cost-analysis
+    $ disco transform-model <source-data-inputs> upgrade
 
 2. Generate job configuration file
 
 .. code-block:: bash
 
-    $ disco config upgrade-cost-analysis <disco-upgrade-cost-analysis-models> 
+    $ disco config upgrade <upgrade-models>
 
 
 4. Submit jobs via JADE
@@ -40,7 +40,7 @@ customized. Here are the default values in the ``upgrade-params.toml`` file.
 
 .. code-block:: bash
 
-    $ disco config upgrade-cost-analysis --show-params .
+    $ disco config upgrade --show-params .
     Thermal Upgrade Config
     ----------
     Parameter                 Value
@@ -78,7 +78,7 @@ customized. Here are the default values in the ``upgrade-params.toml`` file.
 
 
 You can edit this file and provide customized values if need, or create your own
-parameter file and run the command ``disco config upgrade-cost-analysis`` 
+parameter file and run the command ``disco config upgrade`` 
 with the ``--params-file`` option.
 
 

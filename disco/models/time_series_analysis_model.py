@@ -7,7 +7,7 @@ from pydantic.fields import Field
 from .base import ImpactAnalysisBaseModel
 
 
-class TimeSeriesImpactAnalysisModel(ImpactAnalysisBaseModel):
+class TimeSeriesAnalysisModel(ImpactAnalysisBaseModel):
     """Data model for time series impact analysis"""
     include_pv_clipping: Optional[bool] = Field(
         title="include_pv_clipping",
@@ -51,6 +51,6 @@ class TimeSeriesImpactAnalysisModel(ImpactAnalysisBaseModel):
     )
 
     class Config:
-        title = "TimeSeriesImpactAnalysisModel"
+        title = "TimeSeriesAnalysisModel"
         anystr_strip_whitespace = True
         validate_assignment = True

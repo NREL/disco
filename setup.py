@@ -75,6 +75,7 @@ setup(
     entry_points={
         "console_scripts": [
             "disco=disco.cli.disco:cli",
+            "disco-internal=disco.cli.disco_internal:cli",
         ],
     },
     include_package_data=True,

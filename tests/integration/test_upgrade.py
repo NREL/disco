@@ -24,17 +24,17 @@ def test_upgrade_cost_analysis(cleanup):
     # transform-model
     tranform_cmd = (
         f"{TRANSFORM_MODEL} tests/data/smart-ds/substations/ "
-        f"upgrade-cost-analysis -F -o {MODELS_DIR}"
+        f"upgrade -F -o {MODELS_DIR}"
     )
     assert run_command(tranform_cmd) == 0
     
     # config simulation
     disco_config_cmd = (
-        f"disco config upgrade-cost-analysis {MODELS_DIR} "
+        f"disco config upgrade --sequential-upgrade "
         f"-d {GENERIC_COST_DATABASE} "
         f"-c {CONFIG_FILE} "
         f"-p {UPGRADE_PARAMS} "
-        "--sequential-upgrade"
+        f"{MODELS_DIR}"
     )
     assert run_command(disco_config_cmd) == 0
     
