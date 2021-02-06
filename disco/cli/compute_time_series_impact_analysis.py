@@ -1,13 +1,12 @@
 
 import logging
+import os
 
 import click
-import os
 
 from jade.loggers import setup_logging
 from jade.utils.utils import get_cli_string
 from disco.analysis.postprocess_time_series import aggregate_deployments
-#from jade.common import CONFIG_FILE
 
 
 @click.command()
