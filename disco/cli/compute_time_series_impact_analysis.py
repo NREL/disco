@@ -28,5 +28,5 @@ def compute_time_series_impact_analysis(feeder, jade_runtime_output, verbose=Fal
     logger = setup_logging(__name__, None, console_level=level)
     job_outputs = os.path.join(jade_runtime_output, "job-outputs")
     df = aggregate_deployments(job_outputs)
-    df.to_csv(os.path.join(jade_runtime_output, 'impact_summary.csv'))
+    
     print(get_cli_string())

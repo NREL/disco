@@ -47,11 +47,11 @@ def get_absolute_changes(df, property_name, base_case='base_case'):
     ]
     if property_name not in to_exclude:
         df[f"absolute_change_in_{property_name}"] = (
-            df.property_name - df.loc[base_case, property_name]
+            df.loc[:, property_name] - df.loc[base_case, property_name]
         )
     return df
 
-def aggregate_deployments(job_outputs_path):
+def aggregate_deployments(job_outputs_path, tolerance=0.05):
     config_file = os.path.join(os.path.dirname(job_outputs_path), CONFIG_FILE)
     config = PyDssConfiguration.deserialize(config_file)
 
@@ -66,23 +66,23 @@ def aggregate_deployments(job_outputs_path):
             )
             all_summaries_dict[job.name] = combine_metrics(project_path)
 
-        print(all_summaries_dict)
         summary_df = pd.DataFrame.from_dict(all_summaries_dict, 'index')
         if not summary_df.empty:
             for property_name in summary_df.columns:
                 summary_df = get_absolute_changes(summary_df, property_name, base_case.name)
-            summary_df = assess_deployments(summary_df)
+            summary_df = assess_deployments(summary_df, tolerance)
+            summary_df.to_csv(os.path.join(job_outputs_path, f'impact_summary_{feeder}.csv'))
             summary_dfs.append(summary_df)
 
     return summary_dfs
 
-def assess_deployments(df):
-    key = 'absolute_change_in'
+def assess_deployments(df, tolerance):
+    key = 'absolute_change_in_'
     change_cols = [(c, c.split(key)[1]) for c in df.columns if key in c]
     for cols in change_cols:
         change_col = cols[0]
         flag_col = f"pass_{cols[1]}"
-        df.loc[:, flag_col] = df[change_col]<=0
+        df.loc[:, flag_col] = df[change_col] <= tolerance * df[cols[1]]
     pass_flags = [c for c in df.columns if c.startswith('pass')]
     df['pass_flag'] = df[pass_flags[0]]
     for col in pass_flags[1:]:
