@@ -6,7 +6,7 @@ import click
 
 from jade.loggers import setup_logging
 from jade.utils.utils import get_cli_string
-from disco.analysis.postprocess_time_series import aggregate_deployments
+from disco.analysis.postprocess_time_series import aggregate_deployments, compute_hosting_capacity
 
 
 @click.command()
@@ -27,6 +27,6 @@ def compute_time_series_impact_analysis(feeder, jade_runtime_output, verbose=Fal
     level = logging.DEBUG if verbose else logging.INFO
     logger = setup_logging(__name__, None, console_level=level)
     job_outputs = os.path.join(jade_runtime_output, "job-outputs")
-    df = aggregate_deployments(job_outputs)
+    dfs = aggregate_deployments(job_outputs)
     
     print(get_cli_string())
