@@ -145,7 +145,7 @@ def _extract_upgrade_dss_files(project_path):
 def _extract_upgrade_json_files(project_path):
     """Extract .json upgrades files from pydss_project."""
     upgrade_results = {}
-    thermal_upgrade_file = os.path.join(project_path, "Processed_upgrades.json")
+    thermal_upgrade_file = os.path.join(project_path, "Processed_thermal_upgrades.json")
     voltage_upgrade_file = os.path.join(project_path, "Processed_voltage_upgrades.json")
 
     pydss_project = PyDssProject.load_project(project_path)
@@ -154,7 +154,7 @@ def _extract_upgrade_json_files(project_path):
             "Scenarios",
             UpgradeType.ThermalUpgrade.value,
             "PostProcess",
-            "Processed_upgrades.json"
+            "Processed_thermal_upgrades.json"
         ))
         with open(thermal_upgrade_file, "w") as f:
             f.write(text)

@@ -9,7 +9,7 @@ import pandas as pd
 class UpgradedComponentCollector:
     """Collects upgraded component information from a PyDssSimulation job."""
 
-    UPGRADES_FILE = "Scenarios/ThermalUpgrade/PostProcess/Processed_upgrades.json"
+    UPGRADES_FILE = "Scenarios/ThermalUpgrade/PostProcess/Processed_thermal_upgrades.json"
 
     def __init__(self, job, job_dir, pydss_results):
         """Constructs UpgradeAnalysis.

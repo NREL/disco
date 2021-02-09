@@ -135,6 +135,12 @@ class UpgradeCostAnalysis(Analysis):
                 upgraded_line_cost = (
                     new_line_cost_per_line * upgraded_line_count
                 )  # TODO: update to take ampacities as an option. X data currently does not have sufficient resolution
+                
+                if isinstance(new_line_cost, pd.Series):
+                    new_line_cost = new_line_cost.sum()
+                if isinstance(upgraded_line_cost, pd.Series):
+                    upgraded_line_cost = upgraded_line_cost.sum()
+                
                 dict_k = {
                     "id": [k],
                     "new_equip_cost": [new_line_cost],
