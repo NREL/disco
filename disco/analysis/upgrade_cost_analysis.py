@@ -114,7 +114,7 @@ class UpgradeCostAnalysis(Analysis):
                             unit_cost_lines["description"] == "new_line"
                         ].cost_per_m
                     ).astype(float)
-                    new_line_cost = line_count * new_line_cost_per_line
+                    new_line_cost = (line_count * new_line_cost_per_line).sum()
 
                 elif upgrade_df[k]["new"][0] == 0:
                     new_line_cost = 0
@@ -136,8 +136,6 @@ class UpgradeCostAnalysis(Analysis):
                     new_line_cost_per_line * upgraded_line_count
                 )  # TODO: update to take ampacities as an option. X data currently does not have sufficient resolution
                 
-                if isinstance(new_line_cost, pd.Series):
-                    new_line_cost = new_line_cost.sum()
                 if isinstance(upgraded_line_cost, pd.Series):
                     upgraded_line_cost = upgraded_line_cost.sum()
                 
