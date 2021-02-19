@@ -125,12 +125,11 @@ def get_total_load_kilowatts(job_path):
     
     
 def compute_hosting_capacity(dfs, job_outputs_path):
-    HC_dict = {}
+    hc_dict = {}
     for df in dfs:
-        breakpoint()
         feeder = df['feeder'].values[0]
         
-        HC_dict[feeder] = {
+        hc_dict[feeder] = {
             'max_hc_pct': None, 
             'max_hc_kW': None,
             'min_hc_pct': None, 
@@ -142,8 +141,8 @@ def compute_hosting_capacity(dfs, job_outputs_path):
         if df.pass_flag.any():
             pass_df = df.loc[df.pass_flag==True, :]
             
-            HC_dict[feeder]['max_hc_pct'] = pass_df.pct_pv_to_load_ratio.max()
-            HC_dict[feeder]['max_hc_kW'] = pass_df.PV_capacity_kW.max()
+            hc_dict[feeder]['max_hc_pct'] = pass_df.pct_pv_to_load_ratio.max()
+            hc_dict[feeder]['max_hc_kW'] = pass_df.PV_capacity_kW.max()
             
             passing_pentrations = list(pass_df.pct_pv_to_load_ratio)
             for pct in passing_pentrations:
@@ -151,9 +150,9 @@ def compute_hosting_capacity(dfs, job_outputs_path):
                     hc_set.append(pct)
                     size_set.append(df.loc[df.pct_pv_to_load_ratio == pct, 'PV_capacity_kW'][0])
             if hc_set:
-                HC_dict[feeder]['min_hc_pct'] = max(hc_set)
-                HC_dict[feeder]['min_hc_kW'] = pass_df.PV_capacity_kW.max()   
-    hc_df = pd.DataFrame.from_dict(HC_dict, 'index')
+                hc_dict[feeder]['min_hc_pct'] = max(hc_set)
+                hc_dict[feeder]['min_hc_kW'] = max(size_set)   
+    hc_df = pd.DataFrame.from_dict(hc_dict, 'index')
     hc_df.to_csv(os.path.join(job_outputs_path, 'hosting_capacity.csv'))
     
     
