@@ -416,7 +416,7 @@ class SnapshotImpactAnalysis(Analysis):
             ): ['to2_flag', 'lo2_flag', 'uv2_flag', 'ov2_flag'],
         }
 
-        # TODO change
+        # iterate through the combination flags to determine status
         for key, value in self.VIOLATION_COMBINATIONS.items():
             result[key] = not _check_violation_flags(transformer, line, voltage,
                                                      self.VIOLATION_FLAG_NAMES[value[0]],
