@@ -47,7 +47,7 @@ def test_upgrade_cost_analysis(cleanup):
             assert len(job.model.blocked_by) == 2
     
     # submit jobs
-    submit_cmd = f"jade submit-jobs {CONFIG_FILE} -o {OUTPUT}"
+    submit_cmd = f"{SUBMIT_JOBS} {CONFIG_FILE} -o {OUTPUT}"
     assert run_command(submit_cmd) == 0
     
     # verigy results
