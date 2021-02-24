@@ -131,23 +131,22 @@ class PyDssConfiguration(PyDssConfigurationBase):
         cls = self.job_execution_class(job.extension)
         return cls.create(self.pydss_inputs, job, output=output_dir)
 
-    def list_feeders(self):
-        """Return a list of unique feeders in the config.
+    def get_base_case_job(self, feeder):
+        """Return the base_case job for the given feeder.
 
-        Returns
-        -------
-        list
+        Parameters
+        ----------
+        feeder : str
 
         """
-        feeders = set()
-        for job in self.iter_jobs():
-            if job.extension in DeploymentParameters.list_extensions():
-                feeders.add(job.feeder)
+        for job in self.iter_feeder_jobs(feeder):
+            if job.model.is_base_case:
+                return job
 
-        return list(feeders)
+        return InvalidParameter(f"no base case job for feeder={feeder}")
 
-    def get_feeder_jobs(self, feeder):
-        """Return a generator of jobs for feeders in the config.
+    def iter_feeder_jobs(self, feeder):
+        """Return jobs for the given feeder in the config.
 
         Parameters
         ----------
@@ -159,17 +158,39 @@ class PyDssConfiguration(PyDssConfigurationBase):
         DeploymentParameters
 
         """
-        for job in self.iter_jobs():
+        for job in self.iter_pydss_simulation_jobs():
             if job.feeder == feeder:
                 yield job
 
-    def get_feeder_job(self, feeder, deployment):
-        """Return job by deployment
+    def iter_pydss_simulation_jobs(self):
+        """Return jobs that are pydss_simulation jobs (not post-processing).
+
+        Yields
+        ------
+        DeploymentParameters
+
+        """
+        for job in self.iter_jobs():
+            if isinstance(job, DeploymentParameters):
+                yield job
+
+    def list_feeders(self):
+        """Return a list of unique feeders in the config.
+
+        Returns
+        -------
+        list
+
+        """
+        return list({x.feeder for x in self.iter_pydss_simulation_jobs()})
+
+    def get_feeder_job(self, feeder, job_name):
+        """Return job by name
 
         Parameters
         ----------
         feeder : str
-        deployment : str
+        job_name : str
 
         Returns
         -------
@@ -180,8 +201,5 @@ class PyDssConfiguration(PyDssConfigurationBase):
         PyDssJobException
 
         """
-        for job in self.get_feeder_jobs(feeder):
-            if job.name == deployment:
-                return job
-
-        raise PyDssJobException(f"No Job with deployment name {deployment} in feeder {feeder}")
+        # TODO: callers should just call this.
+        return self.get_job(job_name)
