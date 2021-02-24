@@ -31,8 +31,8 @@ class SnapshotImpactAnalysis(Analysis):
         Input('over_voltage_conservative', CustomType(float), 1.05833),
         Input('under_voltage_conservative', CustomType(float), 0.91667),
         Input('line_overload_1', CustomType('percent'), 100),
-        Input('line_overload_2', CustomType('percent'), 100),
-        Input('transformer_overload_1', CustomType('percent'), 150),
+        Input('line_overload_2', CustomType('percent'), 150),
+        Input('transformer_overload_1', CustomType('percent'), 100),
         Input('transformer_overload_2', CustomType('percent'), 150),
     ]
 
