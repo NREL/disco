@@ -57,7 +57,7 @@ class SnapshotImpactAnalysis(Analysis):
         for job in config.iter_jobs():
             if isinstance(job, DeploymentParameters) and job.model.deployment.feeder == self._feeder:
                 if result_lookup[job.name].return_code != 0:
-                    logger.info("Skip failed job {}", job.name)
+                    logger.info("Skip failed job %s", job.name)
                     continue
                 self._run_job(config, job, jobs_output)
 
@@ -77,7 +77,7 @@ class SnapshotImpactAnalysis(Analysis):
                 # TODO: ideally, these should bubble upwards and be caught and logged
                 # in one place (job-run)
                 logger.error(
-                    "Error: include-voltage-deviation flag enabled with no base case given: {}",
+                    "Error: include-voltage-deviation flag enabled with no base case given: %s",
                     job.name
                 )
                 raise AnalysisRunException(
@@ -466,7 +466,7 @@ def _get_line_loading(line_currents_df, line_normalamps_df, deployment_name, ub1
         if not current_mag:
             line_loadings[line] = 0.0
             logger.error("current_mag was empty, set line_loadings=0.0 "
-                         "nphases={} lencolumns={} deployment_name={} line={}",
+                         "nphases=%s lencolumns=%s deployment_name=%s line=%s",
                          nphases, len(line_currents_df.keys()), deployment_name, line)
         else:
             line_loadings[line] = max(current_mag)
