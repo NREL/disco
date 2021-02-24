@@ -20,8 +20,6 @@ def cleanup():
     delete_files()
     yield
     delete_files()
-    os.environ.pop("NREL_CLUSTER", None)
-    os.environ.pop("FAKE_HPC_CLUSTER", None)
 
 
 @pytest.fixture

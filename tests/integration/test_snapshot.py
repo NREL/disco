@@ -76,7 +76,6 @@ def test_snapshot_impact_analysis(cleanup):
 
 def test_snapshot_hosting_capacity(cleanup):
     """For each job, gather outputs and generate desired output CSV files."""
-    os.environ["FAKE_HPC_CLUSTER"] = "True"
     base = os.path.join(DISCO_PATH, "extensions", "pydss_simulation")
     config_file = CONFIG_FILE
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations snapshot -F -o {MODELS_DIR}"
@@ -101,6 +100,6 @@ def test_snapshot_hosting_capacity(cleanup):
         result = os.path.join(
             OUTPUT,
             JOB_OUTPUTS,
-            f"{feeder}-{POST_PROCESS_RESULT}"
+            f"{feeder}-snapshot-impact-analysis-batch-post-process.csv"
         )
         assert os.path.exists(result)

@@ -64,7 +64,6 @@ def test_time_series_impact_analysis(cleanup):
 
 
 def test_time_series_hosting_capacity(cleanup):
-    os.environ["FAKE_HPC_CLUSTER"] = "True"
     num_jobs = 7
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations time-series -F -o {MODELS_DIR}"
     config_cmd = f"{CONFIG_JOBS} time-series --hosting-capacity {MODELS_DIR} -c {CONFIG_FILE}"
