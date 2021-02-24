@@ -23,7 +23,7 @@ def test_snapshot_basic(cleanup):
     config_file = CONFIG_FILE
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations snapshot -F -o {MODELS_DIR}"
     config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} -c {CONFIG_FILE}"
-    submit_cmd = f"jade submit-jobs {config_file} -o {OUTPUT}"
+    submit_cmd = f"{SUBMIT_JOBS} {config_file} -o {OUTPUT}"
 
     assert run_command(transform_cmd) == 0
     assert run_command(config_cmd) == 0
@@ -49,7 +49,7 @@ def test_snapshot_impact_analysis(cleanup):
     config_file = CONFIG_FILE
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations snapshot -F -o {MODELS_DIR}"
     config_cmd = f"{CONFIG_JOBS} snapshot --impact-analysis {MODELS_DIR} -c {CONFIG_FILE}"
-    submit_cmd = f"jade submit-jobs {config_file} -o {OUTPUT}"
+    submit_cmd = f"{SUBMIT_JOBS} {config_file} -o {OUTPUT}"
 
     assert run_command(transform_cmd) == 0
     assert run_command(config_cmd) == 0
@@ -81,7 +81,7 @@ def test_snapshot_hosting_capacity(cleanup):
     config_file = CONFIG_FILE
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations snapshot -F -o {MODELS_DIR}"
     config_cmd = f"{CONFIG_JOBS} snapshot --hosting-capacity {MODELS_DIR} -c {CONFIG_FILE}"
-    submit_cmd = f"jade submit-jobs {config_file} -o {OUTPUT} -p1"
+    submit_cmd = f"{SUBMIT_JOBS} {config_file} -o {OUTPUT} -p1"
 
     assert run_command(transform_cmd) == 0
     assert run_command(config_cmd) == 0
