@@ -31,9 +31,9 @@ class SnapshotImpactAnalysis(Analysis):
         Input('over_voltage_conservative', CustomType(float), 1.05833),
         Input('under_voltage_conservative', CustomType(float), 0.91667),
         Input('line_overload_1', CustomType('percent'), 100),
-        Input('line_overload_2', CustomType('percent'), 100),
+        Input('line_overload_2', CustomType('percent'), 150),
         Input('transformer_overload_1', CustomType('percent'), 100),
-        Input('transformer_overload_2', CustomType('percent'), 100),
+        Input('transformer_overload_2', CustomType('percent'), 150),
     ]
 
     def __init__(self, feeder, *args, **kwargs):
@@ -96,8 +96,8 @@ class SnapshotImpactAnalysis(Analysis):
         line_loading = self._run_line_loading(scenario)
         transformer_loading = self._run_transformer_loading(scenario)
 
-        results = _get_violations_for_job(job, voltage_violations, line_loading,
-                                          transformer_loading)
+        results = self._get_violations_for_job(job, voltage_violations, line_loading,
+                                               transformer_loading)
 
         self._add_to_results('violations', results)
         # output to csv
@@ -153,6 +153,28 @@ class SnapshotImpactAnalysis(Analysis):
             total_pv_pmpp = _get_total_pv_pmpp(scenario.get_full_dataframe('PVSystems', 'Pmpp'))
             pv_to_load_ratio = round(100 * total_pv_pmpp / max(0.00001, total_load_kw), 2)
 
+        self.VIOLATION_FLAG_NAMES = {
+            'uv1_flag': 'undervoltage_flag(limit={})'.format(self.get_input('under_voltage').current_value),
+            'ov1_flag': 'overvoltage_flag(limit={})'.format(self.get_input('over_voltage').current_value),
+            'uv2_flag': 'undervoltage_flag(limit={})'.format(self.get_input('under_voltage_conservative').current_value),
+            'ov2_flag': 'overvoltage_flag(limit={})'.format(self.get_input('over_voltage_conservative').current_value),
+            'lo1_flag': 'line_overloading_flag(limit={})'.format(self.get_input('line_overload_1').current_value),
+            'lo2_flag': 'line_overloading_flag(limit={})'.format(self.get_input('line_overload_2').current_value),
+            'to1_flag': 'xfmr_overloading_flag(limit={})'.format(self.get_input('transformer_overload_1').current_value),
+            'to2_flag': 'xfmr_overloading_flag(limit={})'.format(self.get_input('transformer_overload_2').current_value),
+        }
+
+        self.VIOLATION_COUNT_NAMES = {
+            'uv1_count': 'undervoltage_count(limit={})'.format(self.get_input('under_voltage').current_value),
+            'uv2_count': 'undervoltage_count(limit={})'.format(self.get_input('under_voltage_conservative').current_value),
+            'ov1_count': 'overvoltage_count(limit={})'.format(self.get_input('over_voltage').current_value),
+            'ov2_count': 'overvoltage_count(limit={})'.format(self.get_input('over_voltage_conservative').current_value),
+            'lo1_count': 'line_overloading_count(limit={})'.format(self.get_input('line_overload_1').current_value),
+            'lo2_count': 'line_overloading_count(limit={})'.format(self.get_input('line_overload_2').current_value),
+            'to1_count': 'xfmr_overloading_count(limit={})'.format(self.get_input('transformer_overload_1').current_value),
+            'to2_count': 'xfmr_overloading_count(limit={})'.format(self.get_input('transformer_overload_2').current_value),
+        }
+
         violations = {
             'pv_kw': total_pv_kw,
             'pv_pmpp': total_pv_pmpp,
@@ -160,14 +182,14 @@ class SnapshotImpactAnalysis(Analysis):
             'pv_to_load_ratio': pv_to_load_ratio,
             'min_voltage': vmin,
             'max_voltage': vmax,
-            'undervoltage_A_flag': uv1,
-            'overvoltage_A_flag': ov1,
-            'undervoltage_A_count': uv_count1,
-            'overvoltage_A_count': ov_count1,
-            'undervoltage_B_flag': uv2,
-            'overvoltage_B_flag': ov2,
-            'undervoltage_B_count': uv_count2,
-            'overvoltage_B_count': ov_count2
+            self.VIOLATION_FLAG_NAMES['uv1_flag']: uv1,
+            self.VIOLATION_FLAG_NAMES['ov1_flag']: ov1,
+            self.VIOLATION_FLAG_NAMES['uv2_flag']: uv2,
+            self.VIOLATION_FLAG_NAMES['ov2_flag']: ov2,
+            self.VIOLATION_COUNT_NAMES['uv1_count']: uv_count1,
+            self.VIOLATION_COUNT_NAMES['ov1_count']: ov_count1,
+            self.VIOLATION_COUNT_NAMES['uv2_count']: uv_count2,
+            self.VIOLATION_COUNT_NAMES['ov2_count']: ov_count2,
         }
 
         # ensure that deviation indices are set (base scenarios)
@@ -213,11 +235,11 @@ class SnapshotImpactAnalysis(Analysis):
             )
         line_loading = {
             # 'line_loadings': line_loadings,
-            'max_line': max_line_loading,
-            '1X_line_overloading_flag': lo1,
-            '1X_line_overloading_count': lv_count1,
-            '1p5X_line_overloading_flag': lo2,
-            '1p5X_line_overloading_count': lv_count2
+            'max_line_loading': max_line_loading,
+            self.VIOLATION_FLAG_NAMES['lo1_flag']: lo1,
+            self.VIOLATION_FLAG_NAMES['lo2_flag']: lo2,
+            self.VIOLATION_COUNT_NAMES['lo1_count']: lv_count1,
+            self.VIOLATION_COUNT_NAMES['lo2_count']: lv_count2,
         }
 
         return line_loading
@@ -245,13 +267,14 @@ class SnapshotImpactAnalysis(Analysis):
                 self.get_input('transformer_overload_1').current_value,
                 self.get_input('transformer_overload_2').current_value
             )
+
         transformer_loading = {
             # 'xfmr_loading_s': xfmr_loading_s,
             'max_xfmr_loading': max_xfmr_loading,
-            '1X_xfmr_overloading_flag': to1,
-            '1X_xfmr_overloading_count': tv_count1,
-            '1p5X_xfmr_overloading_flag': to2,
-            '1p5X_xfmr_overloading_count': tv_count2
+            self.VIOLATION_FLAG_NAMES['to1_flag']: to1,
+            self.VIOLATION_FLAG_NAMES['to2_flag']: to2,
+            self.VIOLATION_COUNT_NAMES['to1_count']: tv_count1,
+            self.VIOLATION_COUNT_NAMES['to2_count']: tv_count2,
         }
 
         return transformer_loading
@@ -296,6 +319,113 @@ class SnapshotImpactAnalysis(Analysis):
 
         columns = ['Name', 'PhaseTerminal', 'Value']
         return DataFrame(results_list, columns=columns)
+
+    def _get_violations_for_job(self, job, voltage, line, transformer):
+        """Returns results expected in output csv file
+
+        Parameters
+        ----------
+        job : Job
+        voltage : dict
+            voltage violations
+        line : dict
+            line load
+        transformer : dict
+            transformer load
+
+        Returns
+        ------
+        dict
+
+        """
+        result = {}
+
+        project_data = job.model.deployment.project_data
+
+        # Job Information
+        result['feeder'] = job.model.deployment.feeder
+        result['deployment'] = job.model.deployment.deployment_file
+        result['placement'] = project_data.get("placement")
+        result['sample'] = project_data.get("sample")
+        result['penetration'] = project_data.get("penetration")
+
+        # Voltage Violations
+        result.update(voltage)
+
+        # Line Loading
+        result.update(line)
+
+        # Transformer Loading
+        result.update(transformer)
+
+        self.VIOLATION_COMBINATIONS = {
+            '{}L_{}T_{}OV_{}UV_pass_flag'.format(
+                self.get_input('line_overload_1').current_value,
+                self.get_input('transformer_overload_1').current_value,
+                self.get_input('over_voltage').current_value,
+                self.get_input('under_voltage').current_value,
+               ): ['to1_flag', 'lo1_flag', 'uv1_flag', 'ov1_flag'],
+
+            '{}L_{}T_{}OV_{}UV_pass_flag'.format(
+                self.get_input('line_overload_2').current_value,
+                self.get_input('transformer_overload_1').current_value,
+                self.get_input('over_voltage').current_value,
+                self.get_input('under_voltage').current_value,
+            ): ['to2_flag', 'lo1_flag', 'uv1_flag', 'ov1_flag'],
+
+            '{}L_{}T_{}OV_{}UV_pass_flag'.format(
+                self.get_input('line_overload_1').current_value,
+                self.get_input('transformer_overload_2').current_value,
+                self.get_input('over_voltage').current_value,
+                self.get_input('under_voltage').current_value,
+            ): ['to1_flag', 'lo2_flag', 'uv1_flag', 'ov1_flag'],
+
+            '{}L_{}T_{}OV_{}UV_pass_flag'.format(
+                self.get_input('line_overload_2').current_value,
+                self.get_input('transformer_overload_2').current_value,
+                self.get_input('over_voltage').current_value,
+                self.get_input('under_voltage').current_value,
+            ): ['to2_flag', 'lo2_flag', 'uv1_flag', 'ov1_flag'],
+
+            '{}L_{}T_{}OV_{}UV_pass_flag'.format(
+                self.get_input('line_overload_1').current_value,
+                self.get_input('transformer_overload_1').current_value,
+                self.get_input('over_voltage_conservative').current_value,
+                self.get_input('under_voltage_conservative').current_value,
+            ): ['to1_flag', 'lo1_flag', 'uv2_flag', 'ov2_flag'],
+
+            '{}L_{}T_{}OV_{}UV_pass_flag'.format(
+                self.get_input('line_overload_2').current_value,
+                self.get_input('transformer_overload_1').current_value,
+                self.get_input('over_voltage_conservative').current_value,
+                self.get_input('under_voltage_conservative').current_value,
+            ): ['to2_flag', 'lo1_flag', 'uv2_flag', 'ov2_flag'],
+
+            '{}L_{}T_{}OV_{}UV_pass_flag'.format(
+                self.get_input('line_overload_1').current_value,
+                self.get_input('transformer_overload_2').current_value,
+                self.get_input('over_voltage_conservative').current_value,
+                self.get_input('under_voltage_conservative').current_value,
+            ): ['to1_flag', 'lo2_flag', 'uv2_flag', 'ov2_flag'],
+
+            '{}L_{}T_{}OV_{}UV_pass_flag'.format(
+                self.get_input('line_overload_2').current_value,
+                self.get_input('transformer_overload_2').current_value,
+                self.get_input('over_voltage_conservative').current_value,
+                self.get_input('under_voltage_conservative').current_value,
+            ): ['to2_flag', 'lo2_flag', 'uv2_flag', 'ov2_flag'],
+        }
+
+        # iterate through the combination flags to determine status
+        for key, value in self.VIOLATION_COMBINATIONS.items():
+            result[key] = not _check_violation_flags(transformer, line, voltage,
+                                                     self.VIOLATION_FLAG_NAMES[value[0]],
+                                                     self.VIOLATION_FLAG_NAMES[value[1]],
+                                                     self.VIOLATION_FLAG_NAMES[value[2]],
+                                                     self.VIOLATION_FLAG_NAMES[value[3]],
+                                                     )
+
+        return result
 
 
 # TODO: refactor to take in the scenario here instead of remaking it in analysis.py
@@ -418,74 +548,6 @@ def _get_total_pv_pmpp(pmpp_df):
 
 def _get_total_load_kw(loads_df):
     return sum(loads_df['kW'])
-
-
-def _get_violations_for_job(job, voltage, line, transformer):
-    """Returns results expected in output csv file
-
-    Parameters
-    ----------
-    job : Job
-    voltage : dict
-        voltage violations
-    line : dict
-        line load
-    transformer : dict
-        transformer load
-
-    Returns
-    ------
-    dict
-
-    """
-    result = {}
-
-    project_data = job.model.deployment.project_data
-
-    # Job Information
-    result['feeder'] = job.model.deployment.feeder
-    result['deployment'] = job.model.deployment.deployment_file
-    result['placement'] = project_data.get("placement_type")
-    result['sample'] = project_data.get("sample")
-    result['penetration'] = project_data.get("penetration")
-
-    # Voltage Violations
-    result.update(voltage)
-
-    # Line Loading
-    result.update(line)
-
-    # Transformer Loading
-    result.update(transformer)
-
-    # Random flags
-    uv1 = 'undervoltage_A_flag'
-    ov1 = 'overvoltage_A_flag'
-    uv2 = 'undervoltage_B_flag'
-    ov2 = 'overvoltage_B_flag'
-    lo1 = '1X_line_overloading_flag'
-    lo2 = '1p5X_line_overloading_flag'
-    to1 = '1X_xfmr_overloading_flag'
-    to2 = '1p5X_xfmr_overloading_flag'
-    result['100L100TA_pass_flag'] = not _check_violation_flags(transformer, line, voltage,
-                                                               to1, lo1, uv1, ov1)
-    result['100L150TA_pass_flag'] = not _check_violation_flags(transformer, line, voltage,
-                                                               to2, lo1, uv1, ov1)
-    result['150L100TA_pass_flag'] = not _check_violation_flags(transformer, line, voltage,
-                                                               to1, lo2, uv1, ov1)
-    result['150L150TA_pass_flag'] = not _check_violation_flags(transformer, line, voltage,
-                                                               to2, lo2, uv1, ov1)
-
-    result['100L100TB_pass_flag'] = not _check_violation_flags(transformer, line, voltage,
-                                                               to1, lo1, uv2, ov2)
-    result['100L150TB_pass_flag'] = not _check_violation_flags(transformer, line, voltage,
-                                                               to2, lo1, uv2, ov2)
-    result['150L100TB_pass_flag'] = not _check_violation_flags(transformer, line, voltage,
-                                                               to1, lo2, uv2, ov2)
-    result['150L150TB_pass_flag'] = not _check_violation_flags(transformer, line, voltage,
-                                                               to2, lo2, uv2, ov2)
-
-    return result
 
 
 def _check_violation_flags(transformer, line, voltage,

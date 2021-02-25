@@ -8,6 +8,7 @@ from concurrent.futures import ProcessPoolExecutor
 
 import click
 import pandas as pd
+import numpy as np
 
 from jade.common import CONFIG_FILE, JOBS_OUTPUT_DIR
 from jade.jobs.results_aggregator import ResultsAggregator
@@ -77,7 +78,40 @@ def compute_snapshot_hosting_capacity(jade_runtime_output, verbose=False):
         result_df.to_csv(filename, index=False)
         logger.info("Dumped aggregated results to %s", out_file)
 
-    # TODO: hosting capacity...
+        # determine hosting capacity: group by feeder, penetration and check for max pv kw that passes
+        def get_hosting_capacity(result_df):
+            hc = {}
+            for fail_field in fail_flag_columns:
+                hc[fail_field.replace("flag", "hosting_capacity")] = result_df.loc[result_df[fail_field] ==
+                                                                                   False]['pv_kw'].max()
+            hc_df = pd.DataFrame(hc, index=[0])
+            hc_columns = hc_df.filter(regex='hosting_capacity').columns
+            hc_df[hc_columns] = hc_df[hc_columns].fillna(0)
+            return hc_df
+
+        # individual violation flags are fail flags
+        # combination flags (contain word pass) are pass flags
+        flag_columns = result_df.filter(regex='flag').columns
+        result_df[flag_columns] = result_df[flag_columns].dropna()
+        # convert flag columns to boolean type
+        result_df[flag_columns] = result_df[flag_columns].replace({'False': False, 'True': True})
+        result_df[['pv_kw', 'pv_pmpp']] = result_df[['pv_kw', 'pv_pmpp']].replace('', np.nan)
+        result_df[['pv_kw', 'pv_pmpp']] = result_df[['pv_kw', 'pv_pmpp']].astype(float)
+
+        # convert pass flags to fail flags (so there is uniformity in all flags)
+        pass_flags = result_df.filter(regex='pass').columns
+        for flag in pass_flags:
+            result_df[flag] = ~ result_df[flag]
+
+        result_df.columns = result_df.columns.str.replace('_pass', '')
+        fail_flag_columns = result_df.filter(regex='flag').columns
+
+        hosting_capacity_df = result_df.groupby('feeder').apply(get_hosting_capacity)
+        hosting_capacity_df = hosting_capacity_df.reset_index().drop(columns='level_1')
+
+        hc_file = f"{feeder}-snapshot-hosting-capacity-batch-post-process.csv"
+        filename = os.path.join(jade_runtime_output, JOBS_OUTPUT_DIR, hc_file)
+        hosting_capacity_df.to_csv(filename)
 
 
 def _get_job_post_process_results(job_output_dir, job_name):
