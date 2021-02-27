@@ -25,3 +25,4 @@ VWtype = "Available Power"
 Efficiency = 100
 Priority = "Var"
 DampCoef = 0.8
+VmeaMethod = "Max"
