@@ -6,7 +6,7 @@ import random
 import sys
 from collections import defaultdict
 from copy import deepcopy
-from types import SimpleNamespace
+from types import SimpleNamespace, Tuple
 
 import opendssdirect as dss
 from unidecode import unidecode
@@ -44,75 +44,97 @@ class PVDSSHandler:
         self.convert_to_ascii()
         self.load_feeder()
     
-    def convert_to_ascii(self):
+    def convert_to_ascii(self) -> None:
+        """Convert unicode data in ASCII characters for representation"""
         with open(self.master_file, "r") as f:
             data = f.read()
-        
         updated_data = unidecode(data)
         with open(self.master_file, "w") as f:
             f.write(updated_data)
     
-    def place_energy_meter(self):
-        head_line = self.search_head_line()
-        with open(self.master_file, "r") as f:
-            data = f.read()
-        
-        energy_meter_missing = 'New EnergyMeter' not in data
-        if energy_meter_missing:
-            if self.verbose:
-                logger.info("Energy meter missing in master file - %s", self.master_file)
-            
-            temp = data.split('\nRedirect')[-1].split('\n')[0]
-            updated_data = data.replace(temp, temp + f"\nNew EnergyMeter.m1 element={head_line}")
-            with open(self.master_file, "w") as f:
-                f.write(updated_data)
-            
-            if self.verbose:
-                logger.info("Placed new energy meter into master file - %s", self.master_file)
-            
-            self.load_feeder()
-            return
-        
-        meter_location = data.split('\nNew EnergyMeter')[1].split('element=')[1].split('\n')[0].split(' ')[0]
-        if meter_location != head_line:
-            if self.verbose:
-                logger.info("Energy meter location is not correct in master file - %s", self.master_file)
-            
-            updated_data = data.replace(meter_location, head_line)
-            updated_data += f"\n!Moved energy meter from {meter_location} to {head_line}"
-            with open(self.master_file, 'w') as f:
-                f.write(updated_data)
-            
-            if self.verbose:
-                logger.info("Moved energy meter from %s to %s in master file - %s", meter_location, head_line, self.master_file)
-            
-            self.load_feeder()
-            return
-        
+    def load_feeder(self) -> None:
+        """OpenDSS redirect master DSS file"""
+        dss.run_command("Clear")
         if self.verbose:
-            logger.info("Energy meter exists and meter status is good, skip energy meter placement.")
+            logger.info("OpenDSS loads feeder - %s", self.master_file)
+        r = dss.run_command(f"Redirect {self.master_file}")
+        if r != "" and self.verbose():
+            logger.error(f"OpenDSSError: {r}. System exits!")
+            sys.exit(1)
     
-    def search_head_line(self):
+    def search_head_line(self) -> None:
+        """Search head line from DSS topology"""
         flag = dss.Topology.First()
         while flag > 0:
             if "line" in dss.Topology.BranchName().lower():
                 return dss.Topology.BranchName()
             flag = dss.Topology.Next()
     
-    def load_feeder(self):
-        dss.run_command("Clear")
-        r = dss.run_command(f"Redirect {self.master_file}")
-        if self.verbose:
-            logger.info(r)
+    def check_energy_meter_status(self) -> Tuple[bool, bool]:
+        """Check if energy meter in dss is missing or misplaced"""
+        with open(self.master_file, "r") as f:
+            data = f.read()
         
-        if r != "":
-            logger.error(f"OpenDSSError: {r}. System exits!")
-            sys.exit(1)
+        missing = 'New EnergyMeter' not in data
+        if missing and self.verbose:
+            logger.info("Energy meter missing in master file - %s", self.master_file)
+       
+        misplaced = False
+        if not missing:
+            head_line = self.search_head_line()
+            meter_location = data.split('\nNew EnergyMeter')[1].split('element=')[1].split('\n')[0].split(' ')[0]
+            misplaced = meter_location != head_line
+        if misplaced and self.verbose:
+            logger.info("Energy meter location is not correct in master file - %s", self.master_file)
+       
+        return missing, misplaced
     
-    def get_nbuses(self):
+    def place_new_energy_meter(self) -> None:
+        """Place new energy meter if it's missing from master dss file"""
+        if self.verbose:
+            logger.info("Placing new energy meter into master file - %s", self.master_file)
+        
+        head_line = self.search_head_line()
+        with open(self.master_file, "r") as f:
+            data = f.read()
+        
+        # TODO: refactor, attach new line at the end of file?
+        temp = data.split('\nRedirect')[-1].split('\n')[0]
+        updated_data = data.replace(temp, temp + f"\nNew EnergyMeter.m1 element={head_line}")
+        with open(self.master_file, "w") as f:
+            f.write(updated_data)
+        
+        if self.verbose:
+            logger.info("New energy meter was placed into master file - %s", self.master_file)
+        
+        self.load_feeder()
+    
+    def move_energy_meter_location(self):
+        """Move energy meter location if it's misplaced in master dss file"""
+        if self.verbose:
+            logger.info("Moving energy meter in master file - %s", self.master_file)
+        
+        head_line = self.search_head_line()
+        with open(self.master_file, "r") as f:
+            data = f.read()
+        
+        meter_location = data.split('\nNew EnergyMeter')[1].split('element=')[1].split('\n')[0].split(' ')[0]
+        updated_data = data.replace(meter_location, head_line)
+        updated_data += f"\n!Moved energy meter from {meter_location} to {head_line}"
+        with open(self.master_file, 'w') as f:
+            f.write(updated_data)
+        
+        if self.verbose:
+            logger.info("Moved energy meter from %s to %s in master file - %s", meter_location, head_line, self.master_file)
+        
+        self.load_feeder()
+    
+    def get_nbuses(self) -> int:
+        """Get the number of buses in dss"""
         return dss.Circuit.NumBuses()
     
     def get_total_loads(self) -> SimpleNamespace:
+        """Return total loads"""
         result = SimpleNamespace(**{
             "total_load": 0,
             "customer_loads": {},
@@ -137,6 +159,7 @@ class PVDSSHandler:
         return result
 
     def get_customer_distance(self) -> SimpleNamespace:
+        """Return custmer distance"""
         result = SimpleNamespace(**{"load_distance": {}, "bus_distance": {}})
         flag = dss.Loads.First()
         while flag > 0:
@@ -147,6 +170,7 @@ class PVDSSHandler:
         return result
 
     def get_highv_buses(self, kv_min=1) -> SimpleNamespace:
+        """Return highv buses"""
         result = SimpleNamespace(**{"bus_kv": {}, "hv_bus_distance": {}})
         flag = dss.Lines.First()
         while flag > 0:
@@ -163,6 +187,7 @@ class PVDSSHandler:
         return result
     
     def get_existing_pvs(self) -> SimpleNamespace:
+        """Return existing pvs"""
         result = SimpleNamespace(**{
             "total_existing_pv": 0,
             "existing_pv": defaultdict(int),
@@ -500,8 +525,14 @@ class PVDeploymentGeneratorBase(abc.ABC):
         feeder_name = os.path.basename(feeder_path)
         
         handler = PVDSSHandler(master_file)
-        handler.place_energy_meter()
-
+        missing, misplaced = handler.check_energy_meter_status()
+        if missing:
+            handler.place_new_energy_meter()
+        elif misplaced:
+            handler.move_energy_meter_location()
+        elif self.verbose:
+            logger.info("Energy meter exists and meter status is good in master file - %s", self.master_file)
+        
         # total loads
         total_loads = handler.get_total_loads()
         feeder_stat = {
