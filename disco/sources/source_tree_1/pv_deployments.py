@@ -70,30 +70,36 @@ class PVDSSHandler:
                 return dss.Topology.BranchName()
             flag = dss.Topology.Next()
     
+    def ensure_energy_meter(self) -> None:
+        missing, misplaced = handler.check_energy_meter_status()
+        if missing:
+            if self.verbose:
+                logger.info("Energy meter missing in master file - %s", self.master_file)
+            handler.place_new_energy_meter()
+        elif misplaced:
+            if self.verbose:
+                logger.info("Energy meter location is not correct in master file - %s", self.master_file)
+            handler.move_energy_meter_location()
+        else:
+            if self.verbose:
+                logger.info("Energy meter exists and meter status is good in master file - %s", self.master_file)
+    
     def check_energy_meter_status(self) -> Tuple[bool, bool]:
         """Check if energy meter in dss is missing or misplaced"""
         with open(self.master_file, "r") as f:
             data = f.read()
         
         missing = 'New EnergyMeter' not in data
-        if missing and self.verbose:
-            logger.info("Energy meter missing in master file - %s", self.master_file)
-       
         misplaced = False
         if not missing:
             head_line = self.search_head_line()
             meter_location = data.split('\nNew EnergyMeter')[1].split('element=')[1].split('\n')[0].split(' ')[0]
             misplaced = meter_location != head_line
-        if misplaced and self.verbose:
-            logger.info("Energy meter location is not correct in master file - %s", self.master_file)
-       
+        
         return missing, misplaced
     
     def place_new_energy_meter(self) -> None:
         """Place new energy meter if it's missing from master dss file"""
-        if self.verbose:
-            logger.info("Placing new energy meter into master file - %s", self.master_file)
-        
         head_line = self.search_head_line()
         with open(self.master_file, "r") as f:
             data = f.read()
@@ -493,7 +499,7 @@ class PVDeploymentGeneratorBase(abc.ABC):
     def _ensure_output_path(self, output_path):
         pass
     
-    def _get_master_file(self, feeder_path):
+    def get_master_file(self, feeder_path):
         master_file = os.path.join(feeder_path, self.master_file_basename)
         if os.path.exists(master_file):
             return master_file
@@ -521,17 +527,11 @@ class PVDeploymentGeneratorBase(abc.ABC):
             yield penetration
     
     def _generate_all_scenarios(self, feeder_path, output_path):
-        master_file = self._get_master_file(feeder_path)
+        master_file = self.get_master_file(feeder_path)
         feeder_name = os.path.basename(feeder_path)
         
         handler = PVDSSHandler(master_file)
-        missing, misplaced = handler.check_energy_meter_status()
-        if missing:
-            handler.place_new_energy_meter()
-        elif misplaced:
-            handler.move_energy_meter_location()
-        elif self.verbose:
-            logger.info("Energy meter exists and meter status is good in master file - %s", self.master_file)
+        handler.ensure_energy_meter()
         
         # total loads
         total_loads = handler.get_total_loads()
