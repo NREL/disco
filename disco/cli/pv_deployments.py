@@ -1,3 +1,4 @@
+import json
 import click
 
 from disco.enums import Placement
@@ -122,9 +123,6 @@ def source_tree_1(
     verbose
 ):
     """Generate PV deployments for source tree 1."""
-    if not output_path:
-        output_path = input_path
-    
     deployment_config = {
         "pv_upscale": pv_upscale,
         "min_penetration": min_penetration,
@@ -136,9 +134,15 @@ def source_tree_1(
         "category": category,
         "percent_shares": [100, 0]
     }
-    summary = generate_pv_deployments(input_path, hierarchy, deployment_config, output_path, verbose)
+    summary, output_path = generate_pv_deployments(
+        input_path=input_path,
+        hierarchy=hierarchy,
+        config=deployment_config,
+        output_path=output_path,
+        verbose=verbose
+    )
     print("PV deployments are generated in {}".format(output_path))
-    print(summary)
+    print(json.dumps(summary, indent=2))
 
 
 pv_deployments.add_command(source_tree_1)
