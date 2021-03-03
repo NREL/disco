@@ -7,7 +7,9 @@ import random
 import sys
 from collections import defaultdict
 from copy import deepcopy
-from types import SimpleNamespace, Tuple, Optional, Generator
+from types import SimpleNamespace
+from typing import Optional, Generator, Tuple, NewType
+
 
 import opendssdirect as dss
 from unidecode import unidecode
@@ -15,12 +17,6 @@ from unidecode import unidecode
 from disco.enums import Placement
 
 logger = logging.getLogger(__name__)
-
-PV_SCENARIO_GENERATOR_MAPPING = {
-    ScenarioCategory.SMALL: SmallPVScenarioGenerator,
-    ScenarioCategory.LARGE: LargePVScenarioGenerator,
-    ScenarioCategory.MIXT: MixtPVScenarioGenerator
-}
 
 
 class DeploymentHierarchy(enum.Enum):
@@ -215,7 +211,7 @@ class PVDSSInstance:
         combined_bus_distance.update(customer_bus_distance)
         return combined_bus_distance 
 
-    def get_feeder_stats(self, total_loads: SimpleNamespace, existing_pvs: SimpleNamespace = None) -> SimpleNamesapce:
+    def get_feeder_stats(self, total_loads: SimpleNamespace, existing_pvs: SimpleNamespace = None) -> SimpleNamespace:
         """Return feeder stats"""
         result = {
             "n_buses": self.get_nbuses(),
@@ -817,7 +813,7 @@ class PVDeploymentGeneratorBase(abc.ABC):
         self,
         input_path: str,
         config: SimpleNamespace,
-        verbose: boo = False
+        verbose: bool = False
     ) -> None:
         """
         Initialize pv deployment generator class
@@ -842,13 +838,6 @@ class PVDeploymentGeneratorBase(abc.ABC):
         """Ensure output_path in case of None"""
         pass
     
-    def get_scenario_generator(self, feeder_path: str) -> PVScenarioGeneratorBase:
-        """Return a PV scenario generator instnace"""
-        category = ScenarioCategory(self.config.category)
-        scenario_generator_class = PV_SCENARIO_GENERATOR_MAPPING[category]
-        scenario_generator = scenario_generator_class(feeder_path, self.config, self.verbose)
-        return scenario_generator
-    
     def generate_pv_deployments(self, output_path: str = None) -> Tuple[dict, str]:
         """Given input path, generate pv deployments"""
         feeder_paths = self.get_feeder_paths()
@@ -856,7 +845,7 @@ class PVDeploymentGeneratorBase(abc.ABC):
         
         summary = {}
         for feeder_path in feeder_paths:
-            scenario_generator = self.get_scenario_generator(feeder_path)
+            scenario_generator = get_scenario_generator(self.config, feeder_path, self.verbose)
             feeder_stats = scenario_generator.generate_all_pv_scenarios(output_path)
             feeder_name = os.path.basename(feeder_path)
             summary[feeder_name] = feeder_stats
@@ -917,3 +906,16 @@ class RegionPVDeploymentGenerator(PVDeploymentGeneratorBase):
             output_path = os.path.dirname(self.input_path)
         os.makedirs(output_path, exist_ok=True)
         return output_path
+
+
+def get_scenario_generator(config: SimpleNamespace, feeder_path: str, verbose: bool = False):
+    """Return a PV scenario generator instnace"""
+    pv_scenario_generator_mapping = {
+        ScenarioCategory.SMALL: SmallPVScenarioGenerator,
+        ScenarioCategory.LARGE: LargePVScenarioGenerator,
+        ScenarioCategory.MIXT: MixtPVScenarioGenerator
+    }
+    category = ScenarioCategory(config.category)
+    scenario_generator_class = pv_scenario_generator_mapping[category]
+    scenario_generator = scenario_generator_class(feeder_path, config, verbose)
+    return scenario_generator
