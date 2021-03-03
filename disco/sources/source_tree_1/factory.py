@@ -8,9 +8,9 @@ from .pv_deployments import (
 )
 
 PV_DEPLOYMENT_GENERATOR_MAPPING = {
-    DeploymentHierarchy.region: RegionPVDeploymentGenerator,
-    DeploymentHierarchy.substation: SubstationPVDeploymentGenerator,
-    DeploymentHierarchy.feeder: FeederPVDeploymentGenerator
+    DeploymentHierarchy.REGION: RegionPVDeploymentGenerator,
+    DeploymentHierarchy.SUBSTATION: SubstationPVDeploymentGenerator,
+    DeploymentHierarchy.FEEDER: FeederPVDeploymentGenerator
 }
 
 def generate_pv_deployments(input_path, hierarchy, config, output_path, verbose=False):

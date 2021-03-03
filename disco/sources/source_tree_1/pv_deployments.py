@@ -6,7 +6,7 @@ import random
 import sys
 from collections import defaultdict
 from copy import deepcopy
-from types import SimpleNamespace, Tuple
+from types import SimpleNamespace, Tuple, Optional
 
 import opendssdirect as dss
 from unidecode import unidecode
@@ -17,32 +17,30 @@ from disco.sources.source_tree_1.factory import generate_pv_scenario
 logger = logging.getLogger(__name__)
 
 PV_SCENARIO_GENERATOR_MAPPING = {
-    ScenarioCategory.small: SmallPVScenarioGenerator,
-    ScenarioCategory.large: LargePVScenarioGenerator,
-    ScenarioCategory.mixt: MixtPVScenarioGenerator
+    ScenarioCategory.SMALL: SmallPVScenarioGenerator,
+    ScenarioCategory.LARGE: LargePVScenarioGenerator,
+    ScenarioCategory.MIXT: MixtPVScenarioGenerator
 }
 
 
 class DeploymentHierarchy(enum.Enum):
-    feeder = "feeder"
-    substation = "substation"
-    region = "region"
+    FEEDER = "feeder"
+    SUBSTATION = "substation"
+    REGION = "region"
 
 
 class ScenarioCategory(enum.Enum):
-    mixt = "mixt"
-    small = "small"
-    large = "large"
+    MIXT = "mixt"
+    SMALL = "small"
+    LARGE = "large"
 
 
-class PVDSSHandler:
+class PVDSSInstance:
     """OpenDSS file handler for PV deployments."""
 
     def __init__(self, master_file, verbose=False):
         self.master_file = master_file
         self.verbose = verbose
-        self.convert_to_ascii()
-        self.load_feeder()
     
     def convert_to_ascii(self) -> None:
         """Convert unicode data in ASCII characters for representation"""
@@ -112,8 +110,6 @@ class PVDSSHandler:
         
         if self.verbose:
             logger.info("New energy meter was placed into master file - %s", self.master_file)
-        
-        self.load_feeder()
     
     def move_energy_meter_location(self):
         """Move energy meter location if it's misplaced in master dss file"""
@@ -132,8 +128,6 @@ class PVDSSHandler:
         
         if self.verbose:
             logger.info("Moved energy meter from %s to %s in master file - %s", meter_location, head_line, self.master_file)
-        
-        self.load_feeder()
     
     def get_nbuses(self) -> int:
         """Get the number of buses in dss"""
@@ -143,8 +137,8 @@ class PVDSSHandler:
         """Return total loads"""
         result = SimpleNamespace(**{
             "total_load": 0,
-            "customer_loads": {},
-            "customer_bus": {},
+            "load_dict": {},
+            "customer_bus_map": {},
             "bus_customers": defaultdict(list),
             "bus_totalload": defaultdict(int)
         })
@@ -152,10 +146,10 @@ class PVDSSHandler:
         while flag > 0:
             customer_id = dss.Loads.Name()
             bus = dss.Properties.Value("bus1")
-            result.customer_bus[customer_id] = bus
+            result.customer_bus_map[customer_id] = bus
             
             load_kW = dss.Loads.kW()
-            result.customer_loads[customer_id] = load_kW
+            result.load_dict[customer_id] = load_kW
             result.total_load += load_kW
             
             result.bus_customers[bus].append(customer_id)
@@ -175,7 +169,7 @@ class PVDSSHandler:
             flag = dss.Loads.Next()
         return result
 
-    def get_highv_buses(self, kv_min=1) -> SimpleNamespace:
+    def get_highv_buses(self, kv_min: int = 1) -> SimpleNamespace:
         """Return highv buses"""
         result = SimpleNamespace(**{"bus_kv": {}, "hv_bus_distance": {}})
         flag = dss.Lines.First()
@@ -201,31 +195,194 @@ class PVDSSHandler:
         flag = dss.PVsystems.First()
         while flag > 0:
             bus = dss.Properties.Value("bus1")
-            result.existing_pv[bus] += dss.PVsystems.kVARated()
-            result.total_existing_pv += dss.PVsystems.kVARated()
+            result.existing_pv[bus] += dss.PVsystems.Pmpp()
+            result.total_existing_pv += dss.PVsystems.Pmpp()
             flag = dss.PVsystems.Next()
+        return result
+    
+    def combine_bus_distances(self, customer_distance: SimpleNamespace, highv_buses: SimpleNamespace) -> dict:
+        """Return the combined bus distance"""
+        customer_bus_distance = customer_distance.bus_distance
+        hv_bus_distance = highv_buses.hv_bus_distance
+        if self.verbose:
+            logger.info(
+                "Feeder Name: %s, Highv DistRange: (%s, %s)",
+                feeder_name,
+                min(hv_bus_distance.values()),
+                max(hv_bus_distance.values())
+            )
+        combined_bus_distance = deepcopy(hv_bus_distance)
+        combined_bus_distance.update(customer_bus_distance)
+        return combined_bus_distance 
+
+    def get_feeder_stats(self, total_loads: SimpleNamespace, existing_pvs: SimpleNamespace = None) -> SimpleNamesapce:
+        """Return feeder stats"""
+        result = {
+            "n_buses": self.get_nbuses(),
+            "nload_buses": len(total_loads.bus_totalload.keys()),
+            "nzero_load_buses": sum(v == 0 for v in total_loads.bus_totalload.values()),
+            "total_load": total_loads.total_load
+        }
+        if existing_pvs:
+            nbase_pv_buses = len([b for b, v in existing_pvs.existing_pv.items() if v > 0])
+            pcent_base_pv = (existing_pvs.total_existing_pv * 100) / max(0.0000001, total_loads.total_load)
+            result.update({
+                "nbase_pv_buses": nbase_pv_buses, 
+                "pcent_base_pv": pcent_base_pv,
+                "total_base_pv": existing_pvs.total_existing_pv
+            })
+        result = SimpleNamespace(**result)
         return result
 
 
 class PVScenarioGeneratorBase:
     
-    def __init__(self, data, verbose=False) -> None:
-        # TODO: define data inputs
-        self.data = data
+    def __init__(
+        self,
+        feeder_path: str,
+        config: SimpleNamespace,
+        master: str = "Master.dss",
+        verbose: bool = False
+    ) -> None:
+        """
+        Initialize PV scenario generator class
+        
+        Parameters
+        ----------
+        feeder_path: str, the input path of a feeder model.
+        config: SimpleNamespace, the pv deployment config namespace.
+        master: str, the name of master file, default 'Master.dss`.
+        verbose: bool, output more logging information if enabled, default False.
+        """
+        self.feeder_path = feeder_path
+        self.master = master
+        self.config = config
+        self.verbose = verbose
         self.undeployed_capacity = 0
         self.threshold = 1.0e-10
+        self.output_basename = "hc_pv_deployments"
+        self.pvdss_instance = None
     
     @property
     @abc.abstractmethod
-    def pv_type(self):
+    def pv_type(self) -> str:
         pass
     
     @property
     @abc.abstractmethod
-    def pv_file(self):
+    def pv_cycles(self) -> list:
+        """Return a list of cicyles for generating pv scenarios"""
         pass
     
-    def generate_pv_scenario(self, existing_pv):
+    @property
+    @abc.abstractmethod
+    def pv_file(self) -> str:
+        pass
+    
+    def get_feeder_name(self) -> str:
+        """Return the feeder name"""
+        return os.path.basename(self.feeder_path)
+    
+    def get_master_file(self) -> Optional[str]:
+        """Return the full path of master file"""
+        master_file = os.path.join(self.feeder_path, self.master)
+        if os.path.exists(master_file):
+            return master_file
+        return None
+    
+    def load_pvdss_instance(self) -> PVDSSInstance:
+        """Setup DSS handler for master dss file processing"""
+        master_file = self.get_master_file()
+        if not master_file:
+            logger.error("'%s' not found in '%s'. System exits!", self.master, self.feeder_path)
+            sys.exit(1)
+        pvdss_instance = PVDSSInstance(master_file)
+        try:
+            pvdss_instance.convert_to_ascii()
+            pvdss_instance.load_feeder()
+            pvdss_instance.ensure_energy_meter()
+            pvdss_instance.load_feeder()  # Need to reload after master file updated.
+        except Exception as error:
+            logger.exception("Failed to load master file - %s", master_file)
+        return pvdss_instance
+    
+    def generate_all_pv_scenarios(self, output_path) -> dict:
+        """Given a feeder path, generate all PV scenarios for the feeder"""
+        feeder_name = self.get_feeder_name()
+        pvdss_instance = self.load_pvdss_instance()
+        
+        # check total load
+        total_loads = pvdss_instance.get_total_loads()
+        feeder_stats = pvdss_instance.get_feeder_stats(total_loads)
+        if total_loads.total_load <= 0:
+            logger.error("This feeder '%s' has no load, we cannot generate PV scenarios", feeder_name)
+            return feeder_stats.__dict__
+        
+        # combined bus distance
+        customer_distance = self.get_customer_distance()
+        highv_buses = self.get_highv_buses()
+        combined_bus_distance = pvdss_instance.combine_bus_distances(customer_distance, highv_buses)
+        if max(combined_bus_distance.values()) == 0:
+            logger.warning(
+                "Check your feeder model for '%s'.\n\
+                The bus distance array does not look correct. Maximum bus distance = 0.00 km",
+                feeder_name
+            )
+        hv_bus_map = {
+            f"Large_{k.replace('.','-')}": k
+            for k in highv_buses.hv_bus_distance.keys()
+        }
+        
+        # existing pvs
+        existing_pvs = pvdss_instance.get_existing_pvs()
+        base_existing_pv = existing_pvs.existing_pv
+        feeder_stats = pvdss_instance.get_feeder_stats(total_loads, existing_pvs)
+        if feeder_stats.pcent_base_pv > self.config.max_penetration:
+            logger.error(
+                "The existing PV amount on feeder '%s' exceeds \
+                the maximum penetration level of %s\%. It represents %s\%",
+                feeder_name, self.cofig.max_penetration, feeder_stats.pcent_base_pv
+            )
+            return feeder_stats.__dict__
+        
+        # average_pv_distance = {}
+        for deployment in self.iterate_deployments():
+            existing_pv = deepcopy(base_existing_pv)
+            for penetration in self.iterate_penetrations():
+                data = {
+                    "base_existing_pv": base_existing_pvs.existing_pv,
+                    "total_load": total_loads.total_load,
+                    "load_dict": total_loads.load_dict,
+                    "bus_totalload": total_loads.bus_totalload,
+                    "total_existing_pv": sum(existing_pv.values()),
+                    "existing_pv": existing_pv,
+                    "hv_bus_distance": highv_buses.hv_bus_distance,
+                    "customer_bus_distance": customer_distance.bus_distance,
+                    "hv_bus_map": hv_bus_map,
+                    "customer_bus_map": total_loads.customer_bus_map,
+                    "bus_kv": highv_buses.bus_kv
+                }
+                existing_pv = self.generate_pv_scenario(data=data)
+                # avg_dist = self.compute_average_pv_distance(combined_bus_distance, existing_pv)
+                # key = (self.config.placement, deployment, penetration)
+                # average_pv_distance[key] = [self.config.placement, deployment, penetration, avg_dist]
+        
+        return feeder_stats
+    
+    def iterate_deployments(self):
+        """Iterate deployment numbers"""
+        for deployment in range(1, self.config.deployment_number + 1):
+            yield deployment
+    
+    def iterate_penetrations(self):
+        """Iterate penetration levels"""
+        start = self.config.min_penetration
+        end = self.config.max_penetration + 1
+        step = self.config.penetration_step
+        for penetration in range(start, end, step):
+            yield penetration
+    
+    def generate_pv_scenario(self, data: dict) -> dict:
         pv_string = "! =====================PV SCENARIO FILE==============================\n"
         remaining_pv_to_install = self.get_remaining_pv_to_install()
         priority_buses = self.get_priority_buses()
@@ -322,14 +479,6 @@ class PVScenarioGeneratorBase:
     def get_maximum_pv_size(self):
         pass
     
-    @abc.abstractmethod
-    def get_customer_bus_map(self):
-        pass
-    
-    @abc.abstractmethod
-    def get_bus_distance_map(self):
-        pass
-    
     def generate_pv_size_from_pdf(self, min_size, max_size):
         # TODO: double check, designed in purpose?
         pv_size = max_size
@@ -394,8 +543,37 @@ class PVScenarioGeneratorBase:
 
         return candidate_customers_array, candidate_customers
 
+    def get_pv_deployment_file(self, output_path, placement, deployment, penetration):
+        pv_deployment_path = os.path.join(
+            output_path,
+            "hc_pv_deployments",
+            str(self.config.placement),
+            str(deployment),
+            str(penetration)
+        )
+        os.makedirs(pv_deployment_path, exist_ok=True)
+        pv_deployment_file = os.path.join(pv_deployment_path, "PVDeployments.dss")
+        return pv_deployment_file
+    
+    def compute_average_pv_distance(self, bus_distance, existing_pv):
+        slack_dico = {
+            k: bus_distance[k]
+            for k, v in existing_pv.items()
+            if v > 0 and k in list(bus_distance.keys())
+        }
+        average_pv_distance = np.mean(np.array(list(slack_dico.values())))
+        return average_pv_distance
+
 
 class LargePVScenarioGenerator(PVScenarioGeneratorBase):
+    
+    @property
+    def pv_type(self):
+        return ScenarioCategory.LARGE.value
+    
+    @property
+    def pv_cycles(self):
+        return [ScenarioCategory.LARGE.value]
     
     def get_remaining_pv_to_install(self):
         all_remaining_pv_to_install = self._get_all_remaining_pv_to_install()
@@ -414,136 +592,17 @@ class LargePVScenarioGenerator(PVScenarioGeneratorBase):
         max_bus_pv_size = 100 * random.randint(1, 50)
         return max_bus_pv_size
 
-    def get_customer_bus_map(self):
-        return self.data.hv_bus_map
-    
-    def get_bus_distance_map(self):
-        return self.data.hv_bus_distance
-
-    def get_master_file(self, feeder_path):
-        master_file = os.path.join(feeder_path, self.master)
-        if os.path.exists(master_file):
-            return master_file
-        
-        logger.error("'%s' not found in '%s'. System exits!", basename, directory)
-        sys.exit(1)
-    
-    def get_pv_deployment_file(self, output_path, placement, deployment, penetration):
-        pv_deployment_path = os.path.join(
-            output_path,
-            "hc_pv_deployments",
-            str(self.config.placement),
-            str(deployment),
-            str(penetration)
-        )
-        os.makedirs(pv_deployment_path, exist_ok=True)
-        pv_deployment_file = os.path.join(pv_deployment_path, "PVDeployments.dss")
-        return pv_deployment_file
-    
-    def iterate_penetrations(self):
-        start = self.config.min_penetration
-        end = self.config.max_penetration + 1
-        step = self.config.penetration_step
-        for penetration in range(start, end, step):
-            yield penetration
-    
-    def _generate_pv_scenarios(self, feeder_path, output_path):
-        master_file = self.get_master_file(feeder_path)
-        feeder_name = os.path.basename(feeder_path)
-        
-        handler = PVDSSHandler(master_file)
-        handler.ensure_energy_meter()
-        
-        # total loads
-        total_loads = handler.get_total_loads()
-        feeder_stats = {
-            "n_buses": handler.get_nbuses(),
-            "nload_buses": len(total_loads.bus_totalload.keys()),
-            "nzero_load_buses": sum(v == 0 for v in total_loads.bus_totalload.values()),
-            "total_load": total_loads.total_load
-        }
-        if total_loads.total_load <= 0:
-            logger.warning("This feeder '%s' has no load, we cannot generate PV scenarios", feeder_name)
-            return None, None, feeder_stats
-        
-        # combined bus distance
-        customer_distance = handler.get_customer_distance()
-        highv_buses = handler.get_highv_buses()
-        if self.verbose:
-            logger.info(
-                "Feeder Name: %s, Highv DistRange: (%s, %s)",
-                feeder_name,
-                min(highv_buses.hv_bus_distance.values()),
-                max(highv_buses.hv_bus_distance.values())
-            )
-        combined_bus_distance = deepcopy(highv_buses.hv_bus_distance)
-        combined_bus_distance.update(customer_distance.bus_distance)
-        if max(combined_bus_distance.values()) == 0:
-            logger.error(
-                "Check your feeder model for '%s'.\n\
-                The bus distance array does not look correct. Maximum bus distance = 0.00 km",
-                feeder_name
-            )
-            sys.exit(1)
-        
-        # existing pvs
-        base_existing_pvs = handler.get_existing_pvs()
-        nbase_pv_buses = len([b for b, v in base_existing_pvs.base_existing_pv.items() if v > 0])
-        pcent_base_pv = (base_existing_pvs.total_existing_pv * 100) / max(0.0000001, total_loads.total_load)
-        feeder_stats.update({
-            "nbase_pv_buses": nbase_pv_buses, 
-            "pcent_base_pv": pcent_base_pv,
-            "total_base_pv": base_existing_pvs.total_existing_pv
-        })
-        if pcent_base_pv > self.params.max_penetration:
-            logger.warning("This feeder has no load, we cannot generate PV scenarios")
-            return None, None, feeder_stats
-        
-        average_pv_distance = {}
-        for deployment in range(1, self.config.deployment_number+1):
-            existing_pvs = handler.get_existing_pvs()
-            total_existing_pv = existing_pvs.total_existing_pv
-            existing_pv = existing_pvs.existing_pv
-            for penetration in self.iterate_penetrations():
-                total_existing_pv = sum(existing_pv.values())
-                pv_deployment_file = self.get_pv_deployment_file(
-                    output_path=output_path,
-                    placement=self.data.placement,
-                    deployment=deployment,
-                    penetration=penetration
-                )
-                data = {
-                    "base_existing_pv": base_existing_pvs.existing_pv,
-                    "existing_pv": existing_pv,
-                    # TODO: other inputs
-                }
-                existing_pv = self.generate_pv_scenario(data=data)
-                avg_dist = compute_average_pv_distance(combined_bus_distance, existing_pv)
-                key = (self.config.placement, deployment, penetration)
-                average_pv_distance[key] = [self.config.placement, deployment, penetration, avg_dist]
-        
-        return feeder_stats
-    
-    def _generate_pv_scenario(self, data):
-        category = ScenarioCategory(self.data.category)
-        data = SimpleNamespace(**data)
-        generator_class = PV_SCENARIO_GENERATOR_MAPPING[category]
-        generator = generator_class(data, verbose=self.verbose)
-        result = generator.generate_pv_scenario()
-        return result
-    
-    def compute_average_pv_distance(self, bus_distance, existing_pv):
-        slack_dico = {
-            k: bus_distbus_distanceance_dict[k]
-            for k, v in existing_pv.items()
-            if v > 0 and k in list(bus_distance.keys())
-        }
-        average_pv_distance = np.mean(np.array(list(slack_dico.values())))
-        return average_pv_distance
-
 
 class SmallPVScenarioGenerator(PVScenarioGeneratorBase):
 
+    @property
+    def pv_type(self):
+        return ScenarioCategory.SMALL.value
+    
+    @property
+    def pv_cycles(self):
+        return [ScenarioCategory.SMALL.value]
+    
     def get_remaining_pv_to_install(self):
         all_remaining_pv_to_install = self._get_all_remaining_pv_to_install()
         remaining_pv_to_install = all_remaining_pv_to_install + self.undeployed_capacity
@@ -568,20 +627,25 @@ class SmallPVScenarioGenerator(PVScenarioGeneratorBase):
         max_bus_pv_size = min(pv_size_array)
         return max_bus_pv_size
 
-    def get_customer_bus_map(self):
-        return self.data.cutomer_bus_map
-
-    def get_bus_distance_map(self):
-        return self.data.customer_bus_distance
-
 
 class MixtPVScenarioGenerator(PVScenarioGeneratorBase):
+    
+    def __init__(self, feeder_path, verbose=False):
+        super().__init__(feeder_path, verbose)
+        self._current_pv_type = None
+    
+    @property
+    def pv_type(self):
+        return self._current_pv_type
+    
+    @property
+    def pv_cycles(self):
+        return [ScenarioCategory.SMALL.value, ScenarioCategory.LARGE.value]
     
     def get_remaining_pv_to_install(self):
         all_remaining_pv_to_install = self._get_all_remaining_pv_to_install()
         small_remaining_pv_to_install = (percent_shares[1]/100) * all_remaining_pv_to_install
         large_remaining_pv_to_install_large = (1 - percent_shares[1]/100) * all_remaining_pv_to_install
-        
 
     def get_maximum_pv_size(self):
         pass
@@ -592,8 +656,7 @@ class PVDeploymentGeneratorBase(abc.ABC):
     def __init__(
         self,
         input_path: str,
-        config: dict,
-        master: str = "Master.dss",
+        config: SimpleNamespace,
         verbose: boo = False
     ):
         """
@@ -602,15 +665,12 @@ class PVDeploymentGeneratorBase(abc.ABC):
         Parameters:
         ----------
         input_path: str, the input path of raw dss data for generating pv deployments.
-        config: dict, the pv deployment configuration
-        master: str, the base name of master file, default 'Master.dss'
+        config: SimpleNamespace, the pv deployment configuration namespace.
         verbose: bool, output more logging information if enabled, default False.
         """
         self.input_path = input_path
         self.config = config
-        self.master = master
         self.verbose = verbose
-        self.output_basedirname = "hc_pv_deployments"
     
     @abc.abstractmethod
     def get_feeder_paths(self):
@@ -626,7 +686,7 @@ class PVDeploymentGeneratorBase(abc.ABC):
         """Return a PV scenario generator instnace"""
         category = ScenarioCategory(self.config.category)
         scenario_generator_class = PV_SCENARIO_GENERATOR_MAPPING[category]
-        scenario_generator = scenario_generator_class(feeder_path, self.verbose)
+        scenario_generator = scenario_generator_class(feeder_path, self.config, self.verbose)
         return scenario_generator
     
     def generate_pv_deployments(self, output_path=None):
@@ -638,8 +698,9 @@ class PVDeploymentGeneratorBase(abc.ABC):
         summary = {}
         for feeder_path in feeder_paths:
             scenario_generator = self.get_scenario_generator(feeder_path)
-            feeder_stats = scenario_generator.generate_pv_scenarios(output_path)
-            summary[feeder_path] = feeder_stats
+            feeder_stats = scenario_generator.generate_all_pv_scenarios(output_path)
+            feeder_name = os.path.basename(feeder_path)
+            summary[feeder_name] = feeder_stats
         return summary, output_path
 
 
@@ -654,6 +715,7 @@ class FeederPVDeploymentGenerator(PVDeploymentGeneratorBase):
     def ensure_output_path(self, output_path):
         if not output_path:
             output_path = self.input_path
+        os.makedirs(output_path, exist_ok=True)
         return output_path
 
 
@@ -671,6 +733,7 @@ class SubstationPVDeploymentGenerator(PVDeploymentGeneratorBase):
     def ensure_output_path(self, output_path):
         if not output_path:
             output_path = os.path.dirname(self.input_path)
+        os.makedirs(output_path, exist_ok=True)
         return output_path
 
 
@@ -692,4 +755,5 @@ class RegionPVDeploymentGenerator(PVDeploymentGeneratorBase):
     def ensure_output_path(self, output_path):
         if not output_path:
             output_path = os.path.dirname(self.input_path)
+        os.makedirs(output_path, exist_ok=True)
         return output_path
