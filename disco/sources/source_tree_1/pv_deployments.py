@@ -12,7 +12,6 @@ import opendssdirect as dss
 from unidecode import unidecode
 
 from disco.enums import Placement
-from disco.sources.source_tree_1.factory import generate_pv_scenario
 
 logger = logging.getLogger(__name__)
 
@@ -258,25 +257,16 @@ class PVScenarioGeneratorBase:
         self.master = master
         self.config = config
         self.verbose = verbose
-        self.undeployed_capacity = 0
+        self.current_deployment_cycle = None
         self.threshold = 1.0e-10
         self.output_basename = "hc_pv_deployments"
+        self.deployment_name = "PVDeployments.dss"
         self.pvdss_instance = None
     
     @property
     @abc.abstractmethod
-    def pv_type(self) -> str:
-        pass
-    
-    @property
-    @abc.abstractmethod
-    def pv_cycles(self) -> list:
+    def deployment_cycles(self) -> list:
         """Return a list of cicyles for generating pv scenarios"""
-        pass
-    
-    @property
-    @abc.abstractmethod
-    def pv_file(self) -> str:
         pass
     
     def get_feeder_name(self) -> str:
@@ -306,12 +296,25 @@ class PVScenarioGeneratorBase:
             logger.exception("Failed to load master file - %s", master_file)
         return pvdss_instance
     
-    def generate_all_pv_scenarios(self, output_path) -> dict:
+    def iterate_deployments(self):
+        """Iterate deployment numbers"""
+        for deployment in range(1, self.config.deployment_number + 1):
+            yield deployment
+    
+    def iterate_penetrations(self):
+        """Iterate penetration levels"""
+        start = self.config.min_penetration
+        end = self.config.max_penetration + 1
+        step = self.config.penetration_step
+        for penetration in range(start, end, step):
+            yield penetration
+    
+    def generate_all_pv_scenarios(self, output_path: str) -> dict:
         """Given a feeder path, generate all PV scenarios for the feeder"""
         feeder_name = self.get_feeder_name()
         pvdss_instance = self.load_pvdss_instance()
         
-        # check total load
+        # total load
         total_loads = pvdss_instance.get_total_loads()
         feeder_stats = pvdss_instance.get_feeder_stats(total_loads)
         if total_loads.total_load <= 0:
@@ -349,7 +352,7 @@ class PVScenarioGeneratorBase:
         for deployment in self.iterate_deployments():
             existing_pv = deepcopy(base_existing_pv)
             for penetration in self.iterate_penetrations():
-                data = {
+                data = SimpleNamespace(**{
                     "base_existing_pv": base_existing_pvs.existing_pv,
                     "total_load": total_loads.total_load,
                     "load_dict": total_loads.load_dict,
@@ -361,100 +364,129 @@ class PVScenarioGeneratorBase:
                     "hv_bus_map": hv_bus_map,
                     "customer_bus_map": total_loads.customer_bus_map,
                     "bus_kv": highv_buses.bus_kv
-                }
-                existing_pv = self.generate_pv_scenario(data=data)
+                })
+                existing_pv = self.generate_pv_scenario(deployment, penetration, data, output_path)
                 # avg_dist = self.compute_average_pv_distance(combined_bus_distance, existing_pv)
                 # key = (self.config.placement, deployment, penetration)
                 # average_pv_distance[key] = [self.config.placement, deployment, penetration, avg_dist]
         
         return feeder_stats
     
-    def iterate_deployments(self):
-        """Iterate deployment numbers"""
-        for deployment in range(1, self.config.deployment_number + 1):
-            yield deployment
+    def get_pv_deployment_file(self, output_path: str) -> str:
+        """Return the path of PV depployment file"""
+        output_basedir = os.path.join(output_path, self.output_basename)
+        output_dirname = os.path.join(output_basedir, self.config.placement, str(deployment), str(penetration))
+        os.makedirs(output_dirname, exist_ok=True)
+        pv_deployment_file = os.path.join(output_dirname, self.deployment_name)
+        return pv_deployment_file
     
-    def iterate_penetrations(self):
-        """Iterate penetration levels"""
-        start = self.config.min_penetration
-        end = self.config.max_penetration + 1
-        step = self.config.penetration_step
-        for penetration in range(start, end, step):
-            yield penetration
-    
-    def generate_pv_scenario(self, data: dict) -> dict:
-        pv_string = "! =====================PV SCENARIO FILE==============================\n"
-        remaining_pv_to_install = self.get_remaining_pv_to_install()
-        priority_buses = self.get_priority_buses()
+    def generate_pv_scenario(
+        self,
+        deployment: int,
+        penetration: int,
+        data: SimpleNamespace,
+        output_path: str
+    ) -> dict:
+        """Generate PV deployments dss file in scenario
         
-        ncs, subset_index = 0, 0
-        while remaining_pv_to_install > 0:
-            if subset_idx == 0 and self.data.pv_upscale:
-                for bus in priority_buses:
-                    base_min_pv_size = self.data.base_existing_pv[bus]
-                    if base_min_pv_size > 0:
-                        continue
-                    min_pv_size = existing_pv[bus]
-                    max_pv_size = self.get_max_pv_size(bus)
-                    random_pv_size = self.generate_pv_size_from_pdf(min_pv_size, max_pv_size)
-                    pv_size = min(random_pv_size, min_pv_size + remaining_pv_to_install)
-                    pv_added_capacity = pv_size - min_pv_size
-                    remaining_pv_to_install -= pv_added_capacity
-                    pv_string = self.add_pv_string(bus, pv_size, pv_string)
-                    existing_pv[bus] = pv_size
-            elif subset_idx == 0 and not self.data.pv_upscale:
-                for bus in priority_buses:
-                    base_min_pv_size = self.data.base_existing_pv[bus]
-                    if base_min_pv_size > 0:
-                        continue
-                    min_pv_size = existing_pv[bus]
-                    pv_size = min_pv_size
-                    pv_added_capacity = 0
-                    remaining_pv_to_install -= pv_added_capacity
-                    pv_string = self.add_pv_string(bus, pv_size, pv_string)
-            
-            # TODO: check
-            subset_index += 1
-            candidate_bus, candidate_bus_map = self.get_pv_bus_subset(subset_idx)
-            candidate_bus_array = [bus for bus in candidate_bus if not bus in priority_buses]
-            
-            while len(candidate_bus_array) > 0:
-                random.shuffle(candidate_bus_array)
-                picked_candiate = candidate_bus_array[0]
-                base_min_pv_size = self.data.base_existing_pv[picked_candiate]
-                min_pv_size = existing_pv[picked_candiate]
-                if (base_min_pv_size > 0 or min_pv_size > 0) and (not self.data.pv_upscale):
-                    pass
-                else:
-                    max_pv_size = self.get_maximum_pv_size(picked_candiate)
-                    random_pv_size = self.generate_pv_size_from_pdf(0, max_pv_size)
-                    pv_size = min(random_pv_size, 0 + remaining_pv_to_install)
-                    pv_string = self.add_pv_string(picked_candiate, pv_size)
-                    pv_added_capacity = pv_size
-                    remaining_pv_to_install -= pv_added_capacity
-                    ncs += 1
-                candidate_bus_array.remove(picked_candiate)
-                if abs(remaining_pv_to_install) <= self.threshold and len(pv_string.split("New PVSystem.")) > 0:
-                    self.write_pv_string(pv_string, **kwargs)
-                if subset_index * self.data.proximity_step > 100:
-                    break
-                if remaining_pv_to_install > self.threshold:
-                    self.undeployed_capacity = remaining_pv_to_install
-            logger.info(
-                "Sample: %s, Placement: %s, @penetration %s, number of new installable PVs: %s, Remain_to_install: %s kW", 
-                deployment,
-                self.data.placement,
-                self.data.penetration,
-                ncs,
-                remaining_pv_to_install
-            )
+        Parameters
+        ----------
+        deployment: int, the current deployment number
+        penetration: int, the current penetration level
+        data: SimpleNamespace, the data used for defining PV scenario
+        output_path: str, the output path of PV deployments
+
+        Returns
+        -------
+        dict:
+            The updated existing_pv
+        """
+        pv_string = "! =====================PV SCENARIO FILE==============================\n"
+        pv_deployment_file = self.get_pv_deployment_file(output_path)
+        
+        remaining_pv_to_install = self.get_remaining_pv_to_install(data)
+        bus_distances = self.get_bus_distances(data)
+        customer_bus_map = self.get_customer_bus_map(data)
+        priority_buses = self.get_priority_buses(deployment, penetration, data)
+        existing_pv = data.existing_pv
+        
+        undeployed_capacity = 0
+        for pv_type in self.deployment_cycles:
+            self.current_deployment_cycle = pv_type
+            remaining_pv_to_install = remaining_pv_to_install[pv_type] + undeployed_capacity
+            bus_distance = bus_distances[pv_type]
+            customer_bus_map = customer_bus_map[pv_type]
+
+            ncs, subset_index = 0, 0
+            while remaining_pv_to_install > 0:
+                if subset_idx == 0:
+                    if self.config.pv_upscale:
+                        for bus in priority_buses:
+                            base_min_pv_size = data.base_existing_pv[bus]
+                            if base_min_pv_size > 0:
+                                continue
+                            min_pv_size = existing_pv[bus]
+                            max_pv_size = self.get_maximum_pv_size(bus, data)
+                            random_pv_size = self.generate_pv_size_from_pdf(min_pv_size, max_pv_size)
+                            pv_size = min(random_pv_size, min_pv_size + remaining_pv_to_install)
+                            pv_added_capacity = pv_size - min_pv_size
+                            remaining_pv_to_install -= pv_added_capacity
+                            pv_string = self.add_pv_string(bus, pv_size, pv_string)
+                            existing_pv[bus] = pv_size
+                    else:
+                        for bus in priority_buses:
+                            base_min_pv_size = data.base_existing_pv[bus]
+                            if base_min_pv_size > 0:
+                                continue
+                            min_pv_size = existing_pv[bus]
+                            pv_size = min_pv_size
+                            pv_added_capacity = 0
+                            remaining_pv_to_install -= pv_added_capacity
+                            pv_string = self.add_pv_string(bus, pv_size, pv_string)
+
+                subset_index += 1
+                candidate_bus_array = self.get_pv_bus_subset(bus_distance, subset_idx, priority_buses)
+               
+                while len(candidate_bus_array) > 0:
+                    random.shuffle(candidate_bus_array)
+                    picked_candiate = candidate_bus_array[0]
+                    base_min_pv_size = data.base_existing_pv[picked_candiate]
+                    min_pv_size = existing_pv[picked_candiate]
+                    if (base_min_pv_size > 0 or min_pv_size > 0) and (not self.config.pv_upscale):
+                        pass
+                    else:
+                        max_pv_size = self.get_maximum_pv_size(picked_candiate, data)
+                        random_pv_size = self.generate_pv_size_from_pdf(0, max_pv_size)
+                        pv_size = min(random_pv_size, 0 + remaining_pv_to_install)
+                        pv_string = self.add_pv_string(picked_candiate, pv_size)
+                        pv_added_capacity = pv_size
+                        remaining_pv_to_install -= pv_added_capacity
+                        ncs += 1
+                    candidate_bus_array.remove(picked_candiate)
+                    if abs(remaining_pv_to_install) <= self.threshold and len(pv_string.split("New PVSystem.")) > 0:
+                        self.write_pv_string(pv_string, **kwargs)
+                        break
+                    if subset_index * self.config.proximity_step > 100:
+                        break
+                    if remaining_pv_to_install > self.threshold:
+                        undeployed_capacity = remaining_pv_to_install
+                
+                logger.info(
+                    "Sample: %s, Placement: %s, @penetration %s, number of new installable PVs: %s, Remain_to_install: %s kW", 
+                    deployment,
+                    self.config.placement,
+                    penetration,
+                    ncs,
+                    remaining_pv_to_install
+                )
         return exisitng_pv
     
-    def get_all_remaining_pv_to_install(self):
-        total_pv_to_install = self.data.total_load * self.data.penetration / 100
-        all_remaining_pv_to_install = total_pv_to_install - self.data.total_existing_pv
+    def get_all_remaining_pv_to_install(self, data: SimpleNamespace) -> dict:
+        """Return all remaining PV to install"""
+        total_pv_to_install = data.total_load * self.config.penetration / 100
+        all_remaining_pv_to_install = total_pv_to_install - data.total_existing_pv
         if all_remaining_pv_to_install <= 0:
-            minimum_penetration = (total_existing_pv * 100) / max(0.0001, total_load)
+            minimum_penetration = (data.total_existing_pv * 100) / max(0.0001, data.total_load)
             logger.error(
                 "Failed to generate PV scenario. The system has more than the target PV penetration. \
                 Please increase penetration to at least %s. System exits!", minimum_penetration
@@ -462,28 +494,44 @@ class PVScenarioGeneratorBase:
             sys.exit(1)
         return all_remaining_pv_to_install
 
-    def get_priority_buses(self):
-        priority_buses = list(self.data.existing_pv)
-        if len(priority_buses) == len(self.data.bus_totalload):
+    def get_priority_buses(self, deployment: int, penetration: int, data: SimpleNamespace) -> list:
+        """Return a list of priority buses."""
+        priority_buses = list(data.existing_pv.keys())
+        if len(priority_buses) == len(data.bus_totalload):
             logger.warning(
                 "Beaware - Sample: %s, Placement: %s, @penetration %s, all buses already have PV installed.",
-                self.params.deployment, self.params.placement, self.params.penetration
+                deployment, self.config.placement, penetration
             )
         return priority_buses
     
     @abc.abstractmethod
-    def get_remaining_pv_to_install(self):
+    def get_remaining_pv_to_install(self, data: SimpleNamespace) -> dict:
+        """Return remaining sall, large PV to install"""
         pass
     
-    @abc.abstractmethod
-    def get_maximum_pv_size(self):
+    def get_bus_distances(self, data: SimpleNamespace) -> dict:
+        return {
+            ScenarioCategory.LARGE: data.customer_bus_distance,
+            ScenarioCategory.SMALL: data.hv_bus_distance
+        }
+    
+    def get_customer_bus_map(self, data: SimpleNamespace) -> dict:
+        return {
+            ScenarioCategory.LARGE: data.customer_bus_map,
+            ScenarioCategory.SMALL: data.hv_bus_map
+        }
+    
+    @abc.abstractclassmethod
+    def get_maximum_pv_size(cls, bus: str, data: SimpleNamespace, **kwargs) -> float:
         pass
     
-    def generate_pv_size_from_pdf(self, min_size, max_size):
-        # TODO: double check, designed in purpose?
+    @staticmethod
+    def generate_pv_size_from_pdf(min_size, max_size):
+        # TODO: design in purpose?
         pv_size = max_size
         return pv_size
     
+    @staticmethod
     def add_pv_string(self, bus, pv_size, pv_string):
         if pv_size <= 0:
             return ""
@@ -522,40 +570,30 @@ class PVScenarioGeneratorBase:
             f.write(line)
             f.write(pv_string)
 
-    def get_pv_bus_subset(self, subset_idx):
-        max_dist = max(self.data.bus_distance.values())
-        min_dist = min(self.data.bus_distance.values())
-        if self.data.placement == Placement.CLOSE:
-            lb_dist = (subset_idx - 1) * (self.data.proximity_step * max_dist) / 100
+    def get_pv_bus_subset(self, bus_distance: dict, subset_idx: int, priority_buses: list):
+        """Return candidate buses"""
+        max_dist = max(bus_distance.values())
+        min_dist = min(bus_distance.values())
+        if self.config.placement == Placement.CLOSE:
+            lb_dist = (subset_idx - 1) * (self.config.proximity_step * max_dist) / 100
             ub_dist = subset_idx * proximity_step * max_dist / 100
-        elif self.data.placement == Placement.FAR:
+        elif self.config.placement == Placement.FAR:
             ub_dist = (100 - (subset_idx - 1) * proximity_step) * max_dist / 100
             lb_dist = (100 - subset_idx * proximity_step) * max_dist / 100
-        elif self.data.placement == Placement.RANDOM:
+        elif self.config.placement == Placement.RANDOM:
             lb_dist = min_dist
             ub_dist = max_dist
         
-        candidate_customers = {
-            k: v for k, v in self.data.bus_distance.items() 
+        candidate_bus_map = {
+            k: v for k, v in bus_distance.items() 
             if v > lb_dist and v <= ub_dist
         }
-        candidate_customers_array = list(candidate_customers.keys())
+        candidate_buses = list(candidate_bus_map.keys())
+        candidate_bus_array = [b for b in candidate_buses if not b in priority_buses]
+        return candidate_bus_array
 
-        return candidate_customers_array, candidate_customers
-
-    def get_pv_deployment_file(self, output_path, placement, deployment, penetration):
-        pv_deployment_path = os.path.join(
-            output_path,
-            "hc_pv_deployments",
-            str(self.config.placement),
-            str(deployment),
-            str(penetration)
-        )
-        os.makedirs(pv_deployment_path, exist_ok=True)
-        pv_deployment_file = os.path.join(pv_deployment_path, "PVDeployments.dss")
-        return pv_deployment_file
-    
-    def compute_average_pv_distance(self, bus_distance, existing_pv):
+    def compute_average_pv_distance(self, bus_distance: dict, existing_pv: dict) -> float:
+        """Compute the average PV distance"""
         slack_dico = {
             k: bus_distance[k]
             for k, v in existing_pv.items()
@@ -568,27 +606,19 @@ class PVScenarioGeneratorBase:
 class LargePVScenarioGenerator(PVScenarioGeneratorBase):
     
     @property
-    def pv_type(self):
-        return ScenarioCategory.LARGE.value
+    def deployment_cycles(self):
+        return [ScenarioCategory.LARGE]
     
-    @property
-    def pv_cycles(self):
-        return [ScenarioCategory.LARGE.value]
-    
-    def get_remaining_pv_to_install(self):
-        all_remaining_pv_to_install = self._get_all_remaining_pv_to_install()
-        remaining_pv_to_install = all_remaining_pv_to_install + self.undeployed_capacity
+    def get_remaining_pv_to_install(self, data: SimpleNamespace) -> dict:
+        all_remaining_pv_to_install = self.get_all_remaining_pv_to_install()
+        remaining_pv_to_install = {
+            ScenarioCategory.LARGE: all_remaining_pv_to_install,
+            ScenarioCategory.SMALL: 0
+        }
         return remaining_pv_to_install
     
-    def get_maximum_pv_size(
-        self,
-        bus: int,
-        customer_annual_kwh: dict = None,
-        annual_sun_hours: float = None,
-        roof_area: dict = None,
-        pv_efficiency: float = None,
-        max_load_factor: float = 3
-    ):
+    @classmethod
+    def get_maximum_pv_size(cls, bus: str, data: SimpleNamespace, **kwargs):
         max_bus_pv_size = 100 * random.randint(1, 50)
         return max_bus_pv_size
 
@@ -596,28 +626,25 @@ class LargePVScenarioGenerator(PVScenarioGeneratorBase):
 class SmallPVScenarioGenerator(PVScenarioGeneratorBase):
 
     @property
-    def pv_type(self):
-        return ScenarioCategory.SMALL.value
+    def deployment_cycles(self):
+        return [ScenarioCategory.SMALL]
     
-    @property
-    def pv_cycles(self):
-        return [ScenarioCategory.SMALL.value]
-    
-    def get_remaining_pv_to_install(self):
-        all_remaining_pv_to_install = self._get_all_remaining_pv_to_install()
-        remaining_pv_to_install = all_remaining_pv_to_install + self.undeployed_capacity
+    def get_remaining_pv_to_install(self, data: SimpleNamespace) -> dict:
+        all_remaining_pv_to_install = self.get_all_remaining_pv_to_install()
+        remaining_pv_to_install = {
+            ScenarioCategory.LARGE: 0,
+            ScenarioCategory.SMALL: all_remaining_pv_to_install
+        }
         return remaining_pv_to_install
     
-    def get_maximum_pv_size(
-        self,
-        bus: int,
-        customer_annual_kwh: dict = None,
-        annual_sun_hours: float = None,
-        roof_area: dict = None,
-        pv_efficiency: float = None,
-        max_load_factor: float = 3
-    ):
-        pv_size_array = [max_load_factor * self.data.bus_totalload[bus]]
+    @classmethod
+    def get_maximum_pv_size(cls, bus: str, data: SimpleNamespace, **kwargs):
+        roof_area = kwargs.get("roof_area", {})
+        pv_efficiency = kwargs.get("pv_efficiency", None)
+        customer_annual_kwh = kwargs.get("customer_annual_kwh", {})
+        annual_sun_hours = kwargs.get("annual_sun_hours", None)
+        
+        pv_size_array = [max_load_factor * data.bus_totalload[bus]]
         if roof_area and pv_efficiency:
             value = roof_area[bus] * pv_efficiency
             pv_size_array.append(value)
@@ -630,25 +657,27 @@ class SmallPVScenarioGenerator(PVScenarioGeneratorBase):
 
 class MixtPVScenarioGenerator(PVScenarioGeneratorBase):
     
-    def __init__(self, feeder_path, verbose=False):
-        super().__init__(feeder_path, verbose)
-        self._current_pv_type = None
-    
     @property
-    def pv_type(self):
-        return self._current_pv_type
+    def deployment_cycles(self):
+        return [ScenarioCategory.SMALL, ScenarioCategory.LARGE]
     
-    @property
-    def pv_cycles(self):
-        return [ScenarioCategory.SMALL.value, ScenarioCategory.LARGE.value]
-    
-    def get_remaining_pv_to_install(self):
-        all_remaining_pv_to_install = self._get_all_remaining_pv_to_install()
-        small_remaining_pv_to_install = (percent_shares[1]/100) * all_remaining_pv_to_install
-        large_remaining_pv_to_install_large = (1 - percent_shares[1]/100) * all_remaining_pv_to_install
+    def get_remaining_pv_to_install(self, data: SimpleNamespace) -> dict:
+        all_remaining_pv_to_install = self.get_all_remaining_pv_to_install()
+        small_pv_to_install = (self.config.percent_shares[1] / 100) * all_remaining_pv_to_install
+        large_pv_to_install = (1 - self.config.percent_shares[1] / 100) * all_remaining_pv_to_install
+        remaining_pv_to_install = {
+            ScenarioCategory.LARGE: large_pv_to_install,
+            ScenarioCategory.SMALL: small_pv_to_install
+        }
+        return remaining_pv_to_install
 
-    def get_maximum_pv_size(self):
-        pass
+    @classmethod
+    def get_maximum_pv_size(cls, bus: str, data: SimpleNamespace, **kwargs) -> float:
+        if self.current_deployment_cycle == ScenarioCategory.LARGE:
+            return LargePVScenarioGenerator.get_maximum_pv_size(bus, data, **kwargs)
+        if self.current_deployment_cycle == ScenarioCategory.SMALL:
+            return SmallPVScenarioGenerator.get_maximum_pv_size(bus, data, **kwargs)
+        return None
 
 
 class PVDeploymentGeneratorBase(abc.ABC):
