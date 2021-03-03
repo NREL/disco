@@ -531,7 +531,8 @@ class PVScenarioGeneratorBase:
             ScenarioCategory.SMALL: data.hv_bus_map
         }
     
-    @abc.abstractclassmethod
+    @classmethod
+    @abc.abstractmethod
     def get_maximum_pv_size(cls, bus: str, data: SimpleNamespace, **kwargs) -> float:
         pass
     
