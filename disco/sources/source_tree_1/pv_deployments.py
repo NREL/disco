@@ -1,12 +1,13 @@
 import abc
 import enum
+import json
 import logging
 import os
 import random
 import sys
 from collections import defaultdict
 from copy import deepcopy
-from types import SimpleNamespace, Tuple, Optional
+from types import SimpleNamespace, Tuple, Optional, Generator
 
 import opendssdirect as dss
 from unidecode import unidecode
@@ -110,7 +111,7 @@ class PVDSSInstance:
         if self.verbose:
             logger.info("New energy meter was placed into master file - %s", self.master_file)
     
-    def move_energy_meter_location(self):
+    def move_energy_meter_location(self) -> None:
         """Move energy meter location if it's misplaced in master dss file"""
         if self.verbose:
             logger.info("Moving energy meter in master file - %s", self.master_file)
@@ -259,8 +260,9 @@ class PVScenarioGeneratorBase:
         self.verbose = verbose
         self.current_deployment_cycle = None
         self.threshold = 1.0e-10
-        self.output_basename = "hc_pv_deployments"
-        self.deployment_name = "PVDeployments.dss"
+        self.deployment_rootdirname = "hc_pv_deployments"
+        self.deployment_filename = "PVDeployments.dss"
+        self.loadshapes_filename = "LoadShapes.dss"
         self.pvdss_instance = None
     
     @property
@@ -296,12 +298,12 @@ class PVScenarioGeneratorBase:
             logger.exception("Failed to load master file - %s", master_file)
         return pvdss_instance
     
-    def iterate_deployments(self):
+    def iterate_deployments(self) -> Generator:
         """Iterate deployment numbers"""
         for deployment in range(1, self.config.deployment_number + 1):
             yield deployment
     
-    def iterate_penetrations(self):
+    def iterate_penetrations(self) -> Generator:
         """Iterate penetration levels"""
         start = self.config.min_penetration
         end = self.config.max_penetration + 1
@@ -374,12 +376,42 @@ class PVScenarioGeneratorBase:
         
         return feeder_stats
     
-    def get_pv_deployment_file(self, output_path: str) -> str:
+    def get_pv_deployment_root_path(self, output_path: str) -> str:
+        """Return the root path of PV depployments"""
+        deployment_root_path = os.path.join(output_path, self.deployment_rootdirname)
+        return deployment_root_path
+    
+    def get_pv_deployment_placement_path(self, output_path: str) -> str:
+        """Return the placement path of PV deployments"""
+        deployment_placement_path = os.path.join(
+            output_path, self.deployment_rootdirname, self.config.placement
+        )
+        return deployment_placement_path
+    
+    def get_pv_deployment_sample_path(self, output_path: str, deployment: int) -> str:
+        """Return the deployment sample path of PV deployments"""
+        deployment_sample_path = os.path.join(
+            output_path, self.deployment_rootdirname, self.config.placement, str(deployment)
+        )
+        return pv_deployment_sample_path
+    
+    def get_pv_deployment_penetration_path(self, output_path: str, deployment: int, penetration: int) -> str:
+        deployment_penetration_path = os.path.join(
+            output_path,
+            self.deployment_rootdirname,
+            self.config.placement,
+            str(deployment),
+            str(penetration)
+        )
+        return deployment_penetration_path
+    
+    def get_pv_deployment_file(self, output_path: str, deployment: int, penetration: int) -> str:
         """Return the path of PV depployment file"""
-        output_basedir = os.path.join(output_path, self.output_basename)
-        output_dirname = os.path.join(output_basedir, self.config.placement, str(deployment), str(penetration))
-        os.makedirs(output_dirname, exist_ok=True)
-        pv_deployment_file = os.path.join(output_dirname, self.deployment_name)
+        penetration_path = self.get_pv_deployment_penetration_path(
+            output_path, deployment, penetration
+        )
+        os.makedirs(penetration_path, exist_ok=True)
+        pv_deployment_file = os.path.join(penetration_path, self.deployment_filename)
         return pv_deployment_file
     
     def generate_pv_scenario(
@@ -474,7 +506,7 @@ class PVScenarioGeneratorBase:
                     
                     if abs(remaining_pv_to_install) <= self.threshold and len(pv_string.split("New PVSystem.")) > 0:
                         if len(pv_records) > 0:
-                            self.write_pv_string(deployment, penetration, data.total_pv_to_install, pv_string)
+                            self.write_pv_string(output_path, deployment, penetration, data.total_pv_to_install, pv_string)
                         break
                     if subset_index * self.config.proximity_step > 100:
                         break
@@ -537,13 +569,13 @@ class PVScenarioGeneratorBase:
         pass
     
     @staticmethod
-    def generate_pv_size_from_pdf(min_size, max_size):
+    def generate_pv_size_from_pdf(min_size: float, max_size: float) -> float:
         # TODO: design in purpose?
         pv_size = max_size
         return pv_size
     
     @staticmethod
-    def add_pv_string(self, bus, pv_size, pv_string):
+    def add_pv_string(self, bus: str, pv_size: float, pv_string: str) -> str:
         if pv_size <= 0:
             return ""
         
@@ -570,8 +602,15 @@ class PVScenarioGeneratorBase:
         pv_string += new_pv_string
         return pv_string
 
-    def write_pv_string(self, deployment: int, penetration: int, total_pv_to_install: float, pv_string: str) -> None:
-        pv_deployment_file = self.get_pv_deployment_file(output_path)
+    def write_pv_string(
+        self,
+        output_path: str,
+        deployment: int,
+        penetration: int,
+        total_pv_to_install: float,
+        pv_string: str
+    ) -> None:
+        pv_deployment_file = self.get_pv_deployment_file(output_path, deployment, penetration)
         line = (
             f"// PV Scenario for {data.total_pv_to_install} kW total size, "
             f"Scenario type {self.config.placement}, Deployment {deployment} "
@@ -581,7 +620,7 @@ class PVScenarioGeneratorBase:
             f.write(line)
             f.write(pv_string)
 
-    def get_pv_bus_subset(self, bus_distance: dict, subset_idx: int, priority_buses: list):
+    def get_pv_bus_subset(self, bus_distance: dict, subset_idx: int, priority_buses: list) -> list:
         """Return candidate buses"""
         max_dist = max(bus_distance.values())
         min_dist = min(bus_distance.values())
@@ -613,11 +652,92 @@ class PVScenarioGeneratorBase:
         average_pv_distance = np.mean(np.array(list(slack_dico.values())))
         return average_pv_distance
 
+    def get_pv_loadshapes_file(self) -> str:
+        """Return the loadshapes file in feeder path"""
+        loadshapes_file = os.path.join(self.feeder_path, self.loadshapes_filename)
+        return loadshapes_file
+    
+    def create_all_pv_configs(self, output_path: str) -> None:
+        """Create PV configs JSON file"""
+        pv_deployment_path = self.get_pv_deployment_root_path(output_path)
+        if not os.path.exists(pv_deployment_path):
+            return
+        
+        pv_loadshapes_file = self.get_pv_loadshapes_file()
+        placement_path = self.get_pv_deployment_placement_path(output_path)
+        deployments = next(os.walk(placement_path))[1]
+        for deployment in deployments:
+            sample_path = os.path.join(placement_path, deployment)
+            penetrations = [int(p) for p in next(os.walk(sample_path))[1]]
+            penetrations.sort()
+            # TODO: purpose?
+            for i in range(len(penetrations)):
+                max_pen = pens.pop()
+                pv_deployment_file = os.path.join(sample_path, str(max_pen), self.deployment_filename)
+                
+                if os.path.exists(pv_deployment_file):
+                    break
+            pv_config = self.assign_profile(pv_deployment_file, pv_loadshapes_file)
+            self.save_pv_config(pv_config, sample_path)
+        if self.verbose:
+            logger.info("All PV config files generated in placement - %s", placement_path)
+   
+    @staticmethod
+    def assign_profile(self, pv_deployment_file: str, loadshapes_file: str, limit: int = 5) -> dict:
+        pv_dict = self.get_pvsys(pv_deployment_file)
+        shape_list = self.get_shape_list(loadshapes_file)
+        pv_conf = {"pv_systems": []}
+        for pv_name, pv_value in pv_dict.items():
+            if float(pv_value) > limit:
+                control_name = "volt-var"
+            else:
+                control_name = "pf1"
+            random.shuffle(shape_list)
+            pv_profile = shape_list[0]
+            pv_conf['pv_systems'].append({
+                "name": pv_name,
+                "pydss_controller": {
+                    "controller_type": "PvController",
+                    "name": control_name
+                },
+                "pv_profile": pv_profile
+            })
+        return pv_conf
+    
+    @staticmethod
+    def get_pvsys(pv_deployment_file: str) -> dict:
+        pv_dict = {}
+        with open(pv_deployment_file) as f:
+            slines = f.readlines()
+            for line in slines:
+                if "pvsystem" in line.lower():
+                    value = line.lower().split("pmpp=")[1].split(" ")[0]
+                    pv_dict[line.lower().split("pvsystem.")[1].split(" ")[0]] = value
+        return pv_dict
+    
+    @staticmethod
+    def get_shape_list(loadshapes_file: str) -> list:
+        loadshapes_file = self.get_pv_loadshapes_file()
+        shape_list = []
+        with open(loadshapes_file) as f:
+            slines = f.readlines()
+            for line in slines:
+                if "loadshape" in line.lower():
+                    shape_list.append(line.lower().split("loadshape.")[1].split(' ')[0])
+        return shape_list
+    
+    def save_pv_config(self, pv_config, sample_path: str) -> None:
+        pv_config_file = os.path.join(sample_path, "pv_config.json")
+        with open(pv_config_file, "w") as f:
+            json.dump(pv_config, f, indent=2)
+        if self.verbose:
+            logger.info("PV config file generated - %s", pv_config_file)
+
 
 class LargePVScenarioGenerator(PVScenarioGeneratorBase):
     
     @property
-    def deployment_cycles(self):
+    def deployment_cycles(self) -> list:
         return [ScenarioCategory.LARGE]
     
     def get_remaining_pv_to_install(self, data: SimpleNamespace) -> dict:
@@ -629,7 +749,7 @@ class LargePVScenarioGenerator(PVScenarioGeneratorBase):
         return remaining_pv_to_install
     
     @classmethod
-    def get_maximum_pv_size(cls, bus: str, data: SimpleNamespace, **kwargs):
+    def get_maximum_pv_size(cls, bus: str, data: SimpleNamespace, **kwargs) -> int:
         max_bus_pv_size = 100 * random.randint(1, 50)
         return max_bus_pv_size
 
@@ -637,7 +757,7 @@ class LargePVScenarioGenerator(PVScenarioGeneratorBase):
 class SmallPVScenarioGenerator(PVScenarioGeneratorBase):
 
     @property
-    def deployment_cycles(self):
+    def deployment_cycles(self) -> list:
         return [ScenarioCategory.SMALL]
     
     def get_remaining_pv_to_install(self, data: SimpleNamespace) -> dict:
@@ -649,7 +769,7 @@ class SmallPVScenarioGenerator(PVScenarioGeneratorBase):
         return remaining_pv_to_install
     
     @classmethod
-    def get_maximum_pv_size(cls, bus: str, data: SimpleNamespace, **kwargs):
+    def get_maximum_pv_size(cls, bus: str, data: SimpleNamespace, **kwargs) -> float:
         roof_area = kwargs.get("roof_area", {})
         pv_efficiency = kwargs.get("pv_efficiency", None)
         customer_annual_kwh = kwargs.get("customer_annual_kwh", {})
@@ -669,7 +789,7 @@ class SmallPVScenarioGenerator(PVScenarioGeneratorBase):
 class MixtPVScenarioGenerator(PVScenarioGeneratorBase):
     
     @property
-    def deployment_cycles(self):
+    def deployment_cycles(self) -> list:
         return [ScenarioCategory.SMALL, ScenarioCategory.LARGE]
     
     def get_remaining_pv_to_install(self, data: SimpleNamespace) -> dict:
@@ -698,7 +818,7 @@ class PVDeploymentGeneratorBase(abc.ABC):
         input_path: str,
         config: SimpleNamespace,
         verbose: boo = False
-    ):
+    ) -> None:
         """
         Initialize pv deployment generator class
         
@@ -713,46 +833,46 @@ class PVDeploymentGeneratorBase(abc.ABC):
         self.verbose = verbose
     
     @abc.abstractmethod
-    def get_feeder_paths(self):
+    def get_feeder_paths(self) -> list:
         """Return all feeder paths recursively under given input_path."""
         pass
     
     @abc.abstractmethod
-    def ensure_output_path(self, output_path):
+    def ensure_output_path(self, output_path: str) -> str:
         """Ensure output_path in case of None"""
         pass
     
-    def get_scenario_generator(self, feeder_path):
+    def get_scenario_generator(self, feeder_path: str) -> PVScenarioGeneratorBase:
         """Return a PV scenario generator instnace"""
         category = ScenarioCategory(self.config.category)
         scenario_generator_class = PV_SCENARIO_GENERATOR_MAPPING[category]
         scenario_generator = scenario_generator_class(feeder_path, self.config, self.verbose)
         return scenario_generator
     
-    def generate_pv_deployments(self, output_path=None):
+    def generate_pv_deployments(self, output_path: str = None) -> Tuple[dict, str]:
         """Given input path, generate pv deployments"""
         feeder_paths = self.get_feeder_paths()
         output_path = self.ensure_output_path(output_path)
         
-        # TODO: parallize by using multiprocessing?
         summary = {}
         for feeder_path in feeder_paths:
             scenario_generator = self.get_scenario_generator(feeder_path)
             feeder_stats = scenario_generator.generate_all_pv_scenarios(output_path)
             feeder_name = os.path.basename(feeder_path)
             summary[feeder_name] = feeder_stats
+            scenario_generator.create_all_pv_configs(output_path)
         return summary, output_path
 
 
 class FeederPVDeploymentGenerator(PVDeploymentGeneratorBase):
     
-    def get_feeder_paths(self):
+    def get_feeder_paths(self) -> list:
         """Given a feeder path, return as a list if not"""
         if not isinstance(self.input_path, list):
             feeder_paths = [self.input_path]
         return feeder_paths
 
-    def ensure_output_path(self, output_path):
+    def ensure_output_path(self, output_path: str) -> str:
         if not output_path:
             output_path = self.input_path
         os.makedirs(output_path, exist_ok=True)
@@ -761,7 +881,7 @@ class FeederPVDeploymentGenerator(PVDeploymentGeneratorBase):
 
 class SubstationPVDeploymentGenerator(PVDeploymentGeneratorBase):
     
-    def get_feeder_paths(self):
+    def get_feeder_paths(self) -> list:
         """Given a substation path, return all feeder paths in the substation"""
         feeder_names = next(os.walk(self.input_path))[1]
         feeder_paths = [
@@ -770,7 +890,7 @@ class SubstationPVDeploymentGenerator(PVDeploymentGeneratorBase):
         ]
         return feeder_paths
 
-    def ensure_output_path(self, output_path):
+    def ensure_output_path(self, output_path: str) -> str:
         if not output_path:
             output_path = os.path.dirname(self.input_path)
         os.makedirs(output_path, exist_ok=True)
@@ -779,7 +899,7 @@ class SubstationPVDeploymentGenerator(PVDeploymentGeneratorBase):
 
 class RegionPVDeploymentGenerator(PVDeploymentGeneratorBase):
     
-    def get_feeder_paths(self):
+    def get_feeder_paths(self) -> list:
         """Given a region path, return all feeder paths in the region"""
         feeder_paths = []
         substation_names = next(os.walk(self.input_path))[1]
@@ -792,7 +912,7 @@ class RegionPVDeploymentGenerator(PVDeploymentGeneratorBase):
             ])
         return feeder_paths
 
-    def ensure_output_path(self, output_path):
+    def ensure_output_path(self, output_path: str) -> str:
         if not output_path:
             output_path = os.path.dirname(self.input_path)
         os.makedirs(output_path, exist_ok=True)
