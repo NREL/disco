@@ -106,7 +106,7 @@ def pv_deployments():
     show_default=True,
     help="Enable to show overbose information."
 )
-def source_tree_1(
+def generate_source_tree_1(
     input_path,
     hierarchy,
     placement,
@@ -145,4 +145,4 @@ def source_tree_1(
     print(json.dumps(summary, indent=2))
 
 
-pv_deployments.add_command(source_tree_1)
+pv_deployments.add_command(generate_source_tree_1)
