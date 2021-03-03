@@ -646,7 +646,7 @@ class PVDeploymentGeneratorBase(abc.ABC):
 class FeederPVDeploymentGenerator(PVDeploymentGeneratorBase):
     
     def get_feeder_paths(self):
-        """Given a feeder path, return"""
+        """Given a feeder path, return as a list if not"""
         if not isinstance(self.input_path, list):
             feeder_paths = [self.input_path]
         return feeder_paths
