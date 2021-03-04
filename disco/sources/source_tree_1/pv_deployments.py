@@ -171,7 +171,9 @@ class PVDSSInstance:
         flag = dss.Lines.First()
         while flag > 0:
             if dss.Lines.Phases() < 3:
+                flag = dss.Lines.Next()
                 continue
+            
             buses = [dss.Lines.Bus1(), dss.Lines.Bus2()]
             for bus in buses:
                 dss.Circuit.SetActiveBus(bus)
