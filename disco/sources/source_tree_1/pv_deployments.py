@@ -442,7 +442,7 @@ class PVScenarioGeneratorBase:
             bus_distance = bus_distances[pv_type]
             customer_bus_map = customer_bus_map[pv_type]
 
-            ncs, subset_index = 0, 0
+            ncs, subset_idx = 0, 0
             while remaining_pv_to_install > 0:
                 if subset_idx == 0:
                     if self.config.pv_upscale:
@@ -473,7 +473,7 @@ class PVScenarioGeneratorBase:
                             pv_records[bus] = pv_size
                             existing_pv[bus] = pv_size
 
-                subset_index += 1
+                subset_idx += 1
                 candidate_bus_array = self.get_pv_bus_subset(bus_distance, subset_idx, priority_buses)
                
                 while len(candidate_bus_array) > 0:
@@ -499,7 +499,7 @@ class PVScenarioGeneratorBase:
                         if len(pv_records) > 0:
                             self.write_pv_string(output_path, pv_string, data)
                         break
-                    if subset_index * self.config.proximity_step > 100:
+                    if subset_idx * self.config.proximity_step > 100:
                         break
                     if remaining_pv_to_install > self.pv_threshold:
                         undeployed_capacity = remaining_pv_to_install
