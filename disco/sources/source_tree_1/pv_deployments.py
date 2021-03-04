@@ -364,9 +364,11 @@ class PVScenarioGeneratorBase:
                     "hv_bus_map": hv_bus_map,
                     "customer_bus_map": total_loads.customer_bus_map,
                     "bus_kv": highv_buses.bus_kv,
-                    "pv_records": pv_records
+                    "pv_records": pv_records,
+                    "penetration": penetration,
+                    "deployment": deployment
                 })
-                existing_pv, pv_records = self.generate_pv_scenario(deployment, penetration, data, output_path)
+                existing_pv, pv_records = self.generate_pv_scenario(data, output_path)
                 # avg_dist = self.compute_average_pv_distance(combined_bus_distance, existing_pv)
                 # key = (self.config.placement, deployment, penetration)
                 # average_pv_distance[key] = [self.config.placement, deployment, penetration, avg_dist]
@@ -411,19 +413,11 @@ class PVScenarioGeneratorBase:
         pv_deployment_file = os.path.join(penetration_path, self.pvdeployments)
         return pv_deployment_file
     
-    def generate_pv_scenario(
-        self,
-        deployment: int,
-        penetration: int,
-        data: SimpleNamespace,
-        output_path: str
-    ) -> dict:
+    def generate_pv_scenario(self, data: SimpleNamespace, output_path: str) -> dict:
         """Generate PV deployments dss file in scenario
         
         Parameters
         ----------
-        deployment: int, the current deployment number
-        penetration: int, the current penetration level
         data: SimpleNamespace, the data used for defining PV scenario
         output_path: str, the output path of PV deployments
 
@@ -437,7 +431,7 @@ class PVScenarioGeneratorBase:
         remaining_pv_to_install = self.get_remaining_pv_to_install(data)
         bus_distances = self.get_bus_distances(data)
         customer_bus_map = self.get_customer_bus_map(data)
-        priority_buses = self.get_priority_buses(deployment, penetration, data)
+        priority_buses = self.get_priority_buses(data)
         existing_pv = data.existing_pv
         pv_records = data.pv_records
         
@@ -503,7 +497,7 @@ class PVScenarioGeneratorBase:
                     
                     if abs(remaining_pv_to_install) <= self.pv_threshold and len(pv_string.split("New PVSystem.")) > 0:
                         if len(pv_records) > 0:
-                            self.write_pv_string(output_path, deployment, penetration, data.total_pv_to_install, pv_string)
+                            self.write_pv_string(output_path, pv_string, data)
                         break
                     if subset_index * self.config.proximity_step > 100:
                         break
@@ -512,9 +506,9 @@ class PVScenarioGeneratorBase:
                 
                 logger.info(
                     "Sample: %s, Placement: %s, @penetration %s, number of new installable PVs: %s, Remain_to_install: %s kW", 
-                    deployment,
+                    data.deployment,
                     self.config.placement,
-                    penetration,
+                    data.penetration,
                     ncs,
                     remaining_pv_to_install
                 )
@@ -522,7 +516,7 @@ class PVScenarioGeneratorBase:
     
     def get_all_remaining_pv_to_install(self, data: SimpleNamespace) -> dict:
         """Return all remaining PV to install"""
-        total_pv_to_install = data.total_load * self.config.penetration / 100
+        total_pv_to_install = data.total_load * data.penetration / 100
         all_remaining_pv_to_install = total_pv_to_install - data.total_existing_pv
         if all_remaining_pv_to_install <= 0:
             minimum_penetration = (data.total_existing_pv * 100) / max(0.0001, data.total_load)
@@ -533,13 +527,13 @@ class PVScenarioGeneratorBase:
             sys.exit(1)
         return all_remaining_pv_to_install
 
-    def get_priority_buses(self, deployment: int, penetration: int, data: SimpleNamespace) -> list:
+    def get_priority_buses(self, data: SimpleNamespace) -> list:
         """Return a list of priority buses."""
         priority_buses = list(data.existing_pv.keys())
         if len(priority_buses) == len(data.bus_totalload):
             logger.warning(
                 "Beaware - Sample: %s, Placement: %s, @penetration %s, all buses already have PV installed.",
-                deployment, self.config.placement, penetration
+                data.deployment, self.config.placement, data.penetration
             )
         return priority_buses
     
@@ -602,16 +596,14 @@ class PVScenarioGeneratorBase:
     def write_pv_string(
         self,
         output_path: str,
-        deployment: int,
-        penetration: int,
-        total_pv_to_install: float,
-        pv_string: str
+        pv_string: str,
+        data: SimpleNamespace
     ) -> None:
-        pv_deployment_file = self.get_pv_deployment_file(output_path, deployment, penetration)
+        pv_deployment_file = self.get_pv_deployment_file(output_path, data.deployment, data.penetration)
         line = (
             f"// PV Scenario for {data.total_pv_to_install} kW total size, "
-            f"Scenario type {self.config.placement}, Deployment {deployment} "
-            f"and penetration {penetration}% (PV to load ratio) \n"
+            f"Scenario type {self.config.placement}, Deployment {data.deployment} "
+            f"and penetration {data.penetration}% (PV to load ratio) \n"
         )
         with open(pv_deployment_file, "w") as f:
             f.write(line)
