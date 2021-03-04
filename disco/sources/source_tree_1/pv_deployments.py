@@ -738,7 +738,7 @@ class LargePVScenarioGenerator(PVScenarioGeneratorBase):
         return [ScenarioCategory.LARGE]
     
     def get_remaining_pv_to_install(self, data: SimpleNamespace) -> dict:
-        all_remaining_pv_to_install = self.get_all_remaining_pv_to_install()
+        all_remaining_pv_to_install = self.get_all_remaining_pv_to_install(data)
         remaining_pv_to_install = {
             ScenarioCategory.LARGE: all_remaining_pv_to_install,
             ScenarioCategory.SMALL: 0
@@ -758,7 +758,7 @@ class SmallPVScenarioGenerator(PVScenarioGeneratorBase):
         return [ScenarioCategory.SMALL]
     
     def get_remaining_pv_to_install(self, data: SimpleNamespace) -> dict:
-        all_remaining_pv_to_install = self.get_all_remaining_pv_to_install()
+        all_remaining_pv_to_install = self.get_all_remaining_pv_to_install(data)
         remaining_pv_to_install = {
             ScenarioCategory.LARGE: 0,
             ScenarioCategory.SMALL: all_remaining_pv_to_install
@@ -790,7 +790,7 @@ class MixtPVScenarioGenerator(PVScenarioGeneratorBase):
         return [ScenarioCategory.SMALL, ScenarioCategory.LARGE]
     
     def get_remaining_pv_to_install(self, data: SimpleNamespace) -> dict:
-        all_remaining_pv_to_install = self.get_all_remaining_pv_to_install()
+        all_remaining_pv_to_install = self.get_all_remaining_pv_to_install(data)
         small_pv_to_install = (self.config.percent_shares[1] / 100) * all_remaining_pv_to_install
         large_pv_to_install = (1 - self.config.percent_shares[1] / 100) * all_remaining_pv_to_install
         remaining_pv_to_install = {
