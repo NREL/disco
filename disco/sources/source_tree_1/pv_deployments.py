@@ -491,8 +491,8 @@ class PVScenarioGeneratorBase:
                         random_pv_size = self.generate_pv_size_from_pdf(0, max_pv_size)
                         pv_size = min(random_pv_size, 0 + remaining_pv_to_install)
                         pv_string = self.add_pv_string(picked_candiate, pv_type.value, pv_size, pv_string)
-                        pv_records[bus] = pv_size
-                        existing_pv[bus] = pv_size
+                        pv_records[picked_candiate] = pv_size
+                        existing_pv[picked_candiate] = pv_size
                         pv_added_capacity = pv_size
                         remaining_pv_to_install -= pv_added_capacity
                         ncs += 1
