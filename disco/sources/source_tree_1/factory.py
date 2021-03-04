@@ -1,4 +1,5 @@
 """This module contains factory methods related to source_tree_1"""
+from types import SimpleNamespace
 
 from .pv_deployments import (
     DeploymentHierarchy,
@@ -13,7 +14,7 @@ PV_DEPLOYMENT_GENERATOR_MAPPING = {
     DeploymentHierarchy.FEEDER: FeederPVDeploymentGenerator
 }
 
-def generate_pv_deployments(input_path, hierarchy, config, output_path, verbose=False):
+def generate_pv_deployments(input_path, hierarchy, config, output_path, verbose):
     """A factory method for generating pv deployments
     
     Parameters
@@ -30,8 +31,8 @@ def generate_pv_deployments(input_path, hierarchy, config, output_path, verbose=
         The summary of PV deployments.
     """
     hierarchy = DeploymentHierarchy(hierarchy)
-    config = SimpleNamespace(**config)
     generator_class = PV_DEPLOYMENT_GENERATOR_MAPPING[hierarchy]
-    genertor = generator_class(input_path, config, verbose=verbose)
+    config = SimpleNamespace(**config)
+    generator = generator_class(input_path, config, verbose=verbose)
     summary = generator.generate_pv_deployments(output_path)
     return summary

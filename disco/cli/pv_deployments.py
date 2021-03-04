@@ -102,7 +102,7 @@ def pv_deployments():
     "-v", "--verbose",
     type=click.BOOL,
     is_flag=True,
-    default=True,
+    default=False,
     show_default=True,
     help="Enable to show overbose information."
 )

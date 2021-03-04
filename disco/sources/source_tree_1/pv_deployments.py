@@ -251,14 +251,14 @@ class PVScenarioGeneratorBase:
         verbose: bool, output more logging information if enabled, default False.
         """
         self.feeder_path = feeder_path
-        self.master = master
         self.config = config
+        self.master = master
         self.verbose = verbose
-        self.current_deployment_cycle = None
-        self.threshold = 1.0e-10
-        self.deployment_rootdirname = "hc_pv_deployments"
-        self.deployment_filename = "PVDeployments.dss"
-        self.loadshapes_filename = "LoadShapes.dss"
+        self.current_cycle = None
+        self.pv_threshold = 1.0e-10
+        self.root_dirname = "hc_pv_deployments"
+        self.pvdeployments = "PVDeployments.dss"
+        self.loadshapes = "LoadShapes.dss"
         self.pvdss_instance = None
     
     @property
@@ -374,27 +374,27 @@ class PVScenarioGeneratorBase:
     
     def get_pv_deployment_root_path(self, output_path: str) -> str:
         """Return the root path of PV depployments"""
-        deployment_root_path = os.path.join(output_path, self.deployment_rootdirname)
+        deployment_root_path = os.path.join(output_path, self.root_dirname)
         return deployment_root_path
     
     def get_pv_deployment_placement_path(self, output_path: str) -> str:
         """Return the placement path of PV deployments"""
         deployment_placement_path = os.path.join(
-            output_path, self.deployment_rootdirname, self.config.placement
+            output_path, self.root_dirname, self.config.placement
         )
         return deployment_placement_path
     
     def get_pv_deployment_sample_path(self, output_path: str, deployment: int) -> str:
         """Return the deployment sample path of PV deployments"""
         deployment_sample_path = os.path.join(
-            output_path, self.deployment_rootdirname, self.config.placement, str(deployment)
+            output_path, self.root_dirname, self.config.placement, str(deployment)
         )
         return pv_deployment_sample_path
     
     def get_pv_deployment_penetration_path(self, output_path: str, deployment: int, penetration: int) -> str:
         deployment_penetration_path = os.path.join(
             output_path,
-            self.deployment_rootdirname,
+            self.root_dirname,
             self.config.placement,
             str(deployment),
             str(penetration)
@@ -407,7 +407,7 @@ class PVScenarioGeneratorBase:
             output_path, deployment, penetration
         )
         os.makedirs(penetration_path, exist_ok=True)
-        pv_deployment_file = os.path.join(penetration_path, self.deployment_filename)
+        pv_deployment_file = os.path.join(penetration_path, self.pvdeployments)
         return pv_deployment_file
     
     def generate_pv_scenario(
@@ -442,7 +442,7 @@ class PVScenarioGeneratorBase:
         
         undeployed_capacity = 0
         for pv_type in self.deployment_cycles:
-            self.current_deployment_cycle = pv_type
+            self.current_cycle = pv_type
             remaining_pv_to_install = remaining_pv_to_install[pv_type] + undeployed_capacity
             bus_distance = bus_distances[pv_type]
             customer_bus_map = customer_bus_map[pv_type]
@@ -500,13 +500,13 @@ class PVScenarioGeneratorBase:
                         ncs += 1
                     candidate_bus_array.remove(picked_candiate)
                     
-                    if abs(remaining_pv_to_install) <= self.threshold and len(pv_string.split("New PVSystem.")) > 0:
+                    if abs(remaining_pv_to_install) <= self.pv_threshold and len(pv_string.split("New PVSystem.")) > 0:
                         if len(pv_records) > 0:
                             self.write_pv_string(output_path, deployment, penetration, data.total_pv_to_install, pv_string)
                         break
                     if subset_index * self.config.proximity_step > 100:
                         break
-                    if remaining_pv_to_install > self.threshold:
+                    if remaining_pv_to_install > self.pv_threshold:
                         undeployed_capacity = remaining_pv_to_install
                 
                 logger.info(
@@ -650,7 +650,7 @@ class PVScenarioGeneratorBase:
 
     def get_pv_loadshapes_file(self) -> str:
         """Return the loadshapes file in feeder path"""
-        loadshapes_file = os.path.join(self.feeder_path, self.loadshapes_filename)
+        loadshapes_file = os.path.join(self.feeder_path, self.loadshapes)
         return loadshapes_file
     
     def create_all_pv_configs(self, output_path: str) -> None:
@@ -669,7 +669,7 @@ class PVScenarioGeneratorBase:
             # TODO: purpose?
             for i in range(len(penetrations)):
                 max_pen = pens.pop()
-                pv_deployment_file = os.path.join(sample_path, str(max_pen), self.deployment_filename)
+                pv_deployment_file = os.path.join(sample_path, str(max_pen), self.pvdeployments)
                 
                 if os.path.exists(pv_deployment_file):
                     break
@@ -800,9 +800,9 @@ class MixtPVScenarioGenerator(PVScenarioGeneratorBase):
 
     @classmethod
     def get_maximum_pv_size(cls, bus: str, data: SimpleNamespace, **kwargs) -> float:
-        if self.current_deployment_cycle == ScenarioCategory.LARGE:
+        if self.current_cycle == ScenarioCategory.LARGE:
             return LargePVScenarioGenerator.get_maximum_pv_size(bus, data, **kwargs)
-        if self.current_deployment_cycle == ScenarioCategory.SMALL:
+        if self.current_cycle == ScenarioCategory.SMALL:
             return SmallPVScenarioGenerator.get_maximum_pv_size(bus, data, **kwargs)
         return None
 
@@ -845,7 +845,7 @@ class PVDeploymentGeneratorBase(abc.ABC):
         
         summary = {}
         for feeder_path in feeder_paths:
-            scenario_generator = get_scenario_generator(self.config, feeder_path, self.verbose)
+            scenario_generator = get_scenario_generator(feeder_path, self.config, verbose=self.verbose)
             feeder_stats = scenario_generator.generate_all_pv_scenarios(output_path)
             feeder_name = os.path.basename(feeder_path)
             summary[feeder_name] = feeder_stats
@@ -908,7 +908,12 @@ class RegionPVDeploymentGenerator(PVDeploymentGeneratorBase):
         return output_path
 
 
-def get_scenario_generator(config: SimpleNamespace, feeder_path: str, verbose: bool = False):
+def get_scenario_generator(
+    feeder_path: str,
+    config: SimpleNamespace,
+    master: str = "Master.dss",
+    verbose: bool = False
+):
     """Return a PV scenario generator instnace"""
     pv_scenario_generator_mapping = {
         ScenarioCategory.SMALL: SmallPVScenarioGenerator,
@@ -917,5 +922,5 @@ def get_scenario_generator(config: SimpleNamespace, feeder_path: str, verbose: b
     }
     category = ScenarioCategory(config.category)
     scenario_generator_class = pv_scenario_generator_mapping[category]
-    scenario_generator = scenario_generator_class(feeder_path, config, verbose)
+    scenario_generator = scenario_generator_class(feeder_path, config, master, verbose)
     return scenario_generator
