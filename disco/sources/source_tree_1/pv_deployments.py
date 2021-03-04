@@ -577,13 +577,21 @@ class PVScenarioGeneratorBase:
         
         pv_name = f"{pv_type}_{bus.replace('.', '_')}_pv"
         dss.Circuit.SetActiveBus(bus)
-        ph = len(bus.split(".")) - 1
-        if ph > 1:
+        node_list = bus.split(".")
+        ph = len(node_list) - 1
+        if ph == 3:
             conn = "delta"
             kv = round(dss.Bus.kVBase()*(3)**0.5, 4)
         elif ph == -1 or ph == 4:
             conn = "wye"
             kv = round(dss.Bus.kVBase()*(3)**0.5, 4)
+        elif ph == 2:
+            conn = "wye"
+            if "0" in node_list[1:]:
+                kv = round(dss.Bus.kVBase(), 4)
+            else:
+                kv = round(dss.Bus.kVBase() * 2, 4)
+            ph = 1
         else:
             conn = "wye"
             kv = round(dss.Bus.kVBase(), 4)
