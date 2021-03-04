@@ -615,10 +615,10 @@ class PVScenarioGeneratorBase:
         min_dist = min(bus_distance.values())
         if self.config.placement == Placement.CLOSE.value:
             lb_dist = (subset_idx - 1) * (self.config.proximity_step * max_dist) / 100
-            ub_dist = subset_idx * proximity_step * max_dist / 100
+            ub_dist = subset_idx * self.config.proximity_step * max_dist / 100
         elif self.config.placement == Placement.FAR.value:
-            ub_dist = (100 - (subset_idx - 1) * proximity_step) * max_dist / 100
-            lb_dist = (100 - subset_idx * proximity_step) * max_dist / 100
+            ub_dist = (100 - (subset_idx - 1) * self.config.proximity_step) * max_dist / 100
+            lb_dist = (100 - subset_idx * self.config.proximity_step) * max_dist / 100
         elif self.config.placement == Placement.RANDOM.value:
             lb_dist = min_dist
             ub_dist = max_dist
