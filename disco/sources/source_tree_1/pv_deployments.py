@@ -259,7 +259,6 @@ class PVScenarioGeneratorBase:
         self.root_dirname = "hc_pv_deployments"
         self.pvdeployments = "PVDeployments.dss"
         self.loadshapes = "LoadShapes.dss"
-        self.pvdss_instance = None
     
     @property
     @abc.abstractmethod
@@ -320,8 +319,8 @@ class PVScenarioGeneratorBase:
             return feeder_stats.__dict__
         
         # combined bus distance
-        customer_distance = self.get_customer_distance()
-        highv_buses = self.get_highv_buses()
+        customer_distance = pvdss_instance.get_customer_distance()
+        highv_buses = pvdss_instance.get_highv_buses()
         combined_bus_distance = pvdss_instance.combine_bus_distances(customer_distance, highv_buses)
         if max(combined_bus_distance.values()) == 0:
             logger.warning(
