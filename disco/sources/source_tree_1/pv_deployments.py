@@ -8,7 +8,7 @@ import sys
 from collections import defaultdict
 from copy import deepcopy
 from types import SimpleNamespace
-from typing import Optional, Generator, Tuple, NewType
+from typing import Optional, Generator, Tuple, Sequence
 
 import opendssdirect as dss
 from unidecode import unidecode
@@ -564,13 +564,13 @@ class PVScenarioGeneratorBase:
         pass
     
     @staticmethod
-    def generate_pv_size_from_pdf(min_size: float, max_size: float) -> float:
-        # TODO: design in purpose?
+    def generate_pv_size_from_pdf(min_size: float, max_size: float, pdf: Sequence = None) -> float:
+        # TODO: A placeholder function for later update
         pv_size = max_size
         return pv_size
     
     @staticmethod
-    def add_pv_string(self, bus: str, pv_type: str, pv_size: float, pv_string: str) -> str:
+    def add_pv_string(bus: str, pv_type: str, pv_size: float, pv_string: str) -> str:
         """Add PV string to exiting string"""
         if pv_size <= 0:
             return ""
