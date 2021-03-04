@@ -441,7 +441,7 @@ class PVScenarioGeneratorBase:
             remaining_pv_to_install = remaining_pv_to_install[pv_type] + undeployed_capacity
             bus_distance = bus_distances[pv_type]
             customer_bus_map = customer_bus_map[pv_type]
-            breakpoint()
+            
             ncs, subset_idx = 0, 0
             while remaining_pv_to_install > 0:
                 if subset_idx == 0:
@@ -475,6 +475,9 @@ class PVScenarioGeneratorBase:
 
                 subset_idx += 1
                 candidate_bus_array = self.get_pv_bus_subset(bus_distance, subset_idx, priority_buses)
+                if subset_idx > (100 / self.config.proximity_step):
+                    logger.warning("There is not PVDeployments.dss file created - %s", self.feeder_path)
+                    break
                
                 while len(candidate_bus_array) > 0:
                     random.shuffle(candidate_bus_array)
@@ -765,7 +768,7 @@ class SmallPVScenarioGenerator(PVScenarioGeneratorBase):
         return remaining_pv_to_install
     
     @classmethod
-    def get_maximum_pv_size(cls, bus: str, data: SimpleNamespace, **kwargs) -> float:
+    def get_maximum_pv_size(cls, bus: str, data: SimpleNamespace, max_load_factor: float = 3,  **kwargs) -> float:
         roof_area = kwargs.get("roof_area", {})
         pv_efficiency = kwargs.get("pv_efficiency", None)
         customer_annual_kwh = kwargs.get("customer_annual_kwh", {})
