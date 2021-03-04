@@ -97,7 +97,6 @@ class PVDSSInstance:
         with open(self.master_file, "r") as f:
             data = f.read()
         
-        # TODO: refactor, attach new line at the end of file?
         temp = data.split('\nRedirect')[-1].split('\n')[0]
         updated_data = data.replace(temp, temp + f"\nNew EnergyMeter.m1 element={head_line}")
         with open(self.master_file, "w") as f:
@@ -259,6 +258,7 @@ class PVScenarioGeneratorBase:
         self.pv_threshold = 1.0e-10
         self.root_dirname = "hc_pv_deployments"
         self.pvdeployments = "PVDeployments.dss"
+        self.pvsystems = "PVSystems.dss"
         self.loadshapes = "LoadShapes.dss"
     
     @property
@@ -515,7 +515,7 @@ class PVScenarioGeneratorBase:
                     ncs,
                     remaining_pv_to_install
                 )
-        return existng_pv, pv_records
+        return existing_pv, pv_records
     
     def get_all_remaining_pv_to_install(self, data: SimpleNamespace) -> dict:
         """Return all remaining PV to install"""
@@ -675,10 +675,10 @@ class PVScenarioGeneratorBase:
             penetrations.sort()
             # TODO: purpose?
             for i in range(len(penetrations)):
-                max_pen = pens.pop()
-                pv_deployment_file = os.path.join(sample_path, str(max_pen), self.pvdeployments)
+                max_pen = penetrations.pop()
+                pv_systems_file = os.path.join(sample_path, str(max_pen), self.pvsystems)
                 
-                if os.path.exists(pv_deployment_file):
+                if os.path.exists(pv_systems_file):
                     break
             pv_config = self.assign_profile(pv_deployment_file, pv_loadshapes_file)
             self.save_pv_config(pv_config, sample_path)
@@ -855,6 +855,7 @@ class PVDeploymentGeneratorBase(abc.ABC):
         output_path = self.ensure_output_path(output_path)
         
         summary = {}
+        # TODO: try parallize using multiprocessing
         for feeder_path in feeder_paths:
             scenario_generator = get_scenario_generator(feeder_path, self.config, verbose=self.verbose)
             feeder_stats = scenario_generator.generate_all_pv_scenarios(output_path)
