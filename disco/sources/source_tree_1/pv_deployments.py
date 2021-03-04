@@ -353,7 +353,7 @@ class PVScenarioGeneratorBase:
             pv_records = {}
             for penetration in self.iterate_penetrations():
                 data = SimpleNamespace(**{
-                    "base_existing_pv": base_existing_pvs.existing_pv,
+                    "base_existing_pv": base_existing_pv,
                     "total_load": total_loads.total_load,
                     "load_dict": total_loads.load_dict,
                     "bus_totalload": total_loads.bus_totalload,
