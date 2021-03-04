@@ -372,7 +372,7 @@ class PVScenarioGeneratorBase:
                 # key = (self.config.placement, deployment, penetration)
                 # average_pv_distance[key] = [self.config.placement, deployment, penetration, avg_dist]
         
-        return feeder_stats
+        return feeder_stats.__dict__
     
     def get_pv_deployment_root_path(self, output_path: str) -> str:
         """Return the root path of PV depployments"""
@@ -673,7 +673,6 @@ class PVScenarioGeneratorBase:
             sample_path = os.path.join(placement_path, deployment)
             penetrations = [int(p) for p in next(os.walk(sample_path))[1]]
             penetrations.sort()
-            # TODO: purpose?
             for i in range(len(penetrations)):
                 max_pen = penetrations.pop()
                 pv_systems_file = os.path.join(sample_path, str(max_pen), self.pvsystems)
