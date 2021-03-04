@@ -124,6 +124,7 @@ def source_tree_1(
 ):
     """Generate PV deployments for source tree 1."""
     deployment_config = {
+        "placement": placement,
         "pv_upscale": pv_upscale,
         "min_penetration": min_penetration,
         "max_penetration": max_penetration,
