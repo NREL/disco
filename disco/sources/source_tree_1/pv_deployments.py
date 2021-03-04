@@ -395,6 +395,7 @@ class PVScenarioGeneratorBase:
         return pv_deployment_sample_path
     
     def get_pv_deployment_penetration_path(self, output_path: str, deployment: int, penetration: int) -> str:
+        """Return the deployment penetration path of PV deployments."""
         deployment_penetration_path = os.path.join(
             output_path,
             self.root_dirname,
@@ -543,6 +544,7 @@ class PVScenarioGeneratorBase:
         pass
     
     def get_bus_distances(self, data: SimpleNamespace) -> dict:
+        """Return bus distance of large/small category"""
         return {
             ScenarioCategory.LARGE: data.customer_bus_distance,
             ScenarioCategory.SMALL: data.hv_bus_distance
@@ -567,6 +569,7 @@ class PVScenarioGeneratorBase:
     
     @staticmethod
     def add_pv_string(self, bus: str, pv_type: str, pv_size: float, pv_string: str) -> str:
+        """Add PV string to exiting string"""
         if pv_size <= 0:
             return ""
         
@@ -599,6 +602,7 @@ class PVScenarioGeneratorBase:
         pv_string: str,
         data: SimpleNamespace
     ) -> None:
+        """Write PV string to PV deployment file."""
         pv_deployment_file = self.get_pv_deployment_file(output_path, data.deployment, data.penetration)
         line = (
             f"// PV Scenario for {data.total_pv_to_install} kW total size, "
@@ -673,6 +677,7 @@ class PVScenarioGeneratorBase:
    
     @staticmethod
     def assign_profile(self, pv_deployment_file: str, loadshapes_file: str, limit: int = 5) -> dict:
+        """Assign PV profile to PV systems."""
         pv_dict = self.get_pvsys(pv_deployment_file)
         shape_list = self.get_shape_list(loadshapes_file)
         pv_conf = {"pv_systems": []}
@@ -695,6 +700,7 @@ class PVScenarioGeneratorBase:
     
     @staticmethod
     def get_pvsys(pv_deployment_file: str) -> dict:
+        """Return a mapping of PV systems"""
         pv_dict = {}
         with open(pv_deployment_file) as f:
             slines = f.readlines()
@@ -706,6 +712,7 @@ class PVScenarioGeneratorBase:
     
     @staticmethod
     def get_shape_list(loadshapes_file: str) -> list:
+        """Return a list of loadshapes"""
         loadshapes_file = self.get_pv_loadshapes_file()
         shape_list = []
         with open(loadshapes_file) as f:
@@ -715,7 +722,8 @@ class PVScenarioGeneratorBase:
                     shape_list.append(line.lower().split("loadshape.")[1].split(' ')[0])
         return shape_list
     
-    def save_pv_config(self, pv_config, sample_path: str) -> None:
+    def save_pv_config(self, pv_config: dict, sample_path: str) -> None:
+        """Save PV configuration to JSON file"""
         pv_config_file = os.path.join(sample_path, "pv_config.json")
         with open(pv_config_file, "w") as f:
             json.dump(pv_config, f, indent=2)
