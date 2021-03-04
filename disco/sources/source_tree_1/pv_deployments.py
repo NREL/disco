@@ -515,7 +515,7 @@ class PVScenarioGeneratorBase:
                     ncs,
                     remaining_pv_to_install
                 )
-        return exisitng_pv, pv_records
+        return existng_pv, pv_records
     
     def get_all_remaining_pv_to_install(self, data: SimpleNamespace) -> dict:
         """Return all remaining PV to install"""
