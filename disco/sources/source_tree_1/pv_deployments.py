@@ -456,7 +456,7 @@ class PVScenarioGeneratorBase:
                             pv_size = min(random_pv_size, min_pv_size + remaining_pv_to_install)
                             pv_added_capacity = pv_size - min_pv_size
                             remaining_pv_to_install -= pv_added_capacity
-                            pv_string = self.add_pv_string(bus, pv_size, pv_string)
+                            pv_string = self.add_pv_string(bus, pv_type.value, pv_size, pv_string)
                             pv_records[bus] = pv_size
                             existing_pv[bus] = pv_size
                             ncs += 1
@@ -469,7 +469,7 @@ class PVScenarioGeneratorBase:
                             pv_size = min_pv_size
                             pv_added_capacity = 0
                             remaining_pv_to_install -= pv_added_capacity
-                            pv_string = self.add_pv_string(bus, pv_size, pv_string)
+                            pv_string = self.add_pv_string(bus, pv_type.value, pv_size, pv_string)
                             pv_records[bus] = pv_size
                             existing_pv[bus] = pv_size
 
@@ -487,7 +487,7 @@ class PVScenarioGeneratorBase:
                         max_pv_size = self.get_maximum_pv_size(picked_candiate, data)
                         random_pv_size = self.generate_pv_size_from_pdf(0, max_pv_size)
                         pv_size = min(random_pv_size, 0 + remaining_pv_to_install)
-                        pv_string = self.add_pv_string(picked_candiate, pv_size)
+                        pv_string = self.add_pv_string(picked_candiate, pv_type.value, pv_size, pv_string)
                         pv_records[bus] = pv_size
                         existing_pv[bus] = pv_size
                         pv_added_capacity = pv_size
@@ -566,7 +566,7 @@ class PVScenarioGeneratorBase:
         return pv_size
     
     @staticmethod
-    def add_pv_string(self, bus: str, pv_size: float, pv_string: str) -> str:
+    def add_pv_string(self, bus: str, pv_type: str, pv_size: float, pv_string: str) -> str:
         if pv_size <= 0:
             return ""
         
