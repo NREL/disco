@@ -10,7 +10,6 @@ from copy import deepcopy
 from types import SimpleNamespace
 from typing import Optional, Generator, Tuple, NewType
 
-
 import opendssdirect as dss
 from unidecode import unidecode
 
@@ -65,15 +64,15 @@ class PVDSSInstance:
             flag = dss.Topology.Next()
     
     def ensure_energy_meter(self) -> None:
-        missing, misplaced = handler.check_energy_meter_status()
+        missing, misplaced = self.check_energy_meter_status()
         if missing:
             if self.verbose:
                 logger.info("Energy meter missing in master file - %s", self.master_file)
-            handler.place_new_energy_meter()
+            self.place_new_energy_meter()
         elif misplaced:
             if self.verbose:
                 logger.info("Energy meter location is not correct in master file - %s", self.master_file)
-            handler.move_energy_meter_location()
+            self.move_energy_meter_location()
         else:
             if self.verbose:
                 logger.info("Energy meter exists and meter status is good in master file - %s", self.master_file)
@@ -442,7 +441,7 @@ class PVScenarioGeneratorBase:
             remaining_pv_to_install = remaining_pv_to_install[pv_type] + undeployed_capacity
             bus_distance = bus_distances[pv_type]
             customer_bus_map = customer_bus_map[pv_type]
-
+            breakpoint()
             ncs, subset_idx = 0, 0
             while remaining_pv_to_install > 0:
                 if subset_idx == 0:
