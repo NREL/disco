@@ -44,6 +44,7 @@ def pv_deployments():
     type=click.STRING,
     required=False,
     default="Master.dss",
+    show_default=True,
     help="The filename of master dss"
 )
 @click.option(
