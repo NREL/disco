@@ -468,7 +468,7 @@ class PVScenarioDeployerBase:
                     if remaining_pv_to_install > self.pv_threshold:
                         undeployed_capacity = remaining_pv_to_install
                 
-                logger.info(
+                logger.debug(
                     "Sample: %s, Placement: %s, @penetration %s, number of new installable PVs: %s, Remain_to_install: %s kW", 
                     data.deployment,
                     self.config.placement,
