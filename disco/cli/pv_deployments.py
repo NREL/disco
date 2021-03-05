@@ -1,4 +1,6 @@
 import json
+import logging
+
 import click
 
 from jade.loggers import setup_logging
