@@ -792,7 +792,7 @@ class PVDeploymentGeneratorBase(abc.ABC):
             deployer = get_pv_scenario_deployer(feeder_path, self.config)
             feeder_stats = deployer.deploy_all_pv_scenarios()
             summary[feeder_path] = feeder_stats
-            deployer.create_all_pv_configs(output_path)
+            deployer.create_all_pv_configs()
         return summary
 
 

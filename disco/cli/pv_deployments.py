@@ -144,8 +144,7 @@ def source_tree_1(
     summary = generate_pv_deployments(
         input_path=input_path,
         hierarchy=hierarchy,
-        config=config,
-        verbose=verbose
+        config=config
     )
     print(json.dumps(summary, indent=2))
 
