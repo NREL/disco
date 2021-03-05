@@ -284,7 +284,7 @@ class PVScenarioDeployerBase:
         for penetration in range(start, end, step):
             yield penetration
     
-    def deploy_all_pv_scenarios(self, output_path: str) -> dict:
+    def deploy_all_pv_scenarios(self) -> dict:
         """Given a feeder path, generate all PV scenarios for the feeder"""
         feeder_name = self.get_feeder_name()
         pvdss_instance = self.load_pvdss_instance()
@@ -344,38 +344,37 @@ class PVScenarioDeployerBase:
                     "penetration": penetration,
                     "deployment": deployment
                 })
-                existing_pv, pv_records = self.deploy_pv_scenario(data, output_path)
+                existing_pv, pv_records = self.deploy_pv_scenario(data)
                 # avg_dist = self.compute_average_pv_distance(combined_bus_distance, existing_pv)
                 # key = (self.config.placement, deployment, penetration)
                 # average_pv_distance[key] = [self.config.placement, deployment, penetration, avg_dist]
         
         return feeder_stats.__dict__
     
-    def get_output_root_path(self, output_path: str):
+    def get_output_root_path(self):
         """Return the root path of PV depployments"""
-        return os.path.join(output_path, self.output_dirname)
+        return os.path.join(self.feeder_path, self.output_dirname)
     
-    def get_output_placement_path(self, output_path: str) -> str:
+    def get_output_placement_path(self) -> str:
         """Return the placement path of PV deployments"""
-        root_path = self.get_output_root_path(output_path)
+        root_path = self.get_output_root_path()
         placement_path = os.path.join(root_path, self.config.placement)
         return placement_path
     
-    def get_pv_deployments_file(self, output_path: str, deployment: int, penetration: int) -> str:
+    def get_pv_deployments_file(self, deployment: int, penetration: int) -> str:
         """Return the path of PV depployment file"""
-        root_path = self.get_output_root_path(output_path)
-        penetration_path = os.path.join(root_path, self.config.placement, deployment, penetration)
+        placement_path = self.get_output_placement_path()
+        penetration_path = os.path.join(deployment, penetration)
         os.makedirs(penetration_path, exist_ok=True)
         pv_deployments_file = os.path.join(penetration_path, self.pv_deployments)
         return pv_deployments_file
     
-    def deploy_pv_scenario(self, data: SimpleNamespace, output_path: str) -> dict:
+    def deploy_pv_scenario(self, data: SimpleNamespace) -> dict:
         """Generate PV deployments dss file in scenario
         
         Parameters
         ----------
         data: SimpleNamespace, the data used for defining PV scenario
-        output_path: str, the output path of PV deployments
 
         Returns
         -------
@@ -456,7 +455,7 @@ class PVScenarioDeployerBase:
                     
                     if abs(remaining_pv_to_install) <= self.pv_threshold and len(pv_string.split("New PVSystem.")) > 0:
                         if len(pv_records) > 0:
-                            self.write_pv_string(output_path, pv_string, data)
+                            self.write_pv_string(pv_string, data)
                         break
                     if subset_idx * self.config.proximity_step > 100:
                         break
@@ -562,14 +561,9 @@ class PVScenarioDeployerBase:
         pv_string += new_pv_string
         return pv_string
 
-    def write_pv_string(
-        self,
-        output_path: str,
-        pv_string: str,
-        data: SimpleNamespace
-    ) -> None:
+    def write_pv_string(self, pv_string: str, data: SimpleNamespace) -> None:
         """Write PV string to PV deployment file."""
-        pv_deployments_file = self.get_pv_deployments_file(output_path, data.deployment, data.penetration)
+        pv_deployments_file = self.get_pv_deployments_file(data.deployment, data.penetration)
         line = (
             f"// PV Scenario for {data.total_pv_to_install} kW total size, "
             f"Scenario type {self.config.placement}, Deployment {data.deployment} "
@@ -616,14 +610,14 @@ class PVScenarioDeployerBase:
         load_shapes_file = os.path.join(self.feeder_path, self.load_shapes)
         return load_shapes_file
     
-    def create_all_pv_configs(self, output_path: str) -> None:
+    def create_all_pv_configs(self) -> None:
         """Create PV configs JSON file"""
-        pv_deployment_path = self.get_output_root_path(output_path)
-        if not os.path.exists(pv_deployment_path):
+        root_path = self.get_output_root_path()
+        if not os.path.exists(root_path):
             return
         
         load_shapes_file = self.get_load_shapes_file()
-        placement_path = self.get_output_placement_path(output_path)
+        placement_path = self.get_output_placement_path()
         deployments = next(os.walk(placement_path))[1]
         for deployment in deployments:
             sample_path = os.path.join(placement_path, deployment)
@@ -796,7 +790,7 @@ class PVDeploymentGeneratorBase(abc.ABC):
         feeder_paths = self.get_feeder_paths()
         for feeder_path in feeder_paths:
             deployer = get_pv_scenario_deployer(feeder_path, self.config)
-            feeder_stats = deployer.deploy_all_pv_scenarios(output_path=feeder_path)
+            feeder_stats = deployer.deploy_all_pv_scenarios()
             summary[feeder_path] = feeder_stats
             deployer.create_all_pv_configs(output_path)
         return summary

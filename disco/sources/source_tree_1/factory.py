@@ -14,7 +14,7 @@ PV_DEPLOYMENT_GENERATOR_MAPPING = {
     DeploymentHierarchy.FEEDER: FeederPVDeploymentGenerator
 }
 
-def generate_pv_deployments(input_path: str, hierarchy: str, config: dict, verbose: bool = False):
+def generate_pv_deployments(input_path: str, hierarchy: str, config: dict):
     """A factory method for generating pv deployments
     
     Parameters
@@ -22,7 +22,6 @@ def generate_pv_deployments(input_path: str, hierarchy: str, config: dict, verbo
     input_path: str, the input path of raw data.
     hierarchy: str, a hierarchy type - region, substation, or feeder.
     config: dict, the configuration for PV deployment.
-    verbose: bool, more logging information if enabled, default False.
     
     Returns
     ------
@@ -32,6 +31,6 @@ def generate_pv_deployments(input_path: str, hierarchy: str, config: dict, verbo
     hierarchy = DeploymentHierarchy(hierarchy)
     generator_class = PV_DEPLOYMENT_GENERATOR_MAPPING[hierarchy]
     config = SimpleNamespace(**config)
-    generator = generator_class(input_path, config, verbose=verbose)
+    generator = generator_class(input_path, config)
     summary = generator.generate_pv_deployments()
     return summary
