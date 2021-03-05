@@ -36,6 +36,10 @@ class PVDSSInstance:
     def __init__(self, master_file):
         self.master_file = master_file
     
+    @property
+    def feeder_name(self):
+        return os.path.basename(os.path.os.path.dirname(self.master_file))
+    
     def convert_to_ascii(self) -> None:
         """Convert unicode data in ASCII characters for representation"""
         with open(self.master_file, "r") as f:
@@ -61,7 +65,7 @@ class PVDSSInstance:
                 return dss.Topology.BranchName()
             flag = dss.Topology.Next()
     
-    def ensure_energy_meter(self) -> None:
+    def ensure_energy_meter(self) -> bool:
         missing, misplaced = self.check_energy_meter_status()
         if missing:
             logger.info("Energy meter missing in master file - %s", self.master_file)
@@ -72,6 +76,7 @@ class PVDSSInstance:
         else:
             logger.info("Energy meter exists and meter status is good in master file - %s", self.master_file)
             pass
+        return missing or misplaced
     
     def check_energy_meter_status(self) -> Tuple[bool, bool]:
         """Check if energy meter in dss is missing or misplaced"""
@@ -192,7 +197,7 @@ class PVDSSInstance:
         hv_bus_distance = highv_buses.hv_bus_distance
         logger.info(
             "Feeder Name: %s, Highv DistRange: (%s, %s)",
-            feeder_name,
+            self.feeder_name,
             min(hv_bus_distance.values()),
             max(hv_bus_distance.values())
         )
@@ -265,8 +270,9 @@ class PVScenarioDeployerBase:
         try:
             pvdss_instance.convert_to_ascii()
             pvdss_instance.load_feeder()
-            pvdss_instance.ensure_energy_meter()
-            pvdss_instance.load_feeder()  # Need to reload after master file updated.
+            flag = pvdss_instance.ensure_energy_meter()
+            if flag:
+                pvdss_instance.load_feeder()  # Need to reload after master file updated.
         except Exception as error:
             logger.exception("Failed to load master file - %s", master_file)
         return pvdss_instance
