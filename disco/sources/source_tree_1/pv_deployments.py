@@ -478,10 +478,15 @@ class PVScenarioDeployerBase:
                 )
         return existing_pv, pv_records
     
+    def get_total_pv(self, data: SimpleNamespace) -> dict:
+        """Return total PV, including PV already installed and remaining to install"""
+        total_pv = data.total_load * data.penetration / 100
+        return total_pv
+    
     def get_all_remaining_pv_to_install(self, data: SimpleNamespace) -> dict:
         """Return all remaining PV to install"""
-        total_pv_to_install = data.total_load * data.penetration / 100
-        all_remaining_pv_to_install = total_pv_to_install - data.total_existing_pv
+        total_pv = self.get_total_pv(data)
+        all_remaining_pv_to_install = total_pv - data.total_existing_pv
         if all_remaining_pv_to_install <= 0:
             minimum_penetration = (data.total_existing_pv * 100) / max(0.0001, data.total_load)
             logger.error(
@@ -569,9 +574,10 @@ class PVScenarioDeployerBase:
 
     def write_pv_string(self, pv_string: str, data: SimpleNamespace) -> None:
         """Write PV string to PV deployment file."""
+        total_pv = self.get_total_pv(data)
         pv_deployments_file = self.get_pv_deployments_file(data.deployment, data.penetration)
         line = (
-            f"// PV Scenario for {data.total_pv_to_install} kW total size, "
+            f"// PV Scenario for {total_pv} kW total size, "
             f"Scenario type {self.config.placement}, Deployment {data.deployment} "
             f"and penetration {data.penetration}% (PV to load ratio) \n"
         )
