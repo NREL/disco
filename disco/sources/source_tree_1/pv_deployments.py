@@ -277,19 +277,6 @@ class PVScenarioDeployerBase:
             logger.exception("Failed to load master file - %s", master_file)
         return pvdss_instance
     
-    def iterate_deployments(self) -> Generator:
-        """Iterate deployment numbers"""
-        for deployment in range(1, self.config.deployment_number + 1):
-            yield deployment
-    
-    def iterate_penetrations(self) -> Generator:
-        """Iterate penetration levels"""
-        start = self.config.min_penetration
-        end = self.config.max_penetration + 1
-        step = self.config.penetration_step
-        for penetration in range(start, end, step):
-            yield penetration
-    
     def deploy_all_pv_scenarios(self) -> dict:
         """Given a feeder path, generate all PV scenarios for the feeder"""
         feeder_name = self.get_feeder_name()
@@ -330,10 +317,14 @@ class PVScenarioDeployerBase:
             return feeder_stats.__dict__
         
         # average_pv_distance = {}
-        for deployment in self.iterate_deployments():
+        dnum = self.config.deployment_number + 1
+        start = self.config.min_penetration
+        end = self.config.max_penetration + 1
+        step = self.config.penetration_step
+        for deployment in range(1, dnum):
             existing_pv = deepcopy(base_existing_pv)
             pv_records = {}
-            for penetration in self.iterate_penetrations():
+            for penetration in range(start, end, step):
                 data = SimpleNamespace(**{
                     "base_existing_pv": base_existing_pv,
                     "total_load": total_loads.total_load,
