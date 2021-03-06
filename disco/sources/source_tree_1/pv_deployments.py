@@ -128,7 +128,7 @@ class PVDSSInstance:
             "total_load": 0,
             "load_dict": {},
             "customer_bus_map": {},
-            "bus_customers": defaultdict(list),
+            "bus_load": defaultdict(list),
             "bus_totalload": defaultdict(int)
         })
         flag = dss.Loads.First()
@@ -141,7 +141,7 @@ class PVDSSInstance:
             result.load_dict[customer_id] = load_kW
             result.total_load += load_kW
             
-            result.bus_customers[bus].append(customer_id)
+            result.bus_load[bus].append(customer_id)
             result.bus_totalload[bus] += load_kW
 
             flag = dss.Loads.Next()
@@ -370,7 +370,7 @@ class PVScenarioDeployerBase:
     def get_pv_deployments_file(self, deployment: int, penetration: int) -> str:
         """Return the path of PV depployment file"""
         placement_path = self.get_output_placement_path()
-        penetration_path = os.path.join(deployment, penetration)
+        penetration_path = os.path.join(placement_path, str(deployment), str(penetration))
         os.makedirs(penetration_path, exist_ok=True)
         pv_deployments_file = os.path.join(penetration_path, self.pv_deployments)
         return pv_deployments_file
@@ -389,7 +389,7 @@ class PVScenarioDeployerBase:
         """
         pv_string = "! =====================PV SCENARIO FILE==============================\n"
         
-        remaining_pv_to_install = self.get_remaining_pv_to_install(data)
+        categorical_remaining_pvs = self.get_categorical_remaining_pvs(data)
         bus_distances = self.get_bus_distances(data)
         customer_bus_map = self.get_customer_bus_map(data)
         priority_buses = self.get_priority_buses(data)
@@ -399,7 +399,7 @@ class PVScenarioDeployerBase:
         undeployed_capacity = 0
         for pv_type in self.deployment_cycles:
             self.current_cycle = pv_type
-            remaining_pv_to_install = remaining_pv_to_install[pv_type] + undeployed_capacity
+            remaining_pv_to_install = categorical_remaining_pvs[pv_type] + undeployed_capacity
             bus_distance = bus_distances[pv_type]
             customer_bus_map = customer_bus_map[pv_type]
             
@@ -502,21 +502,21 @@ class PVScenarioDeployerBase:
         return priority_buses
     
     @abc.abstractmethod
-    def get_remaining_pv_to_install(self, data: SimpleNamespace) -> dict:
+    def get_categorical_remaining_pvs(self, data: SimpleNamespace) -> dict:
         """Return remaining sall, large PV to install"""
         pass
     
     def get_bus_distances(self, data: SimpleNamespace) -> dict:
         """Return bus distance of large/small category"""
         return {
-            DeploymentCategory.LARGE: data.customer_bus_distance,
-            DeploymentCategory.SMALL: data.hv_bus_distance
+            DeploymentCategory.SMALL: data.customer_bus_distance,
+            DeploymentCategory.LARGE: data.hv_bus_distance
         }
     
     def get_customer_bus_map(self, data: SimpleNamespace) -> dict:
         return {
-            DeploymentCategory.LARGE: data.customer_bus_map,
-            DeploymentCategory.SMALL: data.hv_bus_map
+            DeploymentCategory.SMALL: data.customer_bus_map,
+            DeploymentCategory.LARGE: data.hv_bus_map
         }
     
     @classmethod
@@ -699,13 +699,13 @@ class LargePVScenarioDeployer(PVScenarioDeployerBase):
     def deployment_cycles(self) -> list:
         return [DeploymentCategory.LARGE]
     
-    def get_remaining_pv_to_install(self, data: SimpleNamespace) -> dict:
+    def get_categorical_remaining_pvs(self, data: SimpleNamespace) -> dict:
         all_remaining_pv_to_install = self.get_all_remaining_pv_to_install(data)
-        remaining_pv_to_install = {
+        categorical_remaining_pvs = {
             DeploymentCategory.LARGE: all_remaining_pv_to_install,
             DeploymentCategory.SMALL: 0
         }
-        return remaining_pv_to_install
+        return categorical_remaining_pvs
     
     @classmethod
     def get_maximum_pv_size(cls, bus: str, data: SimpleNamespace, **kwargs) -> int:
@@ -719,13 +719,13 @@ class SmallPVScenarioDeployer(PVScenarioDeployerBase):
     def deployment_cycles(self) -> list:
         return [DeploymentCategory.SMALL]
     
-    def get_remaining_pv_to_install(self, data: SimpleNamespace) -> dict:
+    def get_categorical_remaining_pvs(self, data: SimpleNamespace) -> dict:
         all_remaining_pv_to_install = self.get_all_remaining_pv_to_install(data)
-        remaining_pv_to_install = {
+        categorical_remaining_pvs = {
             DeploymentCategory.LARGE: 0,
             DeploymentCategory.SMALL: all_remaining_pv_to_install
         }
-        return remaining_pv_to_install
+        return categorical_remaining_pvs
     
     @classmethod
     def get_maximum_pv_size(cls, bus: str, data: SimpleNamespace, max_load_factor: float = 3,  **kwargs) -> float:
@@ -751,15 +751,15 @@ class MixtPVScenarioDeployer(PVScenarioDeployerBase):
     def deployment_cycles(self) -> list:
         return [DeploymentCategory.SMALL, DeploymentCategory.LARGE]
     
-    def get_remaining_pv_to_install(self, data: SimpleNamespace) -> dict:
+    def get_categorical_remaining_pvs(self, data: SimpleNamespace) -> dict:
         all_remaining_pv_to_install = self.get_all_remaining_pv_to_install(data)
         small_pv_to_install = (self.config.percent_shares[1] / 100) * all_remaining_pv_to_install
         large_pv_to_install = (1 - self.config.percent_shares[1] / 100) * all_remaining_pv_to_install
-        remaining_pv_to_install = {
+        categorical_remaining_pvs = {
             DeploymentCategory.LARGE: large_pv_to_install,
             DeploymentCategory.SMALL: small_pv_to_install
         }
-        return remaining_pv_to_install
+        return categorical_remaining_pvs
 
     @classmethod
     def get_maximum_pv_size(cls, bus: str, data: SimpleNamespace, **kwargs) -> float:
