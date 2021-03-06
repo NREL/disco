@@ -641,7 +641,7 @@ class PVScenarioDeployerBase:
                 
                 if os.path.exists(pv_systems_file):
                     break
-            pv_config = self.assign_profile(pv_deployments_file, load_shapes_file)
+            pv_config = self.assign_profile(pv_systems_file, load_shapes_file)
             self.save_pv_config(pv_config, sample_path)
         logger.info("All PV config files generated in placement - %s", placement_path)
    
