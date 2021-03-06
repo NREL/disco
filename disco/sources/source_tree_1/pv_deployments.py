@@ -637,11 +637,11 @@ class PVScenarioDeployerBase:
             penetrations.sort()
             for i in range(len(penetrations)):
                 max_pen = penetrations.pop()
-                pv_systems_file = os.path.join(sample_path, str(max_pen), self.pv_systems)
+                pv_file = os.path.join(sample_path, str(max_pen), self.pv_deployments)
                 
-                if os.path.exists(pv_systems_file):
+                if os.path.exists(pv_file):
                     break
-            pv_config = self.assign_profile(pv_systems_file, load_shapes_file)
+            pv_config = self.assign_profile(pv_file, load_shapes_file)
             self.save_pv_config(pv_config, sample_path)
         logger.info("All PV config files generated in placement - %s", placement_path)
    
@@ -679,8 +679,7 @@ class PVScenarioDeployerBase:
                     pv_dict[line.lower().split("pvsystem.")[1].split(" ")[0]] = value
         return pv_dict
     
-    @staticmethod
-    def get_shape_list(load_shapes_file: str) -> list:
+    def get_shape_list(self, load_shapes_file: str) -> list:
         """Return a list of loadshapes"""
         load_shapes_file = self.get_load_shapes_file()
         shape_list = []
