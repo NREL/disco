@@ -270,7 +270,7 @@ class PVScenarioDeployerBase:
         master_file = self.get_master_file()
         pvdss_instance = PVDSSInstance(master_file)
         try:
-            lock_file = self.master_file + ".lock"
+            lock_file = master_file + ".lock"
             with SoftFileLock(lock_file=lock_file):
                 pvdss_instance.convert_to_ascii()
                 pvdss_instance.load_feeder()
