@@ -10,6 +10,7 @@ from types import SimpleNamespace
 from typing import Optional, Generator, Tuple, Sequence
 
 import opendssdirect as dss
+from filelock import SoftFileLock
 from unidecode import unidecode
 
 from disco.enums import Placement
@@ -165,10 +166,6 @@ class PVDSSInstance:
         result = SimpleNamespace(**{"bus_kv": {}, "hv_bus_distance": {}})
         flag = dss.Lines.First()
         while flag > 0:
-            if dss.Lines.Phases() < 3:
-                flag = dss.Lines.Next()
-                continue
-            
             buses = [dss.Lines.Bus1(), dss.Lines.Bus2()]
             for bus in buses:
                 dss.Circuit.SetActiveBus(bus)
@@ -178,7 +175,7 @@ class PVDSSInstance:
                     result.hv_bus_distance[bus] = dss.Bus.Distance()
             flag = dss.Lines.Next()
         return result
-    
+
     def get_existing_pvs(self) -> SimpleNamespace:
         """Return existing pvs"""
         result = SimpleNamespace(**{
@@ -200,22 +197,16 @@ class PVDSSInstance:
         """Return the combined bus distance"""
         customer_bus_distance = customer_distance.bus_distance
         hv_bus_distance = highv_buses.hv_bus_distance
-        if not hv_bus_distance:
-            logger.warning(
-                "Feeder Name: %s, Highv DistRange: not available, as hv_bus_distance is empty",
-                self.feeder_name
-            )
-        else:
-            logger.info(
-                "Feeder Name: %s, Highv DistRange: (%s, %s)",
-                self.feeder_name,
-                min(hv_bus_distance.values()),
-                max(hv_bus_distance.values())
-            )
+        logger.info(
+            "Feeder Name: %s, Highv DistRange: (%s, %s)",
+            self.feeder_name,
+            min(hv_bus_distance.values()),
+            max(hv_bus_distance.values())
+        )
         
         combined_bus_distance = deepcopy(hv_bus_distance)
         combined_bus_distance.update(customer_bus_distance)
-        return combined_bus_distance 
+        return combined_bus_distance
 
     def get_feeder_stats(self, total_loads: SimpleNamespace, existing_pvs: SimpleNamespace = None) -> SimpleNamespace:
         """Return feeder stats"""
@@ -279,11 +270,13 @@ class PVScenarioDeployerBase:
         master_file = self.get_master_file()
         pvdss_instance = PVDSSInstance(master_file)
         try:
-            pvdss_instance.convert_to_ascii()
-            pvdss_instance.load_feeder()
-            flag = pvdss_instance.ensure_energy_meter()
-            if flag:
-                pvdss_instance.load_feeder()  # Need to reload after master file updated.
+            lock_file = self.master_file + ".lock"
+            with SoftFileLock(lock_file=lock_file):
+                pvdss_instance.convert_to_ascii()
+                pvdss_instance.load_feeder()
+                flag = pvdss_instance.ensure_energy_meter()
+                if flag:
+                    pvdss_instance.load_feeder()  # Need to reload after master file updated.
         except Exception as error:
             logger.exception("Failed to load master file - %s", master_file)
         return pvdss_instance
