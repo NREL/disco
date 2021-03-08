@@ -5,7 +5,6 @@ import logging
 import os
 import random
 import sys
-from collections import defaultdict
 from copy import deepcopy
 from types import SimpleNamespace
 from typing import Optional, Generator, Tuple, Sequence
@@ -54,8 +53,7 @@ class PVDSSInstance:
         logger.info("OpenDSS loads feeder - %s", self.master_file)
         r = dss.run_command(f"Redirect {self.master_file}")
         if r != "":
-            logger.error(f"OpenDSSError: {r}. System exits!")
-            sys.exit(1)
+            logger.error("OpenDSSError: %s. Feeder: %s", str(r), self.master_file)
     
     def search_head_line(self) -> None:
         """Search head line from DSS topology"""
@@ -128,8 +126,8 @@ class PVDSSInstance:
             "total_load": 0,
             "load_dict": {},
             "customer_bus_map": {},
-            "bus_load": defaultdict(list),
-            "bus_totalload": defaultdict(int)
+            "bus_load": {},
+            "bus_totalload": {}
         })
         flag = dss.Loads.First()
         while flag > 0:
@@ -141,8 +139,12 @@ class PVDSSInstance:
             result.load_dict[customer_id] = load_kW
             result.total_load += load_kW
             
-            result.bus_load[bus].append(customer_id)
-            result.bus_totalload[bus] += load_kW
+            if not bus in result.bus_load:
+                result.bus_load[bus] = []
+                result.bus_totalload[bus] = load_kW
+            else:
+                result.bus_load[bus].append(customer_id)
+                result.bus_totalload[bus] += load_kW
 
             flag = dss.Loads.Next()
         return result
@@ -181,12 +183,15 @@ class PVDSSInstance:
         """Return existing pvs"""
         result = SimpleNamespace(**{
             "total_existing_pv": 0,
-            "existing_pv": defaultdict(int),
+            "existing_pv": {},
         })
         flag = dss.PVsystems.First()
         while flag > 0:
             bus = dss.Properties.Value("bus1")
-            result.existing_pv[bus] += dss.PVsystems.Pmpp()
+            try:
+                result.existing_pv[bus] += dss.PVsystems.Pmpp()
+            except Exception:
+                result.existing_pv[bus] = dss.PVsystems.Pmpp()
             result.total_existing_pv += dss.PVsystems.Pmpp()
             flag = dss.PVsystems.Next()
         return result
@@ -260,7 +265,6 @@ class PVScenarioDeployerBase:
         master_file = os.path.join(self.feeder_path, self.config.master_filename)
         if not os.path.exists(master_file):
             logger.error("'%s' not found in '%s'. System exits!", self.config.master_filename, self.feeder_path)
-            sys.exit(1)
         return master_file
     
     def load_pvdss_instance(self) -> PVDSSInstance:
@@ -481,10 +485,9 @@ class PVScenarioDeployerBase:
         if all_remaining_pv_to_install <= 0:
             minimum_penetration = (data.total_existing_pv * 100) / max(0.0001, data.total_load)
             logger.error(
-                "Failed to generate PV scenario. The system has more than the target PV penetration. \
-                Please increase penetration to at least %s. System exits!", minimum_penetration
+                "%s - Failed to generate PV scenario. The system has more than the target PV penetration. \
+                Please increase penetration to at least %s.", self.feeder_path, minimum_penetration
             )
-            sys.exit(1)
         return all_remaining_pv_to_install
 
     def get_priority_buses(self, data: SimpleNamespace) -> list:
