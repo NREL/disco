@@ -403,7 +403,10 @@ class PVScenarioDeployerBase:
                 if subset_idx == 0:
                     if self.config.pv_upscale:
                         for bus in priority_buses:
-                            base_min_pv_size = data.base_existing_pv[bus]
+                            if bus in data.base_existing_pv:
+                                base_min_pv_size = data.base_existing_pv[bus]
+                            else:
+                                base_min_pv_size = 0
                             if base_min_pv_size > 0:
                                 continue
                             min_pv_size = existing_pv[bus]
@@ -418,7 +421,10 @@ class PVScenarioDeployerBase:
                             ncs += 1
                     else:
                         for bus in priority_buses:
-                            base_min_pv_size = data.base_existing_pv[bus]
+                            if bus in data.base_existing_pv:
+                                base_min_pv_size = data.base_existing_pv[bus]
+                            else:
+                                base_min_pv_size
                             if base_min_pv_size > 0:
                                 continue
                             min_pv_size = existing_pv[bus]
@@ -438,8 +444,14 @@ class PVScenarioDeployerBase:
                 while len(candidate_bus_array) > 0:
                     random.shuffle(candidate_bus_array)
                     picked_candidate = candidate_bus_array[0]
-                    base_min_pv_size = data.base_existing_pv[picked_candidate]
-                    min_pv_size = existing_pv[picked_candidate]
+                    if picked_candidate in data.base_existing_pv:
+                        base_min_pv_size = data.base_existing_pv[picked_candidate]
+                    else:
+                        base_min_pv_size = 0
+                    if picked_candidate in existing_pv:
+                        min_pv_size = existing_pv[picked_candidate]
+                    else:
+                        min_pv_size = 0
                     if (base_min_pv_size > 0 or min_pv_size > 0) and (not self.config.pv_upscale):
                         pass
                     else:
