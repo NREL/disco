@@ -200,12 +200,19 @@ class PVDSSInstance:
         """Return the combined bus distance"""
         customer_bus_distance = customer_distance.bus_distance
         hv_bus_distance = highv_buses.hv_bus_distance
-        logger.info(
-            "Feeder Name: %s, Highv DistRange: (%s, %s)",
-            self.feeder_name,
-            min(hv_bus_distance.values()),
-            max(hv_bus_distance.values())
-        )
+        if not hv_bus_distance:
+            logger.warning(
+                "Feeder Name: %s, Highv DistRange: not available, as hv_bus_distance is empty",
+                self.feeder_name
+            )
+        else:
+            logger.info(
+                "Feeder Name: %s, Highv DistRange: (%s, %s)",
+                self.feeder_name,
+                min(hv_bus_distance.values()),
+                max(hv_bus_distance.values())
+            )
+        
         combined_bus_distance = deepcopy(hv_bus_distance)
         combined_bus_distance.update(customer_bus_distance)
         return combined_bus_distance 
@@ -222,7 +229,7 @@ class PVDSSInstance:
             nbase_pv_buses = len([b for b, v in existing_pvs.existing_pv.items() if v > 0])
             pcent_base_pv = (existing_pvs.total_existing_pv * 100) / max(0.0000001, total_loads.total_load)
             result.update({
-                "nbase_pv_buses": nbase_pv_buses, 
+                "nbase_pv_buses": nbase_pv_buses,
                 "pcent_base_pv": pcent_base_pv,
                 "total_base_pv": existing_pvs.total_existing_pv
             })
