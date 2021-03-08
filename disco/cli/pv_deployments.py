@@ -1,6 +1,5 @@
 import json
 import logging
-import pprint
 
 import click
 
@@ -195,8 +194,10 @@ def list(
             f.write(data)
         print(f"Total feeders: {len(feeder_paths)}. Output file - {output_file}." )
         return
-    pprint.pprint(feeder_paths)
-    print(f"=====\nTotal feeders: {len(feeder_paths)}")
+
+    for feeder_path in feeder_paths:
+        print(feeder_path)
+    print(f"=========\nTotal feeders: {len(feeder_paths)}")
 
 
 source_tree_1.add_command(create)

@@ -851,7 +851,7 @@ class RegionPVDeploymentGenerator(PVDeploymentGeneratorBase):
             substation_path = os.path.join(self.input_path, substation_name)
             feeder_names = next(os.walk(substation_path))[1]
             feeder_paths.extend([
-                os.path.join(self.input_path, feeder_name)
+                os.path.join(self.input_path, substation_name, feeder_name)
                 for feeder_name in feeder_names
             ])
         return feeder_paths
