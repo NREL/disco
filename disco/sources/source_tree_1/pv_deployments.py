@@ -840,6 +840,11 @@ class RegionPVDeploymentGenerator(PVDeploymentGeneratorBase):
     
     def get_feeder_paths(self) -> list:
         """Given a region path, return all feeder paths in the region"""
+        self.input_path = os.path.join(
+            self.input_path,
+            "solar_none_batteries_none_timeseries",
+            "opendss"
+        )
         feeder_paths = []
         substation_names = next(os.walk(self.input_path))[1]
         for substation_name in substation_names:

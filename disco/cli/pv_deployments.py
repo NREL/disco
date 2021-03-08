@@ -1,11 +1,12 @@
 import json
 import logging
+import pprint
 
 import click
 
 from jade.loggers import setup_logging
 from disco.enums import Placement
-from disco.sources.source_tree_1.factory import generate_pv_deployments
+from disco.sources.source_tree_1.factory import generate_pv_deployments, list_feeder_paths
 from disco.sources.source_tree_1.pv_deployments import DeploymentHierarchy, DeploymentCategory
 
 HIERARCHY_CHOICE = [item.value for item in DeploymentHierarchy]
@@ -15,6 +16,11 @@ PLACEMENT_CHOICE = [item.value for item in Placement]
 
 @click.group()
 def pv_deployments():
+    """Generate PV deployments from raw OpenDSS models"""
+
+
+@click.group()
+def source_tree_1():
     """Generate PV deployments from raw OpenDSS models"""
 
 
@@ -110,7 +116,7 @@ def pv_deployments():
     show_default=True,
     help="Enable to show overbose information."
 )
-def source_tree_1(
+def create(
     input_path,
     hierarchy,
     placement,
@@ -150,4 +156,49 @@ def source_tree_1(
     print(json.dumps(summary, indent=2))
 
 
+@click.command()
+@click.argument("input_path")
+@click.option(
+    "-h", "--hierarchy",
+    type=click.Choice(HIERARCHY_CHOICE, case_sensitive=False),
+    required=True,
+    help="Choose the deployment hierarchy."
+)
+@click.option(
+    "-o", "--output-file",
+    type=click.STRING,
+    required=False,
+    default=None,
+    help="Text file for feeder paths output."
+)
+@click.option(
+    "-v", "--verbose",
+    type=click.BOOL,
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Enable to show overbose information."
+)
+def list(
+    input_path,
+    hierarchy,
+    output_file,
+    verbose
+):
+    """List feeder paths for source tree 1."""
+    level = logging.DEBUG if verbose else logging.INFO
+    setup_logging("pv_deployments", None, console_level=level)
+    feeder_paths = list_feeder_paths(input_path, hierarchy)
+    if output_file:
+        with open(output_file, "w") as f:
+            data = "\n".join(feeder_paths)
+            f.write(data)
+        print(f"Total feeders: {len(feeder_paths)}. Output file - {output_file}." )
+        return
+    pprint.pprint(feeder_paths)
+    print(f"=====\nTotal feeders: {len(feeder_paths)}")
+
+
+source_tree_1.add_command(create)
+source_tree_1.add_command(list)
 pv_deployments.add_command(source_tree_1)

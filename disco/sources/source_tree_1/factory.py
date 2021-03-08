@@ -34,3 +34,14 @@ def generate_pv_deployments(input_path: str, hierarchy: str, config: dict):
     generator = generator_class(input_path, config)
     summary = generator.generate_pv_deployments()
     return summary
+
+
+def list_feeder_paths(input_path: str, hierarchy: str):
+    """
+    A factory method for getting feeder paths
+    """
+    hierarchy = DeploymentHierarchy(hierarchy)
+    generator_class = PV_DEPLOYMENT_GENERATOR_MAPPING[hierarchy]
+    generator = generator_class(input_path, config=None)
+    feeder_paths = generator.get_feeder_paths()
+    return feeder_paths
