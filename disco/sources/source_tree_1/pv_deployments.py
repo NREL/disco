@@ -651,7 +651,7 @@ class PVScenarioDeployerBase:
             pv_config = self.assign_profile(pv_deployments_file, pv_shapes_file)
             pv_config_file = self.save_pv_config(pv_config, sample_path)
             config_files.append(pv_config_file)
-        logger.info("%s PV config files generated in placement - %s", len(config_filess), placement_path)
+        logger.info("%s PV config files generated in placement - %s", len(config_files), placement_path)
         return config_files
         
    
