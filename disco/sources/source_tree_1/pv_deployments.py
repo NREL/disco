@@ -639,11 +639,9 @@ class PVScenarioDeployerBase:
         config_files = []
         pv_shapes_file = self.get_pv_shapes_file()
         placement_path = self.get_output_placement_path()
-        try:
-            deployments = next(os.walk(placement_path))[1]
-        except StopIteration:
-            logger.exception("Stop interation on path - %s", placement_path)
-            raise
+        if not os.path.exists(placement_path):
+            return []
+        deployments = next(os.walk(placement_path))[1]
         
         for deployment in deployments:
             sample_path = os.path.join(placement_path, deployment)
