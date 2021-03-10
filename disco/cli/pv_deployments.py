@@ -209,6 +209,12 @@ def list_feeders(
     help="Choose the deployment hierarchy."
 )
 @click.option(
+    "-p", "--placement",
+    type=click.Choice(PLACEMENT_CHOICE, case_sensitive=False),
+    required=True,
+    help="Choose the placement type"
+)
+@click.option(
     "-c", "--category",
     type=click.Choice(CATEGORY_CHOICE, case_sensitive=False),
     default=DeploymentCategory.SMALL.value,
@@ -223,11 +229,11 @@ def list_feeders(
     show_default=True,
     help="Enable to show overbose information."
 )
-def assign_profile(input_path, hierarchy, category, verbose):
+def assign_profile(input_path, hierarchy, placement, category, verbose):
     """Assign PV profiles based on PV deployments"""
     level = logging.DEBUG if verbose else logging.INFO
     setup_logging("pv_deployments", None, console_level=level)
-    config_paths = assign_pv_profiles(input_path, hierarchy, category)
+    config_paths = assign_pv_profiles(input_path, hierarchy, placement, category)
     print(f"PV configs created! Total: {len(config_paths)}")
 
 
