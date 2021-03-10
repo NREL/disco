@@ -638,11 +638,18 @@ class PVScenarioDeployerBase:
         config_files = []
         pv_shapes_file = self.get_pv_shapes_file()
         placement_path = self.get_output_placement_path()
-        deployments = next(os.walk(placement_path))[1]
+        try:
+            deployments = next(os.walk(placement_path))[1]
+        except StopIteration:
+            logger.exception("Stop interation on path - %s", placement_path)
+        
         for deployment in deployments:
             sample_path = os.path.join(placement_path, deployment)
-            penetrations = [int(p) for p in next(os.walk(sample_path))[1]]
-            penetrations.sort()
+            try:
+                penetrations = [int(p) for p in next(os.walk(sample_path))[1]]
+                penetrations.sort()
+            except StopIteration:
+                logger.exception("Stop interation on path - %s", sample_path)
             for i in range(len(penetrations)):
                 max_pen = penetrations.pop()
                 pv_deployments_file = os.path.join(sample_path, str(max_pen), self.pv_deployments)
@@ -653,7 +660,6 @@ class PVScenarioDeployerBase:
             config_files.append(pv_config_file)
         logger.info("%s PV config files generated in placement - %s", len(config_files), placement_path)
         return config_files
-        
    
     def assign_profile(self, pv_deployments_file: str, pv_shapes_file: str, limit: int = 5) -> dict:
         """Assign PV profile to PV systems."""
@@ -841,12 +847,15 @@ class SubstationPVDeploymentGenerator(PVDeploymentGeneratorBase):
     
     def get_feeder_paths(self) -> list:
         """Given a substation path, return all feeder paths in the substation"""
-        feeder_names = next(os.walk(self.input_path))[1]
-        feeder_paths = [
-            os.path.join(self.input_path, feeder_name)
-            for feeder_name in feeder_names
-        ]
-        return feeder_paths
+        try:
+            feeder_names = next(os.walk(self.input_path))[1]
+            feeder_paths = [
+                os.path.join(self.input_path, feeder_name)
+                for feeder_name in feeder_names
+            ]
+            return feeder_paths
+        except StopIteration:
+            logger.exception("Stop interation on path - %s", self.input_path)
 
 
 class RegionPVDeploymentGenerator(PVDeploymentGeneratorBase):
@@ -860,10 +869,17 @@ class RegionPVDeploymentGenerator(PVDeploymentGeneratorBase):
             "opendss"
         )
         feeder_paths = []
-        substation_names = next(os.walk(self.input_path))[1]
+        try:
+            substation_names = next(os.walk(self.input_path))[1]
+        except StopIteration:
+            logger.exception("Stop interation on path - %s", self.input_path)
+        
         for substation_name in substation_names:
             substation_path = os.path.join(self.input_path, substation_name)
-            feeder_names = next(os.walk(substation_path))[1]
+            try:
+                feeder_names = next(os.walk(substation_path))[1]
+            except StopIteration:
+                logger.exception("Stop interation on path - %s", substation_path)
             feeder_paths.extend([
                 os.path.join(self.input_path, substation_name, feeder_name)
                 for feeder_name in feeder_names
