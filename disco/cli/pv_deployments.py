@@ -209,6 +209,13 @@ def list_feeders(
     help="Choose the deployment hierarchy."
 )
 @click.option(
+    "-c", "--category",
+    type=click.Choice(CATEGORY_CHOICE, case_sensitive=False),
+    default=DeploymentCategory.SMALL.value,
+    show_default=True,
+    help="The PV size pdf value"
+)
+@click.option(
     "-v", "--verbose",
     type=click.BOOL,
     is_flag=True,
@@ -216,7 +223,7 @@ def list_feeders(
     show_default=True,
     help="Enable to show overbose information."
 )
-def assign_profile(input_path, hierarchy, verbose):
+def assign_profile(input_path, hierarchy, category, verbose):
     """Assign PV profiles based on PV deployments"""
     level = logging.DEBUG if verbose else logging.INFO
     setup_logging("pv_deployments", None, console_level=level)
