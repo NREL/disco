@@ -208,12 +208,20 @@ def list_feeders(
     required=True,
     help="Choose the deployment hierarchy."
 )
-def assign_profile(input_path, hierarchy):
+@click.option(
+    "-v", "--verbose",
+    type=click.BOOL,
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Enable to show overbose information."
+)
+def assign_profile(input_path, hierarchy, verbose):
     """Assign PV profiles based on PV deployments"""
     level = logging.DEBUG if verbose else logging.INFO
     setup_logging("pv_deployments", None, console_level=level)
-    assign_pv_profiles(input_path, hierarchy)
-    print("PV configs created!")
+    config_paths = assign_pv_profiles(input_path, hierarchy)
+    print(f"PV configs created! Total: {len(config_paths)}")
 
 
 source_tree_1.add_command(deploy_pv)

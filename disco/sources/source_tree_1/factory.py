@@ -54,4 +54,5 @@ def assign_pv_profiles(input_path: str, hierarchy: str):
     hierarchy = DeploymentHierarchy(hierarchy)
     generator_class = PV_DEPLOYMENT_GENERATOR_MAPPING[hierarchy]
     generator = generator_class(input_path, config=None)
-    feeder_paths = generator.generate_pv_configs()
+    config_paths = generator.generate_pv_configs()
+    return config_paths

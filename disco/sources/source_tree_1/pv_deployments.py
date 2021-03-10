@@ -632,8 +632,10 @@ class PVScenarioDeployerBase:
         """Create PV configs JSON file"""
         root_path = self.get_output_root_path()
         if not os.path.exists(root_path):
-            return
+            logger.info("Deployment path %s not exis under %s", self.output_dirname, self.feeder_path)
+            return []
         
+        config_files = []
         pv_shapes_file = self.get_pv_shapes_file()
         placement_path = self.get_output_placement_path()
         deployments = next(os.walk(placement_path))[1]
@@ -647,8 +649,11 @@ class PVScenarioDeployerBase:
                 if os.path.exists(pv_deployments_file):
                     break
             pv_config = self.assign_profile(pv_deployments_file, pv_shapes_file)
-            self.save_pv_config(pv_config, sample_path)
-        logger.info("All PV config files generated in placement - %s", placement_path)
+            pv_config_file = self.save_pv_config(pv_config, sample_path)
+            config_files.append(pv_config_file)
+        logger.info("%s PV config files generated in placement - %s", len(config_filess), placement_path)
+        return config_files
+        
    
     def assign_profile(self, pv_deployments_file: str, pv_shapes_file: str, limit: int = 5) -> dict:
         """Assign PV profile to PV systems."""
@@ -701,6 +706,7 @@ class PVScenarioDeployerBase:
         with open(pv_config_file, "w") as f:
             json.dump(pv_config, f, indent=2)
         logger.info("PV config file generated - %s", pv_config_file)
+        return pv_config_file
 
 
 class LargePVScenarioDeployer(PVScenarioDeployerBase):
@@ -813,9 +819,12 @@ class PVDeploymentGeneratorBase(abc.ABC):
     def generate_pv_configs(self) -> None:
         """Generate pv config JSON files based on PV deployments"""
         feeder_paths = self.get_feeder_paths()
+        config_paths = []
         for feeder_path in feeder_paths:
             deployer = get_pv_scenario_deployer(feeder_path, self.config)
-            deployer.create_all_pv_configs()
+            result = deployer.create_all_pv_configs()
+            config_paths.extend(result)
+        return config_paths
 
 
 class FeederPVDeploymentGenerator(PVDeploymentGeneratorBase):
