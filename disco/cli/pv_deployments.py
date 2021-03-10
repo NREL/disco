@@ -227,7 +227,7 @@ def assign_profile(input_path, hierarchy, category, verbose):
     """Assign PV profiles based on PV deployments"""
     level = logging.DEBUG if verbose else logging.INFO
     setup_logging("pv_deployments", None, console_level=level)
-    config_paths = assign_pv_profiles(input_path, hierarchy)
+    config_paths = assign_pv_profiles(input_path, hierarchy, category)
     print(f"PV configs created! Total: {len(config_paths)}")
 
 
