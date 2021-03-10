@@ -811,6 +811,13 @@ class PVDeploymentGeneratorBase(abc.ABC):
             summary[feeder_path] = feeder_stats
             deployer.create_all_pv_configs()
         return summary
+    
+    def generate_pv_configs(self) -> None:
+        """Generate pv config JSON files based on PV deployments"""
+        feeder_paths = self.get_feeder_paths()
+        for feeder_path in feeder_paths:
+            deployer = get_pv_scenario_deployer(feeder_path, self.config)
+            deployer.create_all_pv_configs()
 
 
 class FeederPVDeploymentGenerator(PVDeploymentGeneratorBase):

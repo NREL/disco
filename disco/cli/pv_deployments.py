@@ -5,7 +5,7 @@ import click
 
 from jade.loggers import setup_logging
 from disco.enums import Placement
-from disco.sources.source_tree_1.factory import generate_pv_deployments, list_feeder_paths
+from disco.sources.source_tree_1.factory import generate_pv_deployments, list_feeder_paths, assign_pv_profiles
 from disco.sources.source_tree_1.pv_deployments import DeploymentHierarchy, DeploymentCategory
 
 HIERARCHY_CHOICE = [item.value for item in DeploymentHierarchy]
@@ -115,7 +115,7 @@ def source_tree_1():
     show_default=True,
     help="Enable to show overbose information."
 )
-def create(
+def deploy_pv(
     input_path,
     hierarchy,
     placement,
@@ -178,7 +178,7 @@ def create(
     show_default=True,
     help="Enable to show overbose information."
 )
-def list(
+def list_feeders(
     input_path,
     hierarchy,
     output_file,
@@ -200,6 +200,23 @@ def list(
     print(f"=========\nTotal feeders: {len(feeder_paths)}")
 
 
-source_tree_1.add_command(create)
-source_tree_1.add_command(list)
+@click.command()
+@click.argument("input_path")
+@click.option(
+    "-h", "--hierarchy",
+    type=click.Choice(HIERARCHY_CHOICE, case_sensitive=False),
+    required=True,
+    help="Choose the deployment hierarchy."
+)
+def assign_profile(input_path, hierarchy):
+    """Assign PV profiles based on PV deployments"""
+    level = logging.DEBUG if verbose else logging.INFO
+    setup_logging("pv_deployments", None, console_level=level)
+    assign_pv_profiles(input_path, hierarchy)
+    print("PV configs created!")
+
+
+source_tree_1.add_command(deploy_pv)
+source_tree_1.add_command(list_feeders)
+source_tree_1.add_command(assign_profile)
 pv_deployments.add_command(source_tree_1)

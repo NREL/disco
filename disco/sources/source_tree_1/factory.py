@@ -45,3 +45,13 @@ def list_feeder_paths(input_path: str, hierarchy: str):
     generator = generator_class(input_path, config=None)
     feeder_paths = generator.get_feeder_paths()
     return feeder_paths
+
+
+def assign_pv_profiles(input_path: str, hierarchy: str):
+    """
+    A factory method for assign pv profile
+    """
+    hierarchy = DeploymentHierarchy(hierarchy)
+    generator_class = PV_DEPLOYMENT_GENERATOR_MAPPING[hierarchy]
+    generator = generator_class(input_path, config=None)
+    feeder_paths = generator.generate_pv_configs()
