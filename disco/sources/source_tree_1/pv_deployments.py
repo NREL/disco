@@ -124,7 +124,7 @@ class PVDSSInstance:
         
         pv_shapes = os.path.basename(pv_shapes_file)
         index = 0
-        with open(self.master_file, "w") as f:
+        with open(self.master_file, "r") as f:
             data = f.readlines()
             for i, line in enumerate(data):
                 line = line.strip()
