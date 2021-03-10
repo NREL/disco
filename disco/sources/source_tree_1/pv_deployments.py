@@ -279,6 +279,7 @@ class PVScenarioDeployerBase:
                     pvdss_instance.load_feeder()  # Need to reload after master file updated.
         except Exception as error:
             logger.exception("Failed to load master file - %s", master_file)
+            raise
         return pvdss_instance
     
     def deploy_all_pv_scenarios(self) -> dict:
@@ -642,6 +643,7 @@ class PVScenarioDeployerBase:
             deployments = next(os.walk(placement_path))[1]
         except StopIteration:
             logger.exception("Stop interation on path - %s", placement_path)
+            raise
         
         for deployment in deployments:
             sample_path = os.path.join(placement_path, deployment)
@@ -650,6 +652,7 @@ class PVScenarioDeployerBase:
                 penetrations.sort()
             except StopIteration:
                 logger.exception("Stop interation on path - %s", sample_path)
+                raise
             for i in range(len(penetrations)):
                 max_pen = penetrations.pop()
                 pv_deployments_file = os.path.join(sample_path, str(max_pen), self.pv_deployments)
@@ -856,6 +859,7 @@ class SubstationPVDeploymentGenerator(PVDeploymentGeneratorBase):
             return feeder_paths
         except StopIteration:
             logger.exception("Stop interation on path - %s", self.input_path)
+            raise
 
 
 class RegionPVDeploymentGenerator(PVDeploymentGeneratorBase):
@@ -873,13 +877,14 @@ class RegionPVDeploymentGenerator(PVDeploymentGeneratorBase):
             substation_names = next(os.walk(self.input_path))[1]
         except StopIteration:
             logger.exception("Stop interation on path - %s", self.input_path)
-        
+            raise
         for substation_name in substation_names:
             substation_path = os.path.join(self.input_path, substation_name)
             try:
                 feeder_names = next(os.walk(substation_path))[1]
             except StopIteration:
                 logger.exception("Stop interation on path - %s", substation_path)
+                raise
             feeder_paths.extend([
                 os.path.join(self.input_path, substation_name, feeder_name)
                 for feeder_name in feeder_names
