@@ -113,9 +113,32 @@ class PVDSSInstance:
         meter_location = data.split('\nNew EnergyMeter')[1].split('element=')[1].split('\n')[0].split(' ')[0]
         updated_data = data.replace(meter_location, head_line)
         updated_data += f"\n!Moved energy meter from {meter_location} to {head_line}"
-        with open(self.master_file, 'w') as f:
+        with open(self.master_file, "w") as f:
             f.write(updated_data)
         logger.info("Moved energy meter from %s to %s in master file - %s", meter_location, head_line, self.master_file)
+    
+    def redirect_pv_shapes(self, pv_shapes_file) -> bool:
+        """Update master file and redirect PVShapes.dss"""
+        if not os.path.exists(pv_shapes_file):
+            return False
+        
+        pv_shapes = os.path.basename(pv_shapes_file)
+        index = 0
+        with open(self.master_file, "w") as f:
+            data = f.readlines()
+            for i, line in enumerate(data):
+                line = line.strip()
+                if line.startswith("Redirect"):
+                    index = i + 1
+                if line == f"Redirect {pv_shapes}":
+                    logger.info("Skip PVShapes.dss redirect, it already exists.")
+                    return False
+        
+        logger.info("Update master file %s to redirect %s - %s", self.master_file, pv_shapes)
+        data.insert(index, f"Redirect {pv_shapes}\n")
+        with open(self.master_file, "w") as f:
+            f.writelines(data)
+        return True
     
     def get_nbuses(self) -> int:
         """Get the number of buses in dss"""
@@ -268,6 +291,7 @@ class PVScenarioDeployerBase:
     def load_pvdss_instance(self) -> PVDSSInstance:
         """Setup DSS handler for master dss file processing"""
         master_file = self.get_master_file()
+        pv_shapes_file = self.get_pv_shapes_file()
         pvdss_instance = PVDSSInstance(master_file)
         try:
             lock_file = master_file + ".lock"
@@ -277,6 +301,9 @@ class PVScenarioDeployerBase:
                 flag = pvdss_instance.ensure_energy_meter()
                 if flag:
                     pvdss_instance.load_feeder()  # Need to reload after master file updated.
+                flag = pvdss_instance.redirect_pv_shapes(pv_shapes_file)
+                if flag:
+                    pvdss_instance.load_feeder()
         except Exception as error:
             logger.exception("Failed to load master file - %s", master_file)
             raise
