@@ -246,7 +246,7 @@ class PVScenarioDeployerBase:
         self.output_dirname = "hc_pv_deployments"
         self.pv_deployments = "PVDeployments.dss"
         self.pv_systems = "PVSystems.dss"
-        self.load_shapes = "LoadShapes.dss"
+        self.pv_shapes = "PVShapes.dss"
     
     @property
     @abc.abstractmethod
@@ -623,10 +623,10 @@ class PVScenarioDeployerBase:
         average_pv_distance = np.mean(np.array(list(slack_dico.values())))
         return average_pv_distance
 
-    def get_load_shapes_file(self) -> str:
+    def get_pv_shapes_file(self) -> str:
         """Return the loadshapes file in feeder path"""
-        load_shapes_file = os.path.join(self.feeder_path, self.load_shapes)
-        return load_shapes_file
+        pv_shapes_file = os.path.join(self.feeder_path, self.pv_shapes)
+        return pv_shapes_file
     
     def create_all_pv_configs(self) -> None:
         """Create PV configs JSON file"""
@@ -634,7 +634,7 @@ class PVScenarioDeployerBase:
         if not os.path.exists(root_path):
             return
         
-        load_shapes_file = self.get_load_shapes_file()
+        pv_shapes_file = self.get_pv_shapes_file()
         placement_path = self.get_output_placement_path()
         deployments = next(os.walk(placement_path))[1]
         for deployment in deployments:
@@ -643,18 +643,17 @@ class PVScenarioDeployerBase:
             penetrations.sort()
             for i in range(len(penetrations)):
                 max_pen = penetrations.pop()
-                pv_file = os.path.join(sample_path, str(max_pen), self.pv_deployments)
-                
-                if os.path.exists(pv_file):
+                pv_deployments_file = os.path.join(sample_path, str(max_pen), self.pv_deployments)
+                if os.path.exists(pv_deployments_file):
                     break
-            pv_config = self.assign_profile(pv_file, load_shapes_file)
+            pv_config = self.assign_profile(pv_deployments_file, pv_shapes_file)
             self.save_pv_config(pv_config, sample_path)
         logger.info("All PV config files generated in placement - %s", placement_path)
    
-    def assign_profile(self, pv_deployments_file: str, load_shapes_file: str, limit: int = 5) -> dict:
+    def assign_profile(self, pv_deployments_file: str, pv_shapes_file: str, limit: int = 5) -> dict:
         """Assign PV profile to PV systems."""
         pv_dict = self.get_pvsys(pv_deployments_file)
-        shape_list = self.get_shape_list(load_shapes_file)
+        shape_list = self.get_shape_list(pv_shapes_file)
         pv_conf = {"pv_systems": []}
         for pv_name, pv_value in pv_dict.items():
             if float(pv_value) > limit:
@@ -685,11 +684,11 @@ class PVScenarioDeployerBase:
                     pv_dict[line.lower().split("pvsystem.")[1].split(" ")[0]] = value
         return pv_dict
     
-    def get_shape_list(self, load_shapes_file: str) -> list:
+    def get_shape_list(self, pv_shapes_file: str) -> list:
         """Return a list of loadshapes"""
-        load_shapes_file = self.get_load_shapes_file()
+        pv_shapes_file = self.get_pv_shapes_file()
         shape_list = []
-        with open(load_shapes_file) as f:
+        with open(pv_shapes_file) as f:
             slines = f.readlines()
             for line in slines:
                 if "loadshape" in line.lower():
@@ -809,7 +808,6 @@ class PVDeploymentGeneratorBase(abc.ABC):
             deployer = get_pv_scenario_deployer(feeder_path, self.config)
             feeder_stats = deployer.deploy_all_pv_scenarios()
             summary[feeder_path] = feeder_stats
-            deployer.create_all_pv_configs()
         return summary
     
     def generate_pv_configs(self) -> None:
