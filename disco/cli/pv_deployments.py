@@ -103,7 +103,7 @@ def pv_deployments():
 @click.option(
     "-p", "--placement",
     type=click.Choice(PLACEMENT_CHOICE, case_sensitive=False),
-    required=True,
+    required=False,
     default=None,
     show_default=True,
     help="Choose the placement type"
