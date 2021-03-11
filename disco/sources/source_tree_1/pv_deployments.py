@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import random
+import shutil
 import sys
 from copy import deepcopy
 from types import SimpleNamespace
@@ -973,8 +974,6 @@ class PVDeploymentManager(PVDataStorage):
                 removed.append(deployment_path)
             else:
                 placement_paths = self.get_placement_paths(feeder_path, placement)
-                if not placement_paths:
-                    continue
                 for placement_path in placement_paths:
                     shutil.rmtree(placement_path)
                     removed.append(placement_path)
