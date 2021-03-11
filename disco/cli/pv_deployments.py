@@ -1,5 +1,6 @@
 import json
 import logging
+import sys
 from types import SimpleNamespace
 
 import click
@@ -14,11 +15,18 @@ from disco.sources.source_tree_1.pv_deployments import (
     PVConfigManager
 )
 
+HIERARCHY_CHOICE = [item.value for item in DeploymentHierarchy]
+CATEGORY_CHOICE = [item.value for item in DeploymentCategory]
+PLACEMENT_CHOICE = [item.value for item in Placement]
+
 
 def create_pv_deployments(input_path: str, hierarchy: str, config: dict):
     """A method for generating pv deployments"""
     hierarchy = DeploymentHierarchy(hierarchy)
     config = SimpleNamespace(**config)
+    if not config.placement:
+        print(f"Placement should not be None, choose from {PLACEMENT_CHOICE}")
+        sys.exit()
     manager = PVDeploymentManager(input_path, hierarchy, config)
     summary = manager.generate_pv_deployments()
     print(json.dumps(summary, indent=2))
@@ -72,9 +80,6 @@ ACTION_MAPPING = {
     "remove-configs": remove_pv_configs,
     "list-feeders": list_feeder_paths
 }
-HIERARCHY_CHOICE = [item.value for item in DeploymentHierarchy]
-CATEGORY_CHOICE = [item.value for item in DeploymentCategory]
-PLACEMENT_CHOICE = [item.value for item in Placement]
 
 @click.group()
 def pv_deployments():
@@ -99,6 +104,8 @@ def pv_deployments():
     "-p", "--placement",
     type=click.Choice(PLACEMENT_CHOICE, case_sensitive=False),
     required=True,
+    default=None,
+    show_default=True,
     help="Choose the placement type"
 )
 @click.option(
