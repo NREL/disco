@@ -910,6 +910,9 @@ class PVDataStorage:
         paths = []
         placements = [placement] if placement else [p for p in Placement]
         deployment_path = self.get_deployment_path(feeder_path)
+        if not deployment_path:
+            return paths
+        
         for p in placements:
             path = os.path.join(deployment_path, p.value)
             if os.path.exists(path):
