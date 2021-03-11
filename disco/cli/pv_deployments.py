@@ -25,7 +25,7 @@ def create_pv_deployments(input_path: str, hierarchy: str, config: dict):
     hierarchy = DeploymentHierarchy(hierarchy)
     config = SimpleNamespace(**config)
     if not config.placement:
-        print(f"Placement should not be None, choose from {PLACEMENT_CHOICE}")
+        print(f"'-p' or '--placement' should not be None for this action, choose from {PLACEMENT_CHOICE}")
         sys.exit()
     manager = PVDeploymentManager(input_path, hierarchy, config)
     summary = manager.generate_pv_deployments()
@@ -36,6 +36,9 @@ def create_pv_configs(input_path: str, hierarchy: str, config: dict):
     """A method for generating pv config JSON files """
     hierarchy = DeploymentHierarchy(hierarchy)
     config = SimpleNamespace(**config)
+    if not config.placement:
+        print(f"'-p' or '--placement' should not be None for this action, choose from {PLACEMENT_CHOICE}")
+        sys.exit()
     manager = PVConfigManager(input_path, hierarchy, config)
     config_files = manager.generate_pv_configs()
     print(f"PV configs created! Total: {len(config_files)}")
