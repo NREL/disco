@@ -940,7 +940,7 @@ class PVDeploymentManager(PVDataStorage):
     
     def __init__(self,input_path: str, hierarchy: DeploymentHierarchy, config: SimpleNamespace) -> None:
         """
-        Initialize pv deployment generator class
+        Initialize pv deployment manager class
         
         Parameters:
         ----------
@@ -982,6 +982,19 @@ class PVDeploymentManager(PVDataStorage):
 
 class PVConfigManager(PVDataStorage):
 
+    def __init__(self,input_path: str, hierarchy: DeploymentHierarchy, config: SimpleNamespace) -> None:
+        """
+        Initialize pv config manager class
+        
+        Parameters:
+        ----------
+        hierarchy: DeploymentHierarchy, the predefined hierarchy
+        input_path: str, the input path of raw dss data for generating pv deployments.
+        config: SimpleNamespace, the pv deployment configuration namespace.
+        """
+        super().__init__(input_path, hierarchy)
+        self.config = config
+    
     def generate_pv_configs(self) -> list:
         """Generate pv config JSON files based on PV deployments"""
         config_files = []
