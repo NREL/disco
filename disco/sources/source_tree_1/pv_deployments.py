@@ -17,6 +17,12 @@ from disco.enums import Placement
 
 logger = logging.getLogger(__name__)
 
+PV_DEPLOYMENT_DIRNAME = "hc_pv_deployments"
+PV_SYSTEMS_FILENAME = "PVSystems.dss"
+PV_SHAPES_FILENAME = "PVShapes.dss"
+PV_CONFIG_FILENAME = "pv_config.json"
+PV_INSTALLATION_THRESHOLD = 1.0e-10
+
 
 class DeploymentHierarchy(enum.Enum):
     FEEDER = "feeder"
@@ -131,7 +137,7 @@ class PVDSSInstance:
                 if line.startswith("Redirect"):
                     index = i + 1
                 if line == f"Redirect {pv_shapes}":
-                    logger.info("Skip PVShapes.dss redirect, it already exists.")
+                    logger.info("Skip %s redirect, it already exists.", pv_shapes)
                     return False
         
         logger.info("Update master file %s to redirect %s - %s", self.master_file, pv_shapes)
@@ -251,7 +257,7 @@ class PVDSSInstance:
         return result
 
 
-class PVScenarioDeployerBase:
+class PVScenarioGeneratorBase(abc.ABC):
     
     def __init__(self, feeder_path: str, config: SimpleNamespace) -> None:
         """
@@ -265,11 +271,6 @@ class PVScenarioDeployerBase:
         self.feeder_path = feeder_path
         self.config = config
         self.current_cycle = None
-        self.pv_threshold = 1.0e-10
-        self.output_dirname = "hc_pv_deployments"
-        self.pv_deployments = "PVDeployments.dss"
-        self.pv_systems = "PVSystems.dss"
-        self.pv_shapes = "PVShapes.dss"
     
     @property
     @abc.abstractmethod
@@ -382,7 +383,7 @@ class PVScenarioDeployerBase:
     
     def get_output_root_path(self):
         """Return the root path of PV depployments"""
-        return os.path.join(self.feeder_path, self.output_dirname)
+        return os.path.join(self.feeder_path, PV_DEPLOYMENT_DIRNAME)
     
     def get_output_placement_path(self) -> str:
         """Return the placement path of PV deployments"""
@@ -395,7 +396,7 @@ class PVScenarioDeployerBase:
         placement_path = self.get_output_placement_path()
         penetration_path = os.path.join(placement_path, str(deployment), str(penetration))
         os.makedirs(penetration_path, exist_ok=True)
-        pv_deployments_file = os.path.join(penetration_path, self.pv_deployments)
+        pv_deployments_file = os.path.join(penetration_path, PV_SYSTEMS_FILENAME)
         return pv_deployments_file
     
     def deploy_pv_scenario(self, data: SimpleNamespace) -> dict:
@@ -494,13 +495,13 @@ class PVScenarioDeployerBase:
                         ncs += 1
                     candidate_bus_array.remove(picked_candidate)
                     
-                    if abs(remaining_pv_to_install) <= self.pv_threshold and len(pv_string.split("New PVSystem.")) > 0:
+                    if abs(remaining_pv_to_install) <= PV_INSTALLATION_THRESHOLD and len(pv_string.split("New PVSystem.")) > 0:
                         if len(pv_records) > 0:
                             self.write_pv_string(pv_string, data)
                         break
                     if subset_idx * self.config.proximity_step > 100:
                         break
-                    if remaining_pv_to_install > self.pv_threshold:
+                    if remaining_pv_to_install > PV_INSTALLATION_THRESHOLD:
                         undeployed_capacity = remaining_pv_to_install
                 
                 logger.debug(
@@ -653,14 +654,14 @@ class PVScenarioDeployerBase:
 
     def get_pv_shapes_file(self) -> str:
         """Return the loadshapes file in feeder path"""
-        pv_shapes_file = os.path.join(self.feeder_path, self.pv_shapes)
+        pv_shapes_file = os.path.join(self.feeder_path, PV_SHAPES_FILENAME)
         return pv_shapes_file
     
     def create_all_pv_configs(self) -> None:
         """Create PV configs JSON file"""
         root_path = self.get_output_root_path()
         if not os.path.exists(root_path):
-            logger.info("Deployment path %s not exis under %s", self.output_dirname, self.feeder_path)
+            logger.info("Deployment path %s not exis under %s", PV_DEPLOYMENT_DIRNAME, self.feeder_path)
             return []
         
         config_files = []
@@ -680,7 +681,7 @@ class PVScenarioDeployerBase:
                 raise
             for i in range(len(penetrations)):
                 max_pen = penetrations.pop()
-                pv_deployments_file = os.path.join(sample_path, str(max_pen), self.pv_deployments)
+                pv_deployments_file = os.path.join(sample_path, str(max_pen), PV_SYSTEMS_FILENAME)
                 if os.path.exists(pv_deployments_file):
                     break
             pv_config = self.assign_profile(pv_deployments_file, pv_shapes_file)
@@ -736,14 +737,14 @@ class PVScenarioDeployerBase:
     
     def save_pv_config(self, pv_config: dict, sample_path: str) -> None:
         """Save PV configuration to JSON file"""
-        pv_config_file = os.path.join(sample_path, "pv_config.json")
+        pv_config_file = os.path.join(sample_path, PV_CONFIG_FILENAME)
         with open(pv_config_file, "w") as f:
             json.dump(pv_config, f, indent=2)
         logger.info("PV config file generated - %s", pv_config_file)
         return pv_config_file
 
 
-class LargePVScenarioDeployer(PVScenarioDeployerBase):
+class LargePVScenarioGenerator(PVScenarioGeneratorBase):
     
     @property
     def deployment_cycles(self) -> list:
@@ -763,7 +764,7 @@ class LargePVScenarioDeployer(PVScenarioDeployerBase):
         return max_bus_pv_size
 
 
-class SmallPVScenarioDeployer(PVScenarioDeployerBase):
+class SmallPVScenarioGenerator(PVScenarioGeneratorBase):
 
     @property
     def deployment_cycles(self) -> list:
@@ -795,7 +796,7 @@ class SmallPVScenarioDeployer(PVScenarioDeployerBase):
         return max_bus_pv_size
 
 
-class MixtPVScenarioDeployer(PVScenarioDeployerBase):
+class MixtPVScenarioGenerator(PVScenarioGeneratorBase):
     
     @property
     def deployment_cycles(self) -> list:
@@ -814,117 +815,190 @@ class MixtPVScenarioDeployer(PVScenarioDeployerBase):
     @classmethod
     def get_maximum_pv_size(cls, bus: str, data: SimpleNamespace, **kwargs) -> float:
         if self.current_cycle == DeploymentCategory.LARGE:
-            return LargePVScenarioDeployer.get_maximum_pv_size(bus, data, **kwargs)
+            return LargePVScenarioGenerator.get_maximum_pv_size(bus, data, **kwargs)
         if self.current_cycle == DeploymentCategory.SMALL:
-            return SmallPVScenarioDeployer.get_maximum_pv_size(bus, data, **kwargs)
+            return SmallPVScenarioGenerator.get_maximum_pv_size(bus, data, **kwargs)
         return None
 
 
-class PVDeploymentGeneratorBase(abc.ABC):
+def get_pv_scenario_generator(feeder_path: str, config: SimpleNamespace):
+    """Return a PV scenario generator instnace"""
+    pv_scenario_generator_mapping = {
+        DeploymentCategory.SMALL: SmallPVScenarioGenerator,
+        DeploymentCategory.LARGE: LargePVScenarioGenerator,
+        DeploymentCategory.MIXT: MixtPVScenarioGenerator
+    }
+    category = DeploymentCategory(config.category)
+    generator_class = pv_scenario_generator_mapping[category]
+    generator = generator_class(feeder_path, config)
+    return generator
+
+
+class PVDataStorage:
+    """A class for handling PV data storage on file system"""
     
-    def __init__(self, input_path: str, config: SimpleNamespace) -> None:
-        """
-        Initialize pv deployment generator class
-        
-        Parameters:
-        ----------
-        input_path: str, the input path of raw dss data for generating pv deployments.
-        config: SimpleNamespace, the pv deployment configuration namespace.
-        """
+    def __init__(self, input_path: str, hierarchy: DeploymentHierarchy):
         self.input_path = input_path
-        self.config = config
-    
-    @abc.abstractmethod
-    def get_feeder_paths(self) -> list:
-        """Return all feeder paths recursively under given input_path."""
-        pass
-    
-    def generate_pv_deployments(self) -> dict:
-        """Given input path, generate pv deployments"""
-        summary = {}
-        # TODO: try parallize using multiprocessing
-        feeder_paths = self.get_feeder_paths()
-        for feeder_path in feeder_paths:
-            deployer = get_pv_scenario_deployer(feeder_path, self.config)
-            feeder_stats = deployer.deploy_all_pv_scenarios()
-            summary[feeder_path] = feeder_stats
-        return summary
-    
-    def generate_pv_configs(self) -> None:
-        """Generate pv config JSON files based on PV deployments"""
-        feeder_paths = self.get_feeder_paths()
-        config_paths = []
-        for feeder_path in feeder_paths:
-            deployer = get_pv_scenario_deployer(feeder_path, self.config)
-            result = deployer.create_all_pv_configs()
-            config_paths.extend(result)
-        return config_paths
+        self.hierarchy = hierarchy
 
-
-class FeederPVDeploymentGenerator(PVDeploymentGeneratorBase):
-    """PV deployment generator for one feeder"""
     def get_feeder_paths(self) -> list:
-        """Given a feeder path, return as a list if not"""
-        if not isinstance(self.input_path, list):
-            feeder_paths = [self.input_path]
+        """Given an input path, return a list of feeder paths"""
+        if self.hierarchy == DeploymentHierarchy.FEEDER:
+            paths = self._search_feeder_input()
+        elif self.hierarchy == DeploymentHierarchy.SUBSTATION:
+            paths = self._search_substation_input()
+        elif self.hierarchy == DeploymentHierarchy.REGION:
+            paths = self._search_region_input()
+        return paths
+
+    def _search_feeder_input(self) -> list:
+        """Search feeder input path, return it as a list"""
+        feeder_paths = [self.input_path]
         return feeder_paths
 
-
-class SubstationPVDeploymentGenerator(PVDeploymentGeneratorBase):
-    """PV deployment generator for all feeders under one substation"""
-    
-    def get_feeder_paths(self) -> list:
-        """Given a substation path, return all feeder paths in the substation"""
+    def _search_substation_input(self) -> list:
+        """Search substation input path, return all feeder paths in substation"""
         try:
             feeder_names = next(os.walk(self.input_path))[1]
-            feeder_paths = [
-                os.path.join(self.input_path, feeder_name)
-                for feeder_name in feeder_names
-            ]
-            return feeder_paths
         except StopIteration:
             logger.exception("Stop interation on path - %s", self.input_path)
             raise
+        
+        feeder_paths = [
+            os.path.join(self.input_path, feeder_name)
+            for feeder_name in feeder_names
+        ]
+        return feeder_paths
 
-
-class RegionPVDeploymentGenerator(PVDeploymentGeneratorBase):
-    """PV deployment generator for all feeders under one region"""
-    
-    def get_feeder_paths(self) -> list:
-        """Given a region path, return all feeder paths in the region"""
-        self.input_path = os.path.join(
+    def _search_region_input(self) -> list:
+        """Search region input path, return all feeder paths in region"""
+        opendss_path = os.path.join(
             self.input_path,
             "solar_none_batteries_none_timeseries",
             "opendss"
         )
-        feeder_paths = []
+        
         try:
-            substation_names = next(os.walk(self.input_path))[1]
+            substation_names = next(os.walk(opendss_path))[1]
         except StopIteration:
-            logger.exception("Stop interation on path - %s", self.input_path)
+            logger.exception("Stop interation on path - %s", opendss_path)
             raise
+        
+        feeder_paths = []
         for substation_name in substation_names:
-            substation_path = os.path.join(self.input_path, substation_name)
+            substation_path = os.path.join(opendss_path, substation_name)
             try:
                 feeder_names = next(os.walk(substation_path))[1]
             except StopIteration:
                 logger.exception("Stop interation on path - %s", substation_path)
                 raise
             feeder_paths.extend([
-                os.path.join(self.input_path, substation_name, feeder_name)
+                os.path.join(opendss_path, substation_name, feeder_name)
                 for feeder_name in feeder_names
             ])
         return feeder_paths
+    
+    def get_deployment_path(self, feeder_path: str) -> str:
+        """Return the deployment path"""
+        path = os.path.join(feeder_path, PV_DEPLOYMENT_DIRNAME)
+        if os.path.exists(path):
+            return path
+        return None
+    
+    def get_placement_paths(self, feeder_path: str, placement: Placement = None):
+        """Return the placement path in deployment"""
+        paths = []
+        placements = [placement] if placement else [p for p in Placement]
+        deployment_path = self.get_deployment_path(feeder_path)
+        for p in placements:
+            path = os.path.join(deployment_path, p.value)
+            if os.path.exists(path):
+                paths.append(path)
+        return paths
+    
+    def get_sample_paths(self, feeder_path: str, placement: Placement = None):
+        """Return the sample path in deployment"""
+        paths = []
+        placement_paths = self.get_placement_paths(feeder_path, placement)
+        for placement_path in placement_paths:
+            samples = os.listdir(placement_path)
+            sample_paths = [os.path.join(placement_path, str(s)) for s in samples]
+            paths.extend(sample_paths)
+        return paths
+    
+    def get_pv_config_file(self, sample_path: str):
+        """Return PV config file"""
+        config_file = os.path.join(sample_path, PV_CONFIG_FILENAME)
+        return config_file
 
 
-def get_pv_scenario_deployer(feeder_path: str, config: SimpleNamespace):
-    """Return a PV scenario generator instnace"""
-    pv_scenario_deployer_mapping = {
-        DeploymentCategory.SMALL: SmallPVScenarioDeployer,
-        DeploymentCategory.LARGE: LargePVScenarioDeployer,
-        DeploymentCategory.MIXT: MixtPVScenarioDeployer
-    }
-    category = DeploymentCategory(config.category)
-    deployer_class = pv_scenario_deployer_mapping[category]
-    deployer = deployer_class(feeder_path, config)
-    return deployer
+class PVDeploymentManager(PVDataStorage):
+    
+    def __init__(self,input_path: str, hierarchy: DeploymentHierarchy, config: SimpleNamespace) -> None:
+        """
+        Initialize pv deployment generator class
+        
+        Parameters:
+        ----------
+        hierarchy: DeploymentHierarchy, the predefined hierarchy
+        input_path: str, the input path of raw dss data for generating pv deployments.
+        config: SimpleNamespace, the pv deployment configuration namespace.
+        """
+        super().__init__(input_path, hierarchy)
+        self.config = config
+    
+    def generate_pv_deployments(self) -> dict:
+        """Given input path, generate pv deployments"""
+        summary = {}
+        feeder_paths = self.get_feeder_paths()
+        for feeder_path in feeder_paths:
+            generator = get_pv_scenario_generator(feeder_path, self.config)
+            feeder_stats = generator.deploy_all_pv_scenarios()
+            summary[feeder_path] = feeder_stats
+        return summary
+    
+    def remove_pv_deployments(self, placement: Placement = None) -> list:
+        """Given input path, remove all pv deployments of all placements"""
+        removed = []
+        feeder_paths = self.get_feeder_paths()
+        for feeder_path in feeder_paths:
+            if placement is None:
+                deployment_path = self.get_deployment_path(feeder_path)
+                if not deployment_path:
+                    continue
+                shutil.rmtree(deployment_path)
+                removed.append(deployment_path)
+            else:
+                placement_paths = self.get_placement_paths(feeder_path, placement)
+                if not placement_paths:
+                    continue
+                for placement_path in placement_paths:
+                    shutil.rmtree(placement_path)
+                    removed.append(placement_path)
+        return removed
+
+
+class PVConfigManager(PVDataStorage):
+
+    def generate_pv_configs(self) -> list:
+        """Generate pv config JSON files based on PV deployments"""
+        config_files = []
+        feeder_paths = self.get_feeder_paths()
+        for feeder_path in feeder_paths:
+            generator = get_pv_scenario_generator(feeder_path, self.config)
+            result = generator.create_all_pv_configs()
+            config_files.extend(result)
+        return config_files
+
+    def remove_pv_configs(self, placement: Placement = None) -> list:
+        """Remove pv config JSON files from PV deployments"""
+        removed = []
+        feeder_paths = self.get_feeder_paths()
+        for feeder_path in feeder_paths:
+            sample_paths = self.get_sample_paths(feeder_path, placement)
+            for sample_path in sample_paths:
+                config_file = self.get_pv_config_file(sample_path)
+                if os.path.exists(config_file):
+                    os.remove(config_file)
+                    removed.append(config_file)
+        return removed

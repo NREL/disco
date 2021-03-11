@@ -1,30 +1,94 @@
 import json
 import logging
+from types import SimpleNamespace
 
 import click
 
 from jade.loggers import setup_logging
 from disco.enums import Placement
-from disco.sources.source_tree_1.factory import generate_pv_deployments, list_feeder_paths, assign_pv_profiles
-from disco.sources.source_tree_1.pv_deployments import DeploymentHierarchy, DeploymentCategory
+from disco.sources.source_tree_1.pv_deployments import (
+    DeploymentHierarchy,
+    DeploymentCategory,
+    PVDataStorage,
+    PVDeploymentManager,
+    PVConfigManager
+)
 
+
+def create_pv_deployments(input_path: str, hierarchy: str, config: dict):
+    """A method for generating pv deployments"""
+    hierarchy = DeploymentHierarchy(hierarchy)
+    config = SimpleNamespace(**config)
+    manager = PVDeploymentManager(input_path, hierarchy, config)
+    summary = manager.generate_pv_deployments()
+    print(json.dumps(summary, indent=2))
+
+
+def create_pv_configs(input_path: str, hierarchy: str, config: dict):
+    """A method for generating pv config JSON files """
+    hierarchy = DeploymentHierarchy(hierarchy)
+    manager = PVConfigManager(input_path, hierarchy)
+    config_files = manager.generate_pv_configs()
+    print(f"PV configs created! Total: {len(config_files)}")
+
+
+def remove_pv_deployments(input_path: str, hierarchy: str, config: dict):
+    """A method for removing deployed pv systems"""
+    hierarchy = DeploymentHierarchy(hierarchy)
+    config = SimpleNamespace(**config)
+    manager = PVDeploymentManager(input_path, hierarchy, config)
+    if config.placement:
+        placement = Placement(config.placement)
+    else:
+        placement = config.placement
+    result = manager.remove_pv_deployments(placement=placement)
+    print(f"=========\nTotal removed deployments: {len(result)}")
+
+
+def remove_pv_configs(input_path: str, hierarchy: str, config: dict):
+    hierarchy = DeploymentHierarchy(hierarchy)
+    manager = PVConfigManager(input_path, hierarchy)
+    if config.placement:
+        placement = Placement(config.placement)
+    else:
+        placement = config.placement
+    config_files = manager.remove_pv_configs(placement=placement)
+    print(f"PV configs created! Total: {len(config_files)}")
+
+
+def list_feeder_paths(input_path: str, hierarchy: str, config: dict):
+    hierarchy = DeploymentHierarchy(hierarchy)
+    storage = PVDataStorage(input_path, hierarchy)
+    result = storage.get_feeder_paths()
+    for feeder_path in result:
+        print(feeder_path)
+    print(f"=========\nTotal feeders: {len(result)}")
+
+
+ACTION_MAPPING = {
+    "create-pv": create_pv_deployments,
+    "create-configs": create_pv_configs,
+    "remove-pv": remove_pv_deployments,
+    "remove-configs": remove_pv_configs,
+    "list-feeders": list_feeder_paths
+}
 HIERARCHY_CHOICE = [item.value for item in DeploymentHierarchy]
 CATEGORY_CHOICE = [item.value for item in DeploymentCategory]
 PLACEMENT_CHOICE = [item.value for item in Placement]
-
 
 @click.group()
 def pv_deployments():
     """Generate PV deployments from raw OpenDSS models"""
 
 
-@click.group()
-def source_tree_1():
-    """Generate PV deployments from raw OpenDSS models"""
-
-
 @click.command()
 @click.argument("input_path")
+@click.option(
+    "-a", "--action",
+    type=click.Choice(list(ACTION_MAPPING.keys()), case_sensitive=True),
+    required=True,
+    help="Choose the action related to pv deployments"
+)
 @click.option(
     "-h", "--hierarchy",
     type=click.Choice(HIERARCHY_CHOICE, case_sensitive=False),
@@ -115,8 +179,9 @@ def source_tree_1():
     show_default=True,
     help="Enable to show overbose information."
 )
-def deploy_pv(
+def source_tree_1(
     input_path,
+    action,
     hierarchy,
     placement,
     category,
@@ -147,97 +212,8 @@ def deploy_pv(
         "percent_shares": [100, 0],
         "pv_size_pdf": pv_size_pdf
     }
-    summary = generate_pv_deployments(
-        input_path=input_path,
-        hierarchy=hierarchy,
-        config=config
-    )
-    print(json.dumps(summary, indent=2))
+    action_function = ACTION_MAPPING[action]
+    action_function(input_path, hierarchy, config)
 
 
-@click.command()
-@click.argument("input_path")
-@click.option(
-    "-h", "--hierarchy",
-    type=click.Choice(HIERARCHY_CHOICE, case_sensitive=False),
-    required=True,
-    help="Choose the deployment hierarchy."
-)
-@click.option(
-    "-o", "--output-file",
-    type=click.STRING,
-    required=False,
-    default=None,
-    help="Text file for feeder paths output."
-)
-@click.option(
-    "-v", "--verbose",
-    type=click.BOOL,
-    is_flag=True,
-    default=False,
-    show_default=True,
-    help="Enable to show overbose information."
-)
-def list_feeders(
-    input_path,
-    hierarchy,
-    output_file,
-    verbose
-):
-    """List feeder paths for source tree 1."""
-    level = logging.DEBUG if verbose else logging.INFO
-    setup_logging("pv_deployments", None, console_level=level)
-    feeder_paths = list_feeder_paths(input_path, hierarchy)
-    if output_file:
-        with open(output_file, "w") as f:
-            data = "\n".join(feeder_paths)
-            f.write(data)
-        print(f"Total feeders: {len(feeder_paths)}. Output file - {output_file}." )
-        return
-
-    for feeder_path in feeder_paths:
-        print(feeder_path)
-    print(f"=========\nTotal feeders: {len(feeder_paths)}")
-
-
-@click.command()
-@click.argument("input_path")
-@click.option(
-    "-h", "--hierarchy",
-    type=click.Choice(HIERARCHY_CHOICE, case_sensitive=False),
-    required=True,
-    help="Choose the deployment hierarchy."
-)
-@click.option(
-    "-p", "--placement",
-    type=click.Choice(PLACEMENT_CHOICE, case_sensitive=False),
-    required=True,
-    help="Choose the placement type"
-)
-@click.option(
-    "-c", "--category",
-    type=click.Choice(CATEGORY_CHOICE, case_sensitive=False),
-    default=DeploymentCategory.SMALL.value,
-    show_default=True,
-    help="The PV size pdf value"
-)
-@click.option(
-    "-v", "--verbose",
-    type=click.BOOL,
-    is_flag=True,
-    default=False,
-    show_default=True,
-    help="Enable to show overbose information."
-)
-def assign_profile(input_path, hierarchy, placement, category, verbose):
-    """Assign PV profiles based on PV deployments"""
-    level = logging.DEBUG if verbose else logging.INFO
-    setup_logging("pv_deployments", None, console_level=level)
-    config_paths = assign_pv_profiles(input_path, hierarchy, placement, category)
-    print(f"PV configs created! Total: {len(config_paths)}")
-
-
-source_tree_1.add_command(deploy_pv)
-source_tree_1.add_command(list_feeders)
-source_tree_1.add_command(assign_profile)
 pv_deployments.add_command(source_tree_1)
