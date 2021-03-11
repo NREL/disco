@@ -55,6 +55,7 @@ def remove_pv_deployments(input_path: str, hierarchy: str, config: dict):
 
 def remove_pv_configs(input_path: str, hierarchy: str, config: dict):
     hierarchy = DeploymentHierarchy(hierarchy)
+    config = SimpleNamespace(**config)
     manager = PVConfigManager(input_path, hierarchy)
     if config.placement:
         placement = Placement(config.placement)
