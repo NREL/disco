@@ -35,6 +35,7 @@ def create_pv_deployments(input_path: str, hierarchy: str, config: dict):
 def create_pv_configs(input_path: str, hierarchy: str, config: dict):
     """A method for generating pv config JSON files """
     hierarchy = DeploymentHierarchy(hierarchy)
+    config = SimpleNamespace(**config)
     manager = PVConfigManager(input_path, hierarchy, config)
     config_files = manager.generate_pv_configs()
     print(f"PV configs created! Total: {len(config_files)}")
