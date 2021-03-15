@@ -22,7 +22,7 @@ def detect_convergence_problems(project_path):
     project = PyDssProject.load_project(project_path)
     project_name = project.simulation_config["Project"]["Active Project"]
     for scenario in project.list_scenario_names():
-        log_file = f"Logs/{project_name}_{scenario}.log"
+        log_file = "Logs/pydss.log"
         problems += _detect_convergence_problems(
             scenario, project.fs_interface.read_file(log_file)
         )

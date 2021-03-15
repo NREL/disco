@@ -37,12 +37,8 @@ DEFAULT_CONTROLLER_CONFIGS = [
 
 DEFAULT_PYDSS_SIMULATION_CONFIG = {
     "Project": {
-        "Start Year": datetime.datetime.today().year,
-        "Start Day": 1,
-        "End Day": 1,
-        "Start Time (min)": 0.0,
-        "End Time (min)": 0.0,
-        "Date offset": 0,
+        "Start time": "2021-01-01 00:00:00.0",
+        "Simulation duration (min)": 1.0,
         "Step resolution (sec)": 900.0,
         "Max Control Iterations": 15,
         "Error tolerance": 0.001,
@@ -61,7 +57,6 @@ DEFAULT_PYDSS_SIMULATION_CONFIG = {
         "Export Compression": True,
         "Export Data Tables": False,
         "Export PV Profiles": False,
-        "Result Container": "ResultData",
     },
     "Reports": {},
 }

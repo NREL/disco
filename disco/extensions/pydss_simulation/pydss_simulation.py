@@ -8,6 +8,7 @@ import shutil
 
 from jade.common import OUTPUT_DIR
 from jade.utils.utils import modify_file, interpret_datetime
+from PyDSS.common import DATE_FORMAT
 from PyDSS.pydss_project import PyDssScenario
 
 from disco.models.upgrade_cost_analysis_model import UpgradeCostAnalysisModel
@@ -105,15 +106,10 @@ class PyDssSimulation(PyDssSimulationBase):
         start_time = self._model.simulation.start_time
         end_time = self._model.simulation.end_time
         if start_time is not None:
-            timetuple = start_time.timetuple()
-            config["Start Year"] = start_time.year
-            config["Start Day"] = timetuple.tm_yday
-            config["Start Time (min)"] = self._minutes_from_midnight(timetuple)
+            config["Start time"] = start_time.strftime(DATE_FORMAT)
 
         if end_time is not None:
-            timetuple = end_time.timetuple()
-            config["End Day"] = timetuple.tm_yday
-            config["End Time (min)"] = self._minutes_from_midnight(timetuple)
+            config["Simulation duration (min)"] = (end_time - start_time).total_seconds() / 60
 
         if self._model.simulation.step_resolution is not None:
             config["Step resolution (sec)"] = self._model.simulation.step_resolution
