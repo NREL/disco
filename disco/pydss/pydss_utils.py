@@ -1,6 +1,6 @@
 """Contains PyDSS utility functions"""
 
-import re
+import json
 
 from PyDSS.pydss_project import PyDssProject
 
@@ -22,27 +22,17 @@ def detect_convergence_problems(project_path):
     project = PyDssProject.load_project(project_path)
     project_name = project.simulation_config["Project"]["Active Project"]
     for scenario in project.list_scenario_names():
-        log_file = "Logs/pydss.log"
-        problems += _detect_convergence_problems(
-            scenario, project.fs_interface.read_file(log_file)
-        )
+        log_file = f"Logs/{project_name}__{scenario}__reports.log"
+        problems += _detect_convergence_problems(project.fs_interface.read_file(log_file))
 
     return problems
 
 
-def _detect_convergence_problems(scenario, text):
+def _detect_convergence_problems(text):
     problems = []
-    regex = re.compile(r"WARNING.*Control Loop (?P<priority>\d+) no convergence @ (?P<step>\d+)")
     for line in text.splitlines():
-        if "no convergence" in line:
-            match = regex.search(line)
-            assert match
-            priority = int(match.groupdict()["priority"])
-            step = int(match.groupdict()["step"])
-            problems.append({
-                "scenario": scenario,
-                "priority": priority,
-                "step": step,
-            })
+        data = json.loads(line)
+        if data["Report"] == "Convergence":
+            problems.append(data)
 
     return problems
