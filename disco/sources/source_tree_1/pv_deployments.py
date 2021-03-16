@@ -1029,7 +1029,7 @@ class PVDeploymentManager(PVDataStorage):
             existing_penetrations = os.listdir(sample_path)
             if placement not in result:
                 result[placement] = {}
-            result[placement][sample] = list(desired_penetrations.intersection(existing_penetrations))
+            result[placement][sample] = list(desired_penetrations.difference(existing_penetrations))
         return result
 
 
