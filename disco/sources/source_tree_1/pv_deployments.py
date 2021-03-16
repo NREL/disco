@@ -1004,7 +1004,8 @@ class PVDeploymentManager(PVDataStorage):
         desired_placements = {p.value for p in Placement}
         deployment_path = self.get_deployment_path(feeder_path)
         existing_placements = set(os.listdir(deployment_path))
-        return list(desired_placements.difference(existing_placements))
+        missing_placements = list(desired_placements.difference(existing_placements))
+        return missing_placements
 
     def get_missing_samples(self, feeder_path) -> dict:
         desired_samples = {str(i) for i in range(1, self.config.sample_number + 1)}
@@ -1013,7 +1014,9 @@ class PVDeploymentManager(PVDataStorage):
         for placement_path in placement_paths:
             placement = os.path.basename(placement_path)
             exsiting_samples = set(os.listdir(placement_path))
-            result[placement] = list(desired_samples.difference(exsiting_samples))
+            missing_samples = list(desired_samples.difference(exsiting_samples))
+            if missing_samples:
+                result[placement] = missing_samples
         return result
 
     def get_missing_penetrations(self, feeder_path):
@@ -1029,7 +1032,9 @@ class PVDeploymentManager(PVDataStorage):
             existing_penetrations = os.listdir(sample_path)
             if placement not in result:
                 result[placement] = {}
-            result[placement][sample] = list(desired_penetrations.difference(existing_penetrations))
+            missing_penetrations = list(desired_penetrations.difference(existing_penetrations))
+            if missing_penetrations:
+                result[placement][sample] = missing_penetrations
         return result
 
 
