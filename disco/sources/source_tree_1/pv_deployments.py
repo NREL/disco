@@ -1011,7 +1011,7 @@ class PVDeploymentManager(PVDataStorage):
         placement_paths = self.get_placement_paths(feeder_path)
         result = {}
         for placement_path in placement_paths:
-            placement = os.path.basename(placement)
+            placement = os.path.basename(placement_path)
             exsiting_samples = set(os.listdir(placement_path))
             result[placement] = list(desired_samples.difference(exsiting_samples))
         return result
