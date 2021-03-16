@@ -1035,6 +1035,10 @@ class PVDeploymentManager(PVDataStorage):
             missing_penetrations = list(desired_penetrations.difference(existing_penetrations))
             if missing_penetrations:
                 result[placement][sample] = missing_penetrations
+        clean_result = deepcopy(result)
+        for placement in result:
+            if not result[placement]:
+                clean_result.pop(placement)
         return result
 
 
