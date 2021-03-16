@@ -57,6 +57,18 @@ def remove_pv_deployments(input_path: str, hierarchy: str, config: dict):
     print(f"=========\nTotal removed deployments: {len(result)}")
 
 
+def check_pv_deployments(input_path: str, hierarchy: str, config: dict):
+    hierarchy = DeploymentHierarchy(hierarchy)
+    config = SimpleNamespace(**config)
+    manager = PVDeploymentManager(input_path, hierarchy, config)
+    if config.placement:
+        placement = Placement(config.placement)
+    else:
+        placement = config.placement
+    result = manager.check_pv_deployments()
+    print(json.dumps(result, indent=2))
+
+
 def remove_pv_configs(input_path: str, hierarchy: str, config: dict):
     hierarchy = DeploymentHierarchy(hierarchy)
     config = SimpleNamespace(**config)
@@ -80,8 +92,9 @@ def list_feeder_paths(input_path: str, hierarchy: str, config: dict):
 
 ACTION_MAPPING = {
     "create-pv": create_pv_deployments,
-    "create-configs": create_pv_configs,
     "remove-pv": remove_pv_deployments,
+    "check-pv": check_pv_deployments,
+    "create-configs": create_pv_configs,
     "remove-configs": remove_pv_configs,
     "list-feeders": list_feeder_paths
 }
@@ -157,7 +170,7 @@ def pv_deployments():
     help="The step of penetration level."
 )
 @click.option(
-    "-n", "--deployment-number",
+    "-n", "--sample-number",
     type=click.INT,
     default=10,
     show_default=True,
@@ -202,7 +215,7 @@ def source_tree_1(
     min_penetration,
     max_penetration,
     penetration_step,
-    deployment_number,
+    sample_number,
     proximity_step,
     percent_shares,
     pv_size_pdf,
@@ -219,7 +232,7 @@ def source_tree_1(
         "min_penetration": min_penetration,
         "max_penetration": max_penetration,
         "penetration_step": penetration_step,
-        "deployment_number": deployment_number,
+        "sample_number": sample_number,
         "proximity_step": proximity_step,
         "percent_shares": [100, 0],
         "pv_size_pdf": pv_size_pdf

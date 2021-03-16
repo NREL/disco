@@ -351,11 +351,11 @@ class PVScenarioGeneratorBase(abc.ABC):
             return feeder_stats.__dict__
         
         # average_pv_distance = {}
-        dnum = self.config.deployment_number + 1
+        snum = self.config.sample_number + 1
         start = self.config.min_penetration
         end = self.config.max_penetration + 1
         step = self.config.penetration_step
-        for deployment in range(1, dnum):
+        for sample in range(1, snum):
             existing_pv = deepcopy(base_existing_pv)
             pv_records = {}
             for penetration in range(start, end, step):
@@ -373,12 +373,12 @@ class PVScenarioGeneratorBase(abc.ABC):
                     "bus_kv": highv_buses.bus_kv,
                     "pv_records": pv_records,
                     "penetration": penetration,
-                    "deployment": deployment
+                    "sample": sample
                 })
                 existing_pv, pv_records = self.deploy_pv_scenario(data)
                 # avg_dist = self.compute_average_pv_distance(combined_bus_distance, existing_pv)
-                # key = (self.config.placement, deployment, penetration)
-                # average_pv_distance[key] = [self.config.placement, deployment, penetration, avg_dist]
+                # key = (self.config.placement, sample, penetration)
+                # average_pv_distance[key] = [self.config.placement, sample, penetration, avg_dist]
         
         return feeder_stats.__dict__
     
@@ -392,10 +392,10 @@ class PVScenarioGeneratorBase(abc.ABC):
         placement_path = os.path.join(root_path, self.config.placement)
         return placement_path
     
-    def get_pv_deployments_file(self, deployment: int, penetration: int) -> str:
+    def get_pv_deployments_file(self, sample: int, penetration: int) -> str:
         """Return the path of PV depployment file"""
         placement_path = self.get_output_placement_path()
-        penetration_path = os.path.join(placement_path, str(deployment), str(penetration))
+        penetration_path = os.path.join(placement_path, str(sample), str(penetration))
         os.makedirs(penetration_path, exist_ok=True)
         pv_deployments_file = os.path.join(penetration_path, PV_SYSTEMS_FILENAME)
         return pv_deployments_file
@@ -468,7 +468,7 @@ class PVScenarioGeneratorBase(abc.ABC):
                 subset_idx += 1
                 candidate_bus_array = self.get_pv_bus_subset(bus_distance, subset_idx, priority_buses)
                 if subset_idx > (100 / self.config.proximity_step):
-                    logger.warning("There is not PVDeployments.dss file created - %s", self.feeder_path)
+                    logger.warning("There is not PVSystems.dss file created - %s", self.feeder_path)
                     break
                
                 while len(candidate_bus_array) > 0:
@@ -507,7 +507,7 @@ class PVScenarioGeneratorBase(abc.ABC):
                 
                 logger.debug(
                     "Sample: %s, Placement: %s, @penetration %s, number of new installable PVs: %s, Remain_to_install: %s kW", 
-                    data.deployment,
+                    data.sample,
                     self.config.placement,
                     data.penetration,
                     ncs,
@@ -538,7 +538,7 @@ class PVScenarioGeneratorBase(abc.ABC):
         if len(priority_buses) == len(data.bus_totalload):
             logger.warning(
                 "Beaware - Sample: %s, Placement: %s, @penetration %s, all buses already have PV installed.",
-                data.deployment, self.config.placement, data.penetration
+                data.sample, self.config.placement, data.penetration
             )
         return priority_buses
     
@@ -603,7 +603,7 @@ class PVScenarioGeneratorBase(abc.ABC):
             f"bus1={bus} kv={kv} irradiance=1 "
             f"Pmpp={pv_size} pctPmpp=100 kVA={pv_size} "
             f"conn={conn} %cutin=0.1 %cutout=0.1 "
-            f"Vmaxpu=1.2 !{pv_type} \n"
+            f"Vmaxpu=1.2\n"
         )
         pv_string += new_pv_string
         return pv_string
@@ -611,10 +611,10 @@ class PVScenarioGeneratorBase(abc.ABC):
     def write_pv_string(self, pv_string: str, data: SimpleNamespace) -> None:
         """Write PV string to PV deployment file."""
         total_pv = self.get_total_pv(data)
-        pv_deployments_file = self.get_pv_deployments_file(data.deployment, data.penetration)
+        pv_deployments_file = self.get_pv_deployments_file(data.sample, data.penetration)
         line = (
             f"// PV Scenario for {total_pv} kW total size, "
-            f"Scenario type {self.config.placement}, Deployment {data.deployment} "
+            f"Scenario type {self.config.placement}, Sample {data.sample} "
             f"and penetration {data.penetration}% (PV to load ratio) \n"
         )
         with open(pv_deployments_file, "w") as f:
@@ -670,19 +670,13 @@ class PVScenarioGeneratorBase(abc.ABC):
         placement_path = self.get_output_placement_path()
         if not os.path.exists(placement_path):
             return []
-        deployments = next(os.walk(placement_path))[1]
+        samples = next(os.walk(placement_path))[1]
         
-        for deployment in deployments:
-            sample_path = os.path.join(placement_path, deployment)
-            try:
-                penetrations = [int(p) for p in next(os.walk(sample_path))[1]]
-                penetrations.sort()
-            except StopIteration:
-                logger.exception("Stop interation on path - %s", sample_path)
-                raise
-            for i in range(len(penetrations)):
-                max_pen = penetrations.pop()
-                pv_deployments_file = os.path.join(sample_path, str(max_pen), PV_SYSTEMS_FILENAME)
+        for sample in samples:
+            sample_path = os.path.join(placement_path, sample)
+            pv_systems = {}
+            for penetration in os.listdir(sample_path):
+                pv_deployments_file = os.path.join(sample_path, penetration, PV_SYSTEMS_FILENAME)
                 if os.path.exists(pv_deployments_file):
                     break
             pv_config = self.assign_profile(pv_deployments_file, pv_shapes_file)
@@ -978,6 +972,58 @@ class PVDeploymentManager(PVDataStorage):
                     shutil.rmtree(placement_path)
                     removed.append(placement_path)
         return removed
+    
+    def check_pv_deployments(self) -> SimpleNamespace:
+        """Given input path, check if all pv deployments status"""
+        result = SimpleNamespace(**{
+            "placements": {},
+            "samples": {},
+            "penetrations": {}
+        })
+        feeder_paths = self.get_feeder_paths()
+        for feeder_path in feeder_paths:
+            missing_placements = self.get_missing_placements(feeder_path)
+            if missing_placements:
+                result.placements[feeder_path] = missing_placements
+            missing_samples = self.get_missing_samples(feeder_path)
+            if missing_samples:
+                result.samples[feeder_path] = missing_samples
+            missing_penetrations = self.get_missing_penetrations(feeder_path)
+            if missing_penetrations:
+                result.penetrations[feeder_path] = missing_penetrations
+        return result
+    
+    def get_missing_placements(self, feeder_path) -> dict:
+        desired_placements = {p.value for p in Placement}
+        deployment_path = self.get_deployment_path(feeder_path)
+        existing_placements = set(os.listdir(deployment_path))
+        return list(desired_placements.difference(existing_placements))
+
+    def get_missing_samples(self, feeder_path) -> dict:
+        desired_samples = {str(i) for i in range(1, self.config.sample_number + 1)}
+        placement_paths = self.get_placement_paths(feeder_path)
+        result = {}
+        for placement_path in placement_paths:
+            placement = os.path.basename(placement)
+            exsiting_samples = set(os.listdir(placement_path))
+            result[placement] = list(desired_samples.difference(exsiting_samples))
+        return result
+
+    def get_missing_penetrations(self, feeder_path):
+        desired_penetrations = {str(i) for i in range(
+            self.config.min_penetration,
+            self.config.max_penetration + 1,
+            self.config.penetration_step
+        )}
+        result = {}
+        sample_paths = self.get_sample_paths(feeder_path)
+        for sample_path in sample_paths:
+            placement, sample = sample_path.split(os.path.sep)[-2:]
+            existing_penetrations = os.listdir(sample_path)
+            if placement not in result:
+                result[placement] = {}
+            result[placement][sample] = desired_penetrations.intersection(existing_penetrations)
+        return result
 
 
 class PVConfigManager(PVDataStorage):
