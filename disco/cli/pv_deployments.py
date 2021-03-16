@@ -66,7 +66,7 @@ def check_pv_deployments(input_path: str, hierarchy: str, config: dict):
     else:
         placement = config.placement
     result = manager.check_pv_deployments()
-    print(json.dumps(result, indent=2))
+    print(json.dumps(result.__dict__, indent=2))
 
 
 def remove_pv_configs(input_path: str, hierarchy: str, config: dict):
