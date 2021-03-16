@@ -1039,7 +1039,7 @@ class PVDeploymentManager(PVDataStorage):
         for placement in result:
             if not result[placement]:
                 clean_result.pop(placement)
-        return result
+        return clean_result
 
 
 class PVConfigManager(PVDataStorage):
