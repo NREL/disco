@@ -674,13 +674,17 @@ class PVScenarioGeneratorBase(abc.ABC):
         
         for sample in samples:
             sample_path = os.path.join(placement_path, sample)
-            pv_systems = {}
-            for penetration in os.listdir(sample_path):
-                pv_deployments_file = os.path.join(sample_path, penetration, PV_SYSTEMS_FILENAME)
+            pv_systems = set()
+            pv_configurations = []
+            for pen in os.listdir(sample_path):
+                pen_dir = os.path.join(sample_path, pen)
+                if not os.path.isdir(pen_dir):
+                    continue
+                pv_deployments_file = os.path.join(pen_dir, PV_SYSTEMS_FILENAME)
                 if os.path.exists(pv_deployments_file):
-                    break
-            pv_config = self.assign_profile(pv_deployments_file, pv_shapes_file)
-            pv_config_file = self.save_pv_config(pv_config, sample_path)
+                    pv_configurations += self.assign_profile(pv_deployments_file, pv_shapes_file, pv_systems)
+            final = {'pv_systems': pv_configurations}
+            pv_config_file = self.save_pv_config(final, sample_path)
             config_files.append(pv_config_file)
         logger.info("%s PV config files generated in placement - %s", len(config_files), placement_path)
         return config_files
@@ -689,15 +693,17 @@ class PVScenarioGeneratorBase(abc.ABC):
         """Assign PV profile to PV systems."""
         pv_dict = self.get_pvsys(pv_deployments_file)
         shape_list = self.get_shape_list(pv_shapes_file)
-        pv_conf = {"pv_systems": []}
+        pv_conf = []
         for pv_name, pv_value in pv_dict.items():
+            if pv_name in pv_systems:
+                continue
             if float(pv_value) > limit:
                 control_name = "volt-var"
             else:
                 control_name = "pf1"
             random.shuffle(shape_list)
             pv_profile = shape_list[0]
-            pv_conf['pv_systems'].append({
+            pv_conf.append({
                 "name": pv_name,
                 "pydss_controller": {
                     "controller_type": "PvController",
@@ -705,6 +711,7 @@ class PVScenarioGeneratorBase(abc.ABC):
                 },
                 "pv_profile": pv_profile
             })
+            pv_systems.add(pv_name)
         return pv_conf
     
     @staticmethod
