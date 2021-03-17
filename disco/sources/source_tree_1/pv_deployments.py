@@ -488,7 +488,7 @@ class PVScenarioGeneratorBase(abc.ABC):
                     else:
                         max_pv_size = self.get_maximum_pv_size(picked_candidate, data)
                         random_pv_size = self.generate_pv_size_from_pdf(0, max_pv_size)
-                        pv_size = min(random_pv_size, 0 + remaining_pv_to_install)
+                        pv_size = min(random_pv_size, remaining_pv_to_install)
                         pv_string = self.add_pv_string(picked_candidate, pv_type.value, pv_size, pv_string)
                         pv_records[picked_candidate] = pv_size
                         existing_pv[picked_candidate] = pv_size
@@ -497,14 +497,16 @@ class PVScenarioGeneratorBase(abc.ABC):
                         ncs += 1
                     candidate_bus_array.remove(picked_candidate)
                     
-                    if abs(remaining_pv_to_install) <= PV_INSTALLATION_THRESHOLD and len(pv_string.split("New PVSystem.")) > 0:
-                        if len(pv_records) > 0:
-                            self.write_pv_string(pv_string, data)
+                    if abs(remaining_pv_to_install) <= PV_INSTALLATION_THRESHOLD:
                         break
-                    if subset_idx * self.config.proximity_step > 100:
-                        break
-                    if remaining_pv_to_install > PV_INSTALLATION_THRESHOLD:
-                        undeployed_capacity = remaining_pv_to_install
+                
+                if len(pv_records) > 0:
+                    self.write_pv_string(pv_string, data)
+                
+                if remaining_pv_to_install > PV_INSTALLATION_THRESHOLD:
+                    undeployed_capacity = remaining_pv_to_install
+                elif len(pv_records) > 0 and len(pv_string.split("New PVSystem.")) > 0:
+                    self.write_pv_string(pv_string, data)
                 
                 logger.debug(
                     "Sample: %s, Placement: %s, @penetration %s, number of new installable PVs: %s, Remain_to_install: %s kW", 
@@ -514,6 +516,10 @@ class PVScenarioGeneratorBase(abc.ABC):
                     ncs,
                     remaining_pv_to_install
                 )
+                
+                if subset_idx * self.config.proximity_step > 100:
+                    break
+                
         return existing_pv, pv_records
     
     def get_total_pv(self, data: SimpleNamespace) -> dict:
@@ -638,7 +644,7 @@ class PVScenarioGeneratorBase(abc.ABC):
         
         candidate_bus_map = {
             k: v for k, v in bus_distance.items() 
-            if v > lb_dist and v <= ub_dist
+            if v >= lb_dist and v <= ub_dist
         }
         candidate_buses = list(candidate_bus_map.keys())
         candidate_bus_array = [b for b in candidate_buses if not b in priority_buses]
