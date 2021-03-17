@@ -459,6 +459,7 @@ class PVScenarioGeneratorBase(abc.ABC):
                                 continue
                             min_pv_size = existing_pv[bus]
                             pv_size = min_pv_size
+                            # TODO: pv_added_capacity no effect now
                             pv_added_capacity = 0
                             remaining_pv_to_install -= pv_added_capacity
                             pv_string = self.add_pv_string(bus, pv_type.value, pv_size, pv_string)
@@ -575,7 +576,7 @@ class PVScenarioGeneratorBase(abc.ABC):
     def add_pv_string(bus: str, pv_type: str, pv_size: float, pv_string: str) -> str:
         """Add PV string to exiting string"""
         if pv_size <= 0:
-            return ""
+            return pv_string
         
         pv_name = f"{pv_type}_{bus.replace('.', '_')}_pv"
         dss.Circuit.SetActiveBus(bus)
