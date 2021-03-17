@@ -989,7 +989,7 @@ class PVDeploymentManager(PVDataStorage):
                     removed.append(placement_path)
         return removed
     
-    def check_pv_deployments(self) -> SimpleNamespace:
+    def check_pv_deployments(self, placement: Placement = None) -> SimpleNamespace:
         """Given input path, check if all pv deployments status"""
         result = SimpleNamespace(**{
             "placements": {},
@@ -1004,7 +1004,7 @@ class PVDeploymentManager(PVDataStorage):
             missing_samples = self.get_missing_samples(feeder_path)
             if missing_samples:
                 result.samples[feeder_path] = missing_samples
-            missing_penetrations = self.get_missing_penetrations(feeder_path)
+            missing_penetrations = self.get_missing_penetrations(feeder_path, placement)
             if missing_penetrations:
                 result.penetrations[feeder_path] = missing_penetrations
         return result
@@ -1028,14 +1028,14 @@ class PVDeploymentManager(PVDataStorage):
                 result[placement] = missing_samples
         return result
 
-    def get_missing_penetrations(self, feeder_path):
+    def get_missing_penetrations(self, feeder_path: str, placement: Placement = None):
         desired_penetrations = {str(i) for i in range(
             self.config.min_penetration,
             self.config.max_penetration + 1,
             self.config.penetration_step
         )}
         result = {}
-        sample_paths = self.get_sample_paths(feeder_path)
+        sample_paths = self.get_sample_paths(feeder_path, placement=placement)
         for sample_path in sample_paths:
             placement, sample = sample_path.split(os.path.sep)[-2:]
             existing_penetrations = os.listdir(sample_path)

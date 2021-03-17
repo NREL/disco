@@ -65,7 +65,7 @@ def check_pv_deployments(input_path: str, hierarchy: str, config: dict):
         placement = Placement(config.placement)
     else:
         placement = config.placement
-    result = manager.check_pv_deployments()
+    result = manager.check_pv_deployments(placement=placement)
     print(json.dumps(result.__dict__, indent=2))
 
 
