@@ -49,6 +49,7 @@ class PVDSSInstance:
     
     def convert_to_ascii(self) -> None:
         """Convert unicode data in ASCII characters for representation"""
+        logger.info("Convert master file - %s", self.master_file)
         with open(self.master_file, "r") as f:
             data = f.read()
         updated_data = unidecode(data)
