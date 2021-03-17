@@ -141,7 +141,7 @@ class PVDSSInstance:
                     logger.info("Skip %s redirect, it already exists.", pv_shapes)
                     return False
         
-        logger.info("Update master file %s to redirect %s - %s", self.master_file, pv_shapes)
+        logger.info("Update master file %s to redirect %s", self.master_file, pv_shapes)
         data.insert(index, f"Redirect {pv_shapes}\n")
         with open(self.master_file, "w") as f:
             f.writelines(data)
