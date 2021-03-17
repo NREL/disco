@@ -7,6 +7,7 @@ import random
 import shutil
 import sys
 from copy import deepcopy
+from datetime import datetime, timedelta
 from types import SimpleNamespace
 from typing import Optional, Generator, Tuple, Sequence
 
@@ -22,7 +23,7 @@ PV_DEPLOYMENT_DIRNAME = "hc_pv_deployments"
 PV_SYSTEMS_FILENAME = "PVSystems.dss"
 PV_SHAPES_FILENAME = "PVShapes.dss"
 PV_CONFIG_FILENAME = "pv_config.json"
-PV_INSTALLATION_THRESHOLD = 1.0e-10
+PV_INSTALLATION_TOLERANCE = 1.0e-10
 
 
 class DeploymentHierarchy(enum.Enum):
@@ -498,13 +499,13 @@ class PVScenarioGeneratorBase(abc.ABC):
                         ncs += 1
                     candidate_bus_array.remove(picked_candidate)
                     
-                    if abs(remaining_pv_to_install) <= PV_INSTALLATION_THRESHOLD:
+                    if abs(remaining_pv_to_install) <= PV_INSTALLATION_TOLERANCE:
                         break
                 
                 if len(pv_records) > 0:
                     self.write_pv_string(pv_string, data)
                 
-                if remaining_pv_to_install > PV_INSTALLATION_THRESHOLD:
+                if remaining_pv_to_install > PV_INSTALLATION_TOLERANCE:
                     undeployed_capacity = remaining_pv_to_install
                 elif len(pv_records) > 0 and len(pv_string.split("New PVSystem.")) > 0:
                     self.write_pv_string(pv_string, data)
@@ -582,7 +583,7 @@ class PVScenarioGeneratorBase(abc.ABC):
     @staticmethod
     def add_pv_string(bus: str, pv_type: str, pv_size: float, pv_string: str) -> str:
         """Add PV string to exiting string"""
-        if pv_size <= 0:
+        if round(pv_size, 3) <= 0:
             return pv_string
         
         pv_name = f"{pv_type}_{bus.replace('.', '_')}_pv"
