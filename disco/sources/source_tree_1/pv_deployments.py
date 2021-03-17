@@ -690,7 +690,7 @@ class PVScenarioGeneratorBase(abc.ABC):
         logger.info("%s PV config files generated in placement - %s", len(config_files), placement_path)
         return config_files
    
-    def assign_profile(self, pv_deployments_file: str, pv_shapes_file: str, limit: int = 5) -> dict:
+    def assign_profile(self, pv_deployments_file: str, pv_shapes_file: str, pv_systems: set, limit: int = 5) -> dict:
         """Assign PV profile to PV systems."""
         pv_dict = self.get_pvsys(pv_deployments_file)
         shape_list = self.get_shape_list(pv_shapes_file)
