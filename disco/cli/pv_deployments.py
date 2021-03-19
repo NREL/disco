@@ -81,6 +81,18 @@ def remove_pv_configs(input_path: str, hierarchy: str, config: dict):
     print(f"PV configs created! Total: {len(config_files)}")
 
 
+def check_pv_configs(input_path: str, hierarchy: str, config: dict):
+    hierarchy = DeploymentHierarchy(hierarchy)
+    config = SimpleNamespace(**config)
+    manager = PVConfigManager(input_path, hierarchy, config)
+    if config.placement:
+        placement = Placement(config.placement)
+    else:
+        placement = config.placement
+    total_missing = manager.check_pv_configs(placement=placement)
+    print(json.dumps(total_missing, indent=2))
+
+
 def list_feeder_paths(input_path: str, hierarchy: str, config: dict):
     hierarchy = DeploymentHierarchy(hierarchy)
     storage = PVDataStorage(input_path, hierarchy)
@@ -90,12 +102,14 @@ def list_feeder_paths(input_path: str, hierarchy: str, config: dict):
     print(f"=========\nTotal feeders: {len(result)}")
 
 
+
 ACTION_MAPPING = {
     "create-pv": create_pv_deployments,
     "remove-pv": remove_pv_deployments,
     "check-pv": check_pv_deployments,
     "create-configs": create_pv_configs,
     "remove-configs": remove_pv_configs,
+    "check-configs": check_pv_configs,
     "list-feeders": list_feeder_paths
 }
 

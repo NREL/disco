@@ -1090,3 +1090,23 @@ class PVConfigManager(PVDataStorage):
                     os.remove(config_file)
                     removed.append(config_file)
         return removed
+    
+    def check_pv_configs(self, placement: Placement = None) -> dict:
+        """Check pv config existence in pv deployments"""
+        total_missing = {}
+        feeder_paths = self.get_feeder_paths()
+        for feeder_path in feeder_paths:
+            missing = {}
+            sample_paths = self.get_sample_paths(feeder_path, placement)
+            for sample_path in sample_paths:
+                pv_config_file = os.path.join(sample_path, PV_CONFIG_FILENAME)
+                sample = os.path.basename(sample_path)
+                if os.path.exists(pv_config_file):
+                    continue
+                if placement.value in missing:
+                    missing[placement.value].append(sample)
+                else:
+                    missing[placement.value] = [sample]
+            if missing:
+                total_missing[feeder_path] = missing
+        return total_missing
