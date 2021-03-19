@@ -1108,5 +1108,5 @@ class PVConfigManager(PVDataStorage):
                 else:
                     missing[placement.value] = [sample]
             if missing:
-                total_missing[feeder_path] = missing
+                total_missing[feeder_path] = deepcopy(missing)
         return total_missing
