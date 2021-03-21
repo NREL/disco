@@ -106,6 +106,7 @@ class PyDssSimulationBase(JobExecutionInterface):
                 "Log to external file": True,
                 "Display on screen": False,
                 "Clear old log file": True,
+                "Log time step updates": False,
             },
         }
 
@@ -248,15 +249,16 @@ class PyDssSimulationBase(JobExecutionInterface):
         if not problems:
             return 0
 
-        for problem in problems:
-            event = StructuredLogEvent(
-                source=self._model.name,
-                category=EVENT_CATEGORY_ERROR,
-                name=EVENT_NO_CONVERGENCE,
-                message="Detected convergence problem in PyDSS log.",
-                **problem,
-            )
-            log_event(event)
+        # This is disabled because there can be huge counts. There is no need to duplicate them.
+        #for problem in problems:
+        #    event = StructuredLogEvent(
+        #        source=self._model.name,
+        #        category=EVENT_CATEGORY_ERROR,
+        #        name=EVENT_NO_CONVERGENCE,
+        #        message="Detected convergence problem in PyDSS log.",
+        #        **problem,
+        #    )
+        #    log_event(event)
 
         logger.error("Job failed with %s convergence problems", len(problems))
 
