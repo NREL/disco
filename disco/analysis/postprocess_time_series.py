@@ -10,10 +10,11 @@ import pandas as pd
 import numpy as np
 
 from jade.common import CONFIG_FILE
-from PyDSS.pydss_project import PyDssProject
 from disco.extensions.pydss_simulation.pydss_configuration import PyDssConfiguration
 from disco.distribution.deployment_parameters import DeploymentParameters
+from PyDSS.pydss_project import PyDssProject
 from PyDSS.pydss_results import PyDssResults
+from PyDSS.node_voltage_metrics import SimulationVoltageMetricsModel, VoltageMetricsModel
 
 
 def combine_metrics(project_path):
@@ -22,11 +23,14 @@ def combine_metrics(project_path):
     #if os.path.exists(project_path):
     pydss_project = PyDssProject.load_project(project_path)
 
-    voltage_metrics = json.loads(
-        pydss_project.fs_interface.read_file(
-            os.path.join("Reports", "voltage_metrics.json")
+    voltage_metrics = SimulationVoltageMetricsModel(
+        **json.loads(
+            pydss_project.fs_interface.read_file(
+                os.path.join("Reports", "voltage_metrics.json")
+            )
         )
     )
+    assert "control_mode" in voltage_metrics.scenarios
 
     thermal_metrics = json.loads(
         pydss_project.fs_interface.read_file(
@@ -34,7 +38,8 @@ def combine_metrics(project_path):
         )
     )
     
-    summary_dict.update(voltage_metrics['summary'])
+    voltage_summary = voltage_metrics.scenarios["control_mode"].summary
+    summary_dict.update(voltage_summary.dict())
     summary_dict.update(thermal_metrics['summary'])
     return summary_dict
 
@@ -154,5 +159,3 @@ def compute_hosting_capacity(dfs, job_outputs_path):
                 hc_dict[feeder]['min_hc_kW'] = max(size_set)   
     hc_df = pd.DataFrame.from_dict(hc_dict, 'index')
     hc_df.to_csv(os.path.join(job_outputs_path, 'hosting_capacity.csv'))
-    
-    
