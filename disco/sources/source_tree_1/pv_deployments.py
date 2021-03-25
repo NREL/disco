@@ -790,7 +790,7 @@ class SmallPVScenarioGenerator(PVScenarioGeneratorBase):
         return categorical_remaining_pvs
     
     @classmethod
-    def get_maximum_pv_size(cls, bus: str, data: SimpleNamespace, max_load_factor: float = 3,  **kwargs) -> float:
+    def get_maximum_pv_size(cls, bus: str, data: SimpleNamespace, max_load_factor: float = 2.1,  **kwargs) -> float:
         roof_area = kwargs.get("roof_area", {})
         pv_efficiency = kwargs.get("pv_efficiency", None)
         customer_annual_kwh = kwargs.get("customer_annual_kwh", {})
