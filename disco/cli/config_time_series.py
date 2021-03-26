@@ -98,8 +98,8 @@ def time_series(
     simulation_config["Reports"] = load_data(reports_filename)["Reports"]
 
     scenarios = [
-        PyDssConfiguration.make_default_pydss_scenario(PF1_SCENARIO),
         PyDssConfiguration.make_default_pydss_scenario(CONTROL_MODE_SCENARIO),
+        PyDssConfiguration.make_default_pydss_scenario(PF1_SCENARIO),
     ]
     config = PyDssConfiguration.auto_config(
         inputs,
