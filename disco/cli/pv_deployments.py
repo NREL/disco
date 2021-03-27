@@ -158,7 +158,7 @@ def pv_deployments():
 @click.option(
     "-u", "--pv-upscale",
     is_flag=True,
-    default=True,
+    default=False,
     show_default=True,
     help="Upscale PV in deployments."
 )
