@@ -1010,6 +1010,7 @@ class PVDeploymentManager(PVDataStorage):
         return result
     
     def get_missing_placements(self, feeder_path: str, placement: Placement = None) -> dict:
+        """Return missing placement information in PV deployments on feeder."""
         desired_placements = {p.value for p in Placement}
         deployment_path = self.get_deployment_path(feeder_path)
         existing_placements = set(os.listdir(deployment_path))
@@ -1019,6 +1020,7 @@ class PVDeploymentManager(PVDataStorage):
         return [placement.value]
 
     def get_missing_samples(self, feeder_path: str, placement: Placement = None) -> dict:
+        """Return missing sample information in PV deployments on feeder."""
         desired_samples = {str(i) for i in range(1, self.config.sample_number + 1)}
         placement_paths = self.get_placement_paths(feeder_path, placement)
         result = {}
@@ -1031,6 +1033,7 @@ class PVDeploymentManager(PVDataStorage):
         return result
 
     def get_missing_penetrations(self, feeder_path: str, placement: Placement = None):
+        """Return missing penetration information in PV deployments on feeder."""
         desired_penetrations = {str(i) for i in range(
             self.config.min_penetration,
             self.config.max_penetration + 1,
