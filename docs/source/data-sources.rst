@@ -130,6 +130,8 @@ This format requires the following directory structure:
       └── <profile>.csv
 
 Where in *format.toml*, it defines ``type = "SourceTree1Model"``.
+To see how to generate the PV deployments data in ``hc_pv_deployments`` directory, please
+refer to :ref:`SourceTree1PVDeployments`.
 
 
 .. _SourceTree2Model:
