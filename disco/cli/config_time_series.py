@@ -71,6 +71,14 @@ logger = logging.getLogger(__name__)
     help="PyDSS report options",
 )
 @click.option(
+    "--order-by-penetration/--no-order-by-penetration",
+    default=True,
+    show_default=True,
+    help="Make jobs with higher penetration levels blocked by those with lower levels. This "
+         "is important to set for long simulations with lots of feeders so that jobs on "
+         "failing feeders can be canceled.",
+)
+@click.option(
     "--verbose",
     is_flag=True,
     default=False,
@@ -83,6 +91,7 @@ def time_series(
     impact_analysis,
     impact_analysis_inputs_filename,
     reports_filename=None,
+    order_by_penetration=True,
     verbose=False,
 ):
     """Create JADE configuration for time series simulations."""
@@ -105,6 +114,7 @@ def time_series(
         inputs,
         simulation_config=simulation_config,
         scenarios=scenarios,
+        order_by_penetration=order_by_penetration,
         estimated_exec_secs_per_job=ESTIMATED_EXEC_SECS_PER_JOB,
     )
     if hosting_capacity or impact_analysis:

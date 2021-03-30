@@ -92,7 +92,8 @@ class PyDssConfiguration(PyDssConfigurationBase):
         return job_names
 
     @classmethod
-    def auto_config(cls, inputs, simulation_config=None, scenarios=None, **kwargs):
+    def auto_config(cls, inputs, simulation_config=None, scenarios=None,
+                    order_by_penetration=False, **kwargs):
         """Create a configuration from all available inputs."""
         if isinstance(inputs, str):
             inputs = PyDssInputs(inputs)
@@ -108,24 +109,33 @@ class PyDssConfiguration(PyDssConfigurationBase):
             scenarios = [PyDssConfiguration.make_default_pydss_scenario("scenario")]
         config.set_pydss_config(ConfigType.SCENARIOS, scenarios)
 
-        config.apply_job_order()
+        if order_by_penetration:
+            config.apply_job_order_by_penetration_level()
         return config
 
-    def apply_job_order(self):
+    def apply_job_order_by_penetration_level(self):
         """Assign blocked_by field in each job."""
-        base_cases = {}
-        # This requires that base case jobs be listed first for a feeder.
-        for job in self.iter_jobs():
-            base_case = job.base_case
-            if base_case is None:
-                continue
+        keys = set(("placement", "sample", "penetration_level"))
+        jobs_to_order = defaultdict(list)
+        for job in self.iter_pydss_simulation_jobs():
+            if len(keys.intersection(set(job.model.deployment.project_data.keys()))) == 3:
+                key = (
+                    job.model.deployment.substation,
+                    job.model.deployment.feeder,
+                    job.model.deployment.project_data["placement"],
+                    job.model.deployment.project_data["sample"],
+                )
+                jobs_to_order[key].append(job)
 
-            base_case_index = f"{job.feeder}-{base_case}"
-            if job.name == base_case:
-                assert base_case_index not in base_cases
-                base_cases[base_case_index] = job.name
-            elif base_case_index in base_cases:
-                job.add_blocking_job(base_cases[base_case_index])
+        # If a job of a lower penetration level fails with a convergence error then
+        # all higher jobs are expected to fail. This allows us to cancel those jobs.
+        for jobs in jobs_to_order.values():
+            if len(jobs) < 2:
+                continue
+            jobs.sort(key=lambda x: x.model.deployment.project_data["penetration_level"])
+            for i, job in enumerate(jobs[1:]):
+                # Blocked by the previous job.
+                job.add_blocking_job(jobs[i].name)
 
     def create_from_result(self, job, output_dir):
         cls = self.job_execution_class(job.extension)

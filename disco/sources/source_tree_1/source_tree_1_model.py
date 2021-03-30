@@ -479,6 +479,9 @@ class SourceTree1Model(BaseOpenDssModel):
                         out_deployment = model.create_deployment(
                             model.name, path, pv_profile=pv_profiles
                         )
+                        out_deployment.project_data["placement"] = placement
+                        out_deployment.project_data["sample"] = deployment
+                        out_deployment.project_data["penetration_level"] = level
                         item = {
                             "deployment": out_deployment,
                             "simulation": simulation_params,

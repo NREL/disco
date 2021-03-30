@@ -17,9 +17,6 @@ from tests.common import *
 
 
 def test_pydss_simulation(cleanup):
-    if "NREL_CLUSTER" in os.environ:
-        os.environ.pop("NREL_CLUSTER")
-
     num_jobs = 5
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations snapshot -F -o {MODELS_DIR}"
     config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} -c {CONFIG_FILE}"

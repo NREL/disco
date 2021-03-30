@@ -16,7 +16,7 @@ import disco
 from disco.enums import SimulationType
 from disco.extensions.pydss_simulation.pydss_configuration import PyDssConfiguration
 
-ESTIMATED_EXEC_SECS_PER_JOB = 5
+ESTIMATED_EXEC_SECS_PER_JOB = 10
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +69,12 @@ logger = logging.getLogger(__name__)
     help="PyDSS export options",
 )
 @click.option(
+    "--order-by-penetration/--no-order-by-penetration",
+    default=False,
+    show_default=True,
+    help="Make jobs with higher penetration levels blocked by those with lower levels.",
+)
+@click.option(
     "--verbose",
     is_flag=True,
     default=False,
@@ -81,6 +87,7 @@ def snapshot(
     impact_analysis,
     impact_analysis_inputs_filename,
     exports_filename=None,
+    order_by_penetration=False,
     verbose=False,
 ):
     """Create JADE configuration for snapshot simulations."""
@@ -106,6 +113,7 @@ def snapshot(
         exports_filename=exports_filename,
         simulation_config=simulation_config,
         scenarios=scenarios,
+        order_by_penetration=order_by_penetration,
         estimated_exec_secs_per_job=ESTIMATED_EXEC_SECS_PER_JOB,
     )
     if hosting_capacity or impact_analysis:
