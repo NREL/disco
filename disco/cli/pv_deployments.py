@@ -122,7 +122,7 @@ def pv_deployments():
 @click.argument("input_path")
 @click.option(
     "-a", "--action",
-    type=click.Choice(list(ACTION_MAPPING.keys()), case_sensitive=True),
+    type=click.Choice(list(ACTION_MAPPING.keys()), case_sensitive=False),
     required=True,
     help="Choose the action related to pv deployments"
 )

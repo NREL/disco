@@ -8,6 +8,7 @@ import shutil
 import sys
 from copy import deepcopy
 from datetime import datetime, timedelta
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Optional, Generator, Tuple, Sequence
 
@@ -33,9 +34,18 @@ class DeploymentHierarchy(enum.Enum):
 
 
 class DeploymentCategory(enum.Enum):
-    MIXT = "mixt"
+    MIXED = "mixed"
     SMALL = "small"
     LARGE = "large"
+
+
+def get_subdir_names(input_path: str) -> list:
+    """Given an input path, return directory names under the path.
+    Used to parse substation names, and feeder names under input path.
+    """
+    assert os.path.exists(input_path), f"Path does not exist - {input_path}"
+    subdir_names = next(os.walk(input_path))[1]
+    return subdir_names
 
 
 class PVDSSInstance:
@@ -51,8 +61,7 @@ class PVDSSInstance:
     def convert_to_ascii(self) -> None:
         """Convert unicode data in ASCII characters for representation"""
         logger.info("Convert master file - %s", self.master_file)
-        with open(self.master_file, "r") as f:
-            data = f.read()
+        data = Path(self.master_file).read_text()
         updated_data = unidecode(data)
         with open(self.master_file, "w") as f:
             f.write(updated_data)
@@ -63,7 +72,8 @@ class PVDSSInstance:
         logger.info("OpenDSS loads feeder - %s", self.master_file)
         r = dss.run_command(f"Redirect {self.master_file}")
         if r != "":
-            logger.error("OpenDSSError: %s. Feeder: %s", str(r), self.master_file)
+            logger.exception("OpenDSSError: %s. Feeder: %s", str(r), self.master_file)
+            raise
     
     def search_head_line(self) -> None:
         """Search head line from DSS topology"""
@@ -72,40 +82,54 @@ class PVDSSInstance:
             if "line" in dss.Topology.BranchName().lower():
                 return dss.Topology.BranchName()
             flag = dss.Topology.Next()
+        assert False, "Failed to search head line."
     
     def ensure_energy_meter(self) -> bool:
         missing, misplaced = self.check_energy_meter_status()
         if missing:
             logger.info("Energy meter missing in master file - %s", self.master_file)
             self.place_new_energy_meter()
-        elif misplaced:
+            return True
+
+        if misplaced:
             logger.info("Energy meter location is not correct in master file - %s", self.master_file)
             self.move_energy_meter_location()
-        else:
-            logger.info("Energy meter exists and meter status is good in master file - %s", self.master_file)
-            pass
-        return missing or misplaced
+            return True
+        
+        logger.info("Energy meter exists and meter status is good in master file - %s", self.master_file)
+        return False
     
     def check_energy_meter_status(self) -> Tuple[bool, bool]:
         """Check if energy meter in dss is missing or misplaced"""
-        with open(self.master_file, "r") as f:
-            data = f.read()
-        
+        data = Path(self.master_file).read_text()
         missing = 'New EnergyMeter' not in data
         misplaced = False
         if not missing:
             head_line = self.search_head_line()
-            meter_location = data.split('\nNew EnergyMeter')[1].split('element=')[1].split('\n')[0].split(' ')[0]
+            meter_location = self._parse_meter_location(data)
             misplaced = meter_location != head_line
         
         return missing, misplaced
     
+    @staticmethod
+    def _parse_meter_location(data: str) -> str:
+        """
+        Parameters
+        ----------
+        data: str, the string data read from master file.
+        
+        Returns
+        -------
+        str:
+            meter location
+        """
+        # TODO: Use regex
+        return data.split("\nNew EnergyMeter")[1].split("element=")[1].split("\n")[0].split(" ")[0]
+    
     def place_new_energy_meter(self) -> None:
         """Place new energy meter if it's missing from master dss file"""
         head_line = self.search_head_line()
-        with open(self.master_file, "r") as f:
-            data = f.read()
-        
+        data = Path(self.master_file).read_text()
         temp = data.split('\nRedirect')[-1].split('\n')[0]
         updated_data = data.replace(temp, temp + f"\nNew EnergyMeter.m1 element={head_line}")
         with open(self.master_file, "w") as f:
@@ -116,10 +140,8 @@ class PVDSSInstance:
         """Move energy meter location if it's misplaced in master dss file"""
         logger.info("Moving energy meter in master file - %s", self.master_file)
         head_line = self.search_head_line()
-        with open(self.master_file, "r") as f:
-            data = f.read()
-        
-        meter_location = data.split('\nNew EnergyMeter')[1].split('element=')[1].split('\n')[0].split(' ')[0]
+        data = Path(self.master_file).read_text()
+        meter_location = self._parse_meter_location(data)
         updated_data = data.replace(meter_location, head_line)
         updated_data += f"\n!Moved energy meter from {meter_location} to {head_line}"
         with open(self.master_file, "w") as f:
@@ -135,13 +157,16 @@ class PVDSSInstance:
         index = 0
         with open(self.master_file, "r") as f:
             data = f.readlines()
-            for i, line in enumerate(data):
-                line = line.strip()
-                if line.startswith("Redirect"):
-                    index = i + 1
-                if line == f"Redirect {pv_shapes}":
-                    logger.info("Skip %s redirect, it already exists.", pv_shapes)
-                    return False
+        
+        for i, line in enumerate(data):
+            line = line.strip().lower()
+            if line.startswith("redirect"):
+                index = i + 1
+            if line == f"redirect {pv_shapes}":
+                logger.info("Skip %s redirect, it already exists.", pv_shapes)
+                return False
+        
+        assert index > 0, f"There must be 'Redirect' in {self.master_file}"
         
         logger.info("Update master file %s to redirect %s", self.master_file, pv_shapes)
         data.insert(index, f"Redirect {pv_shapes}\n")
@@ -149,19 +174,15 @@ class PVDSSInstance:
             f.writelines(data)
         return True
     
-    def get_nbuses(self) -> int:
-        """Get the number of buses in dss"""
-        return dss.Circuit.NumBuses()
-    
     def get_total_loads(self) -> SimpleNamespace:
         """Return total loads"""
-        result = SimpleNamespace(**{
-            "total_load": 0,
-            "load_dict": {},
-            "customer_bus_map": {},
-            "bus_load": {},
-            "bus_totalload": {}
-        })
+        result = SimpleNamespace(
+            total_load=0,
+            load_dict={},
+            customer_bus_map={},
+            bus_load={},
+            bus_totalload={}
+        )
         flag = dss.Loads.First()
         while flag > 0:
             customer_id = dss.Loads.Name()
@@ -184,7 +205,7 @@ class PVDSSInstance:
 
     def get_customer_distance(self) -> SimpleNamespace:
         """Return custmer distance"""
-        result = SimpleNamespace(**{"load_distance": {}, "bus_distance": {}})
+        result = SimpleNamespace(load_distance={}, bus_distance={})
         flag = dss.Loads.First()
         while flag > 0:
             dss.Circuit.SetActiveBus(dss.Properties.Value("bus1"))
@@ -195,7 +216,7 @@ class PVDSSInstance:
 
     def get_highv_buses(self, kv_min: int = 1) -> SimpleNamespace:
         """Return highv buses"""
-        result = SimpleNamespace(**{"bus_kv": {}, "hv_bus_distance": {}})
+        result = SimpleNamespace(bus_kv={}, hv_bus_distance={})
         flag = dss.Lines.First()
         while flag > 0:
             buses = [dss.Lines.Bus1(), dss.Lines.Bus2()]
@@ -210,16 +231,13 @@ class PVDSSInstance:
 
     def get_existing_pvs(self) -> SimpleNamespace:
         """Return existing pvs"""
-        result = SimpleNamespace(**{
-            "total_existing_pv": 0,
-            "existing_pv": {},
-        })
+        result = SimpleNamespace(total_existing_pv=0, existing_pv={})
         flag = dss.PVsystems.First()
         while flag > 0:
             bus = dss.Properties.Value("bus1")
             try:
                 result.existing_pv[bus] += dss.PVsystems.Pmpp()
-            except Exception:
+            except KeyError:
                 result.existing_pv[bus] = dss.PVsystems.Pmpp()
             result.total_existing_pv += dss.PVsystems.Pmpp()
             flag = dss.PVsystems.Next()
@@ -243,7 +261,7 @@ class PVDSSInstance:
     def get_feeder_stats(self, total_loads: SimpleNamespace, existing_pvs: SimpleNamespace = None) -> SimpleNamespace:
         """Return feeder stats"""
         result = {
-            "n_buses": self.get_nbuses(),
+            "n_buses": dss.Circuit.NumBuses(),
             "nload_buses": len(total_loads.bus_totalload.keys()),
             "nzero_load_buses": sum(v == 0 for v in total_loads.bus_totalload.values()),
             "total_load": total_loads.total_load
@@ -279,7 +297,6 @@ class PVScenarioGeneratorBase(abc.ABC):
     @abc.abstractmethod
     def deployment_cycles(self) -> list:
         """Return a list of cicyles for generating pv scenarios"""
-        pass
     
     def get_feeder_name(self) -> str:
         """Return the feeder name"""
@@ -289,7 +306,8 @@ class PVScenarioGeneratorBase(abc.ABC):
         """Return the full path of master file"""
         master_file = os.path.join(self.feeder_path, self.config.master_filename)
         if not os.path.exists(master_file):
-            logger.error("'%s' not found in '%s'. System exits!", self.config.master_filename, self.feeder_path)
+            logger.exception("'%s' not found in '%s'. System exits!", self.config.master_filename, self.feeder_path)
+            raise
         return master_file
     
     def load_pvdss_instance(self) -> PVDSSInstance:
@@ -299,7 +317,7 @@ class PVScenarioGeneratorBase(abc.ABC):
         pvdss_instance = PVDSSInstance(master_file)
         try:
             lock_file = master_file + ".lock"
-            with SoftFileLock(lock_file=lock_file):
+            with SoftFileLock(lock_file=lock_file, timeout=300):  # Timeout for loading master file
                 pvdss_instance.convert_to_ascii()
                 pvdss_instance.load_feeder()
                 flag = pvdss_instance.ensure_energy_meter()
@@ -322,8 +340,12 @@ class PVScenarioGeneratorBase(abc.ABC):
         total_loads = pvdss_instance.get_total_loads()
         feeder_stats = pvdss_instance.get_feeder_stats(total_loads)
         if total_loads.total_load <= 0:
-            logger.error("This feeder '%s' has no load, we cannot generate PV scenarios", feeder_name)
-            return feeder_stats.__dict__
+            feeder_stats_string = json.dumps(feeder_stats.__dict__)
+            logger.exception(
+                "Failed to generate PV scenarios on feeder - %s, stats: %s",
+                feeder_name, feeder_stats_string
+            )
+            raise
         
         # combined bus distance
         customer_distance = pvdss_instance.get_customer_distance()
@@ -345,14 +367,14 @@ class PVScenarioGeneratorBase(abc.ABC):
         base_existing_pv = existing_pvs.existing_pv
         feeder_stats = pvdss_instance.get_feeder_stats(total_loads, existing_pvs)
         if feeder_stats.pcent_base_pv > self.config.max_penetration:
-            logger.error(
-                "The existing PV amount on feeder '%s' exceeds \
-                the maximum penetration level of %s\%. It represents %s\%",
-                feeder_name, self.cofig.max_penetration, feeder_stats.pcent_base_pv
+            feeder_stats_string = json.dumps(feeder_stats.__dict__)
+            logger.exception(
+                "Failed to generate PV scenarios on feeder - %s. \
+                The existing PV amount exceeds the maximum penetration level of %s\%. Stats: %s",
+                feeder_name, self.cofig.max_penetration, feeder_stats_string
             )
-            return feeder_stats.__dict__
+            raise
         
-        # average_pv_distance = {}
         snum = self.config.sample_number + 1
         start = self.config.min_penetration
         end = self.config.max_penetration + 1
@@ -361,26 +383,23 @@ class PVScenarioGeneratorBase(abc.ABC):
             existing_pv = deepcopy(base_existing_pv)
             pv_records = {}
             for penetration in range(start, end, step):
-                data = SimpleNamespace(**{
-                    "base_existing_pv": base_existing_pv,
-                    "total_load": total_loads.total_load,
-                    "load_dict": total_loads.load_dict,
-                    "bus_totalload": total_loads.bus_totalload,
-                    "total_existing_pv": sum(existing_pv.values()),
-                    "existing_pv": existing_pv,
-                    "hv_bus_distance": highv_buses.hv_bus_distance,
-                    "customer_bus_distance": customer_distance.bus_distance,
-                    "hv_bus_map": hv_bus_map,
-                    "customer_bus_map": total_loads.customer_bus_map,
-                    "bus_kv": highv_buses.bus_kv,
-                    "pv_records": pv_records,
-                    "penetration": penetration,
-                    "sample": sample
-                })
+                data = SimpleNamespace(
+                    base_existing_pv=base_existing_pv,
+                    total_load=total_loads.total_load,
+                    load_dict=total_loads.load_dict,
+                    bus_totalload=total_loads.bus_totalload,
+                    total_existing_pv=sum(existing_pv.values()),
+                    existing_pv=existing_pv,
+                    hv_bus_distance=highv_buses.hv_bus_distance,
+                    customer_bus_distance=customer_distance.bus_distance,
+                    hv_bus_map=hv_bus_map,
+                    customer_bus_map=total_loads.customer_bus_map,
+                    bus_kv=highv_buses.bus_kv,
+                    pv_records=pv_records,
+                    penetration=penetration,
+                    sample=sample
+                )
                 existing_pv, pv_records = self.deploy_pv_scenario(data)
-                # avg_dist = self.compute_average_pv_distance(combined_bus_distance, existing_pv)
-                # key = (self.config.placement, sample, penetration)
-                # average_pv_distance[key] = [self.config.placement, sample, penetration, avg_dist]
         
         return feeder_stats.__dict__
     
@@ -471,9 +490,9 @@ class PVScenarioGeneratorBase(abc.ABC):
                 subset_idx += 1
                 candidate_bus_array = self.get_pv_bus_subset(bus_distance, subset_idx, priority_buses)
                 if subset_idx > (100 / self.config.proximity_step):
-                    logger.warning("There is not PVSystems.dss file created - %s", self.feeder_path)
-                    break
-               
+                    logger.exception("No %s file created on feeder - %s", PV_SYSTEMS_FILENAME, self.feeder_path)
+                    raise
+                
                 while len(candidate_bus_array) > 0:
                     random.shuffle(candidate_bus_array)
                     picked_candidate = candidate_bus_array[0]
@@ -535,10 +554,12 @@ class PVScenarioGeneratorBase(abc.ABC):
         all_remaining_pv_to_install = total_pv - data.total_existing_pv
         if all_remaining_pv_to_install <= 0:
             minimum_penetration = (data.total_existing_pv * 100) / max(0.0001, data.total_load)
-            logger.error(
-                "%s - Failed to generate PV scenario. The system has more than the target PV penetration. \
+            logger.exception(
+                "Failed to generate PV scenarios on feeder - %s. \
+                The system has more than the target PV penetration. \
                 Please increase penetration to at least %s.", self.feeder_path, minimum_penetration
             )
+            raise
         return all_remaining_pv_to_install
 
     def get_priority_buses(self, data: SimpleNamespace) -> list:
@@ -554,7 +575,6 @@ class PVScenarioGeneratorBase(abc.ABC):
     @abc.abstractmethod
     def get_categorical_remaining_pvs(self, data: SimpleNamespace) -> dict:
         """Return remaining sall, large PV to install"""
-        pass
     
     def get_bus_distances(self, data: SimpleNamespace) -> dict:
         """Return bus distance of large/small category"""
@@ -572,7 +592,7 @@ class PVScenarioGeneratorBase(abc.ABC):
     @classmethod
     @abc.abstractmethod
     def get_maximum_pv_size(cls, bus: str, data: SimpleNamespace, **kwargs) -> float:
-        pass
+        """Return maximum pv size"""
     
     @staticmethod
     def generate_pv_size_from_pdf(min_size: float, max_size: float, pdf: Sequence = None) -> float:
@@ -648,8 +668,7 @@ class PVScenarioGeneratorBase(abc.ABC):
             k: v for k, v in bus_distance.items() 
             if v >= lb_dist and v <= ub_dist
         }
-        candidate_buses = list(candidate_bus_map.keys())
-        candidate_bus_array = [b for b in candidate_buses if not b in priority_buses]
+        candidate_bus_array = [b for b in candidate_bus_map if not b in priority_buses]
         return candidate_bus_array
 
     def compute_average_pv_distance(self, bus_distance: dict, existing_pv: dict) -> float:
@@ -679,8 +698,8 @@ class PVScenarioGeneratorBase(abc.ABC):
         placement_path = self.get_output_placement_path()
         if not os.path.exists(placement_path):
             return []
-        samples = next(os.walk(placement_path))[1]
         
+        samples = get_subdir_names(placement_path)
         for sample in samples:
             sample_path = os.path.join(placement_path, sample)
             pv_systems = set()
@@ -697,7 +716,7 @@ class PVScenarioGeneratorBase(abc.ABC):
             config_files.append(pv_config_file)
         logger.info("%s PV config files generated in placement - %s", len(config_files), placement_path)
         return config_files
-   
+    
     def assign_profile(self, pv_deployments_file: str, pv_shapes_file: str, pv_systems: set, limit: int = 5) -> dict:
         """Assign PV profile to PV systems."""
         pv_dict = self.get_pvsys(pv_deployments_file)
@@ -790,7 +809,7 @@ class SmallPVScenarioGenerator(PVScenarioGeneratorBase):
         return categorical_remaining_pvs
     
     @classmethod
-    def get_maximum_pv_size(cls, bus: str, data: SimpleNamespace, max_load_factor: float = 2.1,  **kwargs) -> float:
+    def get_maximum_pv_size(cls, bus: str, data: SimpleNamespace, max_load_factor: float = 3.1,  **kwargs) -> float:
         roof_area = kwargs.get("roof_area", {})
         pv_efficiency = kwargs.get("pv_efficiency", None)
         customer_annual_kwh = kwargs.get("customer_annual_kwh", {})
@@ -807,7 +826,7 @@ class SmallPVScenarioGenerator(PVScenarioGeneratorBase):
         return max_bus_pv_size
 
 
-class MixtPVScenarioGenerator(PVScenarioGeneratorBase):
+class MixedPVScenarioGenerator(PVScenarioGeneratorBase):
     
     @property
     def deployment_cycles(self) -> list:
@@ -837,7 +856,7 @@ def get_pv_scenario_generator(feeder_path: str, config: SimpleNamespace):
     pv_scenario_generator_mapping = {
         DeploymentCategory.SMALL: SmallPVScenarioGenerator,
         DeploymentCategory.LARGE: LargePVScenarioGenerator,
-        DeploymentCategory.MIXT: MixtPVScenarioGenerator
+        DeploymentCategory.MIXED: MixedPVScenarioGenerator
     }
     category = DeploymentCategory(config.category)
     generator_class = pv_scenario_generator_mapping[category]
@@ -869,12 +888,7 @@ class PVDataStorage:
 
     def _search_substation_input(self) -> list:
         """Search substation input path, return all feeder paths in substation"""
-        try:
-            feeder_names = next(os.walk(self.input_path))[1]
-        except StopIteration:
-            logger.exception("Stop interation on path - %s", self.input_path)
-            raise
-        
+        feeder_names = get_subdir_names(self.input_path)
         feeder_paths = [
             os.path.join(self.input_path, feeder_name)
             for feeder_name in feeder_names
@@ -888,21 +902,11 @@ class PVDataStorage:
             "solar_none_batteries_none_timeseries",
             "opendss"
         )
-        
-        try:
-            substation_names = next(os.walk(opendss_path))[1]
-        except StopIteration:
-            logger.exception("Stop interation on path - %s", opendss_path)
-            raise
-        
         feeder_paths = []
+        substation_names = get_subdir_names(opendss_path)
         for substation_name in substation_names:
             substation_path = os.path.join(opendss_path, substation_name)
-            try:
-                feeder_names = next(os.walk(substation_path))[1]
-            except StopIteration:
-                logger.exception("Stop interation on path - %s", substation_path)
-                raise
+            feeder_names = get_subdir_names(substation_path)
             feeder_paths.extend([
                 os.path.join(opendss_path, substation_name, feeder_name)
                 for feeder_name in feeder_names
@@ -991,11 +995,7 @@ class PVDeploymentManager(PVDataStorage):
     
     def check_pv_deployments(self, placement: Placement = None) -> SimpleNamespace:
         """Given input path, check if all pv deployments status"""
-        result = SimpleNamespace(**{
-            "placements": {},
-            "samples": {},
-            "penetrations": {}
-        })
+        result = SimpleNamespace(placements={}, samples={}, penetrations={})
         feeder_paths = self.get_feeder_paths()
         for feeder_path in feeder_paths:
             missing_placements = self.get_missing_placements(feeder_path, placement)
