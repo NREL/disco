@@ -156,13 +156,6 @@ def pv_deployments():
     help="The filename of master dss"
 )
 @click.option(
-    "-u", "--pv-upscale",
-    is_flag=True,
-    default=False,
-    show_default=True,
-    help="Upscale PV in deployments."
-)
-@click.option(
   "-m", "--min-penetration",
     type=click.INT,
     default=5,
@@ -211,7 +204,14 @@ def pv_deployments():
     help="The PV size pdf value"
 )
 @click.option(
-    "-v", "--verbose",
+    "--pv-upscale/--no-pv-upscale",
+    is_flag=True,
+    default=True,
+    show_default=True,
+    help="Upscale PV in deployments."
+)
+@click.option(
+    "--verbose",
     type=click.BOOL,
     is_flag=True,
     default=False,
@@ -225,7 +225,6 @@ def source_tree_1(
     placement,
     category,
     master_filename,
-    pv_upscale,
     min_penetration,
     max_penetration,
     penetration_step,
@@ -233,6 +232,7 @@ def source_tree_1(
     proximity_step,
     percent_shares,
     pv_size_pdf,
+    pv_upscale,
     verbose
 ):
     """Generate PV deployments for source tree 1."""
