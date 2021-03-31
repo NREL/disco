@@ -72,11 +72,12 @@ logger = logging.getLogger(__name__)
 )
 @click.option(
     "--order-by-penetration/--no-order-by-penetration",
-    default=True,
+    default=False,
     show_default=True,
     help="Make jobs with higher penetration levels blocked by those with lower levels. This "
-         "is important to set for long simulations with lots of feeders so that jobs on "
-         "failing feeders can be canceled.",
+         "can be beneficial if you want the higher-penetration-level jobs to be "
+         "canceled if a job with a lower penetration level fails. However, it can significantly "
+         "reduce the number of jobs that can run simultaneously.",
 )
 @click.option(
     "--verbose",
