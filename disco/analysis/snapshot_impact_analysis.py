@@ -54,12 +54,11 @@ class SnapshotImpactAnalysis(Analysis):
         results = ResultsAggregator.list_results(output)
         result_lookup = {x.name: x for x in results}
         jobs_output = os.path.join(output, JOBS_OUTPUT_DIR)
-        for job in config.iter_jobs():
-            if isinstance(job, DeploymentParameters) and job.model.deployment.feeder == self._feeder:
-                if result_lookup[job.name].return_code != 0:
-                    logger.info("Skip failed job %s", job.name)
-                    continue
-                self._run_job(config, job, jobs_output)
+        for job in config.iter_feeder_jobs(self._feeder):
+            if result_lookup[job.name].return_code != 0:
+                logger.info("Skip failed job %s", job.name)
+                continue
+            self._run_job(config, job, jobs_output)
 
     def _run_job(self, config, job, output):
         simulation = config.create_from_result(job, output)
