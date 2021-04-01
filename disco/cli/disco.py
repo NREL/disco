@@ -9,6 +9,7 @@ from disco.cli.config import config
 from disco.cli.simulation_models import simulation_models
 from disco.cli.download_source import download_source
 from disco.cli.transform_model import transform_model
+from disco.cli.pv_deployments import pv_deployments
 
 
 logger = logging.getLogger(__name__)
@@ -24,3 +25,4 @@ cli.add_command(config)
 cli.add_command(simulation_models)
 cli.add_command(download_source)
 cli.add_command(transform_model)
+cli.add_command(pv_deployments)
