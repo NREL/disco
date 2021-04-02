@@ -1,7 +1,6 @@
 click
 feather-format
 filelock
-matplotlib==2.2.3
 opendssdirect.py>=0.3.7
 pandas
 psutil>=5.6.2

@@ -8,4 +8,3 @@ from disco.distribution.deployment_parameters import DeploymentParameters
 
 class AutomatedUpgradeParameters(DeploymentParameters):
     """Represents deployment parameters for automated system upgrade scenarios"""
-    pass

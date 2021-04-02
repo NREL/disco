@@ -196,8 +196,12 @@ class SourceTree1ModelInputs(JobInputsInterface):
         """
         return self._list_available_params("substation")
 
-    def list_feeders(self):
+    def list_feeders(self, substation):
         """List available feeders.
+
+        Parameters
+        ----------
+        substation : str
 
         Returns
         -------
@@ -205,7 +209,7 @@ class SourceTree1ModelInputs(JobInputsInterface):
             available feeders
 
         """
-        return self._list_available_params("feeder")
+        return self._list_feeders(substation)
 
     def list_placements(self):
         """List available placements.

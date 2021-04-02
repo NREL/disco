@@ -31,6 +31,10 @@ class DeploymentParameters(JobParametersInterface):
     def __repr__(self):
         return self.name
 
+    @property
+    def estimated_run_minutes(self):
+        return None
+
     @staticmethod
     def list_extensions():
         # this may need to be extended to all JobParametersInterface classes
@@ -82,3 +86,10 @@ class DeploymentParameters(JobParametersInterface):
 
     def remove_blocking_job(self, name):
         self._model.blocked_by.remove(name)
+
+    def set_blocking_jobs(self, blocking_jobs):
+        self._model.blocked_by = blocking_jobs
+
+    @property
+    def cancel_on_blocking_job_failure(self):
+        return True
