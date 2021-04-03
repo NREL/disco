@@ -10,17 +10,22 @@ from pandas import DataFrame
 
 from jade.common import JOBS_OUTPUT_DIR
 from jade.jobs.results_aggregator import ResultsAggregator
+from jade.utils.timing_utils import track_timing, TimerStatsManager
 from jade.utils.utils import dump_data
 
-from PyDSS.pydss_results import PyDssResults
+from PyDSS.pydss_results import PyDssResults, PyDssScenarioResults
 from disco.analysis import Analysis, Input
-from disco.distribution.deployment_parameters import DeploymentParameters
 from disco.exceptions import AnalysisRunException
 from disco.extensions.pydss_simulation.pydss_configuration import PyDssConfiguration
 from disco.utils.custom_type import CustomType
 
 
 logger = logging.getLogger(__name__)
+
+
+# TODO: remove once we have debugged the performance issues
+TIMER_STATS = TimerStatsManager()
+
 
 class SnapshotImpactAnalysis(Analysis):
     """Snapshot impact analysis class with default values"""
@@ -40,6 +45,7 @@ class SnapshotImpactAnalysis(Analysis):
         self._include_voltage_deviation = False
         super(SnapshotImpactAnalysis, self).__init__(*args, **kwargs)
         self._feeder = feeder
+        TIMER_STATS.clear()
 
     def run(self, output, **kwargs):
         """Run snapshot impact analysis
@@ -54,12 +60,16 @@ class SnapshotImpactAnalysis(Analysis):
         results = ResultsAggregator.list_results(output)
         result_lookup = {x.name: x for x in results}
         jobs_output = os.path.join(output, JOBS_OUTPUT_DIR)
+
         for job in config.iter_feeder_jobs(self._feeder):
             if result_lookup[job.name].return_code != 0:
                 logger.info("Skip failed job %s", job.name)
                 continue
             self._run_job(config, job, jobs_output)
 
+        TIMER_STATS.log_stats(clear=True)
+
+    @track_timing(TIMER_STATS)
     def _run_job(self, config, job, output):
         simulation = config.create_from_result(job, output)
         results = PyDssResults(simulation.pydss_project_path)
@@ -99,6 +109,7 @@ class SnapshotImpactAnalysis(Analysis):
                                                transformer_loading)
 
         self._add_to_results('violations', results)
+
         # output to csv
         result_df = DataFrame(columns=results.keys())
         result_df.loc[0] = results
@@ -106,7 +117,7 @@ class SnapshotImpactAnalysis(Analysis):
         filename = os.path.join(
             output,
             job.name,
-            f"snapshot-impact-analysis-job-post-process.csv",
+            "snapshot-impact-analysis-job-post-process.csv",
         )
 
         result_df.to_csv(filename, index=False)
@@ -120,6 +131,7 @@ class SnapshotImpactAnalysis(Analysis):
             logger.exception("read_feeder_head_info failed")
             raise
 
+    @track_timing(TIMER_STATS)
     def _run_voltage_violations(self, scenario, base_scenario):
         """Run voltage violations from hosting capacity analysis
 
@@ -131,7 +143,6 @@ class SnapshotImpactAnalysis(Analysis):
         # just one terminal, all phases
         bus_voltages = self._normalize_dataframe_values(scenario, 'Buses', 'puVmagAngle', 1,
                                                         mag_ang='mag')
-
         vmin, vmax, uv1, ov1, uv_count1, ov_count1, uv2, ov2, uv_count2, ov_count2 = \
             _check_voltage_violations(
                 # TODO dynamically grab all phases, 1 terminal
@@ -198,6 +209,7 @@ class SnapshotImpactAnalysis(Analysis):
             violations['voltage_deviation_count'] = None
 
         if base_scenario is not None:
+            # TODO: If this will be used then we need to only get this once.
             base_voltages = self._normalize_dataframe_values(base_scenario, 'Buses', 'puVmagAngle',
                                                              1, mag_ang='mag')
             voltage_deviation, voltage_deviation_flag, voltage_deviation_count = _compare_voltages(
@@ -211,6 +223,7 @@ class SnapshotImpactAnalysis(Analysis):
 
         return violations
 
+    @track_timing(TIMER_STATS)
     def _run_line_loading(self, scenario):
         """Run line loading from hosting capacity analysis
 
@@ -243,6 +256,7 @@ class SnapshotImpactAnalysis(Analysis):
 
         return line_loading
 
+    @track_timing(TIMER_STATS)
     def _run_transformer_loading(self, scenario):
         """Run transformer from hosting capacity analysis
 
@@ -278,6 +292,7 @@ class SnapshotImpactAnalysis(Analysis):
 
         return transformer_loading
 
+    @track_timing(TIMER_STATS)
     def _normalize_dataframe_values(self, scenario, class_name, property_name, terminal=None,
                                     convert=False, **kwargs):
         """Normalize dataframe columns to row values
@@ -291,7 +306,7 @@ class SnapshotImpactAnalysis(Analysis):
         convert : bool
             (optional) convert values to Magnitude
         **kwargs : dict
-            any extra named parameters (mag_ang, etc) to be passed to get_dataframe
+            any extra named parameters (mag_ang, etc) to be passed to get_full_dataframe
 
         Returns
         -------
@@ -303,22 +318,23 @@ class SnapshotImpactAnalysis(Analysis):
         if terminal is not None:
             phase_terminal = re.compile(rf"[ABCN]{terminal}")
 
-        for element in scenario.list_element_names(class_name, property_name):
-            dataframe = scenario.get_dataframe(class_name, property_name, element,
-                                               phase_terminal=phase_terminal, **kwargs)
-            for column in dataframe.columns:
-                value = dataframe[column].values.item()
-                result = {'Name': element, 'PhaseTerminal': column, 'Value': value}
+        df = scenario.get_full_dataframe(class_name, property_name, phase_terminal=phase_terminal,
+                                         **kwargs)
+        for column in df.columns:
+            name = PyDssScenarioResults.get_name_from_column(column)
+            value = df[column].values.item()
+            result = {'Name': name, 'PhaseTerminal': column, 'Value': value}
 
-                if convert:
-                    complex_number = complex(value)
-                    result['Value'] = math.sqrt(complex_number.real**2 + complex_number.imag**2)
+            if convert:
+                complex_number = complex(value)
+                result['Value'] = math.sqrt(complex_number.real**2 + complex_number.imag**2)
 
-                results_list.append(result)
+            results_list.append(result)
 
         columns = ['Name', 'PhaseTerminal', 'Value']
         return DataFrame(results_list, columns=columns)
 
+    @track_timing(TIMER_STATS)
     def _get_violations_for_job(self, job, voltage, line, transformer):
         """Returns results expected in output csv file
 
@@ -428,6 +444,7 @@ class SnapshotImpactAnalysis(Analysis):
 
 
 # TODO: refactor to take in the scenario here instead of remaking it in analysis.py
+@track_timing(TIMER_STATS)
 def _check_voltage_violations(bus_voltages, ub1=1.05, lb1=0.95, ub2=1.05833, lb2=0.91667):
     vmax = max(bus_voltages)
     vmin = min(bus_voltages)
@@ -445,6 +462,7 @@ def _check_voltage_violations(bus_voltages, ub1=1.05, lb1=0.95, ub2=1.05833, lb2
 
 
 # TODO: refactor to take in the scenario here instead of remaking it in analysis.py
+@track_timing(TIMER_STATS)
 def _get_line_loading(line_currents_df, line_normalamps_df, deployment_name, ub1=1.0, ub2=1.5):
     line_loadings = {}
     lv_count1 = 0
@@ -460,7 +478,7 @@ def _get_line_loading(line_currents_df, line_normalamps_df, deployment_name, ub1
         for _, magnitude in line_currents.iterrows():
             current_mag.append(magnitude['Value'] / line_normalamps_df.iloc[0][f"{line}__NormalAmps"])
 
-        # TODO Kwami: how can this be empty?  That occurred in sb100/2045/Q.
+        # TODO Kwami: how can this be empty?
         # deployment_name is only being passed in to debug this problem.
         if not current_mag:
             line_loadings[line] = 0.0
@@ -482,6 +500,7 @@ def _get_line_loading(line_currents_df, line_normalamps_df, deployment_name, ub1
 
 
 # TODO: refactor to take in the scenario here instead of remaking it in analysis.py
+@track_timing(TIMER_STATS)
 def _get_transformer_loading(transformer_dataframe, highside_phase_conn_dataframe,
                             transformer_currents_dataframe, transformer_normalamps_dataframe,
                             ub1=1.0, ub2=1.5):
