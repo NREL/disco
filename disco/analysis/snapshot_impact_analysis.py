@@ -10,7 +10,7 @@ from pandas import DataFrame
 
 from jade.common import JOBS_OUTPUT_DIR
 from jade.jobs.results_aggregator import ResultsAggregator
-from jade.utils.timing_utils import track_timing, TimerStatsManager
+from jade.utils.timing_utils import track_timing, TimerStatsCollector, Timer
 from jade.utils.utils import dump_data
 
 from PyDSS.pydss_results import PyDssResults, PyDssScenarioResults
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 # TODO: remove once we have debugged the performance issues
-TIMER_STATS = TimerStatsManager()
+TIMER_STATS = TimerStatsCollector()
 
 
 class SnapshotImpactAnalysis(Analysis):
