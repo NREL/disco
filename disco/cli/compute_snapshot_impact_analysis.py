@@ -28,10 +28,10 @@ from disco.extensions.pydss_simulation.pydss_configuration import PyDssConfigura
 def compute_snapshot_impact_analysis(feeder, jade_runtime_output, verbose=False):
     """Run post-process computations for time series impact analysis."""
     level = logging.DEBUG if verbose else logging.INFO
-    filename = os.path.join(jade_runtime_output, "compute_snapshot_impact_analysis.log")
+    filename = os.path.join(jade_runtime_output, f"compute_snapshot_impact_analysis_{feeder}.log")
     logger = setup_logging("disco", filename, console_level=level, file_level=level)
     logger.info("Run compute_snapshot_impact_analysis for feeder %s", feeder)
-    print(get_cli_string())
+    logger.info(get_cli_string())
 
     config_file = os.path.join(jade_runtime_output, CONFIG_FILE)
     config = PyDssConfiguration.deserialize(config_file)
