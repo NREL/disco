@@ -4,17 +4,22 @@ Created on Fri Feb  5 07:46:25 2021
 
 @author: senam
 """
+import logging
 import os
 import json
 import pandas as pd
 import numpy as np
 
 from jade.common import CONFIG_FILE
+from jade.jobs.results_aggregator import ResultsAggregator
 from disco.extensions.pydss_simulation.pydss_configuration import PyDssConfiguration
 from disco.distribution.deployment_parameters import DeploymentParameters
 from PyDSS.pydss_project import PyDssProject
 from PyDSS.pydss_results import PyDssResults
 from PyDSS.node_voltage_metrics import SimulationVoltageMetricsModel, VoltageMetricsModel
+
+
+logger = logging.getLogger(__name__)
 
 
 def combine_metrics(project_path):
@@ -60,8 +65,11 @@ def get_absolute_changes(df, property_name, base_case='base_case'):
     return df
 
 def aggregate_deployments(job_outputs_path, tolerance=0.05):
-    config_file = os.path.join(os.path.dirname(job_outputs_path), CONFIG_FILE)
+    main_output = os.path.dirname(job_outputs_path)
+    config_file = os.path.join(main_output, CONFIG_FILE)
     config = PyDssConfiguration.deserialize(config_file)
+    results = ResultsAggregator.list_results(main_output)
+    result_lookup = {x.name: x for x in results}
 
     summary_dfs = []
     for feeder in config.list_feeders():
@@ -69,6 +77,13 @@ def aggregate_deployments(job_outputs_path, tolerance=0.05):
         base_case = config.get_base_case_job(feeder)
         
         for job in config.iter_feeder_jobs(feeder):
+            if job.name not in result_lookup:
+                logger.info("Skip missing job %s", job.name)
+                continue
+            if result_lookup[job.name].return_code != 0:
+                logger.info("Skip failed job %s", job.name)
+                continue
+            logger.info("Processing %s", job.name)
             project_path = os.path.join(
                 job_outputs_path, job.name, "pydss_project",
             )
@@ -83,8 +98,8 @@ def aggregate_deployments(job_outputs_path, tolerance=0.05):
             }
             
             all_summaries_dict[job.name].update(combine_metrics(project_path))
+            logger.info("Finished processing %s", job.name)
             
-
         summary_df = pd.DataFrame.from_dict(all_summaries_dict, 'index')
         if not summary_df.empty:
             for property_name in summary_df.columns:
