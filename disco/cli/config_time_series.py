@@ -18,8 +18,6 @@ import disco
 from disco.enums import SimulationType
 from disco.extensions.pydss_simulation.pydss_configuration import PyDssConfiguration
 
-ESTIMATED_EXEC_SECS_PER_JOB = 3 * 60 * 60
-
 logger = logging.getLogger(__name__)
 
 
@@ -31,6 +29,11 @@ logger = logging.getLogger(__name__)
     default=CONFIG_FILE,
     show_default=True,
     help="JADE config file to create",
+)
+@click.option(
+    "-e", "--estimated-run-minutes",
+    type=int,
+    help="Estimated per-job runtime. Default is None.",
 )
 @click.option(
     "-h", "--hosting-capacity",
@@ -88,6 +91,7 @@ logger = logging.getLogger(__name__)
 def time_series(
     inputs,
     config_file,
+    estimated_run_minutes,
     hosting_capacity,
     impact_analysis,
     impact_analysis_inputs_filename,
@@ -116,7 +120,7 @@ def time_series(
         simulation_config=simulation_config,
         scenarios=scenarios,
         order_by_penetration=order_by_penetration,
-        estimated_exec_secs_per_job=ESTIMATED_EXEC_SECS_PER_JOB,
+        estimated_run_minutes=estimated_run_minutes,
     )
     if hosting_capacity or impact_analysis:
         ia_inputs = load_data(impact_analysis_inputs_filename)

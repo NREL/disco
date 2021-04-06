@@ -25,15 +25,20 @@ class DeploymentParameters(JobParametersInterface):
         UpgradeCostAnalysisModel: "automated_upgrade_simulation",
     }
 
-    def __init__(self, data):
-        self._model = make_model(data)
+    def __init__(self, estimated_run_minutes=None, **kwargs):
+        self._estimated_run_minutes = estimated_run_minutes
+        self._model = make_model(kwargs)
 
     def __repr__(self):
         return self.name
 
     @property
     def estimated_run_minutes(self):
-        return None
+        return self._estimated_run_minutes
+
+    @estimated_run_minutes.setter
+    def estimated_run_minutes(self, val):
+        self._estimated_run_minutes = val
 
     @staticmethod
     def list_extensions():
@@ -69,11 +74,12 @@ class DeploymentParameters(JobParametersInterface):
         """Serialize deployment into a dictionary."""
         data = self._model.dict()
         data["extension"] = self.extension
+        data["estimated_run_minutes"] = self.estimated_run_minutes
         return data
 
     @classmethod
     def deserialize(cls, data):
-        return cls(data)
+        return cls(**data)
 
     def add_blocking_job(self, name):
         self._model.blocked_by.add(name)

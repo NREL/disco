@@ -43,7 +43,7 @@ class DistributionInputs(JobInputsInterface):
         filename = os.path.join(self._base, self._CONFIG_FILE)
         data = load_data(filename)
         for job_data in data:
-            job = DeploymentParameters(job_data)
+            job = DeploymentParameters(**job_data)
             assert job.name not in self._parameters
             self._parameters[job.name] = job
 
