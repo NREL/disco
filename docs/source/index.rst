@@ -75,6 +75,7 @@ techno-economic analysis.
    overview
    quick-start
    data-sources
+   pv-deployments
    transform-models
    analysis-workflows
    debugging-issues
