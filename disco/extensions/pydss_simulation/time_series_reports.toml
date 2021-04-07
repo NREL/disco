@@ -33,13 +33,12 @@ enabled = true
 [[Reports.Types]]
 name = "Thermal Metrics"
 enabled = true
-transformer_loading_percent_threshold = 110
+transformer_loading_percent_threshold = 150
 transformer_window_size_hours = 2
-transformer_loading_percent_moving_average_threshold = 100
+transformer_loading_percent_moving_average_threshold = 120
 line_window_size_hours = 1
-line_loading_percent_threshold = 107
-line_loading_percent_moving_average_threshold = 100
-force_moving_average = true
+line_loading_percent_threshold = 150
+line_loading_percent_moving_average_threshold = 120
 
 [[Reports.Types]]
 name = "Voltage Metrics"
