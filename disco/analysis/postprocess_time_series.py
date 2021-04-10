@@ -14,6 +14,7 @@ from jade.common import CONFIG_FILE
 from jade.jobs.results_aggregator import ResultsAggregator
 from disco.extensions.pydss_simulation.pydss_configuration import PyDssConfiguration
 from disco.distribution.deployment_parameters import DeploymentParameters
+from PyDSS.thermal_metrics import create_summary
 from PyDSS.pydss_project import PyDssProject
 from PyDSS.pydss_results import PyDssResults
 from PyDSS.node_voltage_metrics import SimulationVoltageMetricsModel, VoltageMetricsModel
@@ -22,7 +23,7 @@ from PyDSS.node_voltage_metrics import SimulationVoltageMetricsModel, VoltageMet
 logger = logging.getLogger(__name__)
 
 
-def combine_metrics(project_path):
+def combine_metrics(project_path, scenario="control_mode"):
     summary_dict = dict()
 
     #if os.path.exists(project_path):
@@ -35,15 +36,11 @@ def combine_metrics(project_path):
             )
         )
     )
-    assert "control_mode" in voltage_metrics.scenarios
+    assert scenario in voltage_metrics.scenarios
 
-    thermal_metrics = json.loads(
-        pydss_project.fs_interface.read_file(
-            os.path.join("Reports", "thermal_metrics.json")
-        )
-    )
+    thermal_metrics = create_summary("thermal_metrics.json")
     
-    voltage_summary = voltage_metrics.scenarios["control_mode"].summary
+    voltage_summary = voltage_metrics.scenarios[scenario].summary
     summary_dict.update(voltage_summary.dict())
     summary_dict.update(thermal_metrics['summary'])
     return summary_dict
@@ -112,11 +109,26 @@ def aggregate_deployments(job_outputs_path, tolerance=0.05):
 
 def assess_deployments(df, tolerance):
     key = 'absolute_change_in_'
+    to_exclude = {'line_max_moving_average_loading',
+                  'line_num_time_points_with_instaneous_violations',
+                  'line_num_time_points_with_moving_average_violations',
+                  'line_instantaneous_threshold',
+                  'line_moving_average_threshold',
+                  'transformer_max_instantaneous_loading',
+                  'transformer_max_moving_average_loading',
+                  'transformer_window_size_hours',
+                  'transformer_num_time_points_with_instaneous_violations',
+                  'transformer_num_time_points_with_moving_average_violations',
+                  'transformer_instantaneous_threshold',
+                  'transformer_moving_average_threshold'
+    }
     change_cols = [(c, c.split(key)[1]) for c in df.columns if key in c]
     for cols in change_cols:
         change_col = cols[0]
-        flag_col = f"pass_{cols[1]}"
-        df.loc[:, flag_col] = df[change_col] <= tolerance * df[cols[1]]
+        col = cols[1]
+        if col not in to_exclude:
+            flag_col = f"pass_{col}"
+            df.loc[:, flag_col] = df[change_col] <= tolerance * df[col]
     pass_flags = [c for c in df.columns if c.startswith('pass')]
     df['pass_flag'] = df[pass_flags[0]] # initialization
     for col in pass_flags[1:]:
