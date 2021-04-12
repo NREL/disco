@@ -14,7 +14,7 @@ from jade.common import CONFIG_FILE
 from jade.jobs.results_aggregator import ResultsAggregator
 from disco.extensions.pydss_simulation.pydss_configuration import PyDssConfiguration
 from disco.distribution.deployment_parameters import DeploymentParameters
-from PyDSS.thermal_metrics import create_summary
+from PyDSS.thermal_metrics import create_summary_from_dict
 from PyDSS.pydss_project import PyDssProject
 from PyDSS.pydss_results import PyDssResults
 from PyDSS.node_voltage_metrics import SimulationVoltageMetricsModel, VoltageMetricsModel
@@ -38,7 +38,12 @@ def combine_metrics(project_path, scenario="control_mode"):
     )
     assert scenario in voltage_metrics.scenarios
 
-    thermal_metrics = create_summary("thermal_metrics.json")
+    data = json.loads(
+            pydss_project.fs_interface.read_file(
+                os.path.join("Reports", "thermal_metrics.json")
+            )
+        )
+    thermal_metrics = create_summary_from_dict(data)
     
     voltage_summary = voltage_metrics.scenarios[scenario].summary
     summary_dict.update(voltage_summary.dict())
