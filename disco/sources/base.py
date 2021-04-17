@@ -23,7 +23,7 @@ DEFAULT_SNAPSHOT_IMPACT_ANALYSIS_PARAMS = {
 DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS = {
     "output_dir": "time-series-models",
     "start_time": "2020-01-01T00:00:00",
-    "end_time": "2020-01-08T00:00:00",
+    "end_time": "2020-01-02T00:00:00",
     "simulation_type": SimulationType.QSTS.value,
     "step_resolution": 900,
 }

@@ -27,7 +27,7 @@ def test_upgrade_cost_analysis(cleanup):
         f"upgrade -F -o {MODELS_DIR}"
     )
     assert run_command(tranform_cmd) == 0
-    
+
     # config simulation
     disco_config_cmd = (
         f"disco config upgrade --sequential-upgrade "
@@ -37,7 +37,7 @@ def test_upgrade_cost_analysis(cleanup):
         f"{MODELS_DIR}"
     )
     assert run_command(disco_config_cmd) == 0
-    
+
     # check blocked_by
     config = AutomatedUpgradeConfiguration.deserialize(CONFIG_FILE)
     for job in config.iter_jobs():
@@ -45,20 +45,20 @@ def test_upgrade_cost_analysis(cleanup):
             assert len(job.model.blocked_by) == 0
         if job.model.job_order == 10:
             assert len(job.model.blocked_by) == 2
-    
+
     # submit jobs
     submit_cmd = f"{SUBMIT_JOBS} {CONFIG_FILE} -o {OUTPUT}"
     assert run_command(submit_cmd) == 0
-    
+
     # verigy results
     result_summary = ResultsSummary(OUTPUT)
     results = result_summary.list_results()
-    assert len(results) == 4
-    
+    assert len(results) == 16
+
     for result in results:
         assert result.status == "finished"
         assert result.return_code == 0
-    
+
     # verify post-process results
     job_outputs = os.path.join(OUTPUT, "job-outputs")
     for job_name in os.listdir(job_outputs):

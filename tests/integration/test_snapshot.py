@@ -37,7 +37,7 @@ def test_snapshot_basic(cleanup):
 
     analysis = PyDssAnalysis(OUTPUT, config)
     results = analysis.list_results()
-    assert len(results) == 5
+    assert len(results) == 18
     result = results[0]
     pydss_results = analysis.read_results(result.name)
     assert len(pydss_results.scenarios) == 1
@@ -57,14 +57,15 @@ def test_snapshot_impact_analysis(cleanup):
 
     config = PyDssConfiguration.deserialize(CONFIG_FILE)
     jobs = config.list_jobs()
-    assert len(jobs) == 6
-    for job in jobs[:5]:
+    assert len(jobs) == 20
+    for job in jobs[:18]:
         assert not job.get_blocking_jobs()
-    assert len(jobs[5].get_blocking_jobs()) == 5
+    assert len(jobs[18].get_blocking_jobs()) == 9
+    assert len(jobs[19].get_blocking_jobs()) == 9
     assert config.list_user_data_keys()
 
     # Verify Post-process Results
-    for job in jobs[:5]:
+    for job in jobs[:18]:
         post_process_result = os.path.join(
             OUTPUT,
             JOB_OUTPUTS,
@@ -88,11 +89,12 @@ def test_snapshot_hosting_capacity(cleanup):
 
     config = PyDssConfiguration.deserialize(CONFIG_FILE)
     jobs = config.list_jobs()
-    assert len(jobs) == 7
-    for job in jobs[:5]:
+    assert len(jobs) == 21
+    for job in jobs[:18]:
         assert not job.get_blocking_jobs()
-    assert len(jobs[5].get_blocking_jobs()) == 5
-    assert len(jobs[6].get_blocking_jobs()) == 1
+    assert len(jobs[18].get_blocking_jobs()) == 9
+    assert len(jobs[19].get_blocking_jobs()) == 9
+    assert len(jobs[20].get_blocking_jobs()) == 2
     assert config.list_user_data_keys()
 
     # Verify Post-process Results

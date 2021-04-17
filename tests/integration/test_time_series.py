@@ -17,7 +17,7 @@ from tests.common import *
 
 
 def test_time_series_basic(cleanup):
-    num_jobs = 5
+    num_jobs = 18
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations time-series -F -o {MODELS_DIR}"
     config_cmd = f"{CONFIG_JOBS} time-series {MODELS_DIR} -c {CONFIG_FILE}"
     submit_cmd = f"{SUBMIT_JOBS} {CONFIG_FILE} --output={OUTPUT}"
@@ -40,7 +40,7 @@ def test_time_series_basic(cleanup):
 
 
 def test_time_series_impact_analysis(cleanup):
-    num_jobs = 6
+    num_jobs = 20
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations time-series -F -o {MODELS_DIR}"
     config_cmd = f"{CONFIG_JOBS} time-series --impact-analysis {MODELS_DIR} -c {CONFIG_FILE}"
     submit_cmd = f"{SUBMIT_JOBS} {CONFIG_FILE} --output={OUTPUT}"
@@ -53,9 +53,10 @@ def test_time_series_impact_analysis(cleanup):
     config = PyDssConfiguration.deserialize(CONFIG_FILE)
     assert config.list_user_data_keys()
     jobs = config.list_jobs()
-    for job in jobs[:5]:
+    for job in jobs[:18]:
         assert not job.get_blocking_jobs()
-    assert len(jobs[5].get_blocking_jobs()) == 5
+    assert len(jobs[18].get_blocking_jobs()) == 9
+    assert len(jobs[19].get_blocking_jobs()) == 9
 
     analysis = PyDssAnalysis(OUTPUT, config)
     result = analysis.list_results()[0]
@@ -64,7 +65,7 @@ def test_time_series_impact_analysis(cleanup):
 
 
 def test_time_series_hosting_capacity(cleanup):
-    num_jobs = 7
+    num_jobs = 21
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations time-series -F -o {MODELS_DIR}"
     config_cmd = f"{CONFIG_JOBS} time-series --hosting-capacity {MODELS_DIR} -c {CONFIG_FILE}"
     submit_cmd = f"{SUBMIT_JOBS} {CONFIG_FILE} --output={OUTPUT} -p 1"
@@ -77,10 +78,11 @@ def test_time_series_hosting_capacity(cleanup):
     config = PyDssConfiguration.deserialize(CONFIG_FILE)
     assert config.list_user_data_keys()
     jobs = config.list_jobs()
-    for job in jobs[:5]:
+    for job in jobs[:18]:
         assert not job.get_blocking_jobs()
-    assert len(jobs[5].get_blocking_jobs()) == 5
-    assert len(jobs[6].get_blocking_jobs()) == 1
+    assert len(jobs[18].get_blocking_jobs()) == 9
+    assert len(jobs[19].get_blocking_jobs()) == 9
+    assert len(jobs[20].get_blocking_jobs()) == 2
 
     analysis = PyDssAnalysis(OUTPUT, config)
     result = analysis.list_results()[0]
