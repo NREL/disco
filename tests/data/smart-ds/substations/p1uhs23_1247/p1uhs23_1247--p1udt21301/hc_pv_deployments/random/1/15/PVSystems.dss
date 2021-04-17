@@ -1,0 +1,14 @@
+// PV Scenario for 377.31348613163505 kW total size, Scenario type random, Sample 1 and penetration 15% (PV to load ratio) 
+! =====================PV SCENARIO FILE==============================
+New PVSystem.small_p1ulv41131_1_2_pv phases=1 bus1=p1ulv41131.1.2 kv=0.2402 irradiance=1 Pmpp=20.882 pctPmpp=100 kVA=20.882 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
+New PVSystem.small_p1ulv10092_1_2_pv phases=1 bus1=p1ulv10092.1.2 kv=0.2402 irradiance=1 Pmpp=23.059 pctPmpp=100 kVA=23.059 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
+New PVSystem.small_p1ulv12585_1_2_pv phases=1 bus1=p1ulv12585.1.2 kv=0.2402 irradiance=1 Pmpp=19.138 pctPmpp=100 kVA=19.138 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
+New PVSystem.small_p1ulv4428_1_2_pv phases=1 bus1=p1ulv4428.1.2 kv=0.2402 irradiance=1 Pmpp=21.944 pctPmpp=100 kVA=21.944 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
+New PVSystem.small_p1ulv51773_1_2_pv phases=1 bus1=p1ulv51773.1.2 kv=0.2402 irradiance=1 Pmpp=44.833 pctPmpp=100 kVA=44.833 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
+New PVSystem.small_p1ulv59156_1_2_pv phases=1 bus1=p1ulv59156.1.2 kv=0.2402 irradiance=1 Pmpp=58.619 pctPmpp=100 kVA=58.619 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
+New PVSystem.small_p1ulv36135_1_2_pv phases=1 bus1=p1ulv36135.1.2 kv=0.2402 irradiance=1 Pmpp=44.833 pctPmpp=100 kVA=44.833 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
+New PVSystem.small_p1ulv64195_1_2_pv phases=1 bus1=p1ulv64195.1.2 kv=0.2402 irradiance=1 Pmpp=22.217 pctPmpp=100 kVA=22.217 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
+New PVSystem.small_p1ulv11340_1_2_pv phases=1 bus1=p1ulv11340.1.2 kv=0.2402 irradiance=1 Pmpp=31.963 pctPmpp=100 kVA=31.963 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
+New PVSystem.small_p1ulv58566_1_2_pv phases=1 bus1=p1ulv58566.1.2 kv=0.2402 irradiance=1 Pmpp=21.015 pctPmpp=100 kVA=21.015 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
+New PVSystem.small_p1ulv49293_1_2_pv phases=1 bus1=p1ulv49293.1.2 kv=0.2402 irradiance=1 Pmpp=42.566 pctPmpp=100 kVA=42.566 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
+New PVSystem.small_p1ulv8854_1_2_pv phases=1 bus1=p1ulv8854.1.2 kv=0.2402 irradiance=1 Pmpp=26.245 pctPmpp=100 kVA=26.245 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2

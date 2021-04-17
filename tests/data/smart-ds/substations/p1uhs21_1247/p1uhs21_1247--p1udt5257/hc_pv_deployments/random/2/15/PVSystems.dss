@@ -1,6 +1,4 @@
-// PV Scenario for 86.17499999999998 kW total size, Scenario type random, Deployment 2 and penetration 15% (PV to load ratio) 
+// PV Scenario for 63.32952323373909 kW total size, Scenario type random, Sample 2 and penetration 15% (PV to load ratio) 
 ! =====================PV SCENARIO FILE==============================
-New PVSystem.p1ulv29261_1_2_pv phases=2 bus1=p1ulv29261.1.2 kv=0.208 irradiance=1 Pmpp=23.22 pctPmpp=100 kVA=23.22 conn=delta %cutin=0.1 %cutout=0.1 Vmaxpu=1.2  
-New PVSystem.p1ulv19767_1_2_pv phases=2 bus1=p1ulv19767.1.2 kv=0.208 irradiance=1 Pmpp=5.505 pctPmpp=100 kVA=5.505 conn=delta %cutin=0.1 %cutout=0.1 Vmaxpu=1.2  
-New PVSystem.p1ulv53232_1_2_pv phases=2 bus1=p1ulv53232.1.2 kv=0.208 irradiance=1 Pmpp=38.68 pctPmpp=100 kVA=38.68 conn=delta %cutin=0.1 %cutout=0.1 Vmaxpu=1.2  
-New PVSystem.p1ulv4595_1_2_pv phases=2 bus1=p1ulv4595.1.2 kv=0.208 irradiance=1 Pmpp=18.77 pctPmpp=100 kVA=18.77 conn=delta %cutin=0.1 %cutout=0.1 Vmaxpu=1.2  
+New PVSystem.small_p1ulv53232_1_2_pv phases=1 bus1=p1ulv53232.1.2 kv=0.2402 irradiance=1 Pmpp=49.779 pctPmpp=100 kVA=49.779 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
+New PVSystem.small_p1ulv57596_1_2_3_pv phases=3 bus1=p1ulv57596.1.2.3 kv=0.48 irradiance=1 Pmpp=13.55 pctPmpp=100 kVA=13.55 conn=delta %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
