@@ -83,7 +83,7 @@ class AutomatedUpgradeInputs(DistributionInputs):
             if self.nearest_redirect:
                 lower_order_job_names = set()
             for job_data in group_data:
-                job = AutomatedUpgradeParameters(job_data)
+                job = AutomatedUpgradeParameters(**job_data)
                 job.add_blocking_jobs(blocking_jobs)
                 assert job.name not in parameters
                 parameters[job.name] = job
@@ -100,7 +100,7 @@ class AutomatedUpgradeInputs(DistributionInputs):
         """Parse jobs without blocked_by attribute."""
         parameters = {}
         for job_data in data:
-            job = AutomatedUpgradeParameters(job_data)
+            job = AutomatedUpgradeParameters(**job_data)
             assert job.name not in parameters
             parameters[job.name] = job
         return parameters
