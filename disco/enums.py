@@ -81,6 +81,11 @@ class Mode(enum.Enum):
     SEQUENTIAL = "sequential"
 
 
+class SimulationHierarchy(enum.Enum):
+    SUBSTATION = "substation"
+    FEEDER = "feeder"
+
+
 class SimulationOutputs(enum.Enum):
     """Defines the possible simulation output types."""
     LINE_LOADINGS = "line_loadings"
