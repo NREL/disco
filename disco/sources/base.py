@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 
 from jade.exceptions import InvalidParameter
 from disco.analysis import GENERIC_COST_DATABASE
-from disco.enums import AnalysisType, SimulationType
+from disco.enums import AnalysisType, SimulationType, SimulationHierarchy
 from disco.models.base import OpenDssDeploymentModel
 
 
@@ -154,7 +154,12 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
         )
         # This may overwrite a file copied above.
         shutil.copyfile(self.master_file, workspace.master_file)
-        self._comment_out_solve(workspace.master_file)
+        strings_to_remove = (
+            "solve",
+            "batchedit fuse",
+            "new energymeter",
+        )
+        self._comment_out_leading_strings(workspace.master_file, strings_to_remove)
         if self.loadshape_directory is not None:
             self._copy_files(
                 src_dir=self.loadshape_directory,
@@ -162,10 +167,10 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
             )
 
     @staticmethod
-    def _comment_out_solve(filename):
+    def _comment_out_leading_strings(filename, strings):
         with fileinput.input(files=[filename], inplace=True) as f_in:
             for line in f_in:
-                if line.lower().startswith("solve"):
+                if line.lower().startswith(strings):
                     line = "!" + line
                 print(line, end="")
 
@@ -208,7 +213,46 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
             )
         )
 
-    def create_deployment(self, name, outdir, pv_profile=None):
+    def create_substation_base_case(self, name, outdir):
+        """Create a base case with no added PV.
+
+        Parameters
+        ----------
+        name : str
+            The job name
+        outdir : str
+            The base directory of opendss substation model.
+
+        Returns
+        -------
+        OpenDssDeploymentModel
+
+        """
+        workspace = OpenDssSubstationWorkspace(outdir)
+        if not os.path.exists(workspace.master_file):
+            self._create_common_files(workspace)
+
+        deployment_file = os.path.join(
+            workspace.pv_deployments_directory, name + ".dss"
+        )
+        with open(deployment_file, "w") as fw:
+            fw.write(f"Redirect {workspace.master_file}\n")
+            fw.write("\nSolve\n")
+
+        return OpenDssDeploymentModel.validate(
+            dict(
+                deployment_file=deployment_file,
+                substation=self.substation,
+                feeder="None",
+                dc_ac_ratio=self.dc_ac_ratio,
+                directory=outdir,
+                kva_to_kw_rating=self.kva_to_kw_rating,
+                project_data=self.project_data,
+                pydss_controllers=None,
+            )
+        )
+
+    def create_deployment(self, name, outdir, hierarchy, pv_profile=None):
         """Create the deployment.
 
         Parameters
@@ -217,6 +261,7 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
             The deployment name
         outdir : str
             The base directory of opendss feeder model.
+        hierarchy : SimulationHierarchy
         pv_profile : str
             Optional load shape profile name to apply to all PVSystems
 
@@ -229,7 +274,7 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
         if not os.path.exists(workspace.master_file):
             self._create_common_files(workspace)
         deployment_file = self._create_deployment_file(
-            name, workspace, pv_profile=pv_profile
+            name, workspace, hierarchy, pv_profile=pv_profile
         )
         return OpenDssDeploymentModel.validate(
             dict(
@@ -274,7 +319,7 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
                     os.path.abspath(src_dir), dst_file
                 )
 
-    def _create_deployment_file(self, name, workspace, pv_profile=None):
+    def _create_deployment_file(self, name, workspace, hierarchy, pv_profile=None):
         """Create deployment dss file.
 
         Parameters
@@ -283,6 +328,7 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
             Name of deployment.
         workspace : OpenDssFeederWorkspace
             Instance of OpenDssFeederWorkspace
+        hierarchy : SimulationHierarchy
         pv_profile : str | dict
             Optional load shape profile name to apply to PVSystems.
             If str, apply the name to all PVSystems.
@@ -300,7 +346,8 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
 
         regex = re.compile(r"new pvsystem\.([^\s]+)")
         with open(deployment_file, "w") as fw, fileinput.input(self.pv_locations) as fr:
-            fw.write(f"Redirect {workspace.master_file}\n\n")
+            if hierarchy == SimulationHierarchy.FEEDER:
+                fw.write(f"Redirect {workspace.master_file}\n\n")
             for line in fr:
                 if pv_profile is not None:
                     lowered = line.lower()
@@ -316,7 +363,9 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
                                 raise Exception(f"no profile found for {pv_system}")
                         line = line.strip() + f" yearly={profile}\n"
                 fw.write(line)
-            fw.write("\nSolve\n")
+
+            if hierarchy == SimulationHierarchy.FEEDER:
+                fw.write("\nSolve\n")
 
         return deployment_file
 
@@ -337,14 +386,41 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
             for line in f_in:
                 line = re.sub(regex, replace_func, line)
                 print(line, end="")
-                logger.debug("line=%s", line)
+
+
+class OpenDssSubstationWorkspace:
+    """Defines a substation and all dependent OpenDSS files."""
+
+    def __init__(self, substation_directory):
+        self._substation_directory = substation_directory
+        self._create_directories()
+
+    def _create_directories(self):
+        os.makedirs(self.substation_directory, exist_ok=True)
+        os.makedirs(self.pv_deployments_directory, exist_ok=True)
+
+    @property
+    def opendss_directory(self):
+        return self.substation_directory
+
+    @property
+    def pv_deployments_directory(self):
+        return os.path.join(self.substation_directory, "PVDeployments")
+
+    @property
+    def master_file(self):
+        return os.path.join(self.substation_directory, "Master.dss")
+
+    @property
+    def substation_directory(self):
+        return self._substation_directory
+
 
 
 class OpenDssFeederWorkspace:
     """Defines a feeder and all dependent OpenDSS files."""
 
     def __init__(self, feeder_directory):
-        # self._substation = substation
         self._feeder_directory = feeder_directory
         self._create_directories()
 

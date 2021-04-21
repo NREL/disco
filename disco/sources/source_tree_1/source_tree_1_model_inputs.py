@@ -50,7 +50,7 @@ class SourceTree1ModelInputs(JobInputsInterface):
         return self._base
 
     def create_key(self, substation, feeder, placement):
-        """Create a parameter key for accessing deployments and penetration
+        """Create a parameter key for accessing samples and penetration
         levels.
 
         Parameters
@@ -77,7 +77,7 @@ class SourceTree1ModelInputs(JobInputsInterface):
 
                 {
                     (Substation, Feeder, Placement) : {
-                        deployments: Set(
+                        samples: Set(
                             penetration_levels,
                         )
                     }
@@ -86,13 +86,13 @@ class SourceTree1ModelInputs(JobInputsInterface):
         """
         return self._parameters
 
-    def get_deployment_file(self, key, deployment, penetration_level):
+    def get_deployment_file(self, key, sample, penetration_level):
         """Get the path to an input deployment file for the given parameters.
 
         Parameters
         ----------
         key : namedtuple
-        deployment : int
+        sample : int
         penetration_level : int
 
         Returns
@@ -107,7 +107,7 @@ class SourceTree1ModelInputs(JobInputsInterface):
             self._feeder_dirname(key.substation, key.feeder),
             self._DEPLOYMENTS_DIR,
             key.placement.value,
-            str(deployment),
+            str(sample),
             str(penetration_level),
             self._DEPLOYMENT_FILENAME,
         )
@@ -167,11 +167,29 @@ class SourceTree1ModelInputs(JobInputsInterface):
             self._LOAD_SHAPES_FILENAME,
         )
 
+    def get_substation_opendss_directory(self, substation):
+        """Return the path to the OpenDSS files.
+
+        Parameters
+        ----------
+        substation : str
+
+        Returns
+        -------
+        str
+
+        """
+        return os.path.join(
+            self._base,
+            substation,
+        )
+
     def get_opendss_directory(self, substation, feeder):
         """Return the path to the OpenDSS files.
 
         Parameters
         ----------
+        substation : str
         feeder : str
 
         Returns
@@ -223,8 +241,8 @@ class SourceTree1ModelInputs(JobInputsInterface):
         return self._list_available_params("placement")
 
     @handle_key_error
-    def list_deployments(self, key):
-        """List available deployments.
+    def list_samples(self, key):
+        """List available samples.
 
         Parameters
         ----------
@@ -233,21 +251,21 @@ class SourceTree1ModelInputs(JobInputsInterface):
         Returns
         -------
         list of int
-            available deployments
+            available samples
 
         """
-        deployments = list(self._parameters[key].keys())
-        deployments.sort()
-        return deployments
+        samples = list(self._parameters[key].keys())
+        samples.sort()
+        return samples
 
     @handle_key_error
-    def list_penetration_levels(self, key, deployment):
+    def list_penetration_levels(self, key, sample):
         """List available penetration levels.
 
         Parameters
         ----------
         key : namedtuple
-        deployment : int
+        sample : int
 
         Returns
         -------
@@ -255,18 +273,18 @@ class SourceTree1ModelInputs(JobInputsInterface):
             available penetration levels
 
         """
-        levels = list(self._parameters[key][deployment])
+        levels = list(self._parameters[key][sample])
         levels.sort()
         return levels
 
-    def list_pv_configs(self, substation, feeder, placement, deployment):
+    def list_pv_configs(self, substation, feeder, placement, sample):
         """Return the configurations for each PVSystem.
         Parameters
         ----------
         substation : str
         feeder : str
         placement : Placement
-        deployment : int
+        sample : int
         Returns
         -------
         list
@@ -277,7 +295,7 @@ class SourceTree1ModelInputs(JobInputsInterface):
             self._feeder_dirname(substation, feeder),
             self._DEPLOYMENTS_DIR,
             placement.value,
-            str(deployment),
+            str(sample),
             self._PV_CONFIG_FILENAME,
         ))["pv_systems"]
 
@@ -339,26 +357,26 @@ class SourceTree1ModelInputs(JobInputsInterface):
         return placements
 
     @handle_file_not_found
-    def _list_deployments(self, substation, feeder, placement):
-        deployment_path = os.path.join(
+    def _list_samples(self, substation, feeder, placement):
+        sample_path = os.path.join(
             self._base,
             substation,
             self._feeder_dirname(substation, feeder),
             self._DEPLOYMENTS_DIR,
             placement.value,
         )
-        deployments = self._get_items_from_directory(deployment_path)
-        return sorted([int(x) for x in deployments])
+        samples = self._get_items_from_directory(sample_path)
+        return sorted([int(x) for x in samples])
 
     @handle_file_not_found
-    def _list_penetration_levels(self, substation, feeder, placement, deployment):
+    def _list_penetration_levels(self, substation, feeder, placement, sample):
         penetration_path = os.path.join(
             self._base,
             substation,
             self._feeder_dirname(substation, feeder),
             self._DEPLOYMENTS_DIR,
             placement.value,
-            str(deployment),
+            str(sample),
         )
 
         levels = []
@@ -386,17 +404,17 @@ class SourceTree1ModelInputs(JobInputsInterface):
 
     def _parse_placements(self, data, substation, feeder):
         for placement in self._list_placements(substation, feeder):
-            self._parse_deployments(data, substation, feeder, placement)
+            self._parse_samples(data, substation, feeder, placement)
 
-    def _parse_deployments(self, data, substation, feeder, placement):
+    def _parse_samples(self, data, substation, feeder, placement):
         key = self._KEYS_TYPE(substation, feeder, placement)
         data[key] = {}
-        for deployment in self._list_deployments(substation, feeder, placement):
-            data[key][deployment] = set()
-            self._parse_penetrations(data[key][deployment], substation, feeder,
-                                     placement, deployment)
+        for sample in self._list_samples(substation, feeder, placement):
+            data[key][sample] = set()
+            self._parse_penetrations(data[key][sample], substation, feeder,
+                                     placement, sample)
 
     def _parse_penetrations(self, data, substation, feeder, placement,
-                            deployment):
-        for level in self._list_penetration_levels(substation, feeder, placement, deployment):
+                            sample):
+        for level in self._list_penetration_levels(substation, feeder, placement, sample):
             data.add(level)
