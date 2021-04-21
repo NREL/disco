@@ -170,10 +170,8 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
     def _comment_out_leading_strings(filename, strings):
         with fileinput.input(files=[filename], inplace=True) as f_in:
             for line in f_in:
-                for text in strings:
-                    if line.lower().startswith(text):
-                        line = "!" + line
-                        break
+                if line.lower().startswith(strings):
+                    line = "!" + line
                 print(line, end="")
 
     def create_base_case(self, name, outdir):
