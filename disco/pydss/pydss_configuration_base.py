@@ -270,11 +270,6 @@ class PyDssConfigurationBase(DistributionConfiguration):
 
         return self._pydss_inputs[ConfigType.SIMULATION_CONFIG][name]
 
-    def disable_simulation_exports(self):
-        """Set simulation exports empty"""
-        if ConfigType.SIMULATION_CONFIG in self._pydss_inputs:
-            self._pydss_inputs[ConfigType.SIMULATION_CONFIG]["Exports"] = {}
-
     @staticmethod
     def serialize_pydss_inputs(inputs):
         """Serializes PyDSS input configuration, replacing enums with values.

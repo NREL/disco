@@ -64,8 +64,6 @@ def test_snapshot_basic_with_loadshape(cleanup):
         assert timedelta == 60
         assert not job.get_blocking_jobs()
     assert not config.list_user_data_keys()
-    config.disable_simulation_exports()
-    assert not config._pydss_inputs[ConfigType.SIMULATION_CONFIG]["Exports"]
     for scenario in config._pydss_inputs[ConfigType.SCENARIOS]:
         assert not scenario["exports"]
 

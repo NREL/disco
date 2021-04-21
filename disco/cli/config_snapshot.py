@@ -70,13 +70,6 @@ logger = logging.getLogger(__name__)
     help="PyDSS export options",
 )
 @click.option(
-    "--disable-exports",
-    is_flag=True,
-    default=False,
-    show_default=True,
-    help="Disable PyDSS export options",
-)
-@click.option(
     "-r", "--reports-filename",
     default=os.path.join(
         os.path.dirname(getattr(disco, "__path__")[0]),
@@ -86,7 +79,7 @@ logger = logging.getLogger(__name__)
         "snapshot_reports.toml",
     ),
     show_default=True,
-    help="PyDSS report options. This option will be applied if --with-loadshape is enabled.",
+    help="PyDSS report options.",
 )
 @click.option(
     "--order-by-penetration/--no-order-by-penetration",
@@ -113,7 +106,6 @@ def snapshot(
     impact_analysis,
     impact_analysis_inputs_filename,
     exports_filename,
-    disable_exports,
     reports_filename,
     order_by_penetration=False,
     with_loadshape=False,
@@ -127,13 +119,10 @@ def snapshot(
         print("hosting_capacity and impact_analysis cannot both be set")
         sys.exit(1)
     
-    if disable_exports:
-        exports_filename = None
-    
     simulation_config = PyDssConfiguration.get_default_pydss_simulation_config()
-    simulation_config["Reports"] = load_data(reports_filename)["Reports"]
     if with_loadshape:
         simulation_config["Project"]["Simulation Type"] = SimulationType.QSTS.value
+        simulation_config["Reports"] = load_data(reports_filename)["Reports"]
         scenarios = [
             PyDssConfiguration.make_default_pydss_scenario(CONTROL_MODE_SCENARIO),
             PyDssConfiguration.make_default_pydss_scenario(PF1_SCENARIO),
@@ -156,9 +145,6 @@ def snapshot(
         estimated_exec_secs_per_job=ESTIMATED_EXEC_SECS_PER_JOB,
     )
     
-    if disable_exports:
-        config.disable_simulation_exports()
-
     if with_loadshape:
         config = swith_snapshot_to_qsts(config)
 
