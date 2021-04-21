@@ -702,7 +702,7 @@ def make_substation_pv_deployments(output_path, key, deployment_files):
             # It might also be helpful for debugging and analysis to see the PVSystems in one
             # file.
             f_out.write(Path(deployment_file).read_text())
-            #f_out.write(f"Redirect {deployment_file}\n")
+            os.remove(deployment_file)
         f_out.write("\nSolve\n")
     logger.info("Wrote substation-level deployment files to %s", filename)
 
@@ -740,6 +740,7 @@ def fix_substation_master_file(filename):
     # These master files have "Redirect <substation>--<feeder>".
     # For better or worse, DISCO has already removed substation and then added
     # "/OpenDSS", so we have to patch the references here.
+    # Use "edirect" instead of "Redirect" to avoid case-insensitive checks.
     regex = re.compile(r"edirect \w+--(\w+)")
 
     def remove_substation(match):
