@@ -5,6 +5,7 @@
 import logging
 import os
 import sys
+from datetime import timedelta
 
 import click
 
@@ -12,6 +13,8 @@ from jade.common import CONFIG_FILE
 from jade.loggers import setup_logging
 from jade.jobs.job_post_process import JobPostProcess
 from jade.utils.utils import load_data
+from PyDSS.reports.pv_reports import PF1_SCENARIO, CONTROL_MODE_SCENARIO
+
 import disco
 from disco.enums import SimulationType
 from disco.extensions.pydss_simulation.pydss_configuration import PyDssConfiguration
@@ -24,8 +27,7 @@ logger = logging.getLogger(__name__)
 @click.command()
 @click.argument("inputs")
 @click.option(
-    "-c",
-    "--config-file",
+    "-c", "--config-file",
     default=CONFIG_FILE,
     show_default=True,
     help="JADE config file to create",
@@ -56,8 +58,7 @@ logger = logging.getLogger(__name__)
     help="impact analysis inputs",
 )
 @click.option(
-    "-e",
-    "--exports-filename",
+    "-e", "--exports-filename",
     default=os.path.join(
         os.path.dirname(getattr(disco, "__path__")[0]),
         "disco",
@@ -69,10 +70,35 @@ logger = logging.getLogger(__name__)
     help="PyDSS export options",
 )
 @click.option(
+    "--disable-exports",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Disable PyDSS export options",
+)
+@click.option(
+    "-r", "--reports-filename",
+    default=os.path.join(
+        os.path.dirname(getattr(disco, "__path__")[0]),
+        "disco",
+        "extensions",
+        "pydss_simulation",
+        "snapshot_reports.toml",
+    ),
+    show_default=True,
+    help="PyDSS report options. This option will be applied if --with-loadshape is enabled.",
+)
+@click.option(
     "--order-by-penetration/--no-order-by-penetration",
     default=False,
     show_default=True,
     help="Make jobs with higher penetration levels blocked by those with lower levels.",
+)
+@click.option(
+    "--with-loadshape/--no-with-loadshape",
+    default=False,
+    show_default=True,
+    help="Configure snapshot simulation with loashape profile."
 )
 @click.option(
     "--verbose",
@@ -86,8 +112,11 @@ def snapshot(
     hosting_capacity,
     impact_analysis,
     impact_analysis_inputs_filename,
-    exports_filename=None,
+    exports_filename,
+    disable_exports,
+    reports_filename,
     order_by_penetration=False,
+    with_loadshape=False,
     verbose=False,
 ):
     """Create JADE configuration for snapshot simulations."""
@@ -97,25 +126,42 @@ def snapshot(
     if hosting_capacity and impact_analysis:
         print("hosting_capacity and impact_analysis cannot both be set")
         sys.exit(1)
-
+    
+    if disable_exports:
+        exports_filename = None
+    
     simulation_config = PyDssConfiguration.get_default_pydss_simulation_config()
-    simulation_config["Project"]["Simulation Type"] = SimulationType.SNAPSHOT.value
-
-    exports = {} if exports_filename is None else load_data(exports_filename)
-    scenarios = [
-        PyDssConfiguration.make_default_pydss_scenario(
-            "scenario",
-            exports=exports,
-        )
-    ]
+    simulation_config["Reports"] = load_data(reports_filename)["Reports"]
+    if with_loadshape:
+        simulation_config["Project"]["Simulation Type"] = SimulationType.QSTS.value
+        scenarios = [
+            PyDssConfiguration.make_default_pydss_scenario(CONTROL_MODE_SCENARIO),
+            PyDssConfiguration.make_default_pydss_scenario(PF1_SCENARIO),
+        ]
+    else:
+        exports = {} if exports_filename is None else load_data(exports_filename)
+        simulation_config["Project"]["Simulation Type"] = SimulationType.SNAPSHOT.value
+        scenarios = [
+            PyDssConfiguration.make_default_pydss_scenario(
+                "scenario",
+                exports=exports,
+            )
+        ]
+    
     config = PyDssConfiguration.auto_config(
         inputs,
-        exports_filename=exports_filename,
         simulation_config=simulation_config,
         scenarios=scenarios,
         order_by_penetration=order_by_penetration,
         estimated_exec_secs_per_job=ESTIMATED_EXEC_SECS_PER_JOB,
     )
+    
+    if disable_exports:
+        config.disable_simulation_exports()
+
+    if with_loadshape:
+        config = swith_snapshot_to_qsts(config)
+
     if hosting_capacity or impact_analysis:
         ia_inputs = load_data(impact_analysis_inputs_filename)
         config.add_user_data("impact_analysis_inputs", ia_inputs)
@@ -126,3 +172,11 @@ def snapshot(
 
     config.dump(filename=config_file)
     print(f"Created {config_file} for Snapshot Analysis")
+
+
+def swith_snapshot_to_qsts(config):
+    """Use QSTS at one time point to perform SNAPSHOT simulation with loadshape profile"""
+    for job in config.iter_jobs():
+        job.model.simulation.simulation_type = SimulationType.QSTS
+        job.model.simulation.end_time = job.model.simulation.start_time + timedelta(minutes=1)
+    return config
