@@ -1,9 +1,6 @@
 [Reports]
 Format = "h5"
 Granularity = "per_element_per_time_point"
-#Granularity = "per_element_total"
-#Granularity = "all_elements_per_time_point"
-#Granularity = "all_elements_total"
 
 [[Reports.Types]]
 name = "Capacitor State Change Counts"

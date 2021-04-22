@@ -146,7 +146,7 @@ def snapshot(
     )
     
     if with_loadshape:
-        config = swith_snapshot_to_qsts(config)
+        config = switch_snapshot_to_qsts(config)
 
     if hosting_capacity or impact_analysis:
         ia_inputs = load_data(impact_analysis_inputs_filename)
@@ -160,9 +160,9 @@ def snapshot(
     print(f"Created {config_file} for Snapshot Analysis")
 
 
-def swith_snapshot_to_qsts(config):
+def switch_snapshot_to_qsts(config):
     """Use QSTS at one time point to perform SNAPSHOT simulation with loadshape profile"""
-    for job in config.iter_jobs():
+    for job in config.iter_pydss_simulation_jobs():
         job.model.simulation.simulation_type = SimulationType.QSTS
         job.model.simulation.end_time = job.model.simulation.start_time + timedelta(minutes=1)
     return config
