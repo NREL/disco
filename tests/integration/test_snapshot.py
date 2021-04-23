@@ -8,6 +8,8 @@ from jade.utils.subprocess_manager import run_command
 from jade.utils.utils import dump_data, load_data
 
 import disco
+from disco.enums import SimulationType
+from disco.pydss.common import ConfigType
 from disco.pydss.pydss_analysis import PyDssAnalysis
 from disco.extensions.pydss_simulation.pydss_configuration import PyDssConfiguration
 from tests.common import *
@@ -41,6 +43,37 @@ def test_snapshot_basic(cleanup):
     result = results[0]
     pydss_results = analysis.read_results(result.name)
     assert len(pydss_results.scenarios) == 1
+
+
+def test_snapshot_basic_with_loadshape_no_pf1(cleanup):
+    base = os.path.join(DISCO_PATH, "extensions", "pydss_simulation")
+    config_file = CONFIG_FILE
+    transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations snapshot -F -o {MODELS_DIR}"
+    config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} --with-loadshape --no-pf1 -c {CONFIG_FILE}"
+    submit_cmd = f"{SUBMIT_JOBS} {config_file} -o {OUTPUT}"
+
+    assert run_command(transform_cmd) == 0
+    assert run_command(config_cmd) == 0
+    assert run_command(submit_cmd) == 0
+
+    config = PyDssConfiguration.deserialize(CONFIG_FILE)
+    jobs = config.list_jobs()
+    for job in jobs:
+        assert job.model.simulation.simulation_type == SimulationType.QSTS
+        timedelta = (job.model.simulation.end_time - job.model.simulation.start_time).total_seconds()
+        assert timedelta == job.model.simulation.step_resolution
+        assert not job.get_blocking_jobs()
+    assert not config.list_user_data_keys()
+    for scenario in config._pydss_inputs[ConfigType.SCENARIOS]:
+        assert not scenario["exports"]
+
+    analysis = PyDssAnalysis(OUTPUT, config)
+    results = analysis.list_results()
+    assert len(results) == 18
+    result = results[0]
+    pydss_results = analysis.read_results(result.name)
+    assert len(pydss_results.scenarios) == 1
+    assert pydss_results.scenarios[0].name == "control_mode"
 
 
 def test_snapshot_impact_analysis(cleanup):
