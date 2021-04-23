@@ -164,5 +164,7 @@ def switch_snapshot_to_qsts(config):
     """Use QSTS at one time point to perform SNAPSHOT simulation with loadshape profile"""
     for job in config.iter_pydss_simulation_jobs():
         job.model.simulation.simulation_type = SimulationType.QSTS
-        job.model.simulation.end_time = job.model.simulation.start_time + timedelta(minutes=1)
+        job.model.simulation.end_time = job.model.simulation.start_time + timedelta(
+            seconds=job.model.simulation.step_resolution
+        )
     return config
