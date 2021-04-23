@@ -45,11 +45,11 @@ def test_snapshot_basic(cleanup):
     assert len(pydss_results.scenarios) == 1
 
 
-def test_snapshot_basic_with_loadshape(cleanup):
+def test_snapshot_basic_with_loadshape_no_pf1(cleanup):
     base = os.path.join(DISCO_PATH, "extensions", "pydss_simulation")
     config_file = CONFIG_FILE
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations snapshot -F -o {MODELS_DIR}"
-    config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} --with-loadshape -c {CONFIG_FILE}"
+    config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} --with-loadshape --no-pf1 -c {CONFIG_FILE}"
     submit_cmd = f"{SUBMIT_JOBS} {config_file} -o {OUTPUT}"
 
     assert run_command(transform_cmd) == 0
@@ -61,7 +61,7 @@ def test_snapshot_basic_with_loadshape(cleanup):
     for job in jobs:
         assert job.model.simulation.simulation_type == SimulationType.QSTS
         timedelta = (job.model.simulation.end_time - job.model.simulation.start_time).total_seconds()
-        assert timedelta == 60
+        assert timedelta == job.model.simulation.step_resolution
         assert not job.get_blocking_jobs()
     assert not config.list_user_data_keys()
     for scenario in config._pydss_inputs[ConfigType.SCENARIOS]:
@@ -72,7 +72,8 @@ def test_snapshot_basic_with_loadshape(cleanup):
     assert len(results) == 18
     result = results[0]
     pydss_results = analysis.read_results(result.name)
-    assert len(pydss_results.scenarios) == 2
+    assert len(pydss_results.scenarios) == 1
+    assert pydss_results.scenarios[0].name == "control_mode"
 
 
 def test_snapshot_impact_analysis(cleanup):

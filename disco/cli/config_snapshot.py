@@ -82,6 +82,13 @@ logger = logging.getLogger(__name__)
     help="PyDSS report options.",
 )
 @click.option(
+    "--pf1/--no-pf1",
+    is_flag=True,
+    default=True,
+    show_default=True,
+    help="Include PF1 scenario or not"
+)
+@click.option(
     "--order-by-penetration/--no-order-by-penetration",
     default=False,
     show_default=True,
@@ -107,6 +114,7 @@ def snapshot(
     impact_analysis_inputs_filename,
     exports_filename,
     reports_filename,
+    pf1,
     order_by_penetration=False,
     with_loadshape=False,
     verbose=False,
@@ -123,10 +131,9 @@ def snapshot(
     if with_loadshape:
         simulation_config["Project"]["Simulation Type"] = SimulationType.QSTS.value
         simulation_config["Reports"] = load_data(reports_filename)["Reports"]
-        scenarios = [
-            PyDssConfiguration.make_default_pydss_scenario(CONTROL_MODE_SCENARIO),
-            PyDssConfiguration.make_default_pydss_scenario(PF1_SCENARIO),
-        ]
+        scenarios = [PyDssConfiguration.make_default_pydss_scenario(CONTROL_MODE_SCENARIO)]
+        if pf1:
+            scenarios.append(PyDssConfiguration.make_default_pydss_scenario(PF1_SCENARIO))
     else:
         exports = {} if exports_filename is None else load_data(exports_filename)
         simulation_config["Project"]["Simulation Type"] = SimulationType.SNAPSHOT.value
