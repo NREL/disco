@@ -71,4 +71,4 @@ def show_help_and_exit():
 @click.argument("input_path", callback=input_path_cb)
 def transform_model(input_path):
     """Transform input data into a DISCO model"""
-    setup_logging("disco", None)
+    setup_logging("disco", "transform_model.log")
