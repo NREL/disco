@@ -12,7 +12,6 @@ enabled = true
 [[Reports.Types]]
 name = "Feeder Losses"
 enabled = true
-scenarios = ["control_mode"]
 
 [[Reports.Types]]
 name = "PV Clipping"

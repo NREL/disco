@@ -1,4 +1,0 @@
-"""Common definitions for DISCO"""
-
-EXIT_CODE_GOOD = 0
-EXIT_CODE_CONVERGENCE_ERROR = 113

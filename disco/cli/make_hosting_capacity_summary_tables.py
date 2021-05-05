@@ -33,6 +33,7 @@ def parse_batch_results(output_dir):
     output_path = Path(output_dir)
     config = create_config_from_file(output_path / CONFIG_FILE)
     jobs = list(config.iter_pydss_simulation_jobs())
+    feeder_head_table = []
     feeder_losses_table = []
     metadata_table = []
     thermal_metrics_table = []
@@ -44,11 +45,13 @@ def parse_batch_results(output_dir):
     # well as the metrics.
     with ProcessPoolExecutor() as executor:
         for result in executor.map(parse_job_results, jobs, itertools.repeat(output_path)):
-            feeder_losses_table += result[0]
-            metadata_table += result[1]
-            thermal_metrics_table += result[2]
-            voltage_metrics_table += result[3]
+            feeder_head_table += result[0]
+            feeder_losses_table += result[1]
+            metadata_table += result[2]
+            thermal_metrics_table += result[3]
+            voltage_metrics_table += result[4]
 
+    serialize_table(feeder_head_table, output_path / "feeder_head_table.csv")
     serialize_table(feeder_losses_table, output_path / "feeder_losses_table.csv")
     serialize_table(metadata_table, output_path / "metadata_table.csv")
     serialize_table(thermal_metrics_table, output_path / "thermal_metrics_table.csv")
@@ -79,12 +82,13 @@ def parse_job_results(job, output_path):
         )
     results = PyDssResults(job_path)
     metadata_table = get_metadata_table(results, job_info)
+    feeder_head_table = get_feeder_head_info(results, job_info)
     feeder_losses_table = get_feeder_losses(results, job_info)
     thermal_metrics_table = get_thermal_metrics(results, job_info)
     voltage_metrics_table = get_voltage_metrics(results, job_info)
-    # TODO: we record FeederHeadInfo.json in PyDSS. Do we want a table for that? In metadata?
 
     return (
+        feeder_head_table,
         feeder_losses_table,
         metadata_table,
         thermal_metrics_table,
@@ -113,16 +117,28 @@ def get_metadata_table(results: PyDssResults, job_info: JobInfo):
     return metadata_table
 
 
-def get_feeder_losses(results: PyDssResults, job_info: JobInfo):
-    """Return feeder losses for the control_mode scenario."""
+def get_feeder_head_info(results: PyDssResults, job_info: JobInfo):
+    """Return feeder head info for the control_mode scenario."""
     feeder_losses_table = []
     data = json.loads(results.read_file("Reports/feeder_losses.json"))
-    row = job_info._asdict()
-    # TODO: do we want to add the pf1 scenario to PyDSS? only control_mode is collected
-    row["scenario"] = "control_mode"
-    row.update(data)
-    feeder_losses_table.append(row)
+    for scenario, values in data["scenarios"].items():
+        row = job_info._asdict()
+        row["scenario"] = scenario
+        row.update(values)
+        feeder_losses_table.append(row)
     return feeder_losses_table
+
+
+def get_feeder_losses(results: PyDssResults, job_info: JobInfo):
+    """Return feeder losses for all scenarios."""
+    feeder_head_table = []
+    for scenario in results.scenarios:
+        data = json.loads(results.read_file(f"Exports/{scenario.name}/FeederHeadInfo.json"))
+        row = job_info._asdict()
+        row["scenario"] = scenario.name
+        row.update(data)
+        feeder_head_table.append(row)
+    return feeder_head_table
 
 
 def get_thermal_metrics(results: PyDssResults, job_info: JobInfo):
