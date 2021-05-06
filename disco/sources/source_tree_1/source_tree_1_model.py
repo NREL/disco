@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 SubstationKey = namedtuple("SampleKey", "substation, placement, sample, penetration_level")
 
 
-def _process_geo(_, val):
+def _process_hierarchy(_, val):
     return SimulationHierarchy(val)
 
 
@@ -44,7 +44,7 @@ COMMON_OPTIONS = (
     click.option(
         "--hierarchy",
         type=click.Choice([x.value for x in SimulationHierarchy]),
-        callback=_process_geo,
+        callback=_process_hierarchy,
         default=SimulationHierarchy.FEEDER.value,
         show_default=True,
         help="Level at which to configure the simulation",
@@ -614,16 +614,14 @@ class SourceTree1Model(BaseOpenDssModel):
                         data = {
                             "path": input_path,
                             "substation": substation,
-                            "feeder": feeder,
+                            "feeder": "None",
                             "master": master_file,
                             "placement": placement.value,
                             "sample": sample,
                             "penetration_level": level,
                             "deployment_file": job_deployment_file,
                             "loadshape_directory": None,
-                            "opendss_directory": inputs.get_opendss_directory(
-                                substation, feeder
-                            ),
+                            "opendss_directory": inputs.get_opendss_directory(substation, feeder),
                             "pv_locations": [job_deployment_file],
                             "pydss_controllers": pydss_controller,
                             "is_base_case": False,

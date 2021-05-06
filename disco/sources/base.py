@@ -276,13 +276,19 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
         deployment_file = self._create_deployment_file(
             name, workspace, hierarchy, pv_profile=pv_profile
         )
+        if hierarchy == SimulationHierarchy.FEEDER:
+            directory = outdir
+            feeder = self.feeder
+        else:
+            directory = os.path.dirname(outdir)
+            feeder = "None"
         return OpenDssDeploymentModel.validate(
             dict(
                 deployment_file=deployment_file,
                 substation=self.substation,
-                feeder=self.feeder,
+                feeder=feeder,
                 dc_ac_ratio=self.dc_ac_ratio,
-                directory=outdir,
+                directory=directory,
                 kva_to_kw_rating=self.kva_to_kw_rating,
                 project_data=self.project_data,
                 pydss_controllers=self.pydss_controllers,
