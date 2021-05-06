@@ -9,6 +9,7 @@ import pytest
 
 from jade.result import ResultsSummary
 from jade.utils.subprocess_manager import run_command
+from disco.enums import SimulationHierarchy
 from disco.extensions.pydss_simulation.pydss_configuration import PyDssConfiguration
 from disco.extensions.pydss_simulation.pydss_inputs import PyDssInputs
 from disco.extensions.pydss_simulation.pydss_simulation import PyDssSimulation
@@ -55,6 +56,7 @@ def test_time_series_at_substation(cleanup):
     for job in jobs:
         assert not job.get_blocking_jobs()
     assert not config.list_user_data_keys()
+    assert config.get_simulation_hierarchy() == SimulationHierarchy.SUBSTATION
 
     analysis = PyDssAnalysis(OUTPUT, config)
     result = analysis.list_results()[0]
@@ -82,6 +84,7 @@ def test_time_series_impact_analysis(cleanup):
         assert not job.get_blocking_jobs()
     assert len(jobs[18].get_blocking_jobs()) == 9
     assert len(jobs[19].get_blocking_jobs()) == 9
+    assert config.get_simulation_hierarchy() == SimulationHierarchy.FEEDER
 
     analysis = PyDssAnalysis(OUTPUT, config)
     result = analysis.list_results()[0]

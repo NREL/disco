@@ -8,7 +8,7 @@ from jade.extensions.generic_command.generic_command_parameters import GenericCo
 from jade.utils.utils import load_data
 
 from disco.distribution.deployment_parameters import DeploymentParameters
-from disco.enums import SimulationType
+from disco.enums import SimulationHierarchy, SimulationType
 from disco.exceptions import PyDssJobException
 from disco.pydss.pydss_configuration_base import PyDssConfigurationBase
 from disco.pydss.common import ConfigType
@@ -155,6 +155,24 @@ class PyDssConfiguration(PyDssConfigurationBase):
                 return job
 
         return InvalidParameter(f"no base case job for feeder={feeder}")
+
+    def get_simulation_hierarchy(self):
+        """Return the SimulationHierarchy for the config.
+
+        Returns
+        -------
+        SimulationHierarchy
+
+        """
+        for job in self.iter_pydss_simulation_jobs():
+            if not job.model.is_base_case:
+                if job.model.deployment.feeder == "None":
+                    hierarchy = SimulationHierarchy.SUBSTATION
+                else:
+                    hierarchy = SimulationHierarchy.FEEDER
+                return hierarchy
+
+        raise Exception("Failed to identify SimulationHierarchy")
 
     def iter_feeder_jobs(self, feeder):
         """Return jobs for the given feeder in the config.
