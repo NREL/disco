@@ -5,6 +5,7 @@ import copy
 import logging
 import os
 
+from PyDSS.exceptions import PyDssConvergenceError, PyDssConvergenceMaxError
 from PyDSS.pydss_project import update_pydss_controllers
 from PyDSS.pydss_project import PyDssProject, PyDssScenario
 
@@ -13,6 +14,8 @@ from jade.jobs.job_execution_interface import JobExecutionInterface
 from jade.loggers import log_event
 from jade.utils.utils import dump_data
 from jade.utils.timing_utils import timed_info
+
+from disco.common import EXIT_CODE_GOOD, EXIT_CODE_CONVERGENCE_ERROR
 from disco.pydss.common import ConfigType
 from disco.events import EVENT_NO_CONVERGENCE
 from disco.models.base import PyDSSControllerModel
@@ -231,12 +234,14 @@ class PyDssSimulationBase(JobExecutionInterface):
         logger.debug("Run simulation %s", self)
 
         orig_dir = os.getcwd()
-        ret = 0
+        ret = EXIT_CODE_GOOD
         try:
             self._pydss_project.run(logging_configured=False, zip_project=True)
             ret = self.check_convergence_problems()
             # TODO DT:
-            ret = 0
+            ret = EXIT_CODE_GOOD
+        except (PyDssConvergenceError, PyDssConvergenceMaxError):
+            ret = EXIT_CODE_CONVERGENCE_ERROR
         finally:
             os.chdir(orig_dir)
 

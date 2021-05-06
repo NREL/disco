@@ -7,6 +7,7 @@ import re
 import shutil
 
 from jade.common import OUTPUT_DIR
+from jade.utils.subprocess_manager import run_command
 from jade.utils.utils import modify_file, interpret_datetime
 from PyDSS.common import DATE_FORMAT
 from PyDSS.pydss_project import PyDssScenario
