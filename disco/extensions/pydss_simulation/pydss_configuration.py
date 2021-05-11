@@ -191,8 +191,12 @@ class PyDssConfiguration(PyDssConfigurationBase):
             if job.feeder == feeder:
                 yield job
 
-    def iter_pydss_simulation_jobs(self):
+    def iter_pydss_simulation_jobs(self, exclude_base_case=False):
         """Return jobs that are pydss_simulation jobs (not post-processing).
+
+        Parameters
+        ----------
+        exclude_base_case : bool
 
         Yields
         ------
@@ -201,6 +205,8 @@ class PyDssConfiguration(PyDssConfigurationBase):
         """
         for job in self.iter_jobs():
             if isinstance(job, DeploymentParameters):
+                if exclude_base_case and job.model.is_base_case:
+                    continue
                 yield job
 
     def list_feeders(self):

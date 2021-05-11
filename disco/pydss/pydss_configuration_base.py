@@ -38,6 +38,7 @@ DEFAULT_CONTROLLER_CONFIGS = [
 DEFAULT_PYDSS_SIMULATION_CONFIG = {
     "Project": {
         "Start time": "2021-01-01 00:00:00.0",
+        "Loadshape start time": "2021-01-01 00:00:00.0",
         "Simulation duration (min)": 1.0,
         "Step resolution (sec)": 900.0,
         "Max Control Iterations": 50,

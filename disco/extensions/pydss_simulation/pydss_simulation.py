@@ -7,6 +7,8 @@ import re
 import shutil
 
 from jade.common import OUTPUT_DIR
+from jade.exceptions import InvalidConfiguration
+from jade.utils.subprocess_manager import run_command
 from jade.utils.utils import modify_file, interpret_datetime
 from PyDSS.common import DATE_FORMAT
 from PyDSS.pydss_project import PyDssScenario
@@ -103,10 +105,22 @@ class PyDssSimulation(PyDssSimulationBase):
         return timetuple.tm_hour * 60 + timetuple.tm_min
 
     def _modify_pydss_simulation_params(self, config):
+        regex = re.compile(r"^(\d\d\d\d)(-.*)")
         start_time = self._model.simulation.start_time
         end_time = self._model.simulation.end_time
         if start_time is not None:
             config["Start time"] = start_time.strftime(DATE_FORMAT)
+
+        match = regex.search(config["Start time"])
+        assert match, config["Start time"]
+        start_time_year = int(match.group(1))
+        match = regex.search(config["Loadshape start time"])
+        assert match, config["Loadshape start time"]
+        load_shape_start_time_year = int(match.group(1))
+        if start_time_year != load_shape_start_time_year:
+            logger.warning("start_time_year=%s does not match load_shape_start_time=%s. Setting them to match.",
+                           start_time_year, load_shape_start_time_year)
+            config["Loadshape start time"] = f"{start_time_year}{match.group(2)}"
 
         if end_time is not None:
             config["Simulation duration (min)"] = (end_time - start_time).total_seconds() / 60
