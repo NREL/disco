@@ -5,7 +5,11 @@ import copy
 import logging
 import os
 
-from PyDSS.exceptions import PyDssConvergenceError, PyDssConvergenceMaxError
+from PyDSS.exceptions import (
+    PyDssConvergenceError,
+    PyDssConvergenceErrorCountExceeded,
+    PyDssConvergenceMaxError,
+)
 from PyDSS.pydss_project import update_pydss_controllers
 from PyDSS.pydss_project import PyDssProject, PyDssScenario
 
@@ -240,7 +244,7 @@ class PyDssSimulationBase(JobExecutionInterface):
             ret = self.check_convergence_problems()
             # TODO DT:
             ret = EXIT_CODE_GOOD
-        except (PyDssConvergenceError, PyDssConvergenceMaxError):
+        except (PyDssConvergenceError, PyDssConvergenceErrorCountExceeded, PyDssConvergenceMaxError):
             ret = EXIT_CODE_CONVERGENCE_ERROR
         finally:
             os.chdir(orig_dir)
