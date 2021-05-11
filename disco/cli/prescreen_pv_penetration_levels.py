@@ -139,6 +139,8 @@ def run(config, ctx, substation, feeder, placement, sample, jade_runtime_output,
 @click.pass_obj
 def filter_config(config, ctx, config_file, output_dir):
     """Filter the source config file with the prescreening results."""
+    filename = Path(output_dir) / "filter_prescreened_jobs.log"
+    setup_logging("disco", filename, console_level=logging.WARNING)
     src_config_file = ctx.parent.params["config_file"]
     prescreen_jobs_output = Path(output_dir) / PRESCREEN_JOBS_OUTPUT
     highest_passing_levels = {}
@@ -155,8 +157,11 @@ def filter_config(config, ctx, config_file, output_dir):
     jobs_to_remove = []
     for job in config.iter_pydss_simulation_jobs(exclude_base_case=True):
         key = create_job_key(job)
-        highest_passing_level = highest_passing_levels[key]
-        if job.model.deployment.project_data["penetration_level"] > highest_passing_level:
+        highest_passing_level = highest_passing_levels.get(key)
+        if highest_passing_level is None:
+            logger.warning("Skipping job %s because there is no passing penetration level", key)
+            jobs_to_remove.append(job)
+        elif job.model.deployment.project_data["penetration_level"] > highest_passing_level:
             jobs_to_remove.append(job)
 
     for job in jobs_to_remove:
@@ -164,8 +169,11 @@ def filter_config(config, ctx, config_file, output_dir):
 
     config.dump(config_file)
     num = len(jobs_to_remove)
-    print(
-        f"Created {config_file} by filtering {num} job(s) that were expected to fail from {src_config_file}."
+    logger.info(
+        "Created %s by filtering %s job(s) that were expected to fail from %s.",
+        config_file,
+        num,
+        src_config_file,
     )
 
 
