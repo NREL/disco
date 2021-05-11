@@ -68,7 +68,7 @@ def find_highest_passing_penetration_level(key, jobs, src_config_file, prescreen
         output_dir = prescreen_jobs_output / name
         ret = run_command(f"jade submit-jobs --local {run_config_file} -o {output_dir}")
         if ret != EXIT_CODE_GOOD:
-            raise Exception(f"Unexpected JADE error occurred: {ret}")
+            raise Exception(f"Unexpected JADE error occurred: key={key} name={name} ret={ret}")
 
         ret = _get_job_result(output_dir)
         if ret == EXIT_CODE_GOOD:
@@ -76,14 +76,14 @@ def find_highest_passing_penetration_level(key, jobs, src_config_file, prescreen
         elif ret == EXIT_CODE_CONVERGENCE_ERROR:
             passed = False
         else:
-            raise Exception(f"Unknown PyDSS error occurred. End bisect: {ret}")
+            raise Exception(f"Unknown PyDSS error occurred: key={key} job={name}. End bisect: {ret}")
 
         indices_run.add(index)
         index, done = bisector.get_next_index(index, passed)
         if done:
             break
         if index in indices_run:
-            raise Exception(f"already ran index={index} name={name}")
+            raise Exception(f"already ran index={index} key={key} name={name}")
 
     if not done:
         raise Exception("Failed to find highest penetration level from {key}")

@@ -113,7 +113,7 @@ def run(config, ctx, substation, feeder, placement, sample, jade_runtime_output,
         "__".join((substation, feeder, placement, str(sample))) + ".log",
     )
     level = logging.DEBUG if verbose else logging.INFO
-    setup_logging("disco", filename, console_level=level)
+    setup_logging("disco", filename, console_level=logging.WARNING)
 
     src_config_file = ctx.parent.params["config_file"]
     run_prescreen(
