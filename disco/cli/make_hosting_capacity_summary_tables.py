@@ -14,6 +14,7 @@ import click
 from jade.common import CONFIG_FILE, JOBS_OUTPUT_DIR
 from jade.jobs.job_configuration_factory import create_config_from_file
 from jade.loggers import setup_logging
+from jade.jobs.results_aggregator import ResultsAggregator
 
 from PyDSS.node_voltage_metrics import VOLTAGE_METRIC_FIELDS_TO_INCLUDE_AS_PASS_CRITERIA
 from PyDSS.pydss_results import PyDssResults, PyDssScenarioResults
@@ -32,7 +33,18 @@ def parse_batch_results(output_dir):
     """Parse the results from all jobs in a JADE output directory."""
     output_path = Path(output_dir)
     config = create_config_from_file(output_path / CONFIG_FILE)
-    jobs = list(config.iter_pydss_simulation_jobs())
+    jobs = []
+    results = ResultsAggregator.list_results(output_dir)
+    result_lookup = {x.name: x for x in results}
+    for job in config.iter_pydss_simulation_jobs():
+        if job.name not in result_lookup:
+            logger.info("Skip missing job %s", job.name)
+            continue
+        if result_lookup[job.name].return_code != 0:
+            logger.info("Skip failed job %s", job.name)
+            continue
+        jobs.append(job)
+
     feeder_head_table = []
     feeder_losses_table = []
     metadata_table = []
