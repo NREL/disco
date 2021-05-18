@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 SubstationKey = namedtuple("SampleKey", "substation, placement, sample, penetration_level")
 
 
-def _process_hierarchy(_, val):
+def _process_hierarchy(_, __, val):
     return SimulationHierarchy(val)
 
 
