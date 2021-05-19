@@ -114,7 +114,7 @@ different method.
 
 .. code-block:: bash
 
-    $ zipgrep -h Convergence filtered-output/job-outputs/p1uhs9_1247__p1udt6854__random__9__100/pydss_project/project.zip Logs/pydss_project__control_mode__reports.log | jq -s
+    $ zipgrep -h Convergence output/job-outputs/p1uhs9_1247__p1udt6854__random__9__100/pydss_project/project.zip Logs/pydss_project__control_mode__reports.log | jq . -s
 
 **Note**: That command used ``-h`` to suppress the filename from the output.
 
@@ -124,7 +124,19 @@ those associations.
 
 .. code-block:: bash
 
-    $ for x in `find output/job-outputs -name project.zip`; do zipgrep -h "Convergence" $x Logs/pydss_project__control_mode__reports.log; done | jq -s
+    $ for x in `find output/job-outputs -name project.zip`; do zipgrep -h "Convergence" $x Logs/pydss_project__control_mode__reports.log; done | jq . -s
+
+.. warning:: Be aware of how much CPU and memory will be consumed by these
+   operations. You may want to redirect this output to a temporary text file
+   first.
 
 In both cases you will probably want to redirect the output to a JSON file for
 further processing.
+
+Running searches in parallel
+----------------------------
+The DISCO repository has a script that extracts data from ``project.zip`` with
+the Python multiprocessing library. You can use this as an example to speed up
+large searches. Do not run this kind of search on the login node.
+
+Refer to ``disco/cli/make_hosting_capacity_summary_tables.py``.
