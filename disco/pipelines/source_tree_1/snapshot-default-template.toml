@@ -1,0 +1,57 @@
+inputs = "null"
+simulation_type = "snapshot"
+
+[model]
+[model.transform-params]
+hierarchy = "feeder"
+start = "2020-01-01T00:00:00.0"
+substations = "all"
+feeders =  "all"
+placements =  "all"
+samples = "all"
+penetration_levels = "all"
+master_file = "Master.dss"
+force = false
+output = "snapshot-models"
+
+[simulation]
+[simulation.config-params]
+config_file = "config.json"
+pf1 = true
+order_by_penetration = false
+with_loadshaple = false
+verbose = false
+
+[simulation.submitter-params]
+hpc_config = "hpc_config.toml"
+# assume worst case 1 job 1 min
+per_node_batch_size = 5000
+max_nodes = 50
+poll_interval = 60
+resource_monitor_interval = 0
+num_processes = "null"
+generate_reports = true
+try_add_blocked_jobs = false
+verbose = false
+node_setup_script = "null"
+node_shutdown_script = "null"
+
+[postprocess]
+[postprocess.config-params]
+config_file = "postprocess-config.json"
+cancel_on_blocking_job_failure = "null"
+minutes_per_job = "null"
+verbose = false
+
+[postprocess.submitter-params]
+hpc_config = "hpc_config.toml"
+per_node_batch_size = 1
+max_nodes = 1
+poll_interval = 60
+resource_monitor_interval = 0
+num_processes = "null"
+generate_reports = true
+try_add_blocked_jobs = false
+verbose = false
+node_setup_script = "null"
+node_shutdown_script = "null"

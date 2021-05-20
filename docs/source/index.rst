@@ -78,6 +78,7 @@ techno-economic analysis.
    pv-deployments
    transform-models
    analysis-workflows
+   pipelines
    debugging-issues
    advanced-guide
 

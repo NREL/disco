@@ -11,6 +11,7 @@ from disco.cli.download_source import download_source
 from disco.cli.transform_model import transform_model
 from disco.cli.prescreen_pv_penetration_levels import prescreen_pv_penetration_levels
 from disco.cli.pv_deployments import pv_deployments
+from disco.cli.create_pipeline import create_pipeline
 
 
 logger = logging.getLogger(__name__)
@@ -28,3 +29,4 @@ cli.add_command(download_source)
 cli.add_command(transform_model)
 cli.add_command(pv_deployments)
 cli.add_command(prescreen_pv_penetration_levels)
+cli.add_command(create_pipeline)

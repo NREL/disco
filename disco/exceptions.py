@@ -29,3 +29,6 @@ class PyDssConfigurationException(PyDssException):
 
 class PyDssJobException(DiscoBaseException):
     """Raise when PyDSS related job operations failed"""
+
+class UnknownSourceType(DiscoBaseException):
+    """Raise when failed to parse the source format"""

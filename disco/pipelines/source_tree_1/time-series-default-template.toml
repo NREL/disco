@@ -1,0 +1,82 @@
+inputs = "null"
+simulation_type = "time-series"
+
+[model]
+[model.transform-params]
+hierarchy = "feeder"
+start = "2020-01-01T00:00:00.0"
+end = "2020-01-02T00:00:00.0"
+substations = "all"
+feeders =  "all"
+placements =  "all"
+samples = "all"
+penetration_levels = "all"
+master_file = "Master.dss"
+resolution = 900
+force = false
+output = "time-series-models"
+
+[prescreen]
+[prescreen.config-params]
+config_file = "config.json"
+estimated_run_minutes = "null"
+order_by_penetration = false
+verbose = false
+
+[prescreen.prescreen-params]
+prescreen_config_file = "prescreen-config.json"
+filtered_config_file = "filtered-config.json"
+
+[prescreen.submitter-params]
+hpc_config = "hpc_config.toml"
+# assume worst case 1 job 1 hour, 4-hour short-queue
+per_node_batch_size = 144
+max_nodes = 1000
+poll_interval = 60
+resource_monitor_interval = 0
+num_processes = "null"
+generate_reports = true
+try_add_blocked_jobs = false
+verbose = false
+node_setup_script = "null"
+node_shutdown_script = "null"
+
+[simulation]
+[simulation.config-params]
+config_file = "config.json"
+estimated_run_minutes = "null"
+order_by_penetration = false
+verbose = false
+
+[simulation.submitter-params]
+hpc_config = "hpc_config.toml"
+per_node_batch_size = 36
+max_nodes = 2000
+poll_interval = 60
+resource_monitor_interval = 0
+num_processes = "null"
+generate_reports = true
+try_add_blocked_jobs = false
+verbose = false
+node_setup_script = "null"
+node_shutdown_script = "null"
+
+[postprocess]
+[postprocess.config-params]
+config_file = "postprocess-config.json"
+cancel_on_blocking_job_failure = "null"
+minutes_per_job = "null"
+verbose = false
+
+[postprocess.submitter-params]
+hpc_config = "hpc_config.toml"
+per_node_batch_size = 1
+max_nodes = 1
+poll_interval = 60
+resource_monitor_interval = 0
+num_processes = "null"
+generate_reports = true
+try_add_blocked_jobs = false
+verbose = false
+node_setup_script = "null"
+node_shutdown_script = "null"

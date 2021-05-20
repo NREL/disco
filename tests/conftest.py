@@ -26,3 +26,11 @@ def cleanup():
 def test_data_dir():
     """The path to the directory that contains the fixture data"""
     return os.path.join(os.path.dirname(__file__), "data")
+
+
+@pytest.fixture
+def smart_ds_substations():
+    """The path to the tests data - smart-ds substations"""
+    return os.path.join(
+        os.path.dirname(__file__), "data", "smart-ds", "substations"
+    )
