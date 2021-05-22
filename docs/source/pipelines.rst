@@ -2,10 +2,10 @@
 Pipelines
 *********
 
-To conduct power flow simulations and analysis, people normally need to several steps, including 
+To conduct power flow simulations and analysis, people normally need to perform several steps, including 
 transform model, create configurations, submit jobs, and run post-processing scripts/commands, which 
 takes a long way to get the final results. To streamline this workflow, DISCO leverages the power of 
-JADE pipeline and manage the steps using stages in simplier manner.
+JADE pipeline and manage the steps using stages in simpler manner.
 
 A pipeline can contain one or more stages, each stage can perform config and submit jobs
 to generate stage results. The result output from prior stage can be passed to its subsequent stage 
@@ -32,11 +32,35 @@ Snapshot Impact Analysis
 
 **1. Create Pipeline Template File**
 
+To create pipeline template, use this command:
+
+.. code-block:: bash
+
+    $ disco create-pipeline template <INPUTS>
+
+The opendss model inputs - ``<INPUTS>``  can be source models or preconfigured models.
+
+a. Source Model Inputs
+
 .. code-block:: bash
 
     $ disco create-pipeline template tests/data/smart-ds/substations -s snapshot --impact-analysis -t pipeline-template.toml
 
-This command creates a pipeline template file named ``pipeline-template.toml``.
+b. Preconfigured Model Inputs
+
+Create preconfigured models:
+
+.. code-block:: bash
+
+    $ disco transform-model tests/data/smart-ds/substations snapshot -o disco-models
+
+Then, use ``--preconfigured`` flag to indicate the input models ``disco-models`` are preconfigured.
+
+.. code-block:: bash
+
+    $ disco create-pipeline template disco-models --preconfigured -s snapshot --impact-analysis -t pipeline-template.toml
+
+The commands above create a pipeline template file named ``pipeline-template.toml``.
 
 
 **2. Update Pipeline Template File**

@@ -1,4 +1,5 @@
 inputs = "null"
+preconfigured = false
 simulation_type = "time-series"
 
 [model]

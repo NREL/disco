@@ -10,11 +10,10 @@ from jade.utils.utils import load_data, dump_data
 TEST_TEMPLATE_FILE = "pipeline-test-template.toml"
 TEST_PIPELINE_CONFIG_FILE = "pipeline-test.json"
 TEST_HPC_CONFIG_FILE = "hpc-test-config.toml"
-PRESCREEN_AUTO_CONFIG_SCRIPT = "pipeline-prescreen-auto-config.sh"
-SIMULATION_AUTO_CONFIG_SCRIPT = "pipeline-simulation-auto-config.sh"
-POSTPROCESS_AUTO_CONFIG_SCRIPT = "pipeline-postprocess-auto-config.sh"
-POSTPROCESS_COMMAND_SCRIPT = "pipeline-postprocess-command.sh"
-POSTPROCESS_COMMANDS_FILE = "pipeline-postprocess-command.txt"
+PRESCREEN_AUTO_CONFIG_TEXT_FILE = "pipeline-prescreen-auto-config.txt"
+SIMULATION_AUTO_CONFIG_TEXT_FILE = "pipeline-simulation-auto-config.txt"
+POSTPROCESS_AUTO_CONFIG_TEXT_FILE = "pipeline-postprocess-auto-config.txt"
+POSTPROCESS_COMMAND_TEXT_FILE = "pipeline-postprocess-command.txt"
 
 # Output filenames/dir after pipeline submit
 TRANSFORM_MODEL_LOG_FILE = "transform_model.log"
@@ -25,6 +24,7 @@ POSTPROCESS_CONFIG_FILE = "postprocess-config.json"
 SNAPSHOT_MODELS_DIR = "snapshot-models"
 TIME_SERIES_MODELS_DIR = "time-series-models"
 TEST_PIPELINE_OUTPUT = "pipeline-test-output"
+TEST_PRECONFIGURED_MODELS = "test-preconfigured-models"
 
 FEEDER_HEAD_TABLE = "feeder_head_table.csv"
 FEEDER_LOSSES_TABLE = "feeder_losses_table.csv"
@@ -51,11 +51,10 @@ def cleanup():
             TEST_TEMPLATE_FILE,
             TEST_PIPELINE_CONFIG_FILE,
             TEST_HPC_CONFIG_FILE,
-            PRESCREEN_AUTO_CONFIG_SCRIPT,
-            SIMULATION_AUTO_CONFIG_SCRIPT,
-            POSTPROCESS_AUTO_CONFIG_SCRIPT,
-            POSTPROCESS_COMMAND_SCRIPT,
-            POSTPROCESS_COMMANDS_FILE,
+            PRESCREEN_AUTO_CONFIG_TEXT_FILE,
+            SIMULATION_AUTO_CONFIG_TEXT_FILE,
+            POSTPROCESS_AUTO_CONFIG_TEXT_FILE,
+            POSTPROCESS_COMMAND_TEXT_FILE,
             TRANSFORM_MODEL_LOG_FILE,
             SIMULATION_CONFIG_FILE,
             PRESCREEN_CONFIG_FILE,
@@ -66,11 +65,16 @@ def cleanup():
             if os.path.exists(path):
                 os.remove(path)
         
-        result_dirs = [SNAPSHOT_MODELS_DIR, TIME_SERIES_MODELS_DIR, TEST_PIPELINE_OUTPUT]
+        result_dirs = [
+            SNAPSHOT_MODELS_DIR,
+            TIME_SERIES_MODELS_DIR,
+            TEST_PIPELINE_OUTPUT,
+            TEST_PRECONFIGURED_MODELS
+        ]
         for path in result_dirs:
             if os.path.exists(path):
                 shutil.rmtree(path)
-    
+
     delete_test_results()
     yield
     delete_test_results()
@@ -134,6 +138,25 @@ def test_source_tree_1_create_snapshot_pipeline_template__prescreen(smart_ds_sub
     assert "prescreen" not in data
 
 
+def test_source_tree_1_create_snapshot_pipeline_template__preconfigured_models(smart_ds_substations, cleanup):
+    cmd1 = f"disco transform-model {smart_ds_substations} snapshot -o {TEST_PRECONFIGURED_MODELS}"
+    ret = run_command(cmd1)
+    assert ret == 0
+    assert os.path.exists(TEST_PRECONFIGURED_MODELS)
+    
+    cmd = (
+        f"disco create-pipeline template {TEST_PRECONFIGURED_MODELS} "
+        f"--preconfigured -t {TEST_TEMPLATE_FILE}"
+    )
+    ret = run_command(cmd)
+    assert ret == 0
+    
+    assert os.path.exists(TEST_TEMPLATE_FILE)
+    data = load_data(TEST_TEMPLATE_FILE)
+    assert "model" not in data
+    assert data["preconfigured"] == True
+
+
 def test_source_tree_1_config_snapshot_pipeline(smart_ds_substations, cleanup):
     cmd1 = f"disco create-pipeline template {smart_ds_substations} -t {TEST_TEMPLATE_FILE}"
     ret = run_command(cmd1)
@@ -151,9 +174,9 @@ def test_source_tree_1_config_snapshot_pipeline(smart_ds_substations, cleanup):
     
     assert os.path.exists(TEST_HPC_CONFIG_FILE)
     assert os.path.exists(TEST_PIPELINE_CONFIG_FILE)
-    assert not os.path.exists(PRESCREEN_AUTO_CONFIG_SCRIPT)
-    assert os.path.exists(SIMULATION_AUTO_CONFIG_SCRIPT)
-    assert not os.path.exists(POSTPROCESS_AUTO_CONFIG_SCRIPT)
+    assert not os.path.exists(PRESCREEN_AUTO_CONFIG_TEXT_FILE)
+    assert os.path.exists(SIMULATION_AUTO_CONFIG_TEXT_FILE)
+    assert not os.path.exists(POSTPROCESS_AUTO_CONFIG_TEXT_FILE)
     
     pipeline_data = load_data(TEST_PIPELINE_CONFIG_FILE)
     assert len(pipeline_data["stages"]) == 1
@@ -181,11 +204,10 @@ def test_source_tree_1_config_snapshot_pipeline__impact_analysis(smart_ds_substa
     assert os.path.exists(TEST_HPC_CONFIG_FILE)
     assert os.path.exists(TEST_TEMPLATE_FILE)
     assert os.path.exists(TEST_PIPELINE_CONFIG_FILE)
-    assert not os.path.exists(PRESCREEN_AUTO_CONFIG_SCRIPT)
-    assert os.path.exists(SIMULATION_AUTO_CONFIG_SCRIPT)
-    assert os.path.exists(POSTPROCESS_AUTO_CONFIG_SCRIPT)
-    assert os.path.exists(POSTPROCESS_COMMANDS_FILE)
-    assert os.path.exists(POSTPROCESS_COMMAND_SCRIPT)
+    assert not os.path.exists(PRESCREEN_AUTO_CONFIG_TEXT_FILE)
+    assert os.path.exists(SIMULATION_AUTO_CONFIG_TEXT_FILE)
+    assert os.path.exists(POSTPROCESS_AUTO_CONFIG_TEXT_FILE)
+    assert os.path.exists(POSTPROCESS_COMMAND_TEXT_FILE)
 
     pipeline_data = load_data(TEST_PIPELINE_CONFIG_FILE)
     assert len(pipeline_data["stages"]) == 2
@@ -327,9 +349,9 @@ def test_source_tree_1_config_time_series_pipeline(smart_ds_substations, cleanup
     
     assert os.path.exists(TEST_HPC_CONFIG_FILE)
     assert os.path.exists(TEST_PIPELINE_CONFIG_FILE)
-    assert not os.path.exists(PRESCREEN_AUTO_CONFIG_SCRIPT)
-    assert os.path.exists(SIMULATION_AUTO_CONFIG_SCRIPT)
-    assert not os.path.exists(POSTPROCESS_AUTO_CONFIG_SCRIPT)
+    assert not os.path.exists(PRESCREEN_AUTO_CONFIG_TEXT_FILE)
+    assert os.path.exists(SIMULATION_AUTO_CONFIG_TEXT_FILE)
+    assert not os.path.exists(POSTPROCESS_AUTO_CONFIG_TEXT_FILE)
     
     pipeline_data = load_data(TEST_PIPELINE_CONFIG_FILE)
     assert len(pipeline_data["stages"]) == 1
@@ -356,9 +378,9 @@ def test_source_tree_1_config_time_series_pipeline__prescreen(smart_ds_substatio
     
     assert os.path.exists(TEST_HPC_CONFIG_FILE)
     assert os.path.exists(TEST_PIPELINE_CONFIG_FILE)
-    assert os.path.exists(PRESCREEN_AUTO_CONFIG_SCRIPT)
-    assert os.path.exists(SIMULATION_AUTO_CONFIG_SCRIPT)
-    assert not os.path.exists(POSTPROCESS_AUTO_CONFIG_SCRIPT)
+    assert os.path.exists(PRESCREEN_AUTO_CONFIG_TEXT_FILE)
+    assert os.path.exists(SIMULATION_AUTO_CONFIG_TEXT_FILE)
+    assert not os.path.exists(POSTPROCESS_AUTO_CONFIG_TEXT_FILE)
     
     pipeline_data = load_data(TEST_PIPELINE_CONFIG_FILE)
     assert len(pipeline_data["stages"]) == 2
@@ -385,9 +407,9 @@ def test_source_tree_1_config_time_series_pipeline__impact_analysis(smart_ds_sub
     
     assert os.path.exists(TEST_HPC_CONFIG_FILE)
     assert os.path.exists(TEST_PIPELINE_CONFIG_FILE)
-    assert not os.path.exists(PRESCREEN_AUTO_CONFIG_SCRIPT)
-    assert os.path.exists(SIMULATION_AUTO_CONFIG_SCRIPT)
-    assert os.path.exists(POSTPROCESS_AUTO_CONFIG_SCRIPT)
+    assert not os.path.exists(PRESCREEN_AUTO_CONFIG_TEXT_FILE)
+    assert os.path.exists(SIMULATION_AUTO_CONFIG_TEXT_FILE)
+    assert os.path.exists(POSTPROCESS_AUTO_CONFIG_TEXT_FILE)
     
     pipeline_data = load_data(TEST_PIPELINE_CONFIG_FILE)
     assert len(pipeline_data["stages"]) == 2
@@ -415,9 +437,9 @@ def test_source_tree_1_config_time_series_pipeline__prescreen__impact_analysis(s
     
     assert os.path.exists(TEST_HPC_CONFIG_FILE)
     assert os.path.exists(TEST_PIPELINE_CONFIG_FILE)
-    assert os.path.exists(PRESCREEN_AUTO_CONFIG_SCRIPT)
-    assert os.path.exists(SIMULATION_AUTO_CONFIG_SCRIPT)
-    assert os.path.exists(POSTPROCESS_AUTO_CONFIG_SCRIPT)
+    assert os.path.exists(PRESCREEN_AUTO_CONFIG_TEXT_FILE)
+    assert os.path.exists(SIMULATION_AUTO_CONFIG_TEXT_FILE)
+    assert os.path.exists(POSTPROCESS_AUTO_CONFIG_TEXT_FILE)
     
     pipeline_data = load_data(TEST_PIPELINE_CONFIG_FILE)
     assert len(pipeline_data["stages"]) == 3
@@ -441,6 +463,8 @@ def test_source_tree_1_snapshot_pipeline_submit__impact_analysis(smart_ds_substa
     cmd2 = f"jade pipeline submit {TEST_PIPELINE_CONFIG_FILE} -o {TEST_PIPELINE_OUTPUT}"
     ret = run_command(cmd2)
     assert ret == 0
+    assert not os.path.exists("snapshot-models")
+    assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "snapshot-models"))
     
     assert os.path.exists(TEST_PIPELINE_OUTPUT)
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1"))
@@ -471,6 +495,8 @@ def test_source_tree_1_time_series_pipeline_submit__prescreen__impact_analysis(s
     
     cmd2 = f"jade pipeline submit {TEST_PIPELINE_CONFIG_FILE} -o {TEST_PIPELINE_OUTPUT}"
     ret = run_command(cmd2)
+    assert not os.path.exists("time-series-models")
+    assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "time-series-models"))
     assert ret == 0
     
     assert os.path.exists(TEST_PIPELINE_OUTPUT)

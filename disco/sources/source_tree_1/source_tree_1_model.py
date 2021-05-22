@@ -27,6 +27,7 @@ from disco.sources.base import (
     DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS,
     DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS
 )
+from disco.sources.utils import create_model_format_file
 from .source_tree_1_model_inputs import SourceTree1ModelInputs
 
 
@@ -165,6 +166,7 @@ def snapshot(
         penetration_levels=penetration_levels,
         master_file=master_file,
     )
+    create_model_format_file(output, model_name="SourceTree1Model")
     print(f"Transformed data from {input_path} to {output} for Snapshot Analysis.")
 
 
@@ -237,6 +239,7 @@ def time_series(
         master_file=master_file,
         hierarchy=hierarchy,
     )
+    create_model_format_file(output, model_name="SourceTree1Model")
     print(
         f"Transformed data from {input_path} to {output} for TimeSeries Analysis."
     )
@@ -294,6 +297,7 @@ def upgrade(
         penetration_levels=penetration_levels,
         master_file=master_file,
     )
+    create_model_format_file(output, model_name="SourceTree1Model")
     print(f"Transformed data from {input_path} to {output} for UpgradeCostAnalysis.")
 
 
