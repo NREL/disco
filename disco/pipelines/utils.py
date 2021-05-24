@@ -8,29 +8,12 @@ from disco.pipelines.enums import SimulationType, TemplateSection
 from disco.sources.base import FORMAT_FILENAME
 
 
-SOURCE_MAPPINGS = {
-    "SourceTree1Model": "source_tree_1"
-}
-
-
-def get_source_type(source_inputs):
-    format_file = os.path.join(source_inputs, FORMAT_FILENAME)
-    if not os.path.exists(format_file):
-        raise UnknownSourceType(f"Source inputs does not contain '{FORMAT_FILENAME}'.")
-    data = load_data(format_file)
-    source_type = data["type"]
-    if source_type not in SOURCE_MAPPINGS:
-        raise UnknownSourceType(f"Source type '{source_type}' does not support.")
-    return source_type
-
-
-def get_default_pipeline_template(source_type, simulation_type):
+def get_default_pipeline_template(simulation_type):
     """Return the default pipeline template file"""
-    source = SOURCE_MAPPINGS[source_type]
     if isinstance(simulation_type, SimulationType):
         simulation_type = simulation_type.value
     filename = f"{simulation_type}-default-template.toml"
-    template_file = os.path.join(os.path.dirname(__file__), source, filename)
+    template_file = os.path.join(os.path.dirname(__file__), "template", filename)
     template = PipelineTemplate(template_file)
     return template
 

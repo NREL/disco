@@ -40,6 +40,9 @@ class PipelineTemplate:
     def contains_postprocess(self):
         return TemplateSection.POSTPROCESS.value in self.data
 
+    def update_transform_params(self, data):
+        self.data[TemplateSection.MODEL.value][TemplateParams.TRANSFORM_PARAMS.value].update(data)
+
     def get_command_params(self, section, params_type):
         """Return command params in dict"""
         if isinstance(section, TemplateSection):

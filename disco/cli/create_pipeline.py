@@ -12,7 +12,8 @@ from jade.utils.utils import dump_data, load_data
 from disco.pipelines.base import TemplateSection, TemplateParams, PipelineTemplate
 from disco.pipelines.enums import SimulationType, AnalysisType
 from disco.pipelines.factory import PipelineCreatorFactory
-from disco.pipelines.utils import get_source_type, get_default_pipeline_template, check_hpc_config
+from disco.pipelines.utils import get_default_pipeline_template, check_hpc_config
+from disco.sources.factory import make_source_model
 
 
 logger = logging.getLogger(__name__)
@@ -33,7 +34,7 @@ def create_pipeline():
     is_flag=True,
     default=False,
     show_default=True,
-    help="Whether inputs models are preconfigured"
+    help="Whether inpuPIPELINE_CREATOR_MAPPINGgured"
 )
 @click.option(
     "-s", "--simulation-type",
@@ -86,13 +87,16 @@ def template(
         print("--impact-analysis and --hosting-capacity cannot both be enabled.")
         sys.exit(1)
     
-    source_type = get_source_type(source_inputs=inputs)
-    template = get_default_pipeline_template(source_type, simulation_type=simulation_type)
+    template = get_default_pipeline_template(simulation_type=simulation_type)
     template.data["inputs"] = inputs
     
     if preconfigured:
         template.data["preconfigured"] = True
         template.remove_section(TemplateSection.MODEL)
+    else:
+        source_model = make_source_model(inputs)
+        transform_defaults = source_model.get_transform_defaults()
+        template.update_transform_params(transform_defaults)
     
     if impact_analysis:
         template.data["analysis_type"] = AnalysisType.IMAPCT_ANALYSIS.value
