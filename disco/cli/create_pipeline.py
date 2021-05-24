@@ -34,7 +34,7 @@ def create_pipeline():
     is_flag=True,
     default=False,
     show_default=True,
-    help="Whether inpuPIPELINE_CREATOR_MAPPINGgured"
+    help="Whether inputs models are preconfigured"
 )
 @click.option(
     "-s", "--simulation-type",
