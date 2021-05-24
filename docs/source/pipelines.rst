@@ -163,7 +163,7 @@ allocated HPC hours.
 
     $ disco create-pipeline template tests/data/smart-ds/substations -s time-series --impact-analysis -t pipeline-template.toml
 
-If you needs to prescreen on pv penetration levels, use flag ``--prescreen`` to create the template, that is,
+If you need to prescreen PV penetration levels, use the flag ``--prescreen`` to create the template.
 
 .. code-block:: bash
 
