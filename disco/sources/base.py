@@ -11,6 +11,9 @@ from disco.enums import AnalysisType, SimulationType, SimulationHierarchy
 from disco.models.base import OpenDssDeploymentModel
 
 
+FORMAT_FILENAME = "format.toml"
+TYPE_KEY = "type"
+
 SOURCE_CONFIGURATION_FILENAME = "configurations.json"
 
 DEFAULT_SNAPSHOT_IMPACT_ANALYSIS_PARAMS = {

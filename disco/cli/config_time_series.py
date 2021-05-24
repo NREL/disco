@@ -36,31 +36,6 @@ logger = logging.getLogger(__name__)
     help="Estimated per-job runtime. Default is None.",
 )
 @click.option(
-    "-h", "--hosting-capacity",
-    is_flag=True,
-    default=False,
-    show_default=True,
-    help="Enable hosting capacity computations",
-)
-@click.option(
-    "-i", "--impact-analysis",
-    is_flag=True,
-    default=False,
-    show_default=True,
-    help="Enable impact analysis computations",
-)
-@click.option(
-    "--impact-analysis-inputs-filename",
-    default=os.path.join(
-        os.path.dirname(getattr(disco, "__path__")[0]),
-        "disco",
-        "analysis",
-        "impact_analysis_inputs.toml",
-    ),
-    show_default=True,
-    help="impact analysis options",
-)
-@click.option(
     "-r",
     "--reports-filename",
     default=os.path.join(
@@ -92,9 +67,6 @@ def time_series(
     inputs,
     config_file,
     estimated_run_minutes,
-    hosting_capacity,
-    impact_analysis,
-    impact_analysis_inputs_filename,
     reports_filename=None,
     order_by_penetration=True,
     verbose=False,
@@ -102,10 +74,6 @@ def time_series(
     """Create JADE configuration for time series simulations."""
     level = logging.DEBUG if verbose else logging.INFO
     setup_logging(__name__, None, console_level=level)
-
-    if hosting_capacity and impact_analysis:
-        print("hosting_capacity and impact_analysis cannot both be set")
-        sys.exit(1)
 
     simulation_config = PyDssConfiguration.get_default_pydss_simulation_config()
     simulation_config["Project"]["Simulation Type"] = SimulationType.QSTS.value
@@ -122,13 +90,6 @@ def time_series(
         order_by_penetration=order_by_penetration,
         estimated_run_minutes=estimated_run_minutes,
     )
-    if hosting_capacity or impact_analysis:
-        ia_inputs = load_data(impact_analysis_inputs_filename)
-        config.add_user_data("impact_analysis_inputs", ia_inputs)
-
-        ia_jobs = config.add_impact_analysis_jobs(SimulationType.QSTS)
-        if hosting_capacity:
-            config.add_hosting_capacity_job(SimulationType.QSTS, ia_jobs)
 
     config.dump(filename=config_file)
     print(f"Created {config_file} for TimeSeries Analysis")

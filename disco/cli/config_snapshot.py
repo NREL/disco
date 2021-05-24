@@ -33,31 +33,6 @@ logger = logging.getLogger(__name__)
     help="JADE config file to create",
 )
 @click.option(
-    "-h", "--hosting-capacity",
-    is_flag=True,
-    default=False,
-    show_default=True,
-    help="Enable hosting capacity computations",
-)
-@click.option(
-    "-i", "--impact-analysis",
-    is_flag=True,
-    default=False,
-    show_default=True,
-    help="Enable impact analysis computations",
-)
-@click.option(
-    "--impact-analysis-inputs-filename",
-    default=os.path.join(
-        os.path.dirname(getattr(disco, "__path__")[0]),
-        "disco",
-        "analysis",
-        "impact_analysis_inputs.toml",
-    ),
-    show_default=True,
-    help="impact analysis inputs",
-)
-@click.option(
     "-e", "--exports-filename",
     default=os.path.join(
         os.path.dirname(getattr(disco, "__path__")[0]),
@@ -109,9 +84,6 @@ logger = logging.getLogger(__name__)
 def snapshot(
     inputs,
     config_file,
-    hosting_capacity,
-    impact_analysis,
-    impact_analysis_inputs_filename,
     exports_filename,
     reports_filename,
     pf1,
@@ -123,14 +95,10 @@ def snapshot(
     level = logging.DEBUG if verbose else logging.INFO
     setup_logging(__name__, None, console_level=level)
 
-    if hosting_capacity and impact_analysis:
-        print("hosting_capacity and impact_analysis cannot both be set")
-        sys.exit(1)
-    
     simulation_config = PyDssConfiguration.get_default_pydss_simulation_config()
+    simulation_config["Reports"] = load_data(reports_filename)["Reports"]
     if with_loadshape:
         simulation_config["Project"]["Simulation Type"] = SimulationType.QSTS.value
-        simulation_config["Reports"] = load_data(reports_filename)["Reports"]
         scenarios = [PyDssConfiguration.make_default_pydss_scenario(CONTROL_MODE_SCENARIO)]
         if pf1:
             scenarios.append(PyDssConfiguration.make_default_pydss_scenario(PF1_SCENARIO))
@@ -154,14 +122,6 @@ def snapshot(
     
     if with_loadshape:
         config = switch_snapshot_to_qsts(config)
-
-    if hosting_capacity or impact_analysis:
-        ia_inputs = load_data(impact_analysis_inputs_filename)
-        config.add_user_data("impact_analysis_inputs", ia_inputs)
-
-        ia_jobs = config.add_impact_analysis_jobs(SimulationType.SNAPSHOT)
-        if hosting_capacity:
-            config.add_hosting_capacity_job(SimulationType.SNAPSHOT, ia_jobs)
 
     config.dump(filename=config_file)
     print(f"Created {config_file} for Snapshot Analysis")

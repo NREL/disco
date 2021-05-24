@@ -382,6 +382,19 @@ class SourceTree1Model(BaseOpenDssModel):
     def pydss_controllers(self):
         return self._pydss_controllers
 
+    @staticmethod
+    def get_transform_defaults():
+        return {
+            "substations": "all",
+            "feeders": "all",
+            "placements": "all",
+            "samples": "all",
+            "penetration_levels": "all",
+            "hierarchy": "feeder",
+            "master_file": "Master.dss",
+            "force": False
+        }
+
     @classmethod
     def transform(
         cls,

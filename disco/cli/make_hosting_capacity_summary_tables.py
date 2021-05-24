@@ -20,6 +20,8 @@ from PyDSS.node_voltage_metrics import VOLTAGE_METRIC_FIELDS_TO_INCLUDE_AS_PASS_
 from PyDSS.pydss_results import PyDssResults, PyDssScenarioResults
 from PyDSS.thermal_metrics import create_summary_from_dict
 
+from disco.pipelines.utils import ensure_jade_pipeline_output_dir
+
 
 JobInfo = namedtuple(
     "JobInfo", ["name", "substation", "feeder", "placement", "sample", "penetration_level"]
@@ -216,4 +218,5 @@ def make_summary_tables(output_dir, verbose):
     """Make hosting capacity summary tables for all jobs in a batch."""
     level = logging.DEBUG if verbose else logging.INFO
     setup_logging(__name__, None, console_level=level)
+    output_dir = ensure_jade_pipeline_output_dir(output_dir)
     parse_batch_results(output_dir)

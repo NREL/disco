@@ -8,10 +8,7 @@ from disco.sources import EpriModel
 from disco.sources import GemModel
 from disco.sources import SourceTree1Model
 from disco.sources import SourceTree2Model
-
-
-FORMAT_FILENAME = "format.toml"
-TYPE_KEY = "type"
+from .base import FORMAT_FILENAME, TYPE_KEY
 
 SUPPORTED_FORMATS = {
     "EpriModel": EpriModel,
