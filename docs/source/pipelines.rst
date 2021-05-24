@@ -73,7 +73,7 @@ In the template generated above, there are 3 sections, including:
 
 You can modify the different types of parameters in each section based on your task requirements 
 on model transform, config/submit jobs, and postprocess. To check the meaning of each parameter,
-run ``--help`` on its according command.
+run ``--help`` on its command.
 
     * ``model.transform-params`` from ``disco transform-model <INPUTS> snapshot``
     * ``simulation.config-params`` from ``disco config snapshot``.
