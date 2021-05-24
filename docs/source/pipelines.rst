@@ -3,8 +3,7 @@ Pipelines
 *********
 
 To conduct power flow simulations and analysis, people normally need to perform several steps, including 
-transform model, create configurations, submit jobs, and run post-processing scripts/commands, which 
-takes a long way to get the final results. To streamline this workflow, DISCO leverages the power of 
+transform model, create configurations, submit jobs, and run post-processing scripts/commands. To streamline this workflow, DISCO leverages the power of 
 JADE pipeline and manage the steps using stages in simpler manner.
 
 A pipeline can contain one or more stages, each stage can perform config and submit jobs
