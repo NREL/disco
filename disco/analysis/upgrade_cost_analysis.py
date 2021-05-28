@@ -1,6 +1,7 @@
 import logging
 import os
 
+import numpy as np
 import pandas as pd
 
 from jade.utils.utils import load_data
@@ -109,11 +110,15 @@ class UpgradeCostAnalysis(Analysis):
                     line_count = upgrade_df[k]["new"][
                         0
                     ]  # count of new lines added to address overload. Often 1, but could be > 1 with severe overloads
-                    new_line_cost_per_line = new_line_len_m * (
-                        unit_cost_lines[
-                            unit_cost_lines["description"] == "new_line"
-                        ].cost_per_m
-                    ).astype(float)
+                    new_line_kV = upgrade_df[k]["new"][1]["line_kV"]
+                    # NOTE: Cost for new line of specific voltage kV, 2021-05-28
+                    new_line_voltage_kv_cost = unit_cost_lines.loc[
+                        (unit_cost_lines["description"] == "new_line")
+                        & np.isclose(unit_cost_lines['voltage_kV'].values, new_line_kV, 0.01)
+                    ].cost_per_m.values
+                    if not new_line_voltage_kv_cost:
+                        raise Exception(f"Unit cost database does not contain the cost for new_line_kV - {new_line_kV}")
+                    new_line_cost_per_line = new_line_len_m * new_line_voltage_kv_cost[0]
                     new_line_cost = line_count * new_line_cost_per_line
 
                 elif upgrade_df[k]["new"][0] == 0:
