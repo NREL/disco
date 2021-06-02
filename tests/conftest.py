@@ -10,7 +10,14 @@ from tests.common import *
 @pytest.fixture
 def cleanup():
     def delete_files():
-        for path in (PIPELINE_CONFIG, CONFIG_FILE, PRESCREEN_CONFIG_FILE, PRESCREEN_FINAL_CONFIG_FILE, UPGRADE_PARAMS):
+        for path in (
+            PIPELINE_CONFIG,
+            CONFIG_FILE,
+            PRESCREEN_CONFIG_FILE,
+            PRESCREEN_FINAL_CONFIG_FILE,
+            UPGRADE_PARAMS,
+            TRANSFORM_MODEL_LOG
+        ):
             if os.path.exists(path):
                 os.remove(path)
         for path in (OUTPUT, MODELS_DIR):
