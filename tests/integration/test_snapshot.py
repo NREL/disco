@@ -14,9 +14,6 @@ from disco.pydss.pydss_analysis import PyDssAnalysis
 from disco.extensions.pydss_simulation.pydss_configuration import PyDssConfiguration
 from tests.common import *
 
-
-JOB_RESULT = "snapshot-impact-analysis-job-post-process.csv"
-BATCH_RESULT = "snapshot-impact-analysis-batch-post-process.csv"
 DISCO_PATH = disco.__path__[0]
 
 
@@ -81,7 +78,7 @@ def test_snapshot_impact_analysis(cleanup):
     base = os.path.join(DISCO_PATH, "extensions", "pydss_simulation")
     config_file = CONFIG_FILE
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations snapshot -F -o {MODELS_DIR}"
-    config_cmd = f"{CONFIG_JOBS} snapshot --impact-analysis {MODELS_DIR} -c {CONFIG_FILE}"
+    config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} -c {CONFIG_FILE}"
     submit_cmd = f"{SUBMIT_JOBS} {config_file} -o {OUTPUT}"
 
     assert run_command(transform_cmd) == 0
@@ -90,22 +87,17 @@ def test_snapshot_impact_analysis(cleanup):
 
     config = PyDssConfiguration.deserialize(CONFIG_FILE)
     jobs = config.list_jobs()
-    assert len(jobs) == 20
-    for job in jobs[:18]:
-        assert not job.get_blocking_jobs()
-    assert len(jobs[18].get_blocking_jobs()) == 9
-    assert len(jobs[19].get_blocking_jobs()) == 9
-    assert config.list_user_data_keys()
+    assert len(jobs) == 18
+    assert not config.list_user_data_keys()
 
-    # Verify Post-process Results
-    for job in jobs[:18]:
-        post_process_result = os.path.join(
-            OUTPUT,
-            JOB_OUTPUTS,
-            job.name,
-            JOB_RESULT,
-        )
-        assert os.path.exists(post_process_result)
+    # Verify Post-process & Results
+    postprocess_cmd = f"disco-internal make-summary-tables {OUTPUT}"
+    assert run_command(postprocess_cmd) == 0
+    for filename in POSTPROCESS_RESULTS:
+        summary_table = os.path.join(OUTPUT, filename)
+        assert os.path.exists(summary_table)
+    
+    # TODO: Test impact analysis function after code integrated.
 
 
 def test_snapshot_hosting_capacity(cleanup):
@@ -113,7 +105,7 @@ def test_snapshot_hosting_capacity(cleanup):
     base = os.path.join(DISCO_PATH, "extensions", "pydss_simulation")
     config_file = CONFIG_FILE
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations snapshot -F -o {MODELS_DIR}"
-    config_cmd = f"{CONFIG_JOBS} snapshot --hosting-capacity {MODELS_DIR} -c {CONFIG_FILE}"
+    config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} -c {CONFIG_FILE}"
     submit_cmd = f"{SUBMIT_JOBS} {config_file} -o {OUTPUT} -p1"
 
     assert run_command(transform_cmd) == 0
@@ -122,19 +114,14 @@ def test_snapshot_hosting_capacity(cleanup):
 
     config = PyDssConfiguration.deserialize(CONFIG_FILE)
     jobs = config.list_jobs()
-    assert len(jobs) == 21
-    for job in jobs[:18]:
-        assert not job.get_blocking_jobs()
-    assert len(jobs[18].get_blocking_jobs()) == 9
-    assert len(jobs[19].get_blocking_jobs()) == 9
-    assert len(jobs[20].get_blocking_jobs()) == 2
-    assert config.list_user_data_keys()
+    assert len(jobs) == 18
+    assert not config.list_user_data_keys()
 
-    # Verify Post-process Results
-    for feeder in config.list_feeders():
-        result = os.path.join(
-            OUTPUT,
-            JOB_OUTPUTS,
-            f"{feeder}-snapshot-impact-analysis-batch-post-process.csv"
-        )
-        assert os.path.exists(result)
+    # Verify Post-process & Results
+    postprocess_cmd = f"disco-internal make-summary-tables {OUTPUT}"
+    assert run_command(postprocess_cmd) == 0
+    for filename in POSTPROCESS_RESULTS:
+        summary_table = os.path.join(OUTPUT, filename)
+        assert os.path.exists(summary_table)
+    
+    # TODO: Test hosting capacity function when code integrated.

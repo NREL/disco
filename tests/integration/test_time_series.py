@@ -67,9 +67,9 @@ def test_time_series_at_substation(cleanup):
 
 
 def test_time_series_impact_analysis(cleanup):
-    num_jobs = 20
+    num_jobs = 18
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations time-series -F -o {MODELS_DIR}"
-    config_cmd = f"{CONFIG_JOBS} time-series --impact-analysis {MODELS_DIR} -c {CONFIG_FILE}"
+    config_cmd = f"{CONFIG_JOBS} time-series {MODELS_DIR} -c {CONFIG_FILE}"
     submit_cmd = f"{SUBMIT_JOBS} {CONFIG_FILE} --output={OUTPUT}"
 
     assert run_command(transform_cmd) == 0
@@ -78,24 +78,30 @@ def test_time_series_impact_analysis(cleanup):
     verify_results(OUTPUT, num_jobs)
 
     config = PyDssConfiguration.deserialize(CONFIG_FILE)
-    assert config.list_user_data_keys()
+    assert not config.list_user_data_keys()
     jobs = config.list_jobs()
-    for job in jobs[:18]:
-        assert not job.get_blocking_jobs()
-    assert len(jobs[18].get_blocking_jobs()) == 9
-    assert len(jobs[19].get_blocking_jobs()) == 9
+    assert len(jobs) == num_jobs
     assert config.get_simulation_hierarchy() == SimulationHierarchy.FEEDER
 
     analysis = PyDssAnalysis(OUTPUT, config)
     result = analysis.list_results()[0]
     pydss_results = analysis.read_results(result.name)
     assert len(pydss_results.scenarios) == 2
+    
+    # Verify Post-process & Results
+    postprocess_cmd = f"disco-internal make-summary-tables {OUTPUT}"
+    assert run_command(postprocess_cmd) == 0
+    for filename in POSTPROCESS_RESULTS:
+        summary_table = os.path.join(OUTPUT, filename)
+        assert os.path.exists(summary_table)
+    
+    # TODO: Test impact analysis function after code integrated.
 
 
 def test_time_series_hosting_capacity(cleanup):
-    num_jobs = 21
+    num_jobs = 18
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations time-series -F -o {MODELS_DIR}"
-    config_cmd = f"{CONFIG_JOBS} time-series --hosting-capacity {MODELS_DIR} -c {CONFIG_FILE}"
+    config_cmd = f"{CONFIG_JOBS} time-series {MODELS_DIR} -c {CONFIG_FILE}"
     submit_cmd = f"{SUBMIT_JOBS} {CONFIG_FILE} --output={OUTPUT} -p 1"
 
     assert run_command(transform_cmd) == 0
@@ -104,18 +110,23 @@ def test_time_series_hosting_capacity(cleanup):
     verify_results(OUTPUT, num_jobs)
 
     config = PyDssConfiguration.deserialize(CONFIG_FILE)
-    assert config.list_user_data_keys()
+    assert not config.list_user_data_keys()
     jobs = config.list_jobs()
-    for job in jobs[:18]:
-        assert not job.get_blocking_jobs()
-    assert len(jobs[18].get_blocking_jobs()) == 9
-    assert len(jobs[19].get_blocking_jobs()) == 9
-    assert len(jobs[20].get_blocking_jobs()) == 2
+    assert len(jobs) == num_jobs
 
     analysis = PyDssAnalysis(OUTPUT, config)
     result = analysis.list_results()[0]
     pydss_results = analysis.read_results(result.name)
     assert len(pydss_results.scenarios) == 2
+    
+    # Verify Post-process & Results
+    postprocess_cmd = f"disco-internal make-summary-tables {OUTPUT}"
+    assert run_command(postprocess_cmd) == 0
+    for filename in POSTPROCESS_RESULTS:
+        summary_table = os.path.join(OUTPUT, filename)
+        assert os.path.exists(summary_table)
+    
+    # TODO: Test hosting capacity function when code integrated.
 
 
 def verify_results(output_dir, num_jobs):
