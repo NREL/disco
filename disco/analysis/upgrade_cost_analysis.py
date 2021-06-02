@@ -94,7 +94,7 @@ class UpgradeCostAnalysis(Analysis):
         for k in upgrade_df.keys():
             # print(k)
             if "Line." in k:
-                new_line_len = upgrade_df[k]["new"][1][
+                line_len = upgrade_df[k]["new"][1][
                     "length"
                 ]  # upgraded lines and new lines run along exisiting circuit, so length is the same for both
 
@@ -102,9 +102,9 @@ class UpgradeCostAnalysis(Analysis):
                     # print(k)
                     new_line_len_unit = upgrade_df[k]["new"][1]["length_unit"]
                     if new_line_len_unit == "m":
-                        new_line_len_m = new_line_len
+                        new_line_len_m = line_len
                     else:
-                        new_line_len_m = new_line_len / len_unit_mult[new_line_len_unit]
+                        new_line_len_m = line_len / len_unit_mult[new_line_len_unit]
                     # print('line length is ',new_line_len, new_line_len_unit, 'or', new_line_len_m, 'm')
 
                     line_count = upgrade_df[k]["new"][
@@ -135,11 +135,28 @@ class UpgradeCostAnalysis(Analysis):
                             upgrade_df[k]["new"][0]
                         )
                     )
+                # NEW ADDITION for upgraded lines (reconductoring)
+                # in processed_upgrades.json,all line parameters are defined in "new" dictionary
+                upgraded_line_len_unit = upgrade_df[k]["new"][1]["length_unit"]
+                if upgraded_line_len_unit == "m":
+                    upgraded_line_len_m = line_len
+                else:
+                    upgraded_line_len_m = line_len / len_unit_mult[upgraded_line_len_unit]
+                # print('line length is ',new_line_len, new_line_len_unit, 'or', new_line_len_m, 'm')
 
-                upgraded_line_count = upgrade_df[k]["upgrade"][0]
-                upgraded_line_cost = (
-                    new_line_cost_per_line * upgraded_line_count
-                )  # TODO: update to take ampacities as an option. X data currently does not have sufficient resolution
+                upgraded_line_count = upgrade_df[k]["upgrade"][0]  # count of upgraded lines added to address overload. Often 1, but could be > 1 with severe overloads
+                line_kV = upgrade_df[k]["new"][1]["line_kV"]
+                # NOTE: Cost for reconductored(upgraded) line of specific voltage kV, 2021-05-28
+                upgraded_line_voltage_kv_cost = unit_cost_lines.loc[
+                    (unit_cost_lines["description"] == "reconductor")
+                    & np.isclose(unit_cost_lines['voltage_kV'].values, line_kV, 0.01)
+                ].cost_per_m.values
+                if not upgraded_line_voltage_kv_cost:
+                    raise Exception(f"Unit cost database does not contain the cost for reconductored(upgraded) line of voltage class {line_kV} kV.")
+                upgraded_line_cost_per_line = upgraded_line_len_m * upgraded_line_voltage_kv_cost[0]
+                upgraded_line_cost = upgraded_line_count * upgraded_line_cost_per_line
+                
+                 # TODO: update to take ampacities as an option. X data currently does not have sufficient resolution
                 dict_k = {
                     "id": [k],
                     "new_equip_cost": [new_line_cost],
