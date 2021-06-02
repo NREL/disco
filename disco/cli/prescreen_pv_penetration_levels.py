@@ -59,7 +59,7 @@ def create(config, ctx, config_file):
             f"--substation={key.substation} --feeder={key.feeder} --placement={key.placement} "
             f"--sample={key.sample}"
         )
-        job = GenericCommandParameters(cmd, append_output_dir=True)
+        job = GenericCommandParameters(command=cmd, append_output_dir=True)
         dst_config.add_job(job)
 
     dst_config.dump(config_file)

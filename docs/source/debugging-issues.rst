@@ -139,4 +139,4 @@ The DISCO repository has a script that extracts data from ``project.zip`` with
 the Python multiprocessing library. You can use this as an example to speed up
 large searches. Do not run this kind of search on the login node.
 
-Refer to ``disco/cli/make_hosting_capacity_summary_tables.py``.
+Refer to ``disco/cli/make_summary_tables.py``.
