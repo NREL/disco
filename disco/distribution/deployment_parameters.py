@@ -4,6 +4,7 @@ from collections import namedtuple
 import logging
 
 from jade.jobs.job_parameters_interface import JobParametersInterface
+from jade.common import DEFAULT_SUBMISSION_GROUP
 from disco.models.factory import make_model
 from disco.models.base import ImpactAnalysisBaseModel
 from disco.models.snapshot_impact_analysis_model import SnapshotImpactAnalysisModel
@@ -28,6 +29,7 @@ class DeploymentParameters(JobParametersInterface):
     def __init__(self, estimated_run_minutes=None, **kwargs):
         self._estimated_run_minutes = estimated_run_minutes
         self._model = make_model(kwargs)
+        self._submission_group = DEFAULT_SUBMISSION_GROUP
 
     def __repr__(self):
         return self.name
@@ -99,3 +101,11 @@ class DeploymentParameters(JobParametersInterface):
     @property
     def cancel_on_blocking_job_failure(self):
         return True
+
+    @property
+    def submission_group(self):
+        return self._submission_group
+
+    @submission_group.setter
+    def submission_group(self, group):
+        self._submission_group = group
