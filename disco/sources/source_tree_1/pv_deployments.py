@@ -162,7 +162,7 @@ class PVDSSInstance:
             line = line.strip().lower()
             if line.startswith("redirect"):
                 index = i + 1
-            if line == f"redirect {pv_shapes}":
+            if line == f"redirect {pv_shapes}".lower():
                 logger.info("Skip %s redirect, it already exists.", pv_shapes)
                 return False
         
