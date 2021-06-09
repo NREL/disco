@@ -2,7 +2,8 @@ import logging
 import os
 
 import disco
-from disco.pipelines.base import PipelineCreatorBase, TemplateSection
+from disco.pipelines.enums import AnalysisType, TemplateSection
+from disco.pipelines.base import PipelineCreatorBase
 from jade.models.pipeline import PipelineConfig
 
 logger = logging.getLogger(__name__)
@@ -62,6 +63,25 @@ class SnapshotPipelineCreator(PipelineCreatorBase):
     def make_prescreen_filter_command(self):
         pass
     
+    def make_postprocess_command(self):
+        command = ""
+        impact_analysis = self.template.analysis_type == AnalysisType.IMAPCT_ANALYSIS.value
+        hosting_capacity = self.template.analysis_type == AnalysisType.HOSTING_CAPACITY.value
+        if impact_analysis or hosting_capacity:
+            inputs = os.path.join("$JADE_PIPELINE_OUTPUT_DIR", f"output-stage{self.stage_num-1}")
+            command += f"disco-internal make-summary-tables {inputs}"
+            if hosting_capacity:
+                config_params = self.template.get_config_params(TemplateSection.SIMULATION)
+                with_loadshape = config_params["with_loadshape"]
+                pf1 = config_params["pf1"]
+                if with_loadshape:
+                    command += f"\ndisco-internal compute-hosting-capacity {inputs} --scenario=control_mode"
+                    if pf1:
+                        command += f"\ndisco-internal compute-hosting-capacity {inputs} --scenario=pf1"
+                else:
+                    command += f"\ndisco-internal compute-hosting-capacity {inputs} --scenario=scenario"
+        return command
+
 
 class TimeSeriesPipelineCreator(PipelineCreatorBase):
     """Time-series pipeline creator class"""
@@ -122,4 +142,15 @@ class TimeSeriesPipelineCreator(PipelineCreatorBase):
             f"--config-file={prescreen_params['filtered_config_file']}"
         )
         logger.info("Make command - '%s'", command)
+        return command
+
+    def make_postprocess_command(self):
+        command = ""
+        impact_analysis = self.template.analysis_type == AnalysisType.IMAPCT_ANALYSIS.value
+        hosting_capacity = self.template.analysis_type == AnalysisType.HOSTING_CAPACITY.value
+        if impact_analysis or hosting_capacity:
+            inputs = os.path.join("$JADE_PIPELINE_OUTPUT_DIR", f"output-stage{self.stage_num-1}")
+            command += f"disco-internal make-summary-tables {inputs}"
+            if hosting_capacity:
+                command += f"\ndisco-internal compute-hosting-capacity {inputs} --scenario=control_mode"
         return command

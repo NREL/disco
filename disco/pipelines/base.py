@@ -183,18 +183,9 @@ class PipelineCreatorBase(ABC):
     def make_disco_config_command(self, section):
         """Make disco config command"""
     
+    @abstractmethod
     def make_postprocess_command(self):
-        """Make disco-internal make-summary-tables command"""
-        command = ""
-        impact_analysis = self.template.analysis_type == AnalysisType.IMAPCT_ANALYSIS.value
-        hosting_capacity = self.template.analysis_type == AnalysisType.HOSTING_CAPACITY.value
-        if impact_analysis or hosting_capacity:
-            inputs = os.path.join("$JADE_PIPELINE_OUTPUT_DIR", f"output-stage{self.stage_num-1}")
-            command += f"disco-internal make-summary-tables {inputs}"
-            if hosting_capacity:
-                # TODO: add hosting capacity program here, JG
-                pass
-        return command
+        """Make disco-internal make-summary-tables & compute-hosting-capacity command"""
     
     def create_prescreen_auto_config_text_file(self):
         """Create script for generating prescreen config file"""

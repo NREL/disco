@@ -32,6 +32,9 @@ METADATA_TABLE = "metadata_table.csv"
 THERMAL_METRICS_TABLE = "thermal_metrics_table.csv"
 VOLTAGE_METRICS_TABLE = "voltage_metrics_table.csv"
 
+SCENARIO_HOSTING_CAPACITY_SUMMARY_FIFLE = "hosting_capacity_summary__scenario.json"
+SCENARIO_HOSTING_CAPACITY_OVERALL_FIFLE = "hosting_capacity_overall__scenario.json"
+
 
 CONFIG_HPC_COMMAND = (
     f"jade config hpc -a testaccount -p short -t local -w 4:00 "
@@ -59,7 +62,9 @@ def cleanup():
             SIMULATION_CONFIG_FILE,
             PRESCREEN_CONFIG_FILE,
             FILTERED_CONFIG_FILE,
-            POSTPROCESS_CONFIG_FILE
+            POSTPROCESS_CONFIG_FILE,
+            SCENARIO_HOSTING_CAPACITY_SUMMARY_FIFLE,
+            SCENARIO_HOSTING_CAPACITY_OVERALL_FIFLE
         ]
         for path in result_files:
             if os.path.exists(path):
@@ -445,10 +450,10 @@ def test_source_tree_1_config_time_series_pipeline__prescreen__impact_analysis(s
     assert len(pipeline_data["stages"]) == 3
 
 
-def test_source_tree_1_snapshot_pipeline_submit__impact_analysis(smart_ds_substations, cleanup):
+def test_source_tree_1_snapshot_pipeline_submit__hosting_capacity(smart_ds_substations, cleanup):
     cmd1 = (
         f"disco create-pipeline template {smart_ds_substations} "
-        f"--impact-analysis -t {TEST_TEMPLATE_FILE}"
+        f"--hosting-capacity -t {TEST_TEMPLATE_FILE}"
     )
     ret = run_command(cmd1)
     assert ret == 0
@@ -462,6 +467,7 @@ def test_source_tree_1_snapshot_pipeline_submit__impact_analysis(smart_ds_substa
     
     cmd2 = f"jade pipeline submit {TEST_PIPELINE_CONFIG_FILE} -o {TEST_PIPELINE_OUTPUT}"
     ret = run_command(cmd2)
+    
     assert ret == 0
     assert not os.path.exists("snapshot-models")
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "snapshot-models"))
@@ -475,6 +481,9 @@ def test_source_tree_1_snapshot_pipeline_submit__impact_analysis(smart_ds_substa
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", METADATA_TABLE))
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", THERMAL_METRICS_TABLE))
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", VOLTAGE_METRICS_TABLE))
+    
+    assert os.path.exists(SCENARIO_HOSTING_CAPACITY_OVERALL_FIFLE)
+    assert os.path.exists(SCENARIO_HOSTING_CAPACITY_SUMMARY_FIFLE)
 
 
 def test_source_tree_1_time_series_pipeline_submit__prescreen__impact_analysis(smart_ds_substations, cleanup):
