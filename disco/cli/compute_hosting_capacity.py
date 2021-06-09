@@ -66,8 +66,7 @@ def compute_hosting_capacity(output_dir, metric_class, on, scenario, node_type, 
         node_types=node_type
     )
     
-    for i, query in enumerate(query_list):
-        print(f"Query String {i}:", query)
+    print("Query List:", query_list)
     
     hc_summary_file = f"hosting_capacity_summary__{scenario}.json"
     dump_data(hc_summary, hc_summary_file, indent=2)
