@@ -54,6 +54,11 @@ from disco.postprocess.hosting_capacity import compute_hc
 )
 def compute_hosting_capacity(output_dir, metric_class, on, scenario, node_type, hc_thresholds):
     """Compute the hosting capacity"""
+    
+    if "JADE_PIPELINE_OUTPUT_DIR" in os.environ and "JADE_PIPELINE_OUTPUT_DIR" in output_dir:
+        pipeline_output = os.environ["JADE_PIPELINE_OUTPUT_DIR"]
+        output_dir = output_dir.replace("$JADE_PIPELINE_OUTPUT_DIR", pipeline_output)
+    
     if on == ("all", ):
         on = "all"
     

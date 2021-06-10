@@ -172,11 +172,6 @@ def compute_hc(
     dict: hc_overall
     list: query strings
     """
-    
-    if "JADE_PIPELINE_OUTPUT_DIR" in os.environ and "JADE_PIPELINE_OUTPUT_DIR" in result_path:
-        pipeline_output = os.environ["JADE_PIPELINE_OUTPUT_DIR"]
-        result_path = result_path.replace("$JADE_PIPELINE_OUTPUT_DIR", pipeline_output)
-
     query_list = []
     hc_summary = {}
     hc_overall = {}
