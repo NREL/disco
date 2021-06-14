@@ -55,7 +55,7 @@ from disco.postprocess.hosting_capacity import compute_hc
 def compute_hosting_capacity(output_dir, metric_class, on, scenario, node_type, hc_thresholds):
     """Compute the hosting capacity"""
     
-    if "JADE_PIPELINE_OUTPUT_DIR" in os.environ and "JADE_PIPELINE_OUTPUT_DIR" in output_dir:
+    if "JADE_PIPELINE_OUTPUT_DIR" in os.environ and "$JADE_PIPELINE_OUTPUT_DIR" in output_dir:
         pipeline_output = os.environ["JADE_PIPELINE_OUTPUT_DIR"]
         output_dir = output_dir.replace("$JADE_PIPELINE_OUTPUT_DIR", pipeline_output)
     
@@ -73,10 +73,10 @@ def compute_hosting_capacity(output_dir, metric_class, on, scenario, node_type, 
     
     print("Query List:", query_list)
     
-    hc_summary_file = f"hosting_capacity_summary__{scenario}.json"
+    hc_summary_file = os.path.join(output_dir, f"hosting_capacity_summary__{scenario}.json")
     dump_data(hc_summary, hc_summary_file, indent=2)
     print(f"Hosting Capacity Summary data is dumped - {hc_summary_file}")
     
-    overall_hc_file = f"hosting_capacity_overall__{scenario}.json"
+    overall_hc_file = os.path.join(output_dir, f"hosting_capacity_overall__{scenario}.json")
     dump_data(overall_hc, overall_hc_file, indent=2)
     print(f"Hosting Capacity Overall data is dumped - {overall_hc_file}")

@@ -63,7 +63,7 @@ def compute_hc_per_metric_class(
     Given the metric class, compute its hosting capacity
     
     Parameters
-    ==========
+    ----------
     result_path: str, the output directory of metrics summary tables
     thresholds: dict, the mapping of metric thresholds
     metric_class: str, the metric class, 'voltage' or 'thermal'
@@ -158,7 +158,7 @@ def compute_hc(
     Compute hosting capacity
     
     Parameters
-    ==========
+    ----------
     result_path: str, the output directory of metrics summary tables
     thresholds: dict, the mapping of metric thresholds
     metric_classes: list, the list of metric class
@@ -167,7 +167,7 @@ def compute_hc(
         example: on = ['min_voltage', 'max_voltage']
     
     Returns
-    =======
+    -------
     dict: hc_summary
     dict: hc_overall
     list: query strings

@@ -482,8 +482,8 @@ def test_source_tree_1_snapshot_pipeline_submit__hosting_capacity(smart_ds_subst
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", THERMAL_METRICS_TABLE))
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", VOLTAGE_METRICS_TABLE))
     
-    assert os.path.exists(SCENARIO_HOSTING_CAPACITY_OVERALL_FIFLE)
-    assert os.path.exists(SCENARIO_HOSTING_CAPACITY_SUMMARY_FIFLE)
+    assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", SCENARIO_HOSTING_CAPACITY_OVERALL_FIFLE))
+    assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", SCENARIO_HOSTING_CAPACITY_SUMMARY_FIFLE))
 
 
 def test_source_tree_1_time_series_pipeline_submit__prescreen__impact_analysis(smart_ds_substations, cleanup):
