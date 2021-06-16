@@ -17,6 +17,7 @@ from PyDSS.reports.pv_reports import PF1_SCENARIO, CONTROL_MODE_SCENARIO
 import disco
 from disco.enums import SimulationType
 from disco.extensions.pydss_simulation.pydss_configuration import PyDssConfiguration
+from disco.extensions.pydss_simulation.estimate_run_minutes import generate_estimate_run_minutes
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,13 @@ logger = logging.getLogger(__name__)
     "-e", "--estimated-run-minutes",
     type=int,
     help="Estimated per-job runtime. Default is None.",
+)
+@click.option(
+    "--calc-estimated-run-minutes",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Calculate estimated per-job runtime by parsing the OpenDSS files..",
 )
 @click.option(
     "-r",
@@ -67,6 +75,7 @@ def time_series(
     inputs,
     config_file,
     estimated_run_minutes,
+    calc_estimated_run_minutes,
     reports_filename=None,
     order_by_penetration=True,
     verbose=False,
@@ -91,5 +100,9 @@ def time_series(
         estimated_run_minutes=estimated_run_minutes,
     )
 
+    if calc_estimated_run_minutes:
+        generate_estimate_run_minutes(config)
+
     config.dump(filename=config_file)
+
     print(f"Created {config_file} for TimeSeries Analysis")
