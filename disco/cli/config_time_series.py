@@ -99,7 +99,7 @@ def time_series(
         order_by_penetration=order_by_penetration,
         estimated_run_minutes=estimated_run_minutes,
     )
-
+    
     if calc_estimated_run_minutes:
         generate_estimate_run_minutes(config)
 

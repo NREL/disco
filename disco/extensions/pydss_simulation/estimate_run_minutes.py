@@ -1,20 +1,21 @@
 import os
 import json
-import pandas as pd
+from pathlib import Path
 import pickle
+import math
+
+import pandas as pd
 import sklearn
 import numpy as np
-import math
-from pathlib import Path
 
+from disco.enums import SimulationHierarchy
 
 def generate_estimate_run_minutes(config):
-    """
-    input: config object
-    execute: adding estimated_run_minutes
+    """ Estimated run minutes.
+
     """
     def get_num_elem(dss_path,elem_name):
-        n=0
+        n = 0
         with open(dss_path) as fp:
             for line in fp: 
                 if "new "+elem_name.lower() in line.lower():
@@ -25,8 +26,8 @@ def generate_estimate_run_minutes(config):
     model_file = os.path.join(directory, 'trained_lm_time_prediction.sav')
     trained_model = pickle.load(open(model_file, 'rb'))
     hierarchy = config.get_simulation_hierarchy()
-
-    if hierarchy.value.lower() == 'substation':
+    
+    if hierarchy == SimulationHierarchy.SUBSTATION:
         for job in config.iter_jobs():
             deployment_dss = job.model.deployment.deployment_file
             sub_dir = job.model.deployment.directory 
@@ -39,7 +40,7 @@ def generate_estimate_run_minutes(config):
                 num_loads += get_num_elem(loads_dss,"Load")            
             num_pvsystem = get_num_elem(deployment_dss,"pvsystem")
             exe_time_pred_s = trained_model.predict(np.array([num_lines, num_loads, num_pvsystem]).reshape(1,-1)) 
-            job.estimated_run_minutes = math.ceil(float(exe_time_pred_s/60))          
+            job.estimated_run_minutes = math.ceil(float(exe_time_pred_s/60)*2.5)          
     else:
         for job in config.iter_jobs():
             deployment_dss = job.model.deployment.deployment_file
@@ -50,7 +51,7 @@ def generate_estimate_run_minutes(config):
             num_loads = get_num_elem(loads_dss,"load")
             num_pvsystem = get_num_elem(deployment_dss,"pvsystem")
             exe_time_pred_s = trained_model.predict(np.array([num_lines, num_loads, num_pvsystem]).reshape(1,-1)) 
-            job.estimated_run_minutes = math.ceil(float(exe_time_pred_s/60))        
+            job.estimated_run_minutes = math.ceil(float(exe_time_pred_s/60)*2.5)        
         
 if __name__ == "__main__":
     generate_estimate_run_minutes()
