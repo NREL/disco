@@ -4,6 +4,7 @@ import pathlib
 import click
 
 from jade.utils.run_command import check_run_command
+from disco.pipelines.update_config import set_hc_postprocess_blocked_by
 from disco.pipelines.utils import ensure_jade_pipeline_output_dir
 
 
@@ -18,6 +19,9 @@ def auto_config(commands_file):
             continue
         cmd = ensure_jade_pipeline_output_dir(cmd)
         check_run_command(cmd)
+    
+    if "pipeline-postprocess-auto-config.txt" in commands_file:
+        set_hc_postprocess_blocked_by(commands_file)
 
 
 if __name__ == "__main__":
