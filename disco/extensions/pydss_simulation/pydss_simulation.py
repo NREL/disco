@@ -7,12 +7,10 @@ import re
 import shutil
 
 from jade.common import OUTPUT_DIR
-from jade.exceptions import InvalidConfiguration
-from jade.utils.subprocess_manager import run_command
 from jade.utils.utils import modify_file, interpret_datetime
 from PyDSS.common import DATE_FORMAT
-from PyDSS.pydss_project import PyDssScenario
 
+from disco.enums import SimulationType
 from disco.models.upgrade_cost_analysis_model import UpgradeCostAnalysisModel
 from disco.pydss.common import ConfigType
 from disco.pydss.pydss_simulation_base import PyDssSimulationBase
@@ -27,6 +25,13 @@ DEFAULTS = {
 
 class PyDssSimulation(PyDssSimulationBase):
     """Runs a PyDss simulation."""
+
+    SIMULATION_TYPE_TO_PYDSS_TYPE = {
+        SimulationType.SNAPSHOT: "Snapshot",
+        SimulationType.QSTS: "QSTS",
+        SimulationType.TIME_SERIES: "QSTS",
+    }
+
     def __init__(self, pydss_inputs, job, output=DEFAULTS["output"]):
         """Constructs a PyDssSimulation.
 
@@ -128,7 +133,7 @@ class PyDssSimulation(PyDssSimulationBase):
         if self._model.simulation.step_resolution is not None:
             config["Step resolution (sec)"] = self._model.simulation.step_resolution
 
-        config["Simulation Type"] = self._model.simulation.simulation_type.value
+        config["Simulation Type"] = self.SIMULATION_TYPE_TO_PYDSS_TYPE[self._model.simulation.simulation_type]
 
     def _recalculate_kva(self, line, *args, **kwargs):
         """Adjust kVA for dc_ac_ratio and kva_to_kw_rating."""

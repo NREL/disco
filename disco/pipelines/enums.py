@@ -1,11 +1,5 @@
 import enum
 
-class SimulationType(enum.Enum):
-    """DISCO simulation types."""
-    SNAPSHOT = "snapshot"
-    TIME_SERIES = "time-series"
-    UPGRADE = "upgrade"
-
 
 class AnalysisType(enum.Enum):
     """DISCO analysis types"""
@@ -18,6 +12,7 @@ class TemplateSection(enum.Enum):
     SIMULATION = "simulation"
     POSTPROCESS = "postprocess"
     MODEL = "model"
+    REPORTS = "reports"
 
 
 class TemplateParams(enum.Enum):

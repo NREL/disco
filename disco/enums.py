@@ -99,8 +99,10 @@ class SimulationOutputs(enum.Enum):
 
 class SimulationType(enum.Enum):
     """Defines the possible simulation types."""
-    SNAPSHOT = "Snapshot"
+    SNAPSHOT = "snapshot"
     QSTS = "QSTS"
+    TIME_SERIES = "time-series"  # This should be duplicate with QSTS.
+    UPGRADE = "upgrade"
 
 
 class AnalysisType(enum.Enum):

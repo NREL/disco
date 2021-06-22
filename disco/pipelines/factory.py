@@ -1,7 +1,7 @@
 from jade.utils.utils import load_data
 from disco.pipelines.base import PipelineTemplate
 from disco.pipelines.creator import SnapshotPipelineCreator, TimeSeriesPipelineCreator
-from disco.pipelines.enums import SimulationType
+from disco.enums import SimulationType
 from disco.sources.factory import make_source_model
 
 

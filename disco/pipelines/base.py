@@ -33,7 +33,11 @@ class PipelineTemplate:
     @property
     def analysis_type(self):
         return self.data["analysis_type"]
-    
+
+    @property
+    def reports(self):
+        return self.data.get(TemplateSection.REPORTS.value, {})
+
     def contains_prescreen(self):
         return TemplateSection.PRESCREEN.value in self.data
 
@@ -42,6 +46,11 @@ class PipelineTemplate:
 
     def update_transform_params(self, data):
         self.data[TemplateSection.MODEL.value][TemplateParams.TRANSFORM_PARAMS.value].update(data)
+
+    def update_reports_params(self, data):
+        if TemplateSection.REPORTS.value not in self.data:
+            self.data[TemplateSection.REPORTS.value] = {}
+        self.data[TemplateSection.REPORTS.value].update(data)
 
     def get_command_params(self, section, params_type):
         """Return command params in dict"""
