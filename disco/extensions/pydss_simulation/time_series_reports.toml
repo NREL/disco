@@ -12,13 +12,13 @@ enabled = true
 
 [[Reports.Types]]
 name = "PV Clipping"
-enabled = true
+enabled = false
 diff_tolerance_percent_pmpp = 1.0
 denominator_tolerance_percent_pmpp = 1.0
 
 [[Reports.Types]]
 name = "PV Curtailment"
-enabled = true
+enabled = false
 diff_tolerance_percent_pmpp = 1.0
 denominator_tolerance_percent_pmpp = 1.0
 
