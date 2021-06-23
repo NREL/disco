@@ -4,26 +4,14 @@ import os
 import disco
 from disco.pipelines.enums import AnalysisType, TemplateSection
 from disco.pipelines.base import PipelineCreatorBase
+from disco.pydss.pydss_configuration_base import get_default_exports_file
 from jade.models.pipeline import PipelineConfig
+from jade.utils.utils import dump_data
 
 logger = logging.getLogger(__name__)
 
 
-# NOTE: If user needs to customize these configs, then make them to be click options.
-REPORTS_FILENAME = os.path.join(
-    os.path.dirname(getattr(disco, "__path__")[0]),
-    "disco",
-    "extensions",
-    "pydss_simulation",
-    "snapshot_reports.toml",
-)
-EXPORTS_FILENAME = os.path.join(
-    os.path.dirname(getattr(disco, "__path__")[0]),
-    "disco",
-    "pydss",
-    "config",
-    "Exports.toml",
-)
+EXPORTS_FILENAME = get_default_exports_file()
 
 
 class SnapshotPipelineCreator(PipelineCreatorBase):
@@ -51,9 +39,11 @@ class SnapshotPipelineCreator(PipelineCreatorBase):
         else:
             model_inputs = self.template.get_model_transform_output()
         options = self.template.get_config_options(section)
+        reports_filename = "generated_snapshot_reports.toml"
+        dump_data(self.template.reports, reports_filename)
         command = (
             f"disco config snapshot {model_inputs} "
-            f"--reports-filename={REPORTS_FILENAME} --exports-filename={EXPORTS_FILENAME} {options}"
+            f"--reports-filename={reports_filename} --exports-filename={EXPORTS_FILENAME} {options}"
         )
         return command
     
@@ -112,9 +102,11 @@ class TimeSeriesPipelineCreator(PipelineCreatorBase):
         else:
             model_inputs = self.template.get_model_transform_output()
         options = self.template.get_config_options(section)
+        reports_filename = "generated_time_series_reports.toml"
+        dump_data(self.template.reports, reports_filename)
         command = (
             f"disco config time-series {model_inputs} "
-            f"--reports-filename={REPORTS_FILENAME} {options}"
+            f"--reports-filename={reports_filename} {options}"
         )
         logger.info("Make command - '%s'", command)
         return command

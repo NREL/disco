@@ -11,13 +11,12 @@ import click
 
 from jade.common import CONFIG_FILE
 from jade.loggers import setup_logging
-from jade.jobs.job_post_process import JobPostProcess
 from jade.utils.utils import load_data
 from PyDSS.reports.pv_reports import PF1_SCENARIO, CONTROL_MODE_SCENARIO
 
-import disco
 from disco.enums import SimulationType
 from disco.extensions.pydss_simulation.pydss_configuration import PyDssConfiguration
+from disco.pydss.pydss_configuration_base import get_default_exports_file, get_default_reports_file
 
 ESTIMATED_EXEC_SECS_PER_JOB = 10
 
@@ -34,25 +33,13 @@ logger = logging.getLogger(__name__)
 )
 @click.option(
     "-e", "--exports-filename",
-    default=os.path.join(
-        os.path.dirname(getattr(disco, "__path__")[0]),
-        "disco",
-        "pydss",
-        "config",
-        "Exports.toml",
-    ),
+    default=get_default_exports_file(),
     show_default=True,
     help="PyDSS export options",
 )
 @click.option(
     "-r", "--reports-filename",
-    default=os.path.join(
-        os.path.dirname(getattr(disco, "__path__")[0]),
-        "disco",
-        "extensions",
-        "pydss_simulation",
-        "snapshot_reports.toml",
-    ),
+    default=get_default_reports_file(SimulationType.SNAPSHOT),
     show_default=True,
     help="PyDSS report options.",
 )

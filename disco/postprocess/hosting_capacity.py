@@ -55,7 +55,7 @@ def compute_hc_per_metric_class(
     thresholds,
     metric_class,
     scenario,
-    node_type,
+    node_types,
     on,
     hc_summary,
 ):
@@ -78,8 +78,8 @@ def compute_hc_per_metric_class(
     metric_df = metric_df[metric_df.scenario == scenario]
     meta_df = pd.read_csv(os.path.join(result_path, "metadata_table.csv"))
 
-    if metric_class == "voltage" and len(node_type) == 1:
-        metric_df = metric_df[metric_df.node_type == node_type[0]]
+    if metric_class == "voltage" and len(node_types) == 1:
+        metric_df = metric_df[metric_df.node_types == node_types[0]]
 
     queries = build_queries(metric_df.columns, thresholds, metric_class, on=on)
     query_phrase = " & ".join(queries)

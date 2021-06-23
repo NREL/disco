@@ -9,10 +9,12 @@ import click
 from jade.loggers import setup_logging
 from jade.utils.utils import dump_data, load_data
 
+from disco.enums import SimulationType
 from disco.pipelines.base import TemplateSection, TemplateParams, PipelineTemplate
-from disco.pipelines.enums import SimulationType, AnalysisType
+from disco.pipelines.enums import AnalysisType
 from disco.pipelines.factory import PipelineCreatorFactory
 from disco.pipelines.utils import get_default_pipeline_template, check_hpc_config
+from disco.pydss.pydss_configuration_base import get_default_reports_file
 from disco.sources.factory import make_source_model
 
 
@@ -73,6 +75,13 @@ def create_pipeline():
     show_default=True,
     help="Output pipeline template file"
 )
+@click.option(
+    "-r",
+    "--reports-filename",
+    default=None,
+    type=click.STRING,
+    help="PyDSS report options. If None, use the default for the simulation type.",
+)
 def template(
     inputs,
     preconfigured,
@@ -80,7 +89,8 @@ def template(
     impact_analysis,
     hosting_capacity,
     prescreen,
-    template_file
+    template_file,
+    reports_filename,
 ):
     """Create pipeline template file"""
     if hosting_capacity and impact_analysis:
@@ -108,13 +118,17 @@ def template(
     if SimulationType(simulation_type) == SimulationType.SNAPSHOT:
         if prescreen:
             print("-p or --prescreen option has no effect on 'snapshot' pipeline, ignored!")
-    
+
     if SimulationType(simulation_type) == SimulationType.TIME_SERIES:
         if prescreen:
             template.remove_params(TemplateSection.SIMULATION, TemplateParams.CONFIG_PARAMS)
         else:
             template.remove_section(TemplateSection.PRESCREEN)
-    
+
+    if reports_filename is None:
+        reports_filename = get_default_reports_file(SimulationType(simulation_type))
+    template.update_reports_params(load_data(reports_filename))
+
     dump_data(template.data, filename=template_file)
     print(f"Pipeline template file created - {template_file}")
 

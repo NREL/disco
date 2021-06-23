@@ -1,7 +1,6 @@
 """Contains functionality to configure PyDss simulations."""
 
 import copy
-import datetime
 import logging
 import os
 
@@ -11,7 +10,7 @@ from PyDSS.registry import Registry
 
 import disco
 from disco.distribution.distribution_configuration import DistributionConfiguration
-from disco.enums import get_enum_from_value
+from disco.enums import get_enum_from_value, SimulationType
 from disco.pydss.common import ConfigType
 
 
@@ -69,6 +68,47 @@ DEFAULT_PYDSS_CONFIG = {
     ConfigType.CONTROLLER_CONFIG: DEFAULT_CONTROLLER_CONFIGS,
     ConfigType.SCENARIOS: [],
 }
+
+
+def get_default_exports_file():
+    """Return the default exports file.
+
+    Returns
+    -------
+    str
+
+    """
+    return DEFAULT_EXPORTS_FILE
+
+
+def get_default_reports_file(simulation_type: SimulationType):
+    """Return the default report file for the simulation type.
+
+    Parameters
+    ----------
+    simulation_type : SimulationType
+
+    Returns
+    -------
+    str
+
+    """
+    if simulation_type in (SimulationType.QSTS, SimulationType.TIME_SERIES):
+        filename = "time_series_reports.toml"
+    elif simulation_type == SimulationType.SNAPSHOT:
+        filename = "snapshot_reports.toml"
+    elif simulation_type == SimulationType.UPGRADE:
+        raise InvalidParameter("reports with upgrade simulations is not supported")
+    else:
+        assert False, simulation_type
+
+    return os.path.join(
+        os.path.dirname(getattr(disco, "__path__")[0]),
+        "disco",
+        "extensions",
+        "pydss_simulation",
+        filename,
+    )
 
 
 class PyDssConfigurationBase(DistributionConfiguration):

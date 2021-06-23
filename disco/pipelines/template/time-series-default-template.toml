@@ -14,6 +14,7 @@ output = "time-series-models"
 config_file = "config.json"
 estimated_run_minutes = "null"
 order_by_penetration = false
+skip_night = false
 verbose = false
 
 [prescreen.prescreen-params]
@@ -24,7 +25,6 @@ filtered_config_file = "filtered-config.json"
 hpc_config = "hpc_config.toml"
 # assume worst case 1 job 1 hour, 4-hour short-queue
 per_node_batch_size = 144
-max_nodes = 1000
 poll_interval = 60
 resource_monitor_interval = 0
 num_processes = "null"
@@ -38,16 +38,16 @@ node_shutdown_script = "null"
 [simulation.config-params]
 config_file = "config.json"
 estimated_run_minutes = "null"
+skip_night = false
 order_by_penetration = false
 verbose = false
 
 [simulation.submitter-params]
 hpc_config = "hpc_config.toml"
-per_node_batch_size = 36
-max_nodes = 2000
 poll_interval = 60
 resource_monitor_interval = 0
-num_processes = "null"
+num_processes = 36
+time_based_batching = true
 generate_reports = true
 try_add_blocked_jobs = false
 verbose = false
@@ -64,7 +64,6 @@ verbose = false
 [postprocess.submitter-params]
 hpc_config = "hpc_config.toml"
 per_node_batch_size = 1
-max_nodes = 1
 poll_interval = 60
 resource_monitor_interval = 0
 num_processes = "null"

@@ -19,7 +19,6 @@ verbose = false
 hpc_config = "hpc_config.toml"
 # assume worst case 1 job 1 min
 per_node_batch_size = 5000
-max_nodes = 50
 poll_interval = 60
 resource_monitor_interval = 0
 num_processes = "null"
@@ -39,7 +38,6 @@ verbose = false
 [postprocess.submitter-params]
 hpc_config = "hpc_config.toml"
 per_node_batch_size = 1
-max_nodes = 1
 poll_interval = 60
 resource_monitor_interval = 0
 num_processes = "null"

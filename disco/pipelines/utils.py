@@ -1,10 +1,9 @@
 import os
 import sys
 
-from jade.utils.utils import load_data
-from disco.exceptions import UnknownSourceType
+from disco.enums import SimulationType
 from disco.pipelines.base import PipelineTemplate
-from disco.pipelines.enums import SimulationType, TemplateSection
+from disco.pipelines.enums import TemplateSection
 from disco.sources.base import FORMAT_FILENAME
 
 

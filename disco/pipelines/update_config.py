@@ -15,4 +15,4 @@ def set_hc_postprocess_blocked_by(commands_file):
     
     for i in range(1, len(data["jobs"])):
         data["jobs"][i]["blocked_by"].append(i)
-        dump_data(data, config_file, indent=2)
+    dump_data(data, config_file, indent=2)

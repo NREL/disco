@@ -8,7 +8,8 @@ import pandas as pd
 import pytest
 
 from jade.result import ResultsSummary
-from jade.utils.subprocess_manager import run_command
+from jade.utils.subprocess_manager import check_run_command, run_command
+from jade.utils.utils import load_data
 from disco.enums import SimulationHierarchy
 from disco.extensions.pydss_simulation.pydss_configuration import PyDssConfiguration
 from disco.extensions.pydss_simulation.pydss_inputs import PyDssInputs
@@ -127,6 +128,52 @@ def test_time_series_hosting_capacity(cleanup):
         assert os.path.exists(summary_table)
     
     # TODO: Test hosting capacity function when code integrated.
+
+
+def test_time_series_config_options(cleanup):
+    transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations time-series -F -o {MODELS_DIR}"
+    check_run_command(transform_cmd)
+    config_cmd = f"{CONFIG_JOBS} time-series {MODELS_DIR} -c {CONFIG_FILE}"
+
+    check_run_command(config_cmd)
+    data = load_data(CONFIG_FILE)
+    assert "Simulation range" not in data["pydss_inputs"]["Simulation"]["Project"]
+
+    skip_night_cmd = config_cmd + " --skip-night"
+    check_run_command(skip_night_cmd)
+    data = load_data(CONFIG_FILE)
+    assert data["pydss_inputs"]["Simulation"]["Project"]["Simulation range"] == {
+        "start": "06:00:00",
+        "end": "18:00:00",
+    }
+
+    feeder_losses_cmd = config_cmd + " --feeder-losses=false"
+    check_run_command(feeder_losses_cmd)
+    assert not get_report_value(load_data(CONFIG_FILE), "Feeder Losses")
+
+    pv_clipping_cmd = config_cmd + " --pv-clipping=true"
+    check_run_command(pv_clipping_cmd)
+    assert get_report_value(load_data(CONFIG_FILE), "PV Clipping")
+
+    pv_curtailment_cmd = config_cmd + " --pv-curtailment=true"
+    check_run_command(pv_curtailment_cmd)
+    assert get_report_value(load_data(CONFIG_FILE), "PV Curtailment")
+
+    thermal_metrics_cmd = config_cmd + " --thermal-metrics=false"
+    check_run_command(thermal_metrics_cmd)
+    assert not get_report_value(load_data(CONFIG_FILE), "Thermal Metrics")
+
+    voltage_metrics_cmd = config_cmd + " --voltage-metrics=false"
+    check_run_command(voltage_metrics_cmd)
+    assert not get_report_value(load_data(CONFIG_FILE), "Voltage Metrics")
+
+
+def get_report_value(data, name):
+    for report in data["pydss_inputs"]["Simulation"]["Reports"]["Types"]:
+        if report["name"] == name:
+            return report["enabled"]
+
+    assert False, name
 
 
 def verify_results(output_dir, num_jobs):
