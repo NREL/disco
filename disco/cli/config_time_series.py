@@ -174,7 +174,7 @@ def time_series(
     if skip_night:
         pydss_sim_config = config.get_pydss_config(ConfigType.SIMULATION_CONFIG)
         pydss_sim_config["Project"]["Simulation range"] = {"start": "06:00:00", "end": "18:00:00"}
-        # TODO DT: change error threshold percent?
+        # Note that we are using the same convergence error threshold percent.
         config.set_pydss_config(ConfigType.SIMULATION_CONFIG, pydss_sim_config)
 
     config.dump(filename=config_file)
