@@ -47,6 +47,15 @@ Optional: Install desired packages.
     $ git checkout report-metrics
     $ pip install -e .
 
+Known Windows installation problem: In some cases Shapely will fail to install.
+pip will report an error about ``geos_c.dll``. Install it from conda and then
+retry.
+
+.. code-block:: bash
+
+    $ conda install shapely
+    $ pip install -e .
+
 4. Clone DISCO repo from GitHub and install.
 
 .. code-block:: bash
