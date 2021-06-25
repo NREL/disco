@@ -5,10 +5,7 @@ pycodestyle
 pylint
 pytest
 pytest-cov
-pypandoc
 sphinx>=2.0
 sphinx-rtd-theme>=0.4.3
 sphinxcontrib-plantuml
 tox
-
-

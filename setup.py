@@ -4,6 +4,7 @@ setup.py
 import os
 import logging
 from codecs import open
+from pathlib import Path
 from setuptools import setup, find_packages
 from setuptools.command.develop import develop
 from setuptools.command.install import install
@@ -21,13 +22,8 @@ logger = logging.getLogger(__name__)
 
 
 def read_lines(filename):
-    with open(filename) as f_in:
-        return f_in.readlines()
+    return Path(filename).read_text().splitlines()
 
-try:
-    from pypandoc import convert_text
-except ImportError:
-    convert_text = lambda string, *args, **kwargs: string
 
 
 class PostDevelopCommand(develop):
@@ -52,8 +48,8 @@ def install_jade_extensions():
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-with open("README.md", encoding="utf-8") as readme_file:
-    readme = convert_text(readme_file.read(), "rst", format="md")
+with open("README.md", encoding="utf-8") as f:
+    readme = f.read()
 
 with open(os.path.join(here, "disco", "version.py"), encoding="utf-8") as f:
     version = f.read()
@@ -67,7 +63,7 @@ setup(
     version=version,
     description="DISCO",
     long_description=readme,
-    author="NREL",
+    long_description_content_type="text/markdown",
     maintainer_email="daniel.thom@nrel.gov",
     url="https://github.com/NREL/disco",
     packages=find_packages(),
@@ -81,7 +77,8 @@ setup(
     include_package_data=True,
     license="BSD license",
     zip_safe=False,
-    keywords="disco",
+    keywords=["disco"],
+    python_requires=">=3.7",
     classifiers=[
         "Development Status :: Alpha",
         "Intended Audience :: Modelers",
@@ -91,5 +88,8 @@ setup(
     ],
     test_suite="tests",
     install_requires=read_lines("requirements.txt"),
+    extras_require={
+        "dev": read_lines("dev-requirements.txt"),
+    },
     cmdclass={"install": PostInstallCommand, "develop": PostDevelopCommand},
 )

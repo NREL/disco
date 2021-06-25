@@ -15,43 +15,51 @@ This section shows how to create a virtual Python environment by using Conda,
 and install necessary packages required by DISCO, including JADE, PyDSS and
 third-party libraries.
 
-1. Clone JADE from Github, and create a Conda virtual environment (https://nrel.github.io/jade/installation.html).
+1. Create a Conda virtual environment. This example uses the name ``disco``
+   as a convention.
 
 .. code-block:: bash
 
-    $ git clone git@github.com:NREL/jade.git
-    $ cd jade
-    $ conda env create -f environment.yml -n <env-name>
+    $ conda create -n disco python=3.7
+    $ conda activate disco
 
-Then activate the Python environment, and install JADE,
+.. warning:: Python 3.7 is required. Newer versions won't work.
 
-.. code-block:: bash
-
-    $ conda activate <env-name>
-    $ pip install -e .
-
-2. Clone PyDSS repo from Github and install.
+Optional: Install desired packages.
 
 .. code-block:: bash
 
-    $ cd ..
+    $ conda install ipython
+
+2. Install JADE.
+
+.. code-block:: bash
+
+    $ pip install NREL-jade
+
+3. Clone PyDSS repo from GitHub and install our development branch.
+
+.. code-block:: bash
+
+    $ cd <path-to-your-local-repos>
     $ git clone git@github.com:NREL/PyDSS.git
     $ cd PyDSS
+    $ git checkout report-metrics
     $ pip install -e .
 
-3. Clone DISCO repo from Github and install.
+4. Clone DISCO repo from GitHub and install.
 
 .. code-block:: bash
 
-    $ cd ..
+    $ cd <path-to-your-local-repos>
     $ git clone git@github.com:NREL/disco.git
     $ cd disco
     $ pip install -e .
 
     # If you will also be developing DISCO code then include dev packages.
-    $ pip install -e . -r dev-requirements.txt
+    $ pip install -e '.[dev]'
 
-Now, the Conda environment ``<env-name>`` is ready to use.
+Now, the Conda environment ``disco`` is ready to use.
 To deactivate it, use commands below:
 
 .. code-block:: bash
