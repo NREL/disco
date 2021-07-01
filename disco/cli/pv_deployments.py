@@ -190,12 +190,14 @@ def pv_deployments():
     show_default=True,
     help="The proximity step in PV deployments."
 )
-@click.option(
-    "-P", "--percent-shares",
-    default=[100, 0],
-    show_default=True,
-    help="The share pair - [share of residential PVs, share of utility scale PVs]"
-)
+# TODO: Jianli, this code option causes an exception with the command below.
+# The option is not used, so I'm commenting it out.
+#@click.option(
+#    "-P", "--percent-shares",
+#    default=[100, 0],
+#    show_default=True,
+#    help="The share pair - [share of residential PVs, share of utility scale PVs]"
+#)
 @click.option(
     "-x", "--pv-size-pdf",
     type=click.INT,
@@ -230,7 +232,7 @@ def source_tree_1(
     penetration_step,
     sample_number,
     proximity_step,
-    percent_shares,
+    #percent_shares,
     pv_size_pdf,
     pv_upscale,
     verbose
