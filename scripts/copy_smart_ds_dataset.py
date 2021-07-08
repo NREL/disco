@@ -61,9 +61,11 @@ def copy_dataset(output_dir, version, year, city, force):
 
     for name in os.listdir(base_path):
         if REGEX_REGION_NAME.search(name) is not None:
+            src_profiles = base_path / name / "profiles"
+            dst_profiles = dst_path / name / "profiles"
+            shutil.copytree(src_profiles, dst_profiles)
             src_region_path = base_path / name / "scenarios" / "base_timeseries" / "opendss"
             dst_region_path = dst_path / name / "scenarios" / "base_timeseries" / "opendss"
-
             shutil.copytree(src_region_path, dst_region_path)
             print(f"Copied {src_region_path} to {dst_region_path}")
 
