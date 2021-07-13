@@ -78,6 +78,10 @@ def compute_hc_per_metric_class(
     metric_df = metric_df[metric_df.scenario == scenario]
     meta_df = pd.read_csv(os.path.join(result_path, "metadata_table.csv"))
 
+    if set(metric_df.feeder) == {'None'} or set(meta_df.feeder) == {'None'}:
+        meta_df.feeder = meta_df.substation
+        metric_df.feeder = metric_df.substation
+
     if metric_class == "voltage" and len(node_types) == 1:
         metric_df = metric_df[metric_df.node_types == node_types[0]]
 
