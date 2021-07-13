@@ -345,6 +345,8 @@ class PVScenarioGeneratorBase(abc.ABC):
         except Exception as error:
             logger.exception("Failed redirect '%s' in master file - %s", pv_shapes_file, master_file)
             raise
+        
+        logger.info("Redirected '%s' in substation master - %s", os.path.basename(pv_shapes_file), master_file)
     
     def deploy_all_pv_scenarios(self) -> dict:
         """Given a feeder path, generate all PV scenarios for the feeder"""
