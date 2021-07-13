@@ -290,6 +290,7 @@ class PVScenarioGeneratorBase(abc.ABC):
         config: SimpleNamespace, the pv deployment config namespace.
         """
         self.feeder_path = feeder_path
+        self.substation_path = os.path.dirname(feeder_path)
         self.config = config
         self.current_cycle = None
 
@@ -302,9 +303,9 @@ class PVScenarioGeneratorBase(abc.ABC):
         """Return the feeder name"""
         return os.path.basename(self.feeder_path)
 
-    def get_master_file(self) -> Optional[str]:
+    def get_master_file(self, input_path: str) -> Optional[str]:
         """Return the full path of master file"""
-        master_file = os.path.join(self.feeder_path, self.config.master_filename)
+        master_file = os.path.join(input_path, self.config.master_filename)
         if not os.path.exists(master_file):
             logger.exception("'%s' not found in '%s'. System exits!", self.config.master_filename, self.feeder_path)
             raise
@@ -312,8 +313,8 @@ class PVScenarioGeneratorBase(abc.ABC):
 
     def load_pvdss_instance(self) -> PVDSSInstance:
         """Setup DSS handler for master dss file processing"""
-        master_file = self.get_master_file()
-        pv_shapes_file = self.get_pv_shapes_file()
+        master_file = self.get_master_file(self.feeder_path)
+        pv_shapes_file = self.get_pv_shapes_file(self.feeder_path)
         pvdss_instance = PVDSSInstance(master_file)
         try:
             lock_file = master_file + ".lock"
@@ -331,6 +332,20 @@ class PVScenarioGeneratorBase(abc.ABC):
             raise
         return pvdss_instance
 
+    def redirect_substation_pv_shapes(self):
+        """Redirect PVShapes.dss in Master.dss in substation"""
+        master_file = self.get_master_file(self.substation_path)
+        pvdss_instance = PVDSSInstance(master_file)
+        
+        try:
+            lock_file = master_file + ".lock"
+            with SoftFileLock(lock_file=lock_file, timeout=300):  # Timeout for loading master file
+                pv_shapes_file = self.get_pv_shapes_file(self.substation_path)
+                pvdss_instance.redirect_pv_shapes(pv_shapes_file)
+        except Exception as error:
+            logger.exception("Failed redirect '%s' in master file - %s", pv_shapes_file, master_file)
+            raise
+    
     def deploy_all_pv_scenarios(self) -> dict:
         """Given a feeder path, generate all PV scenarios for the feeder"""
         feeder_name = self.get_feeder_name()
@@ -681,9 +696,9 @@ class PVScenarioGeneratorBase(abc.ABC):
         average_pv_distance = np.mean(np.array(list(slack_dico.values())))
         return average_pv_distance
 
-    def get_pv_shapes_file(self) -> str:
+    def get_pv_shapes_file(self, input_path: str) -> str:
         """Return the loadshapes file in feeder path"""
-        pv_shapes_file = os.path.join(self.feeder_path, PV_SHAPES_FILENAME)
+        pv_shapes_file = os.path.join(input_path, PV_SHAPES_FILENAME)
         return pv_shapes_file
 
     def create_all_pv_configs(self) -> None:
@@ -694,7 +709,7 @@ class PVScenarioGeneratorBase(abc.ABC):
             return []
 
         config_files = []
-        pv_shapes_file = self.get_pv_shapes_file()
+        pv_shapes_file = self.get_pv_shapes_file(self.feeder_path)
         placement_path = self.get_output_placement_path()
         if not os.path.exists(placement_path):
             return []
@@ -756,7 +771,6 @@ class PVScenarioGeneratorBase(abc.ABC):
 
     def get_shape_list(self, pv_shapes_file: str) -> list:
         """Return a list of loadshapes"""
-        pv_shapes_file = self.get_pv_shapes_file()
         shape_list = []
         with open(pv_shapes_file) as f:
             slines = f.readlines()
@@ -971,6 +985,7 @@ class PVDeploymentManager(PVDataStorage):
         feeder_paths = self.get_feeder_paths()
         for feeder_path in feeder_paths:
             generator = get_pv_scenario_generator(feeder_path, self.config)
+            generator.redirect_substation_pv_shapes()
             feeder_stats = generator.deploy_all_pv_scenarios()
             summary[feeder_path] = feeder_stats
         return summary
