@@ -11,6 +11,7 @@ from disco.sources.source_tree_1.pv_deployments import (
     DeploymentHierarchy,
     DeploymentCategory,
     PVDataStorage,
+    PVDataManager,
     PVDeploymentManager,
     PVConfigManager
 )
@@ -102,8 +103,16 @@ def list_feeder_paths(input_path: str, hierarchy: str, config: dict):
     print(f"=========\nTotal feeders: {len(result)}")
 
 
+def redirect_pv_shapes(input_path: str, hierarchy: str, config: dict):
+    hierarchy = DeploymentHierarchy(hierarchy)
+    config = SimpleNamespace(**config)
+    manager = PVDataManager(input_path, hierarchy, config)
+    manager.redirect_substation_pv_shapes()
+    manager.redirect_feeder_pv_shapes()
+
 
 ACTION_MAPPING = {
+    "redirect-pvshapes": redirect_pv_shapes,
     "create-pv": create_pv_deployments,
     "remove-pv": remove_pv_deployments,
     "check-pv": check_pv_deployments,

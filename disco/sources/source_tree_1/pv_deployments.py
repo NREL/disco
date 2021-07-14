@@ -7,6 +7,7 @@ import random
 import shutil
 import sys
 from copy import deepcopy
+from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
@@ -147,32 +148,6 @@ class PVDSSInstance:
         with open(self.master_file, "w") as f:
             f.write(updated_data)
         logger.info("Moved energy meter from %s to %s in master file - %s", meter_location, head_line, self.master_file)
-
-    def redirect_pv_shapes(self, pv_shapes_file) -> bool:
-        """Update master file and redirect PVShapes.dss"""
-        if not os.path.exists(pv_shapes_file):
-            return False
-
-        pv_shapes = os.path.basename(pv_shapes_file)
-        index = 0
-        with open(self.master_file, "r") as f:
-            data = f.readlines()
-
-        for i, line in enumerate(data):
-            line = line.strip().lower()
-            if line.startswith("redirect"):
-                index = i + 1
-            if line == f"redirect {pv_shapes}".lower():
-                logger.info("Skip %s redirect, it already exists.", pv_shapes)
-                return False
-
-        assert index > 0, f"There must be 'Redirect' in {self.master_file}"
-
-        logger.info("Update master file %s to redirect %s", self.master_file, pv_shapes)
-        data.insert(index, f"Redirect {pv_shapes}\n")
-        with open(self.master_file, "w") as f:
-            f.writelines(data)
-        return True
 
     def get_total_loads(self) -> SimpleNamespace:
         """Return total loads"""
@@ -324,30 +299,11 @@ class PVScenarioGeneratorBase(abc.ABC):
                 flag = pvdss_instance.ensure_energy_meter()
                 if flag:
                     pvdss_instance.load_feeder()  # Need to reload after master file updated.
-                flag = pvdss_instance.redirect_pv_shapes(pv_shapes_file)
-                if flag:
-                    pvdss_instance.load_feeder()
         except Exception as error:
             logger.exception("Failed to load master file - %s", master_file)
             raise
         return pvdss_instance
 
-    def redirect_substation_pv_shapes(self):
-        """Redirect PVShapes.dss in Master.dss in substation"""
-        master_file = self.get_master_file(self.substation_path)
-        pvdss_instance = PVDSSInstance(master_file)
-        
-        try:
-            lock_file = master_file + ".lock"
-            with SoftFileLock(lock_file=lock_file, timeout=300):  # Timeout for loading master file
-                pv_shapes_file = self.get_pv_shapes_file(self.substation_path)
-                pvdss_instance.redirect_pv_shapes(pv_shapes_file)
-        except Exception as error:
-            logger.exception("Failed redirect '%s' in master file - %s", pv_shapes_file, master_file)
-            raise
-        
-        logger.info("Redirected '%s' in substation master - %s", os.path.basename(pv_shapes_file), master_file)
-    
     def deploy_all_pv_scenarios(self) -> dict:
         """Given a feeder path, generate all PV scenarios for the feeder"""
         feeder_name = self.get_feeder_name()
@@ -887,22 +843,54 @@ class PVDataStorage:
         self.input_path = input_path
         self.hierarchy = hierarchy
 
+    def get_substation_paths(self) -> list:
+        """Given an input path, return a list of substation paths"""
+        if self.hierarchy == DeploymentHierarchy.FEEDER:
+            paths = self._get_substation_paths_from_feeder_input()
+        elif self.hierarchy == DeploymentHierarchy.SUBSTATION:
+            paths = self._get_substation_paths_from_substation_input()
+        elif self.hierarchy == DeploymentHierarchy.REGION:
+            paths = self._get_substation_paths_from_region_input()
+        return paths
+
+    def _get_substation_paths_from_feeder_input(self) -> list:
+        """Given a feeder path, return its substation path"""
+        return [os.path.dirname(self.input_path)]
+
+    def _get_substation_paths_from_substation_input(self) -> list:
+        """Given a substation input path, return it as a list"""
+        return [self.input_path]
+
+    def _get_substation_paths_from_region_input(self) -> list:
+        """Search region input path, return all substation paths in region"""
+        opendss_path = os.path.join(
+            self.input_path,
+            "solar_none_batteries_none_timeseries",
+            "opendss"
+        )
+        substation_names = get_subdir_names(opendss_path)
+        substation_paths = [
+            os.path.join(opendss_path, substation_name)
+            for substation_name in substation_names
+        ]
+        return substation_paths
+
     def get_feeder_paths(self) -> list:
         """Given an input path, return a list of feeder paths"""
         if self.hierarchy == DeploymentHierarchy.FEEDER:
-            paths = self._search_feeder_input()
+            paths = self._get_feeder_paths_from_feeder_input()
         elif self.hierarchy == DeploymentHierarchy.SUBSTATION:
-            paths = self._search_substation_input()
+            paths = self._get_feeder_paths_from_substation_input()
         elif self.hierarchy == DeploymentHierarchy.REGION:
-            paths = self._search_region_input()
+            paths = self._get_feeder_paths_from_region_input()
         return paths
 
-    def _search_feeder_input(self) -> list:
+    def _get_feeder_paths_from_feeder_input(self) -> list:
         """Search feeder input path, return it as a list"""
         feeder_paths = [self.input_path]
         return feeder_paths
 
-    def _search_substation_input(self) -> list:
+    def _get_feeder_paths_from_substation_input(self) -> list:
         """Search substation input path, return all feeder paths in substation"""
         feeder_names = get_subdir_names(self.input_path)
         feeder_paths = [
@@ -911,20 +899,13 @@ class PVDataStorage:
         ]
         return feeder_paths
 
-    def _search_region_input(self) -> list:
+    def _get_feeder_paths_from_region_input(self) -> list:
         """Search region input path, return all feeder paths in region"""
-        opendss_path = os.path.join(
-            self.input_path,
-            "solar_none_batteries_none_timeseries",
-            "opendss"
-        )
-        feeder_paths = []
-        substation_names = get_subdir_names(opendss_path)
-        for substation_name in substation_names:
-            substation_path = os.path.join(opendss_path, substation_name)
+        substation_paths = self._get_substation_paths_from_region_input()
+        for substation_path in substation_paths:
             feeder_names = get_subdir_names(substation_path)
             feeder_paths.extend([
-                os.path.join(opendss_path, substation_name, feeder_name)
+                os.path.join(substation_path, feeder_name)
                 for feeder_name in feeder_names
             ])
         return feeder_paths
@@ -966,9 +947,74 @@ class PVDataStorage:
         return config_file
 
 
+class PVDataManager(PVDataStorage):
+    
+    def __init__(self, input_path: str, hierarchy: DeploymentHierarchy, config: SimpleNamespace) -> None:
+        """
+        Initialize pv data manager class
+
+        Parameters
+        ----------
+        hierarchy: DeploymentHierarchy, the predefined hierarchy
+        input_path: str, the input path of raw dss data for generating pv deployments.
+        config: SimpleNamespace, the pv deployment configuration namespace.
+        """
+        super().__init__(input_path, hierarchy)
+        self.config = config
+
+    def redirect(self, path: str) -> bool:
+        """Given a path, update the master file by redirecting PVShapes.dss"""
+        master_file = os.path.join(path, self.config.master_filename)
+        if not os.path.exists(master_file):
+            logger.exception("'%s' not found in '%s'. System exits!", self.config.master_filename, path)
+            raise
+        
+        pv_shapes_file = os.path.join(path, PV_SHAPES_FILENAME)
+        if not os.path.exists(pv_shapes_file):
+            logger.exception("'%s' not found in '%s'. System exits!", PV_SHAPES_FILENAME, path)
+            raise
+        
+        pv_shapes = os.path.basename(pv_shapes_file)
+        index = 0
+        with open(master_file, "r") as f:
+            data = f.readlines()
+
+        for i, line in enumerate(data):
+            line = line.strip().lower()
+            if line.startswith("redirect"):
+                index = i + 1
+            if line == f"redirect {pv_shapes}".lower():
+                logger.info("Skip %s redirect, it already exists.", pv_shapes)
+                return False
+
+        assert index > 0, f"There must be 'Redirect' in {master_file}"
+
+        logger.info("Update master file %s to redirect %s", master_file, pv_shapes)
+        data.insert(index, f"Redirect {pv_shapes}\n")
+        with open(master_file, "w") as f:
+            f.writelines(data)
+        return True
+    
+    def redirect_substation_pv_shapes(self):
+        """Run PVShapes redirect in substation directories in parallel"""
+        substation_paths = self.get_substation_paths()
+        logger.info("Running PVShapes redirect in %s substation directories...", len(substation_paths))
+        with ProcessPoolExecutor() as executor:
+            executor.map(self.redirect, substation_paths)
+        logger.info("Substation PVShapes redirect done!")
+    
+    def redirect_feeder_pv_shapes(self):
+        """Run PVShapes redirect in feeder directories in parallel"""
+        feeder_paths = self.get_feeder_paths()
+        logger.info("Running PVShapes redirect in %s feeder directories...", len(feeder_paths))
+        with ProcessPoolExecutor() as executor:
+            executor.map(self.redirect, feeder_paths)
+        logger.info("Feeder PVShapes redirect done!")
+
+
 class PVDeploymentManager(PVDataStorage):
 
-    def __init__(self,input_path: str, hierarchy: DeploymentHierarchy, config: SimpleNamespace) -> None:
+    def __init__(self, input_path: str, hierarchy: DeploymentHierarchy, config: SimpleNamespace) -> None:
         """
         Initialize pv deployment manager class
 
@@ -987,7 +1033,6 @@ class PVDeploymentManager(PVDataStorage):
         feeder_paths = self.get_feeder_paths()
         for feeder_path in feeder_paths:
             generator = get_pv_scenario_generator(feeder_path, self.config)
-            generator.redirect_substation_pv_shapes()
             feeder_stats = generator.deploy_all_pv_scenarios()
             summary[feeder_path] = feeder_stats
         return summary
