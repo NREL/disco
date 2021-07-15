@@ -879,7 +879,7 @@ class PVDataStorage:
         return [substation_path]
 
     @staticmethod
-    def _get_substation_paths_from_region_input(self, region_path: str) -> list:
+    def _get_substation_paths_from_region_input(region_path: str) -> list:
         """Search region input path, return all substation paths in region"""
         opendss_path = os.path.join(
             region_path,
@@ -887,6 +887,11 @@ class PVDataStorage:
             "opendss"
         )
         substation_names = get_subdir_names(opendss_path)
+        
+        # NOTE: exclude directory named "subtransmission" from substations
+        if "subtransmission" in substation_names:
+            substation_names.remove("subtransmission")
+        
         substation_paths = [
             os.path.join(opendss_path, substation_name)
             for substation_name in substation_names
