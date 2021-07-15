@@ -1175,14 +1175,14 @@ class PVDeploymentManager(PVDataStorage):
         
         options = ""
         options += f"-c {self.config.category} "
-        options += f"-f {self.config.master_file} "
+        options += f"-f {self.config.master_filename} "
         options += f"-m {self.config.min_penetration} "
         options += f"-M {self.config.max_penetration} "
         options += f"-s {self.config.penetration_step} "
         options += f"-n {self.config.sample_number} "
         options += f"-S {self.config.proximity_step} "
         if self.config.pv_size_pdf:
-            options += f"-x {self.config.pv_size_pdf}"
+            options += f"-x {self.config.pv_size_pdf} "
         if not self.config.pv_upscale:
             options += "--no-pv-upscale "
         options.strip()
@@ -1208,7 +1208,6 @@ class PVDeploymentManager(PVDataStorage):
             os.unlink(commands_file)
         
         return config_file
-
 
 
 class PVConfigManager(PVDataStorage):
@@ -1278,14 +1277,14 @@ class PVConfigManager(PVDataStorage):
         
         options = ""
         options += f"-c {self.config.category} "
-        options += f"-f {self.config.master_file} "
+        options += f"-f {self.config.master_filename} "
         options += f"-m {self.config.min_penetration} "
         options += f"-M {self.config.max_penetration} "
         options += f"-s {self.config.penetration_step} "
         options += f"-n {self.config.sample_number} "
         options += f"-S {self.config.proximity_step} "
         if self.config.pv_size_pdf:
-            options += f"-x {self.config.pv_size_pdf}"
+            options += f"-x {self.config.pv_size_pdf} "
         if not self.config.pv_upscale:
             options += "--no-pv-upscale "
         options.strip()
