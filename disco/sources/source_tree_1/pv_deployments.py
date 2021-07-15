@@ -1168,15 +1168,17 @@ class PVDeploymentManager(PVDataStorage):
 
     def generate_pv_creation_jobs(self):
         """Generate PV creation jobs at feeder hierarchy"""
-        placements = [p.value for p in Placement] if self.config.placement is None else [p.value]
         feeder_paths = self.get_feeder_paths()
+        placements = [p.value for p in Placement]
+        if self.config.placement:
+            placements = [self.config.placement]
         
         commands = []
         for feeder_path in feeder_paths:
             for placement in placements:
                 # NOTE: other options are using defaults
                 cmd = f"disco pv-deployments source-tree-1 -a create-pv -h feeder -p {placement} {feeder_path}\n"
-                commands.append(cmd)
+                commands.append(cmd.encode())
         
         with NamedTemporaryFile(delete=False) as f:
             f.writelines(commands)
@@ -1253,15 +1255,17 @@ class PVConfigManager(PVDataStorage):
 
     def generate_pv_config_jobs(self):
         """Generate PV configs jobs at feeder hierarchy"""
-        placements = [p.value for p in Placement] if self.config.placement is None else [p.value]
         feeder_paths = self.get_feeder_paths()
+        placements = [p.value for p in Placement]
+        if self.config.placement:
+            placements = [self.config.placement]
         
         commands = []
         for feeder_path in feeder_paths:
             for placement in placements:
                 # NOTE: other options are using defaults
                 cmd = f"disco pv-deployments source-tree-1 -a create-configs -h feeder -p {placement} {feeder_path}\n"
-                commands.append(cmd)
+                commands.append(cmd.encode())
         
         with NamedTemporaryFile(delete=False) as f:
             f.writelines(commands)
