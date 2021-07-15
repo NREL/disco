@@ -968,13 +968,7 @@ class PVDataManager(PVDataStorage):
         if not os.path.exists(master_file):
             logger.exception("'%s' not found in '%s'. System exits!", self.config.master_filename, path)
             raise
-        
-        pv_shapes_file = os.path.join(path, PV_SHAPES_FILENAME)
-        if not os.path.exists(pv_shapes_file):
-            logger.exception("'%s' not found in '%s'. System exits!", PV_SHAPES_FILENAME, path)
-            raise
-        
-        pv_shapes = os.path.basename(pv_shapes_file)
+        print(master_file, "===="*10)
         index = 0
         with open(master_file, "r") as f:
             data = f.readlines()
@@ -983,14 +977,14 @@ class PVDataManager(PVDataStorage):
             line = line.strip().lower()
             if line.startswith("redirect"):
                 index = i + 1
-            if line == f"redirect {pv_shapes}".lower():
-                logger.info("Skip %s redirect, it already exists.", pv_shapes)
+            if line == f"redirect {PV_SHAPES_FILENAME}".lower():
+                logger.info("Skip %s redirect, it already exists.", PV_SHAPES_FILENAME)
                 return False
 
         assert index > 0, f"There must be 'Redirect' in {master_file}"
 
-        logger.info("Update master file %s to redirect %s", master_file, pv_shapes)
-        data.insert(index, f"Redirect {pv_shapes}\n")
+        logger.info("Update master file %s to redirect %s", master_file, PV_SHAPES_FILENAME)
+        data.insert(index, f"Redirect {PV_SHAPES_FILENAME}\n")
         with open(master_file, "w") as f:
             f.writelines(data)
         return True
