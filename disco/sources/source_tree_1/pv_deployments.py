@@ -901,6 +901,7 @@ class PVDataStorage:
 
     def _get_feeder_paths_from_region_input(self) -> list:
         """Search region input path, return all feeder paths in region"""
+        feeder_paths = []
         substation_paths = self._get_substation_paths_from_region_input()
         for substation_path in substation_paths:
             feeder_names = get_subdir_names(substation_path)
