@@ -111,12 +111,28 @@ def redirect_pv_shapes(input_path: str, hierarchy: str, config: dict):
     manager.redirect_feeder_pv_shapes()
 
 
+def generate_pv_deployment_jobs(input_path: str, hierarchy: str, config: dict):
+    hierarchy = DeploymentHierarchy(hierarchy)
+    config = SimpleNamespace(**config)
+    
+    manager = PVDeploymentManager(input_path, hierarchy, config)
+    create_pv_jobs_file = manager.generate_pv_creation_jobs()
+    print(f"JADE config file generated - {create_pv_jobs_file}")
+    
+    manager = PVConfigManager(input_path, hierarchy, config)
+    create_config_jobs_file = manager.generate_pv_config_jobs()
+    print(f"JADE config file generated - {create_config_jobs_file}")
+
+
 ACTION_MAPPING = {
     "redirect-pvshapes": redirect_pv_shapes,
+    "generate-jobs": generate_pv_deployment_jobs,
+    
     "create-pv": create_pv_deployments,
+    "create-configs": create_pv_configs,
+    
     "remove-pv": remove_pv_deployments,
     "check-pv": check_pv_deployments,
-    "create-configs": create_pv_configs,
     "remove-configs": remove_pv_configs,
     "check-configs": check_pv_configs,
     "list-feeders": list_feeder_paths

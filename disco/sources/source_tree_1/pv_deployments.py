@@ -10,6 +10,7 @@ from copy import deepcopy
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime, timedelta
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from types import SimpleNamespace
 from typing import Optional, Generator, Tuple, Sequence
 
@@ -17,6 +18,7 @@ import opendssdirect as dss
 from filelock import SoftFileLock
 from unidecode import unidecode
 
+from jade.utils.run_command import check_run_command
 from disco.enums import Placement
 
 logger = logging.getLogger(__name__)
@@ -1164,6 +1166,32 @@ class PVDeploymentManager(PVDataStorage):
                 clean_result.pop(placement)
         return clean_result
 
+    def generate_pv_creation_jobs(self):
+        """Generate PV creation jobs at feeder hierarchy"""
+        placements = [p.value for p in Placement] if self.config.placement is None else [p.value]
+        feeder_paths = self.get_feeder_paths()
+        
+        commands = []
+        for feeder_path in feeder_paths:
+            for placement in placements:
+                # NOTE: other options are using defaults
+                cmd = f"disco pv-deployments source-tree-1 -a create-pv -h feeder -p {placement} {feeder_path}\n"
+                commands.append(cmd)
+        
+        with NamedTemporaryFile(delete=False) as f:
+            f.writelines(commands)
+            commands_file = f.name
+        
+        config_file = "create-pv-jobs.json"
+        try:
+            config_cmd = f"jade config create {commands_file} -c {config_file}"
+            check_run_command(config_cmd)
+        finally:
+            os.unlink(commands_file)
+        
+        return config_file
+
+
 
 class PVConfigManager(PVDataStorage):
 
@@ -1222,3 +1250,28 @@ class PVConfigManager(PVDataStorage):
             if missing:
                 total_missing[feeder_path] = deepcopy(missing)
         return total_missing
+
+    def generate_pv_config_jobs(self):
+        """Generate PV configs jobs at feeder hierarchy"""
+        placements = [p.value for p in Placement] if self.config.placement is None else [p.value]
+        feeder_paths = self.get_feeder_paths()
+        
+        commands = []
+        for feeder_path in feeder_paths:
+            for placement in placements:
+                # NOTE: other options are using defaults
+                cmd = f"disco pv-deployments source-tree-1 -a create-configs -h feeder -p {placement} {feeder_path}\n"
+                commands.append(cmd)
+        
+        with NamedTemporaryFile(delete=False) as f:
+            f.writelines(commands)
+            commands_file = f.name
+        
+        config_file = "create-config-jobs.json"
+        try:
+            config_cmd = f"jade config create {commands_file} -c {config_file}"
+            check_run_command(config_cmd)
+        finally:
+            os.unlink(commands_file)
+        
+        return config_file
