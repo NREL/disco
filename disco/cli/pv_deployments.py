@@ -117,11 +117,9 @@ def generate_pv_deployment_jobs(input_path: str, hierarchy: str, config: dict):
     
     manager = PVDeploymentManager(input_path, hierarchy, config)
     create_pv_jobs_file = manager.generate_pv_creation_jobs()
-    print(f"JADE config file generated - {create_pv_jobs_file}")
     
     manager = PVConfigManager(input_path, hierarchy, config)
     create_config_jobs_file = manager.generate_pv_config_jobs()
-    print(f"JADE config file generated - {create_config_jobs_file}")
 
 
 ACTION_MAPPING = {

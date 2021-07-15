@@ -1173,11 +1173,27 @@ class PVDeploymentManager(PVDataStorage):
         if self.config.placement:
             placements = [self.config.placement]
         
+        options = ""
+        options += f"-c {self.config.category} "
+        options += f"-f {self.config.master_file} "
+        options += f"-m {self.config.min_penetration} "
+        options += f"-M {self.config.max_penetration} "
+        options += f"-s {self.config.penetration_step} "
+        options += f"-n {self.config.sample_number} "
+        options += f"-S {self.config.proximity_step} "
+        if self.config.pv_size_pdf:
+            options += f"-x {self.config.pv_size_pdf}"
+        if not self.config.pv_upscale:
+            options += "--no-pv-upscale "
+        options.strip()
+        
         commands = []
         for feeder_path in feeder_paths:
             for placement in placements:
-                # NOTE: other options are using defaults
-                cmd = f"disco pv-deployments source-tree-1 -a create-pv -h feeder -p {placement} {feeder_path}\n"
+                cmd = (
+                    "disco pv-deployments source-tree-1 "
+                    f"-a create-pv -h feeder -p {placement} {options} {feeder_path}\n"
+                )
                 commands.append(cmd.encode())
         
         with NamedTemporaryFile(delete=False) as f:
@@ -1260,11 +1276,27 @@ class PVConfigManager(PVDataStorage):
         if self.config.placement:
             placements = [self.config.placement]
         
+        options = ""
+        options += f"-c {self.config.category} "
+        options += f"-f {self.config.master_file} "
+        options += f"-m {self.config.min_penetration} "
+        options += f"-M {self.config.max_penetration} "
+        options += f"-s {self.config.penetration_step} "
+        options += f"-n {self.config.sample_number} "
+        options += f"-S {self.config.proximity_step} "
+        if self.config.pv_size_pdf:
+            options += f"-x {self.config.pv_size_pdf}"
+        if not self.config.pv_upscale:
+            options += "--no-pv-upscale "
+        options.strip()
+        
         commands = []
         for feeder_path in feeder_paths:
             for placement in placements:
-                # NOTE: other options are using defaults
-                cmd = f"disco pv-deployments source-tree-1 -a create-configs -h feeder -p {placement} {feeder_path}\n"
+                cmd = (
+                    "disco pv-deployments source-tree-1 "
+                    f"-a create-configs -h feeder -p {placement} {options} {feeder_path}\n"
+                )
                 commands.append(cmd.encode())
         
         with NamedTemporaryFile(delete=False) as f:
