@@ -6,6 +6,8 @@ import shutil
 import sys
 from pathlib import Path
 import struct
+import pandas as pd
+import csv
 
 import click
 
@@ -55,13 +57,18 @@ def convert_to_sng_file(csvfolder):
     
     path = Path(csvfolder)
     for csvpath in path.rglob("*.csv"):
-        loadshape = pd.read_csv(csvpath, header=None)
+        header_flag = None
+        with open(csvpath, newline='') as f:
+            reader = csv.reader(f)
+            row1 = next(reader)[0]
+        if re.match(r'[a-zA-Z]',row1):
+            header_flag = 0
+        loadshape = pd.read_csv(csvpath, header=header_flag)
         loadshape_list = loadshape.iloc[:,0].to_list()
         fname = os.path.basename(csvpath).split('.csv')[0]+'.sng'
-        fout = open(os.path.join(csvfolder,fname), 'wb')
-        fout.write(struct.pack('%sf' % len(loadshape_list), *loadshape_list))
-        fout.close()
-
+        with open(path / fname, 'wb') as fout:
+            fout.write(struct.pack('%sf' % len(loadshape_list), *loadshape_list))
+        
 
 def copy_dataset(output_dir, version, year, city, force):
     """Copy a SMART-DS from the Eagle source directory to a destination directory."""
