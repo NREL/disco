@@ -32,6 +32,7 @@ class DeploymentHierarchy(enum.Enum):
     FEEDER = "feeder"
     SUBSTATION = "substation"
     REGION = "region"
+    CITY = "city"
 
 
 class DeploymentCategory(enum.Enum):
@@ -843,28 +844,45 @@ class PVDataStorage:
         self.input_path = input_path
         self.hierarchy = hierarchy
 
+    def get_region_paths(self, city_path: str) -> list:
+        """Given an city path, return all region paths of the city"""
+        if self.hierarchy != DeploymentHierarchy.CITY:
+            raise ValueError("The hierarchy value should be 'city' for '--hierarchy' option")
+
+        # NOTE: Assume all region directories are named with pattern 'PXX'
+        subdir_names = get_subdir_names(city_path)
+        region_names = [name for name in subdir_names if name.startswith("P")]
+        
+        region_paths = [os.path.join(city_path, name) for name in region_names]
+        return region_paths
+
     def get_substation_paths(self) -> list:
         """Given an input path, return a list of substation paths"""
         if self.hierarchy == DeploymentHierarchy.FEEDER:
-            paths = self._get_substation_paths_from_feeder_input()
+            paths = self._get_substation_paths_from_feeder_input(self.input_path)
         elif self.hierarchy == DeploymentHierarchy.SUBSTATION:
-            paths = self._get_substation_paths_from_substation_input()
+            paths = self._get_substation_paths_from_substation_input(self.input_path)
         elif self.hierarchy == DeploymentHierarchy.REGION:
-            paths = self._get_substation_paths_from_region_input()
+            paths = self._get_substation_paths_from_region_input(self.input_path)
+        elif self.hierarchy == DeploymentHierarchy.CITY:
+            paths = self._get_substation_paths_from_city_input(self.input_path)
         return paths
 
-    def _get_substation_paths_from_feeder_input(self) -> list:
+    @staticmethod
+    def _get_substation_paths_from_feeder_input(feeder_path: str) -> list:
         """Given a feeder path, return its substation path"""
-        return [os.path.dirname(self.input_path)]
+        return [os.path.dirname(feeder_path)]
 
-    def _get_substation_paths_from_substation_input(self) -> list:
+    @staticmethod
+    def _get_substation_paths_from_substation_input(substation_path: str) -> list:
         """Given a substation input path, return it as a list"""
-        return [self.input_path]
+        return [substation_path]
 
-    def _get_substation_paths_from_region_input(self) -> list:
+    @staticmethod
+    def _get_substation_paths_from_region_input(self, region_path: str) -> list:
         """Search region input path, return all substation paths in region"""
         opendss_path = os.path.join(
-            self.input_path,
+            region_path,
             "solar_none_batteries_none_timeseries",
             "opendss"
         )
@@ -874,35 +892,64 @@ class PVDataStorage:
             for substation_name in substation_names
         ]
         return substation_paths
-
+    
+    def _get_substation_paths_from_city_input(self, city_path: str) -> list:
+        """Search city input path, return all substation paths in all regions of the city"""
+        region_paths = self.get_region_paths(city_path)
+        substation_paths = []
+        for region_path in region_paths:
+            substation_paths.extend(self._get_substation_paths_from_region_input(region_path))
+        return substation_paths
+    
     def get_feeder_paths(self) -> list:
         """Given an input path, return a list of feeder paths"""
         if self.hierarchy == DeploymentHierarchy.FEEDER:
-            paths = self._get_feeder_paths_from_feeder_input()
+            paths = self._get_feeder_paths_from_feeder_input(self.input_path)
         elif self.hierarchy == DeploymentHierarchy.SUBSTATION:
-            paths = self._get_feeder_paths_from_substation_input()
+            paths = self._get_feeder_paths_from_substation_input(self.input_path)
         elif self.hierarchy == DeploymentHierarchy.REGION:
-            paths = self._get_feeder_paths_from_region_input()
+            paths = self._get_feeder_paths_from_region_input(self.input_path)
+        elif self.hierarchy == DeploymentHierarchy.CITY:
+            paths = self._get_feeder_paths_from_city_input(self.input_path)
         return paths
 
-    def _get_feeder_paths_from_feeder_input(self) -> list:
+    @staticmethod
+    def _get_feeder_paths_from_feeder_input(feeder_path: str) -> list:
         """Search feeder input path, return it as a list"""
-        feeder_paths = [self.input_path]
+        feeder_paths = [feeder_path]
         return feeder_paths
 
-    def _get_feeder_paths_from_substation_input(self) -> list:
+    @staticmethod
+    def _get_feeder_paths_from_substation_input(substation_path: str) -> list:
         """Search substation input path, return all feeder paths in substation"""
-        feeder_names = get_subdir_names(self.input_path)
+        feeder_names = get_subdir_names(substation_path)
+        
+        # NOTE: found a directory named "subtransmission", it's not a feeder
+        if "subtransmission" in feeder_names:
+            feeder_names.remove("subtransmission")
+        
         feeder_paths = [
-            os.path.join(self.input_path, feeder_name)
+            os.path.join(substation_path, feeder_name)
             for feeder_name in feeder_names
         ]
         return feeder_paths
 
-    def _get_feeder_paths_from_region_input(self) -> list:
+    def _get_feeder_paths_from_region_input(self, region_path: str) -> list:
         """Search region input path, return all feeder paths in region"""
         feeder_paths = []
-        substation_paths = self._get_substation_paths_from_region_input()
+        substation_paths = self._get_substation_paths_from_region_input(region_path)
+        for substation_path in substation_paths:
+            feeder_names = get_subdir_names(substation_path)
+            feeder_paths.extend([
+                os.path.join(substation_path, feeder_name)
+                for feeder_name in feeder_names
+            ])
+        return feeder_paths
+
+    def _get_feeder_paths_from_city_input(self, city_path: str) -> list:
+        """Search city input path, return aall feeder paths in city"""
+        feeder_paths = []
+        substation_paths = self._get_substation_paths_from_city_input(city_path)
         for substation_path in substation_paths:
             feeder_names = get_subdir_names(substation_path)
             feeder_paths.extend([
