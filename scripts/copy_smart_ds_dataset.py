@@ -5,6 +5,9 @@ import re
 import shutil
 import sys
 from pathlib import Path
+import struct
+import pandas as pd
+import csv
 
 import click
 
@@ -42,6 +45,31 @@ REGEX_REGION_NAME = re.compile(r"^P\d+[RU]$")
     help="overwrite output-dir if it exists",
 )
 @click.command()
+
+def convert_to_sng_file(csvfolder):
+    """Convert csv files to sng files.
+    
+    Parameters
+    ----------
+    csv files location folder
+    
+    """
+    
+    path = Path(csvfolder)
+    for csvpath in path.rglob("*.csv"):
+        header_flag = None
+        with open(csvpath) as f:
+            reader = csv.reader(f)
+            row1 = next(reader)[0]
+        if re.match(r'[a-zA-Z]',row1):
+            header_flag = 0
+        loadshape = pd.read_csv(csvpath, header=header_flag)
+        loadshape_list = loadshape.iloc[:,0].to_list()
+        fname = os.path.basename(csvpath).split('.csv')[0]+'.sng'
+        with open(path / fname, 'wb') as fout:
+            fout.write(struct.pack('%sf' % len(loadshape_list), *loadshape_list))
+        
+
 def copy_dataset(output_dir, version, year, city, force):
     """Copy a SMART-DS from the Eagle source directory to a destination directory."""
     output_dir = Path(output_dir)
