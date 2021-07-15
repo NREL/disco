@@ -58,7 +58,7 @@ def convert_to_sng_file(csvfolder):
     path = Path(csvfolder)
     for csvpath in path.rglob("*.csv"):
         header_flag = None
-        with open(csvpath, newline='') as f:
+        with open(csvpath) as f:
             reader = csv.reader(f)
             row1 = next(reader)[0]
         if re.match(r'[a-zA-Z]',row1):
