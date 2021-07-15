@@ -968,7 +968,7 @@ class PVDataManager(PVDataStorage):
         if not os.path.exists(master_file):
             logger.exception("'%s' not found in '%s'. System exits!", self.config.master_filename, path)
             raise
-        print(master_file, "===="*10)
+        
         index = 0
         with open(master_file, "r") as f:
             data = f.readlines()
