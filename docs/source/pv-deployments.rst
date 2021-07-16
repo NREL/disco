@@ -13,10 +13,12 @@ The main command going to be used is the one below,
 
 .. code-block:: bash
 
-    $ disco pv-deployments source-tree-1 --action <action-name> --hierarchy <storage hierarchy> --placement <placement type> INPUT_PATH
+    $ disco pv-deployments source-tree-1 --action <action-name> --hierarchy <hierarchy> --placement <placement type> INPUT_PATH
 
 There are several actions here related to PV deployments manipulation, including
 
+* ``redirect-pvshapes``: Redirect PVShape.dss in both substation and feeder Master.dss files.
+* ``generate-jobs``: help generate ``create-pv`` and ``create-configs`` jobs in JSON, i.e., jade config.
 * ``create-pv``: create PV deployments on feeders based on `placement`, `sample` and `penetration` levels.
 * ``check-pv``: check if there are PV deployments missing at each `placement`, `sample` and `penetration` level.
 * ``remove-pv``: delete PV deployments in case there's something wrong.
@@ -26,8 +28,73 @@ There are several actions here related to PV deployments manipulation, including
 * ``list-feeders``: list feeder paths given input of region, substation or feeder.
 
 
+Redirect PVShapes
+-----------------
+Before performing PV deployments, we need to ensure the ``PVShapes.dss`` is redirected in the master 
+file located in substation and feeder directories. Two steps are required:
+
+First, you need to generate the PV profiles into a ``PVShapes.dss`` file on your own, and then
+copy the ``PVShapes.dss`` into each substation and feeder directories.
+
+Second, run the command below.
+
+.. code-block:: bash
+
+    $ disco pv-deployments source-tree-1 -a direct-pvshapes -h <hierarchy> INPUT_PATH
+
+
+Generate Jobs
+-------------
+DISCO provides a command to help generate JADE jobs config files for PV deployments and PV configs, that is,
+
+.. code-block:: bash
+
+    $ disco pv-deployments source-tree-1 -a generate-jobs -h <hierarchy> INPUT_PATH
+
+The hierarchy options are:
+
+    * ``city``
+    * ``region``
+    * ``substation``
+    * ``feeder``
+
+We recommand to run this ``generate-jobs`` command with ``--hierarchy=city`` and generate jobs on all
+feeders within the city path, if your simulation/analysis jobs run relatively stable, this way can help avoid 
+the repeated job generation work on regions, substations, or feeders.
+For test or debug purpose,it's good to specify ``--hierarchy=feeder`` for generating config file with one job, 
+or ``--hierarchy=substation`` with a few jobs.
+
+
+This command will generate two JADE config files:
+
+    * ``create-pv-jobs.json`` contains jobs for PV deployments.
+    * ``create-config-jobs.json`` contains jobs for PV configs
+
+And, you can submit the jobs via ``jade submit-jobs <config_file>`` command. 
+
+.. warning::
+
+    Since PV configs are based on the result of PV deployments, so you will need to wait PV deployment
+    jobs to complete, before to submit PV config jobs.
+
+
 PV Deployments
 --------------
+
+Submit Jobs
+^^^^^^^^^^^
+
+To generate PV deployments, you will need to submit the jobs via JADE, that is,
+
+.. code-block:: bash
+
+    $ jade submit-jobs <OPTIONS> create-pv-jobs.json
+
+If the jobs pass, then the PV deployments task is done. If you'd like to explore details 
+about ``create-pv`` action based on your hierarchy and according input path, please check the section below.
+
+Details Exploration
+^^^^^^^^^^^^^^^^^^^
 
 Here are some example commands showing how to create, check and remove PV deployments.
 
@@ -80,6 +147,21 @@ the result would include `placement` missing information on each feeder.
 
 PV Configs
 ----------
+
+Submit Jobs
+^^^^^^^^^^^
+
+To generate PV configs, you will need to submit the jobs via JADE, that is,
+
+.. code-block:: bash
+
+    $ jade submit-jobs <OPTIONS> create-config-jobs.json
+
+If the jobs pass, then the PV configs task is done. If you'd like to explore details 
+about ``create-configs`` action based on your hierarchy and according input path, please check the section below.
+
+Details Exploration
+^^^^^^^^^^^^^^^^^^^
 
 After PV deployments creaated, PV config files need to be generated as well for assigning each 
 PV system in deployments a PV profile, where the PV config files are created in `sample` directories.
