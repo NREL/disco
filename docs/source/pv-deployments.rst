@@ -60,8 +60,8 @@ The hierarchy options are:
 
 We recommand to run this ``generate-jobs`` command with ``--hierarchy=city`` and generate jobs on all
 feeders within the city path, if your simulation/analysis jobs run relatively stable, this way can help avoid 
-the repeated job generation work on regions, substations, or feeders. For test or debug purpose,
-it's good to specify ``--hierarchy=feeder`` for generating config file with one job, 
+the repeated job generation work on regions, substations, or feeders.
+For test or debug purpose,it's good to specify ``--hierarchy=feeder`` for generating config file with one job, 
 or ``--hierarchy=substation`` with a few jobs.
 
 
