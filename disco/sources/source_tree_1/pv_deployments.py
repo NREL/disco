@@ -847,7 +847,7 @@ class PVDataStorage:
         self.hierarchy = hierarchy
 
     def get_region_paths(self, city_path: str) -> list:
-        """Given an city path, return all region paths of the city"""
+        """Given a city path, return all region paths of the city"""
         if self.hierarchy != DeploymentHierarchy.CITY:
             raise ValueError("The hierarchy value should be 'city' for '--hierarchy' option")
 
@@ -868,6 +868,8 @@ class PVDataStorage:
             paths = self._get_substation_paths_from_region_input(self.input_path)
         elif self.hierarchy == DeploymentHierarchy.CITY:
             paths = self._get_substation_paths_from_city_input(self.input_path)
+        else:
+            assert False, self.hierarchy
         return paths
 
     @staticmethod
@@ -918,6 +920,8 @@ class PVDataStorage:
             paths = self._get_feeder_paths_from_region_input(self.input_path)
         elif self.hierarchy == DeploymentHierarchy.CITY:
             paths = self._get_feeder_paths_from_city_input(self.input_path)
+        else:
+            assert False, self.hierarchy
         return paths
 
     @staticmethod

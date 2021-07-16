@@ -31,12 +31,12 @@ There are several actions here related to PV deployments manipulation, including
 Redirect PVShapes
 -----------------
 Before performing PV deployments, we need to ensure the ``PVShapes.dss`` is redirected in the master 
-file located in substation and feeder directories. Two steps need to take for this redirect,
+file located in substation and feeder directories. Two steps are required:
 
-First, you need to generate the PV profiles together with a ``PVShapes.dss`` on your own, and then
+First, you need to generate the PV profiles into a ``PVShapes.dss`` file on your own, and then
 copy the ``PVShapes.dss`` into each substation and feeder directories.
 
-Second, to run the command below to redirect ``PVShapes.dss`` in ``Master.dss`` files.
+Second, run the command below.
 
 .. code-block:: bash
 
@@ -49,16 +49,30 @@ DISCO provides a command to help generate JADE jobs config files for PV deployme
 
 .. code-block:: bash
 
-    $ disco pv-deployments source-tree-1 -a generate-jobs -h feeder INPUT_PATH
+    $ disco pv-deployments source-tree-1 -a generate-jobs -h <hierarchy> INPUT_PATH
 
-This command will generate two JADE config files
+The hierarchy options are:
+
+    * ``city``
+    * ``region``
+    * ``substation``
+    * ``feeder``
+
+We recommand to run this ``generate-jobs`` command with ``--hierarchy=city`` and generate jobs on all
+feeders within the city path, if your simulation/analysis jobs run relatively stable, this way can help avoid 
+the repeated job generation work on regions, substations, or feeders. For test or debug purpose,
+it's good to specify ``--hierarchy=feeder`` for generating config file with one job, 
+or ``--hierarchy=substation`` with a few jobs.
+
+
+This command will generate two JADE config files:
 
     * ``create-pv-jobs.json`` contains jobs for PV deployments.
     * ``create-config-jobs.json`` contains jobs for PV configs
 
 And, you can submit the jobs via ``jade submit-jobs <config_file>`` command. 
 
-.. note::
+.. warning::
 
     Since PV configs are based on the result of PV deployments, so you will need to wait PV deployment
     jobs to complete, before to submit PV config jobs.
@@ -76,7 +90,7 @@ To generate PV deployments, you will need to submit the jobs via JADE, that is,
 
     $ jade submit-jobs <OPTIONS> create-pv-jobs.json
 
-If everything runs good, then the PV deployments task is done. If you'd like to explore details 
+If the jobs pass, then the PV deployments task is done. If you'd like to explore details 
 about ``create-pv`` action based on your hierarchy and according input path, please check the section below.
 
 Details Exploration
@@ -143,7 +157,7 @@ To generate PV configs, you will need to submit the jobs via JADE, that is,
 
     $ jade submit-jobs <OPTIONS> create-config-jobs.json
 
-If everything runs good, then the PV confgis task is done. If you'd like to explore details 
+If the jobs pass, then the PV configs task is done. If you'd like to explore details 
 about ``create-configs`` action based on your hierarchy and according input path, please check the section below.
 
 Details Exploration
