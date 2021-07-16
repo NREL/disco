@@ -69,6 +69,137 @@ class PVDSSInstance:
         updated_data = unidecode(data)
         with open(self.master_file, "w") as f:
             f.write(updated_data)
+			
+    def get_attribute(line, attribute_id):
+        attribute = None
+        """
+        Attribute ID
+        for kv: 'kv='
+        for name: 'new load.' (load example)
+        for bus: 'bus1='
+        for kw: 'kw='
+        """
+        if attribute_id in line.lower():
+            attribute = line.lower().split(attribute_id)[1].split(' ')[0]
+        
+        return attribute
+
+    def build_load_dictionary(load_lines):
+        load_dict = {}
+        for idx, line in enumerate(load_lines):
+            if 'new' in line.lower():
+                kv = float(get_attribute(line, 'kv='))
+                init_name = get_attribute(line,'new load.')
+                
+                bus_node = get_attribute(line,'bus1=')
+                if bus_node is not None:
+                    # print('-------------------',bus_node)
+                    if '.' in bus_node:
+                    
+                        bus = bus_node.split('.')[0]
+                        nodes = bus_node.split('.')[1:]
+                    else:
+                        bus = bus_node
+                        nodes = []
+                    if len(nodes)<3:
+                        name = '_'.join(init_name.split('_')[:-1])
+                    else:
+                        name = init_name
+                    kw = get_attribute(line,'kw=')
+                    kvar = get_attribute(line, 'kvar=')
+                    kva = get_attribute(line, 'kva=')
+                    phases = get_attribute(line, 'phases=')
+                
+                
+                    if (bus, name) in load_dict.keys():
+                        if nodes:
+                            load_dict[bus, name]['node'] += nodes
+                        if 'kw=' in line.lower():
+                            load_dict[bus, name]['kw'] += float(kw)
+                        if 'kvar=' in line.lower():
+                            load_dict[bus, name]['kvar'] += float(kvar)
+                        if 'kva=' in line.lower():
+                            load_dict[bus, name]['kva'] += float(kva)
+                    
+                    else:
+                        load_dict[bus, name] = {}
+                        load_dict[bus, name]['name'] = name
+                        load_dict[bus, name]['bus'] = bus
+                        if nodes:
+                            load_dict[bus, name]['node'] = nodes
+                        else:
+                            load_dict[bus, name]['node'] = []
+                        if 'kw=' in line.lower():
+                            load_dict[bus, name]['kw'] = float(kw)
+                        if 'kvar=' in line.lower():
+                            load_dict[bus, name]['kvar'] = float(kvar)
+                        if 'kva=' in line.lower():
+                            load_dict[bus, name]['kva'] = float(kva)
+                        if 'phases=' in line.lower():
+                            load_dict[bus, name]['phases'] = phases
+                    
+                        load_dict[bus,name]['line_idx'] = idx 
+                        load_dict[bus,name]['kv'] = kv
+                    
+                
+            
+        rekeyed_load_dict = {v['line_idx']:v for k,v in load_dict.items()}
+    
+        return rekeyed_load_dict
+
+    def update_loads(lines, rekeyed_load_dict):
+        new_load_lines = []
+        for k, v in rekeyed_load_dict.items():
+            if v['node']:
+                bus_name = f"{v['bus']}.{'.'.join(v['node'])}"
+            else:
+                bus_name = v['bus']
+            lines[k] = lines[k].replace(get_attribute(lines[k],'bus1='), bus_name)
+        
+            lines[k] = lines[k].replace(get_attribute(lines[k],'load.'), v['name'])
+        
+            if v['kv'] == 0.12 and len(v['node'])==2:
+                kv = 0.208
+                phases = '2'
+            else:
+                kv = v['kv']
+                phases = v['phases']
+            
+            lines[k] = lines[k].lower().replace(f"kv={get_attribute(lines[k],'kv=')}", f"kv={kv}")
+            lines[k] = lines[k].lower().replace(f"phases={get_attribute(lines[k],'phases=')}", f"phases={phases}")
+        
+            if 'kw=' in lines[k].lower():
+                lines[k] = lines[k].lower().replace(f"kw={get_attribute(lines[k],'kw=')}", f"kw={str(v['kw'])}")
+            if 'kvar=' in lines[k].lower():
+                lines[k] = lines[k].lower().replace(f"kvar={get_attribute(lines[k],'kvar=')}", f"kvar={str(v['kvar'])}")
+            if 'kva=' in lines[k].lower():
+                lines[k] = lines[k].lower().replace(f"kva={get_attribute(lines[k],'kva=')}", f"kva={str(v['kva'])}")
+            
+        new_load_lines = [lines[x] for x in rekeyed_load_dict.keys()]
+    
+        return new_load_lines
+
+    def transform_loads(feeder_path, load_file_name = 'Loads.dss'):
+        load_file = os.path.join(feeder_path, load_file_name)
+        original_load_file = os.path.join(feeder_path, f'original_{load_file_name}')
+    
+        with open(load_file, 'r') as lr:
+            original_load_str = lr.read()
+        
+        # Save original load file
+        with open(original_load_file, 'w') as olw:
+            olw.write(original_load_str)
+        
+        with open(load_file, 'r') as lr:
+            load_lines = lr.readlines()
+        
+        rekeyed_load_dict = build_load_dictionary(load_lines)
+    
+        new_lines = update_loads(load_lines, rekeyed_load_dict)
+    
+        with open(load_file, 'w') as lw:
+            lw.writelines(new_lines)
+		
 
     def load_feeder(self) -> None:
         """OpenDSS redirect master DSS file"""
@@ -298,6 +429,7 @@ class PVScenarioGeneratorBase(abc.ABC):
             lock_file = master_file + ".lock"
             with SoftFileLock(lock_file=lock_file, timeout=300):  # Timeout for loading master file
                 pvdss_instance.convert_to_ascii()
+				pvdss_instance.transform_loads() # change load model to suitable center-tap schema if needed
                 pvdss_instance.load_feeder()
                 flag = pvdss_instance.ensure_energy_meter()
                 if flag:
@@ -310,6 +442,7 @@ class PVScenarioGeneratorBase(abc.ABC):
     def deploy_all_pv_scenarios(self) -> dict:
         """Given a feeder path, generate all PV scenarios for the feeder"""
         feeder_name = self.get_feeder_name()
+        
         pvdss_instance = self.load_pvdss_instance()
 
         # total load
