@@ -429,7 +429,7 @@ class PVScenarioGeneratorBase(abc.ABC):
             lock_file = master_file + ".lock"
             with SoftFileLock(lock_file=lock_file, timeout=300):  # Timeout for loading master file
                 pvdss_instance.convert_to_ascii()
-				pvdss_instance.transform_loads() # change load model to suitable center-tap schema if needed
+                pvdss_instance.transform_loads() # change load model to suitable center-tap schema if needed
                 pvdss_instance.load_feeder()
                 flag = pvdss_instance.ensure_energy_meter()
                 if flag:
