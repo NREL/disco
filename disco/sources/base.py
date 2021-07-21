@@ -161,6 +161,9 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
             "solve",
             "batchedit fuse",
             "new energymeter",
+            "new monitor",
+            "export monitors",
+            "plot",
         )
         self._comment_out_leading_strings(workspace.master_file, strings_to_remove)
         if self.loadshape_directory is not None:
