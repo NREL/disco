@@ -193,7 +193,7 @@ class PVDSSInstance:
         original_load_file = os.path.join(feeder_path, ORIGINAL_PV_LOAD_FILENAME)
         shutil.copyfile(load_file, original_load_file)
         
-        with open(load_file, "r") as lr, open(load_file, "w") as lw:
+        with open(original_load_file, "r") as lr, open(load_file, "w") as lw:
             load_lines = lr.readlines()
             rekeyed_load_dict = self.build_load_dictionary(load_lines)
             new_lines = self.update_loads(load_lines, rekeyed_load_dict)
