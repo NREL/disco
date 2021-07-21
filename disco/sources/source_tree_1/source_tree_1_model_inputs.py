@@ -312,7 +312,8 @@ class SourceTree1ModelInputs(JobInputsInterface):
     @staticmethod
     def _feeder_from_dirname(dirname):
         fields = dirname.split(SourceTree1ModelInputs.SUBSTATION_DELIMITER)
-        assert len(fields) == 2
+        if len(fields) != 2:
+            return None
         return fields[1]
 
     def _list_available_params(self, param):
@@ -336,9 +337,13 @@ class SourceTree1ModelInputs(JobInputsInterface):
 
     @handle_file_not_found
     def _list_feeders(self, substation):
+        feeders = []
         feeder_path = os.path.join(self._base, substation)
-        return [self._feeder_from_dirname(x) for x in
-                self._get_items_from_directory(feeder_path)]
+        for item in self._get_items_from_directory(feeder_path):
+            feeder = self._feeder_from_dirname(item)
+            if feeder is not None:
+                feeders.append(feeder)
+        return feeders
 
     @handle_file_not_found
     def _list_placements(self, substation, feeder):
