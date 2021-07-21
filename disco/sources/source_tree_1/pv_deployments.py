@@ -31,8 +31,8 @@ PV_CONFIG_FILENAME = "pv_config.json"
 PV_INSTALLATION_TOLERANCE = 1.0e-10
 
 PV_LOAD_FILENAME = "Loads.dss"
-ORIGINAL_PV_LOAD_FILENAME = "OriginalLoads.dss"
-FINAL_PV_LOAD_FILENAME = "PVLoads.dss"
+ORIGINAL_PV_LOAD_FILENAME = "Original_Loads.dss"
+TRANSFORMED_PV_LOAD_FILENAME = "PV_Loads.dss"
 
 
 class DeploymentHierarchy(enum.Enum):
@@ -155,7 +155,7 @@ class PVDSSInstance:
         new_load_lines = []
         for k, v in rekeyed_load_dict.items():
             if v["node"]:
-                bus_name = f"{v['bus']}.{".".join(v['node'])}"
+                bus_name = f"{v['bus']}.{'.'.join(v['node'])}"
             else:
                 bus_name = v["bus"]
             
@@ -193,7 +193,7 @@ class PVDSSInstance:
         original_load_file = os.path.join(feeder_path, ORIGINAL_PV_LOAD_FILENAME)
         shutil.copyfile(load_file, original_load_file)
         
-        with open(load_file, "r") as lr, open(load_file, "w") as lw::
+        with open(load_file, "r") as lr, open(load_file, "w") as lw:
             load_lines = lr.readlines()
             rekeyed_load_dict = self.build_load_dictionary(load_lines)
             new_lines = self.update_loads(load_lines, rekeyed_load_dict)
@@ -880,6 +880,18 @@ class PVScenarioGeneratorBase(abc.ABC):
             json.dump(pv_config, f, indent=2)
         logger.info("PV config file generated - %s", pv_config_file)
         return pv_config_file
+    
+    def rename_feeder_load_files(self) -> None:
+        """Rename Loads.dss and transformed Loads.ss files after development finish."""
+        # Rename transformed Loads.dss to PV_Loads.ss
+        load_file = os.path.join(self.feeder_path, PV_LOAD_FILENAME)
+        transformed_load_file = os.path.join(self.feeder_path, TRANSFORMED_PV_LOAD_FILENAME)
+        os.rename(load_file, transformed_load_file)
+        
+        # Rename Original_Loads.dss back to Loads.dss
+        original_load_file = os.path.join(self.feeder_path, ORIGINAL_PV_LOAD_FILENAME)
+        os.rename(original_load_file, load_file)
+        logger.info("Load and transformed load files renamed.")
 
 
 class LargePVScenarioGenerator(PVScenarioGeneratorBase):
@@ -1220,6 +1232,7 @@ class PVDeploymentManager(PVDataStorage):
         for feeder_path in feeder_paths:
             generator = get_pv_scenario_generator(feeder_path, self.config)
             feeder_stats = generator.deploy_all_pv_scenarios()
+            generator.rename_transformed_loads_file()
             summary[feeder_path] = feeder_stats
         return summary
 
