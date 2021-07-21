@@ -881,15 +881,18 @@ class PVScenarioGeneratorBase(abc.ABC):
         logger.info("PV config file generated - %s", pv_config_file)
         return pv_config_file
     
-    def rename_feeder_load_files(self) -> None:
+    def try_rename_feeder_load_files(self) -> None:
         """Rename Loads.dss and transformed Loads.ss files after development finish."""
+        original_load_file = os.path.join(self.feeder_path, ORIGINAL_PV_LOAD_FILENAME)
+        if not os.path.exists(original_load_file):
+            return
+        
         # Rename transformed Loads.dss to PV_Loads.ss
         load_file = os.path.join(self.feeder_path, PV_LOAD_FILENAME)
         transformed_load_file = os.path.join(self.feeder_path, TRANSFORMED_PV_LOAD_FILENAME)
         os.rename(load_file, transformed_load_file)
         
         # Rename Original_Loads.dss back to Loads.dss
-        original_load_file = os.path.join(self.feeder_path, ORIGINAL_PV_LOAD_FILENAME)
         os.rename(original_load_file, load_file)
         logger.info("Load and transformed load files renamed.")
 
@@ -1231,9 +1234,11 @@ class PVDeploymentManager(PVDataStorage):
         feeder_paths = self.get_feeder_paths()
         for feeder_path in feeder_paths:
             generator = get_pv_scenario_generator(feeder_path, self.config)
-            feeder_stats = generator.deploy_all_pv_scenarios()
-            generator.rename_transformed_loads_file()
-            summary[feeder_path] = feeder_stats
+            try:
+                feeder_stats = generator.deploy_all_pv_scenarios()
+                summary[feeder_path] = feeder_stats
+            finally:
+                generator.try_rename_feeder_load_files()
         return summary
 
     def remove_pv_deployments(self, placement: Placement = None) -> list:
