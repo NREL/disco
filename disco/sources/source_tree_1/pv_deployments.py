@@ -205,17 +205,18 @@ class PVDSSInstance:
 
     def transform_loads(self) -> None:
         """Transform Loads.dss"""
-        logger.info("Transforming PV load file '%s'", load_file)
         original_loads_file = os.path.join(self.feeder_path, ORIGINAL_LOADS_FILENAME)
         loads_file = os.path.join(self.feeder_path, LOADS_FILENAME)
+        logger.info("Transforming PV load file '%s'", loads_file)
+        
         lock_file = loads_file + ".lock"
         with SoftFileLock(lock_file=lock_file, timeout=300):
-            with open(original_loads_file, "r") as fr, open(load_file, "w") as fw:
+            with open(original_loads_file, "r") as fr, open(loads_file, "w") as fw:
                 load_lines = fr.readlines()
                 rekeyed_load_dict = self.build_load_dictionary(load_lines)
                 new_lines = self.update_loads(load_lines, rekeyed_load_dict)
                 fw.writelines(new_lines)
-        logger.info("Loads transformed - '%s'.", load_file)
+        logger.info("Loads transformed - '%s'.", loads_file)
 
     def load_feeder(self) -> None:
         """OpenDSS redirect master DSS file"""
