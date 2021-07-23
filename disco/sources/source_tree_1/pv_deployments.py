@@ -1039,6 +1039,13 @@ class PVDataStorage:
             "solar_none_batteries_none_timeseries",
             "opendss"
         )
+        if not os.path.exists(opendss_path):
+            opendss_path = os.path.join(
+                region_path,
+                "scenarios",
+                "base_timeseries",
+                "opendss"
+            )
         substation_names = get_subdir_names(opendss_path)
         
         # NOTE: exclude directory named "subtransmission" from substations
