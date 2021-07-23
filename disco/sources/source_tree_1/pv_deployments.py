@@ -54,7 +54,11 @@ def get_subdir_names(input_path: str) -> list:
     """
     assert os.path.exists(input_path), f"Path does not exist - {input_path}"
     subdir_names = next(os.walk(input_path))[1]
-    return subdir_names
+    
+    # Ignore these folder names
+    ignored_names = ["subtransmission", "aggregate", "analysis", "hc_pv_deployments", "zip"]
+    clean_names = [name for name in subdir_names if name not in ignored_names]
+    return clean_names
 
 
 class PVDSSInstance:
