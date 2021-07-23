@@ -5,7 +5,6 @@ import logging
 import os
 import random
 import shutil
-import subprocess
 import sys
 from copy import deepcopy
 from concurrent.futures import ProcessPoolExecutor
@@ -96,7 +95,11 @@ class PVDSSInstance:
         with SoftFileLock(lock_file=lock_file, timeout=300):
             loads_file = os.path.join(self.feeder_path, LOADS_FILENAME)
             shutil.copyfile(loads_file, original_loads_file)
-            subprocess.call(["chmod", "0666", original_loads_file])
+        
+        try:
+            os.chmod(original_loads_file, 0o666)
+        except Exception:
+            pass
         
     def get_attribute(self, line: str, attribute_id: str) -> str:
         """
@@ -1184,9 +1187,9 @@ class PVDataManager(PVDataStorage):
         super().__init__(input_path, hierarchy)
         self.config = config
 
-    def redirect(self, path: str) -> bool:
+    def redirect(self, feeder_path: str) -> bool:
         """Given a path, update the master file by redirecting PVShapes.dss"""
-        master_file = os.path.join(path, self.config.master_filename)
+        master_file = os.path.join(feeder_path, self.config.master_filename)
         if not os.path.exists(master_file):
             logger.exception("'%s' not found in '%s'. System exits!", self.config.master_filename, path)
             raise
@@ -1211,7 +1214,7 @@ class PVDataManager(PVDataStorage):
             f.writelines(data)
         return True
     
-    def redirect_substation_pv_shapes(self):
+    def redirect_substation_pv_shapes(self) -> None:
         """Run PVShapes redirect in substation directories in parallel"""
         substation_paths = self.get_substation_paths()
         logger.info("Running PVShapes redirect in %s substation directories...", len(substation_paths))
@@ -1219,13 +1222,52 @@ class PVDataManager(PVDataStorage):
             executor.map(self.redirect, substation_paths)
         logger.info("Substation PVShapes redirect done!")
     
-    def redirect_feeder_pv_shapes(self):
+    def redirect_feeder_pv_shapes(self) -> None:
         """Run PVShapes redirect in feeder directories in parallel"""
         feeder_paths = self.get_feeder_paths()
         logger.info("Running PVShapes redirect in %s feeder directories...", len(feeder_paths))
         with ProcessPoolExecutor() as executor:
             executor.map(self.redirect, feeder_paths)
         logger.info("Feeder PVShapes redirect done!")
+    
+    def rename(self, feeder_path: str) -> None:
+        """Rename transformed/original Loads files"""
+        loads_file = os.path.join(feeder_path, LOADS_FILENAME)
+        original_loads_file = os.path.join(feeder_path, ORIGINAL_LOADS_FILENAME)
+        transformed_loads_file = os.path.join(feeder_path, TRANSFORMED_LOADS_FILENAME)
+        
+        if not os.path.exists(original_loads_file):
+            return
+        
+        if os.path.exists(transformed_loads_file):
+            os.remove(transformed_loads_file)
+        
+        os.rename(loads_file, transformed_loads_file)
+        try:
+            os.chmod(loads_file, 0o666)
+        except Exception:
+            pass
+        
+        os.rename(original_loads_file, loads_file)
+        try:
+            os.chmod(transformed_loads_file, 0o666)
+        except Exception:
+            pass
+    
+    def rename_feeder_loads(self) -> None:
+        """After PV deployments, rename transformed Loads.dss to PV_Loads.dss"""
+        feeder_paths = self.get_feeder_paths()
+        logger.info("Renaming loads files in %s feeder directories...", len(feeder_paths))
+        deployed = []
+        for feeder_path in feeder_paths:
+            hc_pv_deployments = os.path.join(feeder_path, "hc_pv_deployments")
+            if not os.path.exists(hc_pv_deployments):
+                continue
+            deployed.append(feeder_path)
+        
+        with ProcessPoolExecutor() as executor:
+            executor.map(self.rename, deployed)
+        logger.info("Feeder Loads rename done, total %s", len(deployed))
 
 
 class PVDeploymentManager(PVDataStorage):

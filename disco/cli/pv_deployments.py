@@ -122,9 +122,17 @@ def generate_pv_deployment_jobs(input_path: str, hierarchy: str, config: dict):
     create_config_jobs_file = manager.generate_pv_config_jobs()
 
 
+def rename_feeder_loads(input_path: str, hierarchy: str, config: dict):
+    hierarchy = DeploymentHierarchy(hierarchy)
+    config = SimpleNamespace(**config)
+    manager = PVDataManager(input_path, hierarchy, config)
+    manager.rename_feeder_loads()
+
+
 ACTION_MAPPING = {
     "redirect-pvshapes": redirect_pv_shapes,
     "generate-jobs": generate_pv_deployment_jobs,
+    "rename-loads": rename_feeder_loads,
     
     "create-pv": create_pv_deployments,
     "create-configs": create_pv_configs,
