@@ -30,9 +30,9 @@ PV_SHAPES_FILENAME = "PVShapes.dss"
 PV_CONFIG_FILENAME = "pv_config.json"
 PV_INSTALLATION_TOLERANCE = 1.0e-10
 
-PV_LOAD_FILENAME = "Loads.dss"
-ORIGINAL_PV_LOAD_FILENAME = "Original_Loads.dss"
-TRANSFORMED_PV_LOAD_FILENAME = "PV_Loads.dss"
+LOADS_FILENAME = "Loads.dss"
+ORIGINAL_LOADS_FILENAME = "Original_Loads.dss"
+TRANSFORMED_LOADS_FILENAME = "PV_Loads.dss"
 
 
 class DeploymentHierarchy(enum.Enum):
@@ -64,8 +64,14 @@ class PVDSSInstance:
         self.master_file = master_file
 
     @property
-    def feeder_name(self):
-        return os.path.basename(os.path.os.path.dirname(self.master_file))
+    def feeder_name(self) -> str:
+        """Parse feeder name from master file path"""
+        return os.path.basename(os.path.dirname(self.master_file))
+
+    @property
+    def feeder_path(self) -> str:
+        """Parse feeder path from master file path"""
+        return os.path.dirname(self.master_file)
 
     def convert_to_ascii(self) -> None:
         """Convert unicode data in ASCII characters for representation"""
@@ -74,7 +80,18 @@ class PVDSSInstance:
         updated_data = unidecode(data)
         with open(self.master_file, "w") as f:
             f.write(updated_data)
-	
+ 
+    def backup_loads_file(self) -> None:
+        """Create a backup of Loads.dss file"""
+        original_loads_file = os.path.join(self.feeder_path, ORIGINAL_LOADS_FILENAME)
+        if os.path.exists(original_loads_file):
+            return
+        
+        lock_file = original_loads_file + ".lock"
+        with SoftFileLock(lock_file=lock_file, timeout=300):
+            loads_file = os.path.join(self.feeder_path, LOADS_FILENAME)
+            shutil.copyfile(loads_file, original_loads_file)
+ 
     def get_attribute(self, line: str, attribute_id: str) -> str:
         """
         Get the attribute from line string.
@@ -182,24 +199,19 @@ class PVDSSInstance:
         new_load_lines = [lines[x] for x in rekeyed_load_dict.keys()]
         return new_load_lines
 
-    def transform_loads(self, feeder_path: str, load_filename: str = None) -> None:
+    def transform_loads(self) -> None:
         """Transform Loads.dss"""
-        if not load_filename:
-            load_filename = PV_LOAD_FILENAME
-        
-        load_file = os.path.join(feeder_path, load_filename)
         logger.info("Transforming PV load file '%s'", load_file)
-        
-        original_load_file = os.path.join(feeder_path, ORIGINAL_PV_LOAD_FILENAME)
-        shutil.copyfile(load_file, original_load_file)
-        
-        with open(original_load_file, "r") as lr, open(load_file, "w") as lw:
-            load_lines = lr.readlines()
-            rekeyed_load_dict = self.build_load_dictionary(load_lines)
-            new_lines = self.update_loads(load_lines, rekeyed_load_dict)
-            lw.writelines(new_lines)
-        
-        logger.info("'%s' transformed!", load_file)
+        original_loads_file = os.path.join(self.feeder_path, ORIGINAL_LOADS_FILENAME)
+        loads_file = os.path.join(self.feeder_path, LOADS_FILENAME)
+        lock_file = loads_file + ".lock"
+        with SoftFileLock(lock_file=lock_file, timeout=300):
+            with open(original_loads_file, "r") as fr, open(load_file, "w") as fw:
+                load_lines = fr.readlines()
+                rekeyed_load_dict = self.build_load_dictionary(load_lines)
+                new_lines = self.update_loads(load_lines, rekeyed_load_dict)
+                fw.writelines(new_lines)
+        logger.info("Loads transformed - '%s'.", load_file)
 
     def load_feeder(self) -> None:
         """OpenDSS redirect master DSS file"""
@@ -423,13 +435,13 @@ class PVScenarioGeneratorBase(abc.ABC):
     def load_pvdss_instance(self) -> PVDSSInstance:
         """Setup DSS handler for master dss file processing"""
         master_file = self.get_master_file(self.feeder_path)
-        pv_shapes_file = self.get_pv_shapes_file(self.feeder_path)
         pvdss_instance = PVDSSInstance(master_file)
+        pvdss_instance.backup_loads_file()
         try:
             lock_file = master_file + ".lock"
-            with SoftFileLock(lock_file=lock_file, timeout=300):  # Timeout for loading master file
+            with SoftFileLock(lock_file=lock_file, timeout=300):
                 pvdss_instance.convert_to_ascii()
-                pvdss_instance.transform_loads(self.feeder_path) # change load model to suitable center-tap schema if needed
+                pvdss_instance.transform_loads() # change load model to suitable center-tap schema if needed
                 pvdss_instance.load_feeder()
                 flag = pvdss_instance.ensure_energy_meter()
                 if flag:
@@ -442,7 +454,6 @@ class PVScenarioGeneratorBase(abc.ABC):
     def deploy_all_pv_scenarios(self) -> dict:
         """Given a feeder path, generate all PV scenarios for the feeder"""
         feeder_name = self.get_feeder_name()
-        
         pvdss_instance = self.load_pvdss_instance()
 
         # total load
@@ -795,6 +806,11 @@ class PVScenarioGeneratorBase(abc.ABC):
         pv_shapes_file = os.path.join(input_path, PV_SHAPES_FILENAME)
         return pv_shapes_file
 
+    def get_loads_file(self, input_path: str) -> str:
+        """Return the loads file in feeder path"""
+        loads_file = os.path.join(input_path, LOADS_FILENAME)
+        return loads_file
+
     def create_all_pv_configs(self) -> None:
         """Create PV configs JSON file"""
         root_path = self.get_output_root_path()
@@ -880,21 +896,6 @@ class PVScenarioGeneratorBase(abc.ABC):
             json.dump(pv_config, f, indent=2)
         logger.info("PV config file generated - %s", pv_config_file)
         return pv_config_file
-    
-    def try_rename_feeder_load_files(self) -> None:
-        """Rename Loads.dss and transformed Loads.ss files after development finish."""
-        original_load_file = os.path.join(self.feeder_path, ORIGINAL_PV_LOAD_FILENAME)
-        if not os.path.exists(original_load_file):
-            return
-        
-        # Rename transformed Loads.dss to PV_Loads.ss
-        load_file = os.path.join(self.feeder_path, PV_LOAD_FILENAME)
-        transformed_load_file = os.path.join(self.feeder_path, TRANSFORMED_PV_LOAD_FILENAME)
-        os.rename(load_file, transformed_load_file)
-        
-        # Rename Original_Loads.dss back to Loads.dss
-        os.rename(original_load_file, load_file)
-        logger.info("Load and transformed load files renamed.")
 
 
 class LargePVScenarioGenerator(PVScenarioGeneratorBase):
@@ -1234,11 +1235,8 @@ class PVDeploymentManager(PVDataStorage):
         feeder_paths = self.get_feeder_paths()
         for feeder_path in feeder_paths:
             generator = get_pv_scenario_generator(feeder_path, self.config)
-            try:
-                feeder_stats = generator.deploy_all_pv_scenarios()
-                summary[feeder_path] = feeder_stats
-            finally:
-                generator.try_rename_feeder_load_files()
+            feeder_stats = generator.deploy_all_pv_scenarios()
+            summary[feeder_path] = feeder_stats
         return summary
 
     def remove_pv_deployments(self, placement: Placement = None) -> list:
