@@ -205,3 +205,30 @@ The examples below show commands for creating, checking or removing PV config fi
     $ disco pv-deployments source-tree-1 -a remove-configs -h feeder -p random <feeder1_path>
     $ disco pv-deployments source-tree-1 -a remove-configs -h substation -p random <substation1_path>
     $ disco pv-deployments source-tree-1 -a remove-configs -h region -p random <region1_path>
+
+
+Rename Loads
+------------
+
+As the ``Loads.dss`` in SourceTree1 models needs to be transformed during PV deployments, and the 
+content of ``Loads.dss`` was modified. However, we backuped the original ``Loads.dss`` before 
+PV deployments, so we can rename back after that. Simply, the steps look like this.
+
+1. Before PV deployments:
+
+* Rename raw ``Loads.dss`` into ``Original_Loads.dss``.
+
+2. During PV deployments:
+
+* DISCO PV deployment program transformed ``Loads.dss`` in place.
+
+3. After PV deployments:
+
+* Rename transformed ``Loads.dss`` file into ``PV_Loads.dss``.
+* Rename ``Original_Loads.dss`` back to ``Loads.dss``.
+
+Run the command below to rename ``Loads.dss`` file and related,
+
+.. code-block:: bash
+
+    $ disco pv-deployments source-tree-1 -a rename-loads -h <hierarchy> INPUT_PATH
