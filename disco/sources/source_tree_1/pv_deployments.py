@@ -5,6 +5,7 @@ import logging
 import os
 import random
 import shutil
+import subprocess
 import sys
 from copy import deepcopy
 from concurrent.futures import ProcessPoolExecutor
@@ -95,7 +96,8 @@ class PVDSSInstance:
         with SoftFileLock(lock_file=lock_file, timeout=300):
             loads_file = os.path.join(self.feeder_path, LOADS_FILENAME)
             shutil.copyfile(loads_file, original_loads_file)
- 
+            subprocess.call(["chmod", "0666", original_loads_file])
+        
     def get_attribute(self, line: str, attribute_id: str) -> str:
         """
         Get the attribute from line string.
