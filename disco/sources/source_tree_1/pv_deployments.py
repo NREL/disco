@@ -1260,8 +1260,8 @@ class PVDataManager(PVDataStorage):
         logger.info("Renaming loads files in %s feeder directories...", len(feeder_paths))
         deployed = []
         for feeder_path in feeder_paths:
-            hc_pv_deployments = os.path.join(feeder_path, "hc_pv_deployments")
-            if not os.path.exists(hc_pv_deployments):
+            original_loads_file = os.path.join(feeder_path, ORIGINAL_LOADS_FILENAME)
+            if not os.path.exists(original_loads_file):
                 continue
             deployed.append(feeder_path)
         
