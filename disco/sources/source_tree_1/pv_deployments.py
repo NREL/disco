@@ -1166,6 +1166,7 @@ class PVDataManager(PVDataStorage):
     
     def backup_loads_file(self, loads_file: str) -> bool:
         """Create a backup of Loads.dss file"""
+        feeder_path = os.path.dirname(loads_file)
         original_loads_file = os.path.join(feeder_path, ORIGINAL_LOADS_FILENAME)
         if os.path.exists(original_loads_file):
             return False
@@ -1283,7 +1284,7 @@ class PVDataManager(PVDataStorage):
         
         new_load_lines = [lines[x] for x in rekeyed_load_dict.keys()]
         return new_load_lines
-    
+
     def transform_feeder_loads(self) -> None:
         """Before PV deployments, transform Loads.dss"""
         feeder_paths = self.get_feeder_paths()
