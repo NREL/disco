@@ -98,12 +98,12 @@ class PVDSSInstance:
         Plot Profile Phases=All
         """
         logger.info("Disable monitors export in master file - %s", self.master_file)
-        update_data = []
+        updated_data = []
         with open(self.master_file, "r") as f:
             for line in f.readlines():
                 if not line.startswith("!") and "export monitors" in line.lower():
                     line = "! " + line
-                update_data.append(line)
+                updated_data.append(line)
         
         with open(self.master_file, "w") as f:
             for line in updated_data:
