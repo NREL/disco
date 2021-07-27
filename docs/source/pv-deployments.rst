@@ -43,6 +43,16 @@ Second, run the command below.
     $ disco pv-deployments source-tree-1 -a direct-pvshapes -h <hierarchy> INPUT_PATH
 
 
+Transform Loads
+---------------
+Also, ``Loads.dss`` file under the feeder needs to be transformed before PV deployments, so that to
+change load model to suitable center-tap schema if needed. The command to run this is,
+
+.. code-block:: bash
+
+    $ disco pv-deployments source-tree-1 -a transform-loads -h <hierarchy> INPUT_PATH
+
+
 Generate Jobs
 -------------
 DISCO provides a command to help generate JADE jobs config files for PV deployments and PV configs, that is,
