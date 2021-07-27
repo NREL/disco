@@ -85,6 +85,30 @@ class PVDSSInstance:
         with open(self.master_file, "w") as f:
             f.write(updated_data)
  
+    def disable_monitors_export(self) -> None:
+        """
+        Disable monitors export in Master dss file.
+
+        For example, 
+        Solve mode=yearly stepsize=15m number=35040
+        ! Export monitors m1
+        Plot monitor object= m1 channels=(7 9 11 )
+        ! Export monitors m2
+        Plot monitor object= m2 channels=(1 3 5 )
+        Plot Profile Phases=All
+        """
+        logger.info("Disable monitors export in master file - %s", self.master_file)
+        update_data = []
+        with open(self.master_file, "r") as f:
+            for line in f.readlines():
+                if not line.startswith("!") and "export monitors" in line.lower():
+                    line = "! " + line
+                update_data.append(line)
+        
+        with open(self.master_file, "w") as f:
+            for line in updated_data:
+                f.write(line)
+
     def load_feeder(self) -> None:
         """OpenDSS redirect master DSS file"""
         dss.run_command("Clear")
@@ -312,6 +336,7 @@ class PVScenarioGeneratorBase(abc.ABC):
             lock_file = master_file + ".lock"
             with SoftFileLock(lock_file=lock_file, timeout=300):
                 pvdss_instance.convert_to_ascii()
+                pvdss_instance.disable_monitors_export()
                 pvdss_instance.load_feeder()
                 flag = pvdss_instance.ensure_energy_meter()
                 if flag:
