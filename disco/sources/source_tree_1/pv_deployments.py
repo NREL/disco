@@ -85,144 +85,6 @@ class PVDSSInstance:
         with open(self.master_file, "w") as f:
             f.write(updated_data)
  
-    def backup_loads_file(self) -> None:
-        """Create a backup of Loads.dss file"""
-        original_loads_file = os.path.join(self.feeder_path, ORIGINAL_LOADS_FILENAME)
-        if os.path.exists(original_loads_file):
-            return
-        
-        lock_file = original_loads_file + ".lock"
-        with SoftFileLock(lock_file=lock_file, timeout=300):
-            loads_file = os.path.join(self.feeder_path, LOADS_FILENAME)
-            shutil.copyfile(loads_file, original_loads_file)
-        
-        try:
-            os.chmod(original_loads_file, 0o666)
-        except Exception:
-            pass
-        
-    def get_attribute(self, line: str, attribute_id: str) -> str:
-        """
-        Get the attribute from line string.
-
-        Attribute ID
-        for kv: 'kv='
-        for name: 'new load.' (load example)
-        for bus: 'bus1='
-        for kw: 'kw='
-        """
-        attribute = None
-        if attribute_id in line.lower():
-            attribute = line.lower().split(attribute_id)[1].split(" ")[0]
-            if "kv" in attribute_id or "kw" in attribute_id:
-                attribute = float(attribute)
-        return attribute
-
-    def build_load_dictionary(self, load_lines: list) -> dict:
-        """Util function for building dict from load lines."""
-        load_dict = {}
-        for idx, line in enumerate(load_lines):
-            if 'new' not in line.lower():
-                continue
-            
-            bus_node = self.get_attribute(line, "bus1=")
-            if bus_node is None:
-                continue
-            
-            kv = self.get_attribute(line, "kv=")
-            kw = self.get_attribute(line, "kw=")
-            kvar = self.get_attribute(line, "kvar=")
-            kva = self.get_attribute(line, "kva=")
-            phases = self.get_attribute(line, "phases=")
-            init_name = self.get_attribute(line, "new load.")
-            
-            if "." in bus_node:
-                bus = bus_node.split(".")[0]
-                nodes = bus_node.split(".")[1:]
-            else:
-                bus = bus_node
-                nodes = []
-            
-            if len(nodes) < 3:
-                name = "_".join(init_name.split("_")[:-1])
-            else:
-                name = init_name
-            
-            if (bus, name) in load_dict.keys():
-                if nodes:
-                    load_dict[bus, name]["node"] += nodes
-                if "kw=" in line.lower():
-                    load_dict[bus, name]["kw"] += kw
-                if "kvar=" in line.lower():
-                    load_dict[bus, name]["kvar"] += kvar
-                if "kva=" in line.lower():
-                    load_dict[bus, name]["kva"] += kva
-            else:
-                load_dict[bus, name] = {}
-                load_dict[bus, name]["name"] = name
-                load_dict[bus, name]["bus"] = bus
-                load_dict[bus, name]["node"] = nodes
-                if "kw=" in line.lower():
-                    load_dict[bus, name]["kw"] = kw
-                if "kvar=" in line.lower():
-                    load_dict[bus, name]["kvar"] = kvar
-                if "kva=" in line.lower():
-                    load_dict[bus, name]["kva"] = kva
-                if "phases=" in line.lower():
-                    load_dict[bus, name]["phases"] = phases
-                load_dict[bus,name]["line_idx"] = idx 
-                load_dict[bus,name]["kv"] = kv
-        
-        rekeyed_load_dict = {v["line_idx"]: v for k, v in load_dict.items()}
-        return rekeyed_load_dict
-
-    def update_loads(self, lines: dict, rekeyed_load_dict: dict) -> list:
-        """Update load lines based on given load dict"""
-        new_load_lines = []
-        for k, v in rekeyed_load_dict.items():
-            if v["node"]:
-                bus_name = f"{v['bus']}.{'.'.join(v['node'])}"
-            else:
-                bus_name = v["bus"]
-            
-            lines[k] = lines[k].replace(self.get_attribute(lines[k],"bus1="), bus_name)
-            lines[k] = lines[k].replace(self.get_attribute(lines[k],"load."), v["name"])
-
-            if np.isclose(v["kv"], 0.12) and len(v["node"])==2:
-                kv = 0.208
-                phases = "2"
-            else:
-                kv = v["kv"]
-                phases = v["phases"]
-            
-            lines[k] = lines[k].lower().replace(f"kv={self.get_attribute(lines[k], 'kv=')}", f"kv={kv}")
-            lines[k] = lines[k].lower().replace(f"phases={self.get_attribute(lines[k], 'phases=')}", f"phases={phases}")
-        
-            if "kw=" in lines[k].lower():
-                lines[k] = lines[k].lower().replace(f"kw={self.get_attribute(lines[k], 'kw=')}", f"kw={str(v['kw'])}")
-            if "kvar=" in lines[k].lower():
-                lines[k] = lines[k].lower().replace(f"kvar={self.get_attribute(lines[k], 'kvar=')}", f"kvar={str(v['kvar'])}")
-            if "kva=" in lines[k].lower():
-                lines[k] = lines[k].lower().replace(f"kva={self.get_attribute(lines[k], 'kva=')}", f"kva={str(v['kva'])}")
-        
-        new_load_lines = [lines[x] for x in rekeyed_load_dict.keys()]
-        return new_load_lines
-
-    def transform_loads(self) -> None:
-        """Transform Loads.dss"""
-        original_loads_file = os.path.join(self.feeder_path, ORIGINAL_LOADS_FILENAME)
-        loads_file = os.path.join(self.feeder_path, LOADS_FILENAME)
-        logger.info("Transforming PV load file '%s'", loads_file)
-        
-        lock_file = loads_file + ".lock"
-        with SoftFileLock(lock_file=lock_file, timeout=300):
-            with open(original_loads_file, "r") as fr, open(loads_file, "w") as fw:
-                load_lines = fr.readlines()
-                rekeyed_load_dict = self.build_load_dictionary(load_lines)
-                new_lines = self.update_loads(load_lines, rekeyed_load_dict)
-                fw.writelines(new_lines)
-        logger.info("Loads transformed - '%s'.", loads_file)
-
     def load_feeder(self) -> None:
         """OpenDSS redirect master DSS file"""
         dss.run_command("Clear")
@@ -446,12 +308,10 @@ class PVScenarioGeneratorBase(abc.ABC):
         """Setup DSS handler for master dss file processing"""
         master_file = self.get_master_file(self.feeder_path)
         pvdss_instance = PVDSSInstance(master_file)
-        pvdss_instance.backup_loads_file()
         try:
             lock_file = master_file + ".lock"
             with SoftFileLock(lock_file=lock_file, timeout=300):
                 pvdss_instance.convert_to_ascii()
-                pvdss_instance.transform_loads() # change load model to suitable center-tap schema if needed
                 pvdss_instance.load_feeder()
                 flag = pvdss_instance.ensure_energy_meter()
                 if flag:
@@ -1268,6 +1128,169 @@ class PVDataManager(PVDataStorage):
         with ProcessPoolExecutor() as executor:
             executor.map(self.rename, deployed)
         logger.info("Feeder Loads rename done, total %s", len(deployed))
+    
+    def transform(self, feeder_path: str) -> None:
+        """Transform feeder Loads.dss
+        
+        change load model to suitable center-tap schema if needed
+        """
+        original_loads_file = os.path.join(feeder_path, ORIGINAL_LOADS_FILENAME)
+        loads_file = os.path.join(feeder_path, LOADS_FILENAME)
+        if os.path.exists(original_loads_file):
+            self.restore_loads_file(original_loads_file)
+        else:
+            self.backup_loads_file(loads_file)
+        
+        with open(original_loads_file, "r") as fr, open(loads_file, "w") as fw:
+            load_lines = fr.readlines()
+            rekeyed_load_dict = self.build_load_dictionary(load_lines)
+            new_lines = self.update_loads(load_lines, rekeyed_load_dict)
+            fw.writelines(new_lines)
+        logger.info("Loads transformed - '%s'.", loads_file)
+    
+    def restore_loads_file(self, original_loads_file: str) -> bool:
+        """Restore Loads file from backup"""
+        if not os.path.exists(original_loads_file):
+            return False
+        
+        loads_file = os.path.join(feeder_path, LOADS_FILENAME)
+        if os.path.exists(loads_file):
+            os.remove(loads_file)
+        
+        shutil.copyfile(original_loads_file, loads_file)
+        try:
+            os.chmod(loads_file, 0o666)
+        except Exception:
+            pass
+        return True
+    
+    def backup_loads_file(self, loads_file: str) -> bool:
+        """Create a backup of Loads.dss file"""
+        original_loads_file = os.path.join(feeder_path, ORIGINAL_LOADS_FILENAME)
+        if os.path.exists(original_loads_file):
+            return False
+        
+        shutil.copyfile(loads_file, original_loads_file)
+        try:
+            os.chmod(original_loads_file, 0o666)
+        except Exception:
+            pass
+        return True
+    
+    def get_attribute(self, line: str, attribute_id: str) -> str:
+        """
+        Get the attribute from line string.
+
+        Attribute ID
+        for kv: 'kv='
+        for name: 'new load.' (load example)
+        for bus: 'bus1='
+        for kw: 'kw='
+        """
+        attribute = None
+        if attribute_id in line.lower():
+            attribute = line.lower().split(attribute_id)[1].split(" ")[0]
+            if "kv" in attribute_id or "kw" in attribute_id:
+                attribute = float(attribute)
+        return attribute
+
+    def build_load_dictionary(self, load_lines: list) -> dict:
+        """Util function for building dict from load lines."""
+        load_dict = {}
+        for idx, line in enumerate(load_lines):
+            if 'new' not in line.lower():
+                continue
+            
+            bus_node = self.get_attribute(line, "bus1=")
+            if bus_node is None:
+                continue
+            
+            kv = self.get_attribute(line, "kv=")
+            kw = self.get_attribute(line, "kw=")
+            kvar = self.get_attribute(line, "kvar=")
+            kva = self.get_attribute(line, "kva=")
+            phases = self.get_attribute(line, "phases=")
+            init_name = self.get_attribute(line, "new load.")
+            
+            if "." in bus_node:
+                bus = bus_node.split(".")[0]
+                nodes = bus_node.split(".")[1:]
+            else:
+                bus = bus_node
+                nodes = []
+            
+            if len(nodes) < 3:
+                name = "_".join(init_name.split("_")[:-1])
+            else:
+                name = init_name
+            
+            if (bus, name) in load_dict.keys():
+                if nodes:
+                    load_dict[bus, name]["node"] += nodes
+                if "kw=" in line.lower():
+                    load_dict[bus, name]["kw"] += kw
+                if "kvar=" in line.lower():
+                    load_dict[bus, name]["kvar"] += kvar
+                if "kva=" in line.lower():
+                    load_dict[bus, name]["kva"] += kva
+            else:
+                load_dict[bus, name] = {}
+                load_dict[bus, name]["name"] = name
+                load_dict[bus, name]["bus"] = bus
+                load_dict[bus, name]["node"] = nodes
+                if "kw=" in line.lower():
+                    load_dict[bus, name]["kw"] = kw
+                if "kvar=" in line.lower():
+                    load_dict[bus, name]["kvar"] = kvar
+                if "kva=" in line.lower():
+                    load_dict[bus, name]["kva"] = kva
+                if "phases=" in line.lower():
+                    load_dict[bus, name]["phases"] = phases
+                load_dict[bus,name]["line_idx"] = idx 
+                load_dict[bus,name]["kv"] = kv
+        
+        rekeyed_load_dict = {v["line_idx"]: v for k, v in load_dict.items()}
+        return rekeyed_load_dict
+
+    def update_loads(self, lines: dict, rekeyed_load_dict: dict) -> list:
+        """Update load lines based on given load dict"""
+        new_load_lines = []
+        for k, v in rekeyed_load_dict.items():
+            if v["node"]:
+                bus_name = f"{v['bus']}.{'.'.join(v['node'])}"
+            else:
+                bus_name = v["bus"]
+            
+            lines[k] = lines[k].replace(self.get_attribute(lines[k],"bus1="), bus_name)
+            lines[k] = lines[k].replace(self.get_attribute(lines[k],"load."), v["name"])
+
+            if np.isclose(v["kv"], 0.12) and len(v["node"])==2:
+                kv = 0.208
+                phases = "2"
+            else:
+                kv = v["kv"]
+                phases = v["phases"]
+            
+            lines[k] = lines[k].lower().replace(f"kv={self.get_attribute(lines[k], 'kv=')}", f"kv={kv}")
+            lines[k] = lines[k].lower().replace(f"phases={self.get_attribute(lines[k], 'phases=')}", f"phases={phases}")
+        
+            if "kw=" in lines[k].lower():
+                lines[k] = lines[k].lower().replace(f"kw={self.get_attribute(lines[k], 'kw=')}", f"kw={str(v['kw'])}")
+            if "kvar=" in lines[k].lower():
+                lines[k] = lines[k].lower().replace(f"kvar={self.get_attribute(lines[k], 'kvar=')}", f"kvar={str(v['kvar'])}")
+            if "kva=" in lines[k].lower():
+                lines[k] = lines[k].lower().replace(f"kva={self.get_attribute(lines[k], 'kva=')}", f"kva={str(v['kva'])}")
+        
+        new_load_lines = [lines[x] for x in rekeyed_load_dict.keys()]
+        return new_load_lines
+    
+    def transform_feeder_loads(self) -> None:
+        """Before PV deployments, transform Loads.dss"""
+        feeder_paths = self.get_feeder_paths()
+        logger.info("Transforming loads files in %s feeders...", len(feeder_paths))
+        with ProcessPoolExecutor() as executor:
+            executor.map(self.transform, feeder_paths)
+        logger.info("Feeder Loads transformed, total %s feeders.", len(feeder_paths))
 
 
 class PVDeploymentManager(PVDataStorage):

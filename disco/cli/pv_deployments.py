@@ -129,8 +129,16 @@ def rename_feeder_loads(input_path: str, hierarchy: str, config: dict):
     manager.rename_feeder_loads()
 
 
+def transform_feeder_loads(input_path: str, hierarchy: str, config: dict):
+    hierarchy = DeploymentHierarchy(hierarchy)
+    config = SimpleNamespace(**config)
+    manager = PVDataManager(input_path, hierarchy, config)
+    manager.transform_feeder_loads()
+
+
 ACTION_MAPPING = {
     "redirect-pvshapes": redirect_pv_shapes,
+    "transform-loads": transform_feeder_loads,
     "generate-jobs": generate_pv_deployment_jobs,
     "rename-loads": rename_feeder_loads,
     
