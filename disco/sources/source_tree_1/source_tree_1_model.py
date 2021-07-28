@@ -577,7 +577,6 @@ class SourceTree1Model(BaseOpenDssModel):
                         if issubclass(simulation_model, ImpactAnalysisBaseModel):
                             item["base_case"] = base_case_name
                         config.append(simulation_model.validate(item).dict())
-                enable_feeder_monitors_export(os.path.join(output_path, substation, feeder, master_file))
 
         filename = os.path.join(output_path, SOURCE_CONFIGURATION_FILENAME)
         with open(filename, "w") as f_out:
@@ -705,7 +704,6 @@ class SourceTree1Model(BaseOpenDssModel):
                                 item["base_case"] = base_case_name
                             config.append(simulation_model.validate(item).dict())
                         deployment_files_by_key[substation_key].append(out_job_deployment_file)
-                enable_feeder_monitors_export(os.path.join(output_path, substation, feeder, master_file))
 
         for substation_key, deployment_files in deployment_files_by_key.items():
             make_substation_pv_deployments(output_path, substation_key, deployment_files)
@@ -803,21 +801,3 @@ def fix_substation_master_file(filename):
         for line in f_in:
             line = re.sub(regex, remove_substation, line)
             print(line, end="")
-
-
-def enable_feeder_monitors_export(filename):
-    """
-    These master files in feeder have "! Export monitors m1" and "! Export monitors m2"
-    disabled during PV deployments. Here, during DISCO transformation, it needs to remove 
-    the comments and enable exports.
-    """
-    data = []
-    with open(filename, "r") as f:
-        for line in f.readlines():
-            if line.startswith("! ") and "export monitors" in line.lower():
-                line = line.lstrip("! ")
-            data.append(line)
-    
-    with open(self.master_file, "w") as f:
-        for line in data:
-            f.write(line)
