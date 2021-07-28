@@ -705,6 +705,7 @@ class SourceTree1Model(BaseOpenDssModel):
                                 item["base_case"] = base_case_name
                             config.append(simulation_model.validate(item).dict())
                         deployment_files_by_key[substation_key].append(out_job_deployment_file)
+                enable_feeder_monitors_export(os.path.join(output_path, substation, feeder, master_file))
 
         for substation_key, deployment_files in deployment_files_by_key.items():
             make_substation_pv_deployments(output_path, substation_key, deployment_files)
