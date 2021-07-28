@@ -334,7 +334,7 @@ class PVScenarioGeneratorBase(abc.ABC):
         pvdss_instance = PVDSSInstance(master_file)
         try:
             lock_file = master_file + ".lock"
-            with SoftFileLock(lock_file=lock_file, timeout=300):
+            with SoftFileLock(lock_file=lock_file, timeout=900):
                 pvdss_instance.convert_to_ascii()
                 pvdss_instance.disable_monitors_export()
                 pvdss_instance.load_feeder()
@@ -646,7 +646,7 @@ class PVScenarioGeneratorBase(abc.ABC):
             f"New PVSystem.{pv_name} phases={ph} "
             f"bus1={bus} kv={kv} irradiance=1 "
             f"Pmpp={pv_size} pctPmpp=100 kVA={pv_size} "
-            f"conn={conn} %cutin=0.1 %cutout=0.1 "
+            f"conn=wye %cutin=0.1 %cutout=0.1 "
             f"Vmaxpu=1.2\n"
         )
         pv_string += new_pv_string
