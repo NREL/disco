@@ -465,7 +465,7 @@ class PVScenarioGeneratorBase(abc.ABC):
             customer_bus_map = customer_bus_map[pv_type]
 
             ncs, subset_idx = 0, 0
-            while remaining_pv_to_install > 0:
+            while remaining_pv_to_install > PV_INSTALLATION_TOLERANCE:
                 if subset_idx == 0:
                     if self.config.pv_upscale:
                         for bus in priority_buses:
@@ -505,8 +505,13 @@ class PVScenarioGeneratorBase(abc.ABC):
                 subset_idx += 1
                 candidate_bus_array = self.get_pv_bus_subset(bus_distance, subset_idx, priority_buses)
                 if subset_idx > (100 / self.config.proximity_step):
-                    logger.exception("No %s file created on feeder - %s", PV_SYSTEMS_FILENAME, self.feeder_path)
-                    raise
+                    logger.info(
+                        "No %s file created on feeder - %s, beacause capacity remains %s",
+                        PV_SYSTEMS_FILENAME,
+                        self.feeder_path,
+                        remaining_pv_to_install
+                    )
+                    break
 
                 while len(candidate_bus_array) > 0:
                     random.shuffle(candidate_bus_array)
