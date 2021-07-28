@@ -1,5 +1,6 @@
 """Contains OpenDSS utility functions."""
 
+import fileinput
 import logging
 import os
 import re
@@ -172,3 +173,19 @@ def _extract_upgrade_json_files(project_path):
         upgrade_results["voltage"] = voltage_upgrade_file
 
     return upgrade_results
+
+
+def comment_out_leading_strings(filename, strings):
+    """Insert a comment character on any line that begins with one of strings.
+
+    Parameters
+    ----------
+    filename : str
+    strings : list
+
+    """
+    with fileinput.input(files=[filename], inplace=True) as f_in:
+        for line in f_in:
+            if line.lower().startswith(strings):
+                line = "!" + line
+            print(line, end="")
