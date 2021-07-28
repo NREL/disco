@@ -12,6 +12,7 @@ import csv
 import click
 
 from disco.sources.base import FORMAT_FILENAME
+from disco.utils.dss_utils import comment_out_leading_strings
 
 
 BASE_DIR = "/datasets/SMART-DS"
@@ -20,6 +21,16 @@ BASE_DIR = "/datasets/SMART-DS"
 #   P4R
 REGEX_REGION_NAME = re.compile(r"^P\d+[RU]$")
 FORMAT_FILE_CONTENTS = 'type = "SourceTree1Model"\n'
+# If you modify this list, compare the similar list in disco/sources/base.py.
+# The two locations may have different goals, and so do not share the same list reference.
+MASTER_DSS_STRINGS_TO_REMOVE = (
+    "solve",
+    "batchedit fuse",
+    "new energymeter",
+    "new monitor",
+    "export monitors",
+    "plot",
+)
 
 
 @click.argument("output-dir")
@@ -74,6 +85,8 @@ def copy_dataset(output_dir, version, year, city, force):
             dst_region_path = dst_path / name / "scenarios" / "base_timeseries" / "opendss"
             shutil.copytree(src_region_path, dst_region_path)
             _write_format_file(dst_region_path / FORMAT_FILENAME)
+            for filename in dst_region_path.rglob("Master.dss"):
+                comment_out_leading_strings(filename, MASTER_DSS_STRINGS_TO_REMOVE)
             print(f"Copied {src_region_path} to {dst_region_path}")
 
 

@@ -5,10 +5,10 @@ import re
 import shutil
 from abc import ABC, abstractmethod
 
-from jade.exceptions import InvalidParameter
 from disco.analysis import GENERIC_COST_DATABASE
 from disco.enums import AnalysisType, SimulationType, SimulationHierarchy
 from disco.models.base import OpenDssDeploymentModel
+from disco.utils.dss_utils import comment_out_leading_strings
 
 
 FORMAT_FILENAME = "format.toml"
@@ -157,6 +157,8 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
         )
         # This may overwrite a file copied above.
         shutil.copyfile(self.master_file, workspace.master_file)
+        # If you modify this list, compare the similar list in scripts/copy_smart_ds_dataset.py
+        # The two locations may have different goals, and so do not share the same list reference.
         strings_to_remove = (
             "solve",
             "batchedit fuse",
@@ -165,20 +167,12 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
             "export monitors",
             "plot",
         )
-        self._comment_out_leading_strings(workspace.master_file, strings_to_remove)
+        comment_out_leading_strings(workspace.master_file, strings_to_remove)
         if self.loadshape_directory is not None:
             self._copy_files(
                 src_dir=self.loadshape_directory,
                 dst_dir=workspace.loadshape_directory,
             )
-
-    @staticmethod
-    def _comment_out_leading_strings(filename, strings):
-        with fileinput.input(files=[filename], inplace=True) as f_in:
-            for line in f_in:
-                if line.lower().startswith(strings):
-                    line = "!" + line
-                print(line, end="")
 
     def create_base_case(self, name, outdir):
         """Create a base case with no added PV.
