@@ -2,16 +2,16 @@
 Pipelines
 *********
 
-To conduct power flow simulations and analysis, people normally need to perform several steps, including 
-transform model, create configurations, submit jobs, and run post-processing scripts/commands. To streamline this workflow, DISCO leverages the power of 
+To conduct power flow simulations and analysis, people normally need to perform several steps, including
+transform model, create configurations, submit jobs, and run post-processing scripts/commands. To streamline this workflow, DISCO leverages the power of
 JADE pipeline and manage the steps using stages in simpler manner.
 
 A pipeline can contain one or more stages, each stage can perform config and submit jobs
-to generate stage results. The result output from prior stage can be passed to its subsequent stage 
-as inputs, so that produces further results. DISCO uses pipeline ``template`` and pipeline 
+to generate stage results. The result output from prior stage can be passed to its subsequent stage
+as inputs, so that produces further results. DISCO uses pipeline ``template`` and pipeline
 ``config`` to manage the DISCO analysis workflow.
 
-To generate a pipeline template file, and create a pipeline config file based on it, 
+To generate a pipeline template file, and create a pipeline config file based on it,
 use this group command below:
 
 .. code-block:: bash
@@ -26,8 +26,8 @@ The source models that DISCO pipeline currently supports include:
 SourceTree1Model
 ================
 
-Snapshot Impact Analysis
-------------------------
+Snapshot Hosting Capacity Analysis
+----------------------------------
 
 **1. Create Pipeline Template File**
 
@@ -43,7 +43,7 @@ a. Source Model Inputs
 
 .. code-block:: bash
 
-    $ disco create-pipeline template tests/data/smart-ds/substations -s snapshot --impact-analysis -t pipeline-template.toml
+    $ disco create-pipeline template tests/data/smart-ds/substations -s snapshot --hosting-capacity -t pipeline-template.toml
 
 b. Preconfigured Model Inputs
 
@@ -51,13 +51,15 @@ Create preconfigured models:
 
 .. code-block:: bash
 
-    $ disco transform-model tests/data/smart-ds/substations snapshot -o disco-models
+    $ disco transform-model tests/data/smart-ds/substations snapshot -o snapshot-feeder-models
 
-Then, use ``--preconfigured`` flag to indicate the input models ``disco-models`` are preconfigured.
+.. warning:: Don't change the directory name passed to the``-o`` option after creation. The name is used inside generated files.
+
+Then, use ``--preconfigured`` flag to indicate the input models ``snapshot-feeder-models`` are preconfigured.
 
 .. code-block:: bash
 
-    $ disco create-pipeline template disco-models --preconfigured -s snapshot --impact-analysis -t pipeline-template.toml
+    $ disco create-pipeline template snapshot-feeder-models --preconfigured -s snapshot --hosting-capacity -t pipeline-template.toml
 
 The commands above create a pipeline template file named ``pipeline-template.toml``.
 
@@ -70,7 +72,7 @@ In the template generated above, there are 3 sections, including:
     * ``simulation``
     * ``postprocess``
 
-You can modify the different types of parameters in each section based on your task requirements 
+You can modify the different types of parameters in each section based on your task requirements
 on model transform, config/submit jobs, and postprocess. To check the meaning of each parameter,
 run ``--help`` on its command.
 
@@ -91,7 +93,7 @@ different stages. To create HPC config file, use command ``jade config create``.
 
     $ disco create-pipeline config pipeline-template.toml -c pipeline.json
 
-This step creates the pipeline config file named ``pipeline.json``, which contains the stage 
+This step creates the pipeline config file named ``pipeline.json``, which contains the stage
 information. In this example, there are 2 stages, JADE run each of the stage in order, and manage
 the status of each util it completes the whole workflow.
 
@@ -102,7 +104,7 @@ the status of each util it completes the whole workflow.
 
     $ jade pipeline submit pipeline.json -o snapshot-pipeline-output
 
-Pipeline output directory is ``snapshot-pipeline-output`` in this example, 
+Pipeline output directory is ``snapshot-pipeline-output`` in this example,
 which contains two stages' results, as shown below:
 
 .. code-block:: bash
@@ -143,31 +145,31 @@ which contains two stages' results, as shown below:
     ├── pipeline.json
     └── pipeline_submit.log
 
-From the result tree, the metrics summary tables ``*.csv`` were created in ``output-stage1`` 
+From the result tree, the metrics summary tables ``*.csv`` were created in ``output-stage1``
 by the postprocess job from stage 2.
 
 
 
-Time-series Impact Analysis
----------------------------
+Time-series Hosting Capacity Analysis
+-------------------------------------
 
-Simlarly, you can run time-series impact analysis using pipeline. 
-However, there is a difference for time-series pipeline, where one more 
+Simlarly, you can run time-series hosting capacity analysis using pipeline.
+However, there is a difference for time-series pipeline, where one more
 stage named ``prescreen`` could be enabled, so that to prescreen pv penetration levels
-and avoid running jobs with higher failure potentials, which could help reduce the consumption of 
+and avoid running jobs with higher failure potentials, which could help reduce the consumption of
 allocated HPC hours.
 
 **1. Create Pipeline Template File**
 
 .. code-block:: bash
 
-    $ disco create-pipeline template tests/data/smart-ds/substations -s time-series --impact-analysis -t pipeline-template.toml
+    $ disco create-pipeline template tests/data/smart-ds/substations -s time-series --hosting-capacity -t pipeline-template.toml
 
 If you need to prescreen PV penetration levels, use the flag ``--prescreen`` to create the template.
 
 .. code-block:: bash
 
-    $ disco create-pipeline template tests/data/smart-ds/substations -s time-series --prescreen --impact-analysis -t pipeline-template.toml
+    $ disco create-pipeline template tests/data/smart-ds/substations -s time-series --prescreen --hosting-capacity -t pipeline-template.toml
 
 This step create the ``pipeline-template.toml`` file.
 
@@ -183,7 +185,7 @@ Update the params in each section based on your task requirements,
 
     * ``model.transform-params`` from ``disco transform-model <INPUTS> time-series``
     * ``prescreen.config-params`` from ``disco config time-series``
-    * ``prescreen.prescreen-params`` from ``disco prescreen-pv-penetration-levels create`` 
+    * ``prescreen.prescreen-params`` from ``disco prescreen-pv-penetration-levels create``
         and ``disco prescreen-pv-penetration-levels filter-config``.
     * ``simulation.submitter-params`` from ``jade submit-jobs``.
     * ``postprocess.config-params`` from ``jade config create``.
