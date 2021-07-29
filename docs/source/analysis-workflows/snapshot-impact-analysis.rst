@@ -1,68 +1,73 @@
 Snapshot Impact Analysis
 ========================
 
-The following steps show how to conduct *snapshot impact analysis* using DISCO.
-This tutorial assumes there's an existing ``snapshot-models`` 
-directory generated from the ``transform-model`` command in the current working 
-directory.
+The following steps show how to conduct *snapshot impact analysis* using DISCO pipeline. 
+This tutorial assumes there's an existing ``snapshot-models`` directory generated from the 
+``transform-model`` command in the current working directory.
 
-**1. Config Jobs**
+**1. Config Pipeline**
 
-Check the ``--help`` option for snapshot impact analysis options.
+Check the ``--help`` option for creating pipeline template.
 
 .. code-block:: bash
 
-    $ disco config snapshot --help
-    Usage: disco config snapshot [OPTIONS] INPUTS
+    $ disco create-pipeline template --help
+    Usage: disco create-pipeline template [OPTIONS] INPUTS
 
-      Create JADE configuration for snapshot simulations.
+      Create pipeline template file
 
     Options:
-      -c, --config-file TEXT          JADE config file to create  [default:
-                                      config.json]
-
-      -h, --hosting-capacity          Enable hosting capacity computations
+      -P, --preconfigured             Whether inputs models are preconfigured
                                       [default: False]
-
+      -s, --simulation-type [snapshot|time-series]
+                                      Choose a DISCO simulation type  [default:
+                                      snapshot]
       -i, --impact-analysis           Enable impact analysis computations
                                       [default: False]
-
-      --impact-analysis-inputs-filename TEXT
-                                      impact analysis inputs  [default: /Users/username
-                                      /sandboxes/disco/disco/analysis/impact_analy
-                                      sis_inputs.toml]
-
-      -e, --exports-filename TEXT     PyDSS export options  [default: /Users/username
-                                      /sandboxes/disco/disco/pydss/config/Exports.
-                                      toml]
-
-      --verbose                       Enable debug logging
+      -h, --hosting-capacity          Enable hosting capacity computations
+                                      [default: False]
+      -p, --prescreen                 Enable PV penetration level prescreening
+                                      [default: False]
+      -t, --template-file TEXT        Output pipeline template file  [default:
+                                      pipeline-template.toml]
+      -r, --reports-filename TEXT     PyDSS report options. If None, use the
+                                      default for the simulation type.
       --help                          Show this message and exit.
 
-Given an output directory from ``transform-model``, we use this command below to 
-configure the snapshot impact analysis jobs.
+Given an output directory from ``transform-model``, we use this command with ``--preconfigured`` option
+ to create the template.
 
 .. code-block:: bash
 
-    $ disco config snapshot --impact-analysis --config-file config.json
+    $ disco create-pipeline template --impact-analysis --preconfigured snapshot-models
 
-It generates the ``config.json`` for JADE to submit jobs.
-
-**2. Submit Jobs**
-
-With configured jobs in ``config.json``, all that's left to do is run the jobs:
+It creates the ``pipeline-template.toml`` with configurable parameters of different sections. Update
+parameter values if need, then run
 
 .. code-block:: bash
 
-    $ jade submit-jobs config.json
+    $ disco create-pipeline config pipeline-template.toml
 
-**3. Job Analysis**
+This command creates a ``pipeline.json`` file containing two stages: simulation and post-process,
+where the impact analysis happens in the post-processing stage.
 
-Upon successful completion of each job, it will run and generate a
-``snapshot-impact-analysis-job-post-process.csv`` file inside of each job's results folder.
+**2. Submit Pipeline**
+
+With configured DISCO pipeline in ``pipeline.json``, the next step is to submit the pipeline by using JADE:
 
 .. code-block:: bash
 
-    $ cat ./output/job-outputs/feeder_1__-1__None__None__deployment0.dss/snapshot-impact-analysis-job-post-process.csv
-    feeder,deployment,placement,sample,penetration,peak_load,pv_kw,pv_pmpp,pv_to_load_ratio,min_voltage,max_voltage,undervoltage_A_flag,overvoltage_A_flag,undervoltage_A_count,overvoltage_A_count,undervoltage_B_flag,overvoltage_B_flag,undervoltage_B_count,overvoltage_B_count,max_flicker,flicker_flag,flicker_count,max_line,1X_line_overloading_flag,1X_line_overloading_count,1p5X_line_overloading_flag,1p5X_line_overloading_count,max_xfmr_loading,1X_xfmr_overloading_flag,1X_xfmr_overloading_count,1p5X_xfmr_overloading_flag,1p5X_xfmr_overloading_count,100L100TA_fail_flag,100L100TA_pass_flag,100L150TA_fail_flag,100L150TA_pass_flag,150L100TA_fail_flag,150L100TA_pass_flag,150L150TA_fail_flag,150L150TA_pass_flag,100L100TB_fail_flag,100L100TB_pass_flag,100L150TB_fail_flag,100L150TB_pass_flag,150L100TB_fail_flag,150L100TB_pass_flag,150L150TB_fail_flag,150L150TB_pass_flag,name
-    feeder_1,deployment0,,,0.0,2115.474432865047,123.69600000000001,123.696,5.85,0.9578933469865691,1.018676511690172,False,False,0,0,False,False,0,0,,,,1.670472047303335,True,1,True,1,8.927325959426224,True,12,True,12,True,False,True,False,True,False,True,False,True,False,True,False,True,False,True,False,feeder_1__-1__None__None__deployment0.dss
+    $ jade pipeline submit pipeline.json
+
+**3. Check Metrics**
+
+Upon successful completion of DISCO model simulation, the following stage (post-process) will take
+the simulation results, collect metrics from it, and report in CSV formats. There are five tables,
+
+* ``feeder_head_table.csv``
+* ``feeder_losses_table.csv``
+* ``metadata_table.csv``
+* ``thermal_metrics_table.csv``
+* ``voltage_metrics_table.csv``
+
+Each table contains different set of metrics, inspect the values for impact analysis.

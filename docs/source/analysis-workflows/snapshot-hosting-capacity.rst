@@ -1,62 +1,74 @@
-Snapshot Hosting Capacity
-=========================
+Snapshot Hosting Capacity Analysis
+==================================
 
-The following steps show how to conduct *snapshot hosting* using DISCO.
+The following steps show how to conduct *hosting capacity analysis* using DISCO pipeline. 
 This tutorial assumes there's an existing ``snapshot-models`` 
 directory generated from the ``transform-model`` command in the current working 
 directory.
 
-**1. Config Jobs**
+**1. Config Pipeline**
 
-Check the ``--help`` option for snapshot impact analysis options.
+Check the ``--help`` option for creating pipeline template.
 
 .. code-block:: bash
 
-    $ disco config snapshot --help
-    Usage: disco config snapshot [OPTIONS] INPUTS
+    $ disco create-pipeline template --help
+    Usage: disco create-pipeline template [OPTIONS] INPUTS
 
-      Create JADE configuration for snapshot simulations.
+      Create pipeline template file
 
     Options:
-      -c, --config-file TEXT          JADE config file to create  [default:
-                                      config.json]
-
-      -h, --hosting-capacity          Enable hosting capacity computations
+      -P, --preconfigured             Whether inputs models are preconfigured
                                       [default: False]
-
+      -s, --simulation-type [snapshot|time-series]
+                                      Choose a DISCO simulation type  [default:
+                                      snapshot]
       -i, --impact-analysis           Enable impact analysis computations
                                       [default: False]
-
-      --impact-analysis-inputs-filename TEXT
-                                      impact analysis inputs  [default: /Users/username
-                                      /sandboxes/disco/disco/analysis/impact_analy
-                                      sis_inputs.toml]
-
-      -e, --exports-filename TEXT     PyDSS export options  [default: /Users/username
-                                      /sandboxes/disco/disco/pydss/config/Exports.
-                                      toml]
-
-      --verbose                       Enable debug logging
+      -h, --hosting-capacity          Enable hosting capacity computations
+                                      [default: False]
+      -p, --prescreen                 Enable PV penetration level prescreening
+                                      [default: False]
+      -t, --template-file TEXT        Output pipeline template file  [default:
+                                      pipeline-template.toml]
+      -r, --reports-filename TEXT     PyDSS report options. If None, use the
+                                      default for the simulation type.
       --help                          Show this message and exit.
 
-Given an output directory from ``transform-model``, we use this command below to 
-configure the snapshot impact analysis jobs.
+Given an output directory from ``transform-model``, we use this command with ``--preconfigured`` option
+ to create the template.
 
 .. code-block:: bash
 
-    $ disco config snapshot --hosting-capacity --config-file config.json
+    $ disco create-pipeline template --hosting-capacity --preconfigured snapshot-models
 
-It generates the ``config.json`` for JADE to submit jobs.
-
-**2. Submit Jobs**
-
-With configured jobs in ``config.json``, all that's left to do is run the jobs:
+It creates the ``pipeline-template.toml`` with configurable parameters of different sections. Update
+parameter values if need, then run
 
 .. code-block:: bash
 
-    $ jade submit-jobs config.json
+    $ disco create-pipeline config pipeline-template.toml
 
-**3. Job Analysis**
+This command creates a ``pipeline.json`` file containing two stages: simulation and post-process,
+where the hosting capacity analysis happens in the post-processing stage.
 
-Upon successful completion of all jobs it will post-process the results and
-create a summary file.
+**2. Submit Pipeline**
+
+With configured DISCO pipeline in ``pipeline.json``, the next step is to submit the pipeline by using JADE:
+
+.. code-block:: bash
+
+    $ jade pipeline submit pipeline.json
+
+**3. Check Metrics**
+
+Upon successful completion of DISCO model simulation, the following stage (post-process) will take
+the simulation results, collect metrics from it, and report in CSV formats. There are five tables,
+
+* ``feeder_head_table.csv``
+* ``feeder_losses_table.csv``
+* ``metadata_table.csv``
+* ``thermal_metrics_table.csv``
+* ``voltage_metrics_table.csv``
+
+Each table contains different set of metrics, inspect the values for hosting capacity analysis.
