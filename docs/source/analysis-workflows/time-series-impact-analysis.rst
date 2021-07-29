@@ -63,6 +63,9 @@ generated from the ``transform-model`` command.
 
     $ disco config time-series time-series-models
 
+Consider to use ``--thermal-metrics``, ``--voltage-metrics``, or ``--reports-filename`` options
+in the command above for generating time-series reports from PyDSS.
+
 **2. Sumbit Jobs**
 
 Submit jobs via JADE
