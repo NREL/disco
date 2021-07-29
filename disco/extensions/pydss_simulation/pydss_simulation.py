@@ -196,9 +196,9 @@ class PyDssSimulation(PyDssSimulationBase):
             return line
 
         # For some reason OpenDSS changes directories during a redirect.
-        # This will change ./model-inputs/feeder_3/OpenDSS/MasterDiscoPV.dss
+        # This will change ./model-inputs/feeder_3/OpenDSS/Master.dss
         # to
-        # ~/data/model-inputs/feeder_3/OpenDSS/MasterDiscoPV.dss
+        # ~/data/model-inputs/feeder_3/OpenDSS/Master.dss
         path = match.group(2)
         new_line = match.group(1) + os.path.abspath(path)
         return new_line

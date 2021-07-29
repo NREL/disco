@@ -125,7 +125,7 @@ def common_options(func):
 @click.option(
     "-o",
     "--output",
-    default=DEFAULT_SNAPSHOT_IMPACT_ANALYSIS_PARAMS["output_dir"],
+    default=None,
     show_default=True,
     help="output directory",
 )
@@ -144,6 +144,8 @@ def snapshot(
     output,
 ):
     """Transform input data for a snapshot simulation"""
+    if output is None:
+        output = f"snapshot-{hierarchy.value}-models"
     input_path = ctx.parent.params["input_path"]
     handle_existing_dir(output, force)
     simulation_params = {
@@ -195,7 +197,7 @@ def snapshot(
 @click.option(
     "-o",
     "--output",
-    default=DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS["output_dir"],
+    default=None,
     show_default=True,
     help="output directory",
 )
@@ -216,6 +218,8 @@ def time_series(
     output,
 ):
     """Transform input data for a time series simulation"""
+    if output is None:
+        output = f"time-series-{hierarchy.value}-models"
     input_path = ctx.parent.params["input_path"]
     handle_existing_dir(output, force)
     simulation_params = {
@@ -254,7 +258,7 @@ def time_series(
 @click.option(
     "-o",
     "--output",
-    default=DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS["output_dir"],
+    default=None,
     show_default=True,
     help="output directory"
 )
@@ -273,6 +277,8 @@ def upgrade(
     output
 ):
     """Transform input data for an automated upgrade simulation"""
+    if output is None:
+        output = f"upgrade-{hierarchy.value}-models"
     input_path = ctx.parent.params["input_path"]
     handle_existing_dir(output, force)
     simulation_params = {
