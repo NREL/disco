@@ -53,8 +53,6 @@ Create preconfigured models:
 
     $ disco transform-model tests/data/smart-ds/substations snapshot -o snapshot-feeder-models
 
-.. warning:: Don't change the directory name passed to the``-o`` option after creation. The name is used inside generated files.
-
 Then, use ``--preconfigured`` flag to indicate the input models ``snapshot-feeder-models`` are preconfigured.
 
 .. code-block:: bash

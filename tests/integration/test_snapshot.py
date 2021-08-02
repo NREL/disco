@@ -20,7 +20,7 @@ DISCO_PATH = disco.__path__[0]
 def test_snapshot_basic(cleanup):
     base = os.path.join(DISCO_PATH, "extensions", "pydss_simulation")
     config_file = CONFIG_FILE
-    transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations snapshot -F -o {MODELS_DIR}"
+    transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations snapshot -c -F -o {MODELS_DIR}"
     config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} -c {CONFIG_FILE}"
     submit_cmd = f"{SUBMIT_JOBS} {config_file} -o {OUTPUT}"
 

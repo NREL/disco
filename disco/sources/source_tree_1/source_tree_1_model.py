@@ -97,6 +97,15 @@ COMMON_OPTIONS = (
         help="Master file for the OpenDSS model",
     ),
     click.option(
+        "-c",
+        "--copy-load-shape-data-files",
+        help="Copy load shape data files into the target directory. Otherwise, use references "
+             "to existing files.",
+        is_flag=True,
+        default=False,
+        show_default=True,
+    ),
+    click.option(
         "-F",
         "--force",
         help="overwrite existing directory",
@@ -139,6 +148,7 @@ def snapshot(
     samples,
     penetration_levels,
     master_file,
+    copy_load_shape_data_files,
     force,
     start,
     output,
@@ -166,6 +176,7 @@ def snapshot(
         samples=samples,
         penetration_levels=penetration_levels,
         master_file=master_file,
+        copy_load_shape_data_files=copy_load_shape_data_files,
     )
     print(f"Transformed data from {input_path} to {output} for Snapshot Analysis.")
 
@@ -211,6 +222,7 @@ def time_series(
     samples,
     penetration_levels,
     master_file,
+    copy_load_shape_data_files,
     force,
     start,
     end,
@@ -240,6 +252,7 @@ def time_series(
         penetration_levels=penetration_levels,
         master_file=master_file,
         hierarchy=hierarchy,
+        copy_load_shape_data_files=copy_load_shape_data_files,
     )
     print(
         f"Transformed data from {input_path} to {output} for TimeSeries Analysis."
@@ -272,6 +285,7 @@ def upgrade(
     samples,
     penetration_levels,
     master_file,
+    copy_load_shape_data_files,
     force,
     start,
     output
@@ -299,6 +313,7 @@ def upgrade(
         samples=samples,
         penetration_levels=penetration_levels,
         master_file=master_file,
+        copy_load_shape_data_files=copy_load_shape_data_files,
     )
     print(f"Transformed data from {input_path} to {output} for UpgradeCostAnalysis.")
 
@@ -415,6 +430,7 @@ class SourceTree1Model(BaseOpenDssModel):
         samples=("all",),
         penetration_levels=("all",),
         master_file="Master.dss",
+        copy_load_shape_data_files=False,
     ):
         inputs = SourceTree1ModelInputs(input_path)
 
@@ -445,6 +461,7 @@ class SourceTree1Model(BaseOpenDssModel):
             samples,
             penetration_levels,
             master_file,
+            copy_load_shape_data_files,
         )
 
     @classmethod
@@ -461,6 +478,7 @@ class SourceTree1Model(BaseOpenDssModel):
         samples,
         penetration_levels,
         master_file,
+        copy_load_shape_data_files,
     ):
         config = []
         base_cases = set()
@@ -489,7 +507,11 @@ class SourceTree1Model(BaseOpenDssModel):
                     }
                     model = cls(data)
                     path = os.path.join(output_path, substation, feeder)
-                    out_deployment = model.create_base_case(base_case_name, path)
+                    out_deployment = model.create_base_case(
+                        base_case_name,
+                        path,
+                        copy_load_shape_data_files=copy_load_shape_data_files,
+                    )
                     item = {
                         "deployment": out_deployment,
                         "simulation": simulation_params,
@@ -536,7 +558,11 @@ class SourceTree1Model(BaseOpenDssModel):
                         model = cls(data)
                         path = os.path.join(output_path, substation, feeder)
                         out_deployment = model.create_deployment(
-                            model.name, path, pv_profile=pv_profiles, hierarchy=SimulationHierarchy.FEEDER,
+                            model.name,
+                            path,
+                            pv_profile=pv_profiles,
+                            hierarchy=SimulationHierarchy.FEEDER,
+                            copy_load_shape_data_files=copy_load_shape_data_files,
                         )
                         out_deployment.project_data["placement"] = placement
                         out_deployment.project_data["sample"] = sample
@@ -571,6 +597,7 @@ class SourceTree1Model(BaseOpenDssModel):
             samples,
             penetration_levels,
             master_file,
+            copy_load_shape_data_files,
     ):
         config = []
         deployment_files_by_key = defaultdict(list)
@@ -598,7 +625,11 @@ class SourceTree1Model(BaseOpenDssModel):
                     }
                     model = cls(data)
                     path = os.path.join(output_path, substation)
-                    out_deployment = model.create_substation_base_case(base_case_name, path)
+                    out_deployment = model.create_substation_base_case(
+                        base_case_name,
+                        path,
+                        copy_load_shape_data_files=copy_load_shape_data_files,
+                    )
                     item = {
                         "deployment": out_deployment,
                         "simulation": simulation_params,
@@ -648,7 +679,11 @@ class SourceTree1Model(BaseOpenDssModel):
                         model = cls(data)
                         path = os.path.join(output_path, substation, feeder)
                         out_deployment = model.create_deployment(
-                            model.name, path, pv_profile=pv_profiles, hierarchy=SimulationHierarchy.SUBSTATION,
+                            model.name,
+                            path,
+                            pv_profile=pv_profiles,
+                            hierarchy=SimulationHierarchy.SUBSTATION,
+                            copy_load_shape_data_files=copy_load_shape_data_files,
                         )
                         out_deployment.project_data["placement"] = placement
                         out_deployment.project_data["sample"] = sample
@@ -708,8 +743,7 @@ class SourceTree1Model(BaseOpenDssModel):
 def make_substation_pv_deployments(output_path, key, deployment_files):
     filename = substation_key_to_dss_filename(output_path, key)
     with open(filename, "w") as f_out:
-        substation_master = Path(output_path) / key.substation / "Master.dss"
-        f_out.write(f"Redirect {substation_master}\n\n")
+        f_out.write(f"Redirect ../Master.dss\n\n")
         for deployment_file in deployment_files:
             # We have the option of either redirecting to each file or include the content
             # of each file.

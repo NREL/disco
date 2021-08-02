@@ -4,6 +4,7 @@ import os
 import re
 import shutil
 from abc import ABC, abstractmethod
+from pathlib import Path
 
 from disco.analysis import GENERIC_COST_DATABASE
 from disco.enums import AnalysisType, SimulationType, SimulationHierarchy
@@ -88,6 +89,10 @@ class BaseSourceDataModel(ABC):
 class BaseOpenDssModel(BaseSourceDataModel, ABC):
     """Base model for a single OpenDSS configuration"""
 
+    # Example line:
+    # New Loadshape.Residential1234 npts=123456 minterval=5 mult=[file=../BuildingData/Dataset_12_34/Residential/RES1234/LoadProfiles/12345.csv]
+    REGEX_LOAD_SHAPE_DATA_FILE = re.compile(r"file=([\.\w/\\-]+)")
+
     @property
     @abstractmethod
     def substation(self):
@@ -143,17 +148,19 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
     def pv_locations(self):
         """PV systems file of OpenDSS model."""
 
-    def _create_common_files(self, workspace):
+    def _create_common_files(self, workspace, copy_load_shape_data_files):
         """Create files common to all deployments.
 
         Parameters
         ----------
         workspace : OpenDssFeederWorkspace
+        copy_load_shape_data_files : bool
 
         """
         self._copy_files(
             src_dir=self.opendss_directory,
             dst_dir=workspace.opendss_directory,
+            copy_load_shape_data_files=copy_load_shape_data_files,
         )
         # This may overwrite a file copied above.
         shutil.copyfile(self.master_file, workspace.master_file)
@@ -172,9 +179,10 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
             self._copy_files(
                 src_dir=self.loadshape_directory,
                 dst_dir=workspace.loadshape_directory,
+                copy_load_shape_data_files=copy_load_shape_data_files,
             )
 
-    def create_base_case(self, name, outdir):
+    def create_base_case(self, name, outdir, copy_load_shape_data_files=False):
         """Create a base case with no added PV.
 
         Parameters
@@ -183,6 +191,7 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
             The job name
         outdir : str
             The base directory of opendss feeder model.
+        copy_load_shape_data_files : bool
 
         Returns
         -------
@@ -191,18 +200,17 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
         """
         workspace = OpenDssFeederWorkspace(outdir)
         if not os.path.exists(workspace.master_file):
-            self._create_common_files(workspace)
+            self._create_common_files(workspace, copy_load_shape_data_files)
 
-        deployment_file = os.path.join(
-            workspace.pv_deployments_directory, name + ".dss"
-        )
+        deployment_file = Path(workspace.pv_deployments_directory) / (name + ".dss")
+        rel_path = self._get_master_file_relative_path(deployment_file, Path(workspace.master_file))
         with open(deployment_file, "w") as fw:
-            fw.write(f"Redirect {workspace.master_file}\n")
+            fw.write(f"Redirect {rel_path}\n")
             fw.write("\nSolve\n")
 
         return OpenDssDeploymentModel.validate(
             dict(
-                deployment_file=deployment_file,
+                deployment_file=str(deployment_file),
                 substation=self.substation,
                 feeder=self.feeder,
                 dc_ac_ratio=self.dc_ac_ratio,
@@ -213,7 +221,7 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
             )
         )
 
-    def create_substation_base_case(self, name, outdir):
+    def create_substation_base_case(self, name, outdir, copy_load_shape_data_files=False):
         """Create a base case with no added PV.
 
         Parameters
@@ -222,6 +230,7 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
             The job name
         outdir : str
             The base directory of opendss substation model.
+        copy_load_shape_data_files : bool
 
         Returns
         -------
@@ -230,18 +239,17 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
         """
         workspace = OpenDssSubstationWorkspace(outdir)
         if not os.path.exists(workspace.master_file):
-            self._create_common_files(workspace)
+            self._create_common_files(workspace, copy_load_shape_data_files)
 
-        deployment_file = os.path.join(
-            workspace.pv_deployments_directory, name + ".dss"
-        )
+        deployment_file = Path(workspace.pv_deployments_directory) / (name + ".dss")
+        rel_path = self._get_master_file_relative_path(deployment_file, Path(workspace.master_file))
         with open(deployment_file, "w") as fw:
-            fw.write(f"Redirect {workspace.master_file}\n")
+            fw.write(f"Redirect {rel_path}\n")
             fw.write("\nSolve\n")
 
         return OpenDssDeploymentModel.validate(
             dict(
-                deployment_file=deployment_file,
+                deployment_file=str(deployment_file),
                 substation=self.substation,
                 feeder="None",
                 dc_ac_ratio=self.dc_ac_ratio,
@@ -252,7 +260,7 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
             )
         )
 
-    def create_deployment(self, name, outdir, hierarchy, pv_profile=None):
+    def create_deployment(self, name, outdir, hierarchy, pv_profile=None, copy_load_shape_data_files=False):
         """Create the deployment.
 
         Parameters
@@ -264,6 +272,7 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
         hierarchy : SimulationHierarchy
         pv_profile : str
             Optional load shape profile name to apply to all PVSystems
+        copy_load_shape_data_files : bool
 
         Returns
         -------
@@ -272,7 +281,7 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
         """
         workspace = OpenDssFeederWorkspace(outdir)
         if not os.path.exists(workspace.master_file):
-            self._create_common_files(workspace)
+            self._create_common_files(workspace, copy_load_shape_data_files)
         deployment_file = self._create_deployment_file(
             name, workspace, hierarchy, pv_profile=pv_profile
         )
@@ -296,7 +305,7 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
         )
 
     @staticmethod
-    def _copy_files(src_dir, dst_dir, exclude=None):
+    def _copy_files(src_dir, dst_dir, exclude=None, copy_load_shape_data_files=False):
         """Copy files from src to dst directory.
 
         Parameters
@@ -307,6 +316,8 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
             Destination directory
         exclude : list | str, optional
             Excluded file names from copy, by default None
+        copy_load_shape_data_files : bool
+
         """
         if not exclude:
             exclude = []
@@ -321,8 +332,11 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
             dst_file = os.path.join(dst_dir, name)
             shutil.copyfile(src_file, dst_file)
             if os.path.splitext(dst_file)[1] in (".dss", ".txt"):
-                BaseOpenDssModel.fix_data_file_references(
-                    os.path.abspath(src_dir), dst_file
+                if copy_load_shape_data_files:
+                    BaseOpenDssModel.copy_any_load_shape_data_files(Path(src_file), Path(dst_file))
+                else:
+                    BaseOpenDssModel.make_data_file_references_absolute(
+                        os.path.abspath(src_dir), dst_file
                 )
 
     def _create_deployment_file(self, name, workspace, hierarchy, pv_profile=None):
@@ -341,19 +355,18 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
             If dict, keys are PVSystem names and values are profile names.
 
         """
-        deployment_file = os.path.join(
-            workspace.pv_deployments_directory, name + ".dss"
-        )
+        deployment_file = Path(workspace.pv_deployments_directory) / (name + ".dss")
+        rel_path = self._get_master_file_relative_path(deployment_file, Path(workspace.master_file))
         if not self.pv_locations:
             with open(deployment_file, "w") as fw:
-                fw.write(f"Redirect {workspace.master_file}\n\n")
+                fw.write(f"Redirect {rel_path}\n\n")
                 fw.write("\nSolve\n")
-            return deployment_file
+            return str(deployment_file)
 
         regex = re.compile(r"new pvsystem\.([^\s]+)")
         with open(deployment_file, "w") as fw, fileinput.input(self.pv_locations) as fr:
             if hierarchy == SimulationHierarchy.FEEDER:
-                fw.write(f"Redirect {workspace.master_file}\n\n")
+                fw.write(f"Redirect {rel_path}\n\n")
             for line in fr:
                 if pv_profile is not None:
                     lowered = line.lower()
@@ -373,15 +386,38 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
             if hierarchy == SimulationHierarchy.FEEDER:
                 fw.write("\nSolve\n")
 
-        return deployment_file
+        return str(deployment_file)
 
     @staticmethod
-    def fix_data_file_references(src_dir, filename):
+    def copy_any_load_shape_data_files(src_file, dst_file):
+        """Copy any referenced load shape data file into the destination directory.
+
+        Parameters
+        ----------
+        src_file : Path
+        dst_file : Path
+
+        """
+        with open(src_file) as f_in:
+            for line in f_in:
+                matches = BaseOpenDssModel.REGEX_LOAD_SHAPE_DATA_FILE.findall(line)
+                for match in matches:
+                    src_data_file_rel_path = Path(match)
+                    src_data_file_path = (src_file.parent / src_data_file_rel_path).resolve()
+                    dst_data_file_path = (dst_file.parent / src_data_file_rel_path).resolve()
+                    dst_data_dir = dst_data_file_path.parent
+                    if not dst_data_dir.exists():
+                        dst_data_dir.mkdir(parents=True)
+                    shutil.copyfile(src_data_file_path, dst_data_file_path)
+                    logger.debug("Copied load shape data file %s", dst_data_file_path)
+
+    def _get_master_file_relative_path(self, deployment_file, master_path):
+        return Path("..") / (master_path.relative_to(deployment_file.parent.parent))
+
+    @staticmethod
+    def make_data_file_references_absolute(src_dir, filename):
         """Change the path to any data file referenced in a .dss file to its
         absolute path."""
-        # Example line:
-        # New Loadshape.Residential1234 npts=123456 minterval=5 mult=[file=../BuildingData/Dataset_12_34/Residential/RES1234/LoadProfiles/12345.csv]
-        regex = re.compile(r"file=([\.\w/\\-]+)")
 
         def replace_func(match):
             path = os.path.normpath(match.group(1).replace("\\", "/"))
@@ -390,7 +426,7 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
 
         with fileinput.input(files=[filename], inplace=True) as f_in:
             for line in f_in:
-                line = re.sub(regex, replace_func, line)
+                line = re.sub(BaseOpenDssModel.REGEX_LOAD_SHAPE_DATA_FILE, replace_func, line)
                 print(line, end="")
 
 

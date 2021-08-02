@@ -43,7 +43,7 @@ def test_time_series_basic(cleanup):
 
 def test_time_series_at_substation(cleanup):
     num_jobs = 18
-    transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations time-series -F -o {MODELS_DIR} --hierarchy=substation"
+    transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations time-series -c -F -o {MODELS_DIR} --hierarchy=substation"
     config_cmd = f"{CONFIG_JOBS} time-series {MODELS_DIR} -c {CONFIG_FILE}"
     submit_cmd = f"{SUBMIT_JOBS} {CONFIG_FILE} --output={OUTPUT}"
 
@@ -101,7 +101,7 @@ def test_time_series_impact_analysis(cleanup):
 
 def test_time_series_hosting_capacity(cleanup):
     num_jobs = 18
-    transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations time-series -F -o {MODELS_DIR}"
+    transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations time-series -c -F -o {MODELS_DIR}"
     config_cmd = f"{CONFIG_JOBS} time-series {MODELS_DIR} -c {CONFIG_FILE}"
     submit_cmd = f"{SUBMIT_JOBS} {CONFIG_FILE} --output={OUTPUT} -p 1"
 
