@@ -54,6 +54,21 @@ in *format.toml*.
         disco transform-model tests/data/smart-ds/substations/ upgrade --help
 
 
+Load Shape Data files
+---------------------
+By default DISCO replaces relative paths to load shape data files with absolute
+paths and does not copy them. This reduces time and consumed storage space.
+However, it also makes the directory non-portable to other systems.
+
+If you want to create a portable directory with copies of these files, add
+this flag to the command:
+
+.. code-block:: bash
+
+   $ disco transform-model tests/data/smart-ds/substations time-series -c
+   $ disco transform-model tests/data/smart-ds/substations time-series --copy-load-shape-data-files
+
+
 DISCO Model in Depth
 ====================
 

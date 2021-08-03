@@ -50,7 +50,7 @@ def test_upgrade_cost_analysis(cleanup):
     submit_cmd = f"{SUBMIT_JOBS} {CONFIG_FILE} -o {OUTPUT}"
     assert run_command(submit_cmd) == 0
 
-    # verigy results
+    # verify results
     result_summary = ResultsSummary(OUTPUT)
     results = result_summary.list_results()
     assert len(results) == 16

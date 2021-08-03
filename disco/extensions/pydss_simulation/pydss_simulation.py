@@ -5,6 +5,7 @@ import logging
 import os
 import re
 import shutil
+from pathlib import Path
 
 from jade.common import OUTPUT_DIR
 from jade.utils.utils import modify_file, interpret_datetime
@@ -102,7 +103,7 @@ class PyDssSimulation(PyDssSimulationBase):
                     upgrade_path, deployment_filename
                 )
 
-        modify_file(deployment_filename, self.make_redirects_absolute)
+        modify_file(deployment_filename, self.fix_redirects, Path(deployment_filename))
         logger.info("Modified redirect path in %s", deployment_filename)
 
     @staticmethod
@@ -188,25 +189,39 @@ class PyDssSimulation(PyDssSimulationBase):
 
         return " ".join(values) + "\n"
 
-    def make_redirects_absolute(self, line, *args, **kwargs):
-        """Makes redirect paths in a DSS file absolute."""
+    def fix_redirects(self, line, deployment_filename, **kwargs):
+        """Fix the paths to a redirect file."""
         regex = re.compile(r"^([Rr]edirect\s+)(.*)")
         match = regex.search(line)
         if match is None:
             return line
 
-        # For some reason OpenDSS changes directories during a redirect.
-        # This will change ./model-inputs/feeder_3/OpenDSS/Master.dss
-        # to
-        # ~/data/model-inputs/feeder_3/OpenDSS/Master.dss
-        path = match.group(2)
-        new_line = match.group(1) + os.path.abspath(path)
+        # The deployment file is now farther away from the base files.
+        # This will change Redirect ../OpenDSS/Master.dss
+        # to something like
+        # Redirect ../../../../../model-inputs/X/OpenDSS/Master.dss
+
+        base_path = Path(".")
+        assert len(deployment_filename.parts) >= 2
+        parts = [".."] * (len(deployment_filename.parts) - 1)
+        parts.append(self._model.deployment.directory)
+        base_path = Path(parts[0])
+        for part in parts[1:]:
+            base_path /= part
+
+        path = Path(match.group(2))
+        parts = [x for x in path.parts if str(x) != ".."]
+        new_path = base_path
+        for parent in parts:
+            new_path /= parent
+        new_line = match.group(1) + str(new_path)
         return new_line
 
     @staticmethod
     def _redirect_upgrade_path(deployment_file, upgrade_path):
         """Redirect upgrade paths in deployment file."""
-        redirect_line = f"Redirect {upgrade_path}"
+        # This could be improved by making this path relative.
+        redirect_line = f"Redirect {os.path.abspath(upgrade_path)}"
         redirected = False
         
         # if Solve in file, the redirect upgrade paths before Solve.
@@ -215,16 +230,17 @@ class PyDssSimulation(PyDssSimulationBase):
             for line in f:
                 line = line.strip()
                 if line == redirect_line:
-                    print(line + "\n")
+                    print(line)
                     redirected = True
                 elif line == "Solve" and not redirected:
-                    print(redirect_line + "\n")
+                    print(redirect_line)
                     print("\nSolve\n")
                     redirected = True
                 else:
-                    print(line + "\n")
+                    print(line)
 
         # if Solve not in file, append to the end
         if not redirected:
             with open(deployment_file, "a") as f:
                 f.write(redirect_line)
+                f.write("\n")

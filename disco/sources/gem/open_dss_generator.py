@@ -202,7 +202,8 @@ class OpenDssGenerator(ModelInputDataInterface):
             logger.debug("Copied %s to %s", path, target_path)
 
             src_dir = os.path.abspath(os.path.dirname(path))
-            OpenDssGenerator.fix_data_file_references(src_dir, target_path)
+            # TODO: add support for copying data files if we use this source model again.
+            OpenDssGenerator.make_data_file_references_absolute(src_dir, target_path)
 
     @staticmethod
     def _copy_upgrade_files(feeder, dst):
@@ -219,7 +220,7 @@ class OpenDssGenerator(ModelInputDataInterface):
             logger.debug("Copied %s to %s", src_file, dst_file)
 
     @staticmethod
-    def fix_data_file_references(src_dir, filename):
+    def make_data_file_references_absolute(src_dir, filename):
         """Change the path to any data file referenced in a .dss file to its
         absolute path."""
         # Example line:
