@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import random
+import re
 import shutil
 import sys
 from copy import deepcopy
@@ -428,13 +429,13 @@ class PVScenarioGeneratorBase(abc.ABC):
         placement_path = os.path.join(root_path, self.config.placement)
         return placement_path
 
-    def get_pv_deployments_file(self, sample: int, penetration: int) -> str:
+    def get_pv_systems_file(self, sample: int, penetration: int) -> str:
         """Return the path of PV depployment file"""
         placement_path = self.get_output_placement_path()
         penetration_path = os.path.join(placement_path, str(sample), str(penetration))
         os.makedirs(penetration_path, exist_ok=True)
-        pv_deployments_file = os.path.join(penetration_path, PV_SYSTEMS_FILENAME)
-        return pv_deployments_file
+        pv_systems_file = os.path.join(penetration_path, PV_SYSTEMS_FILENAME)
+        return pv_systems_file
 
     def deploy_pv_scenario(self, data: SimpleNamespace) -> dict:
         """Generate PV deployments dss file in scenario
@@ -660,13 +661,13 @@ class PVScenarioGeneratorBase(abc.ABC):
     def write_pv_string(self, pv_string: str, data: SimpleNamespace) -> None:
         """Write PV string to PV deployment file."""
         total_pv = self.get_total_pv(data)
-        pv_deployments_file = self.get_pv_deployments_file(data.sample, data.penetration)
+        pv_systems_file = self.get_pv_systems_file(data.sample, data.penetration)
         line = (
             f"// PV Scenario for {total_pv} kW total size, "
             f"Scenario type {self.config.placement}, Sample {data.sample} "
             f"and penetration {data.penetration}% (PV to load ratio) \n"
         )
-        with open(pv_deployments_file, "w") as f:
+        with open(pv_systems_file, "w") as f:
             f.write(line)
             f.write(pv_string)
 
@@ -728,25 +729,27 @@ class PVScenarioGeneratorBase(abc.ABC):
         for sample in samples:
             sample_path = os.path.join(placement_path, sample)
             pv_systems = set()
-            pv_configurations = []
+            pv_configs = []
             for pen in os.listdir(sample_path):
                 pen_dir = os.path.join(sample_path, pen)
                 if not os.path.isdir(pen_dir):
                     continue
-                pv_deployments_file = os.path.join(pen_dir, PV_SYSTEMS_FILENAME)
-                if os.path.exists(pv_deployments_file):
-                    pv_configurations += self.assign_profile(pv_deployments_file, pv_shapes_file, pv_systems)
-            final = {'pv_systems': pv_configurations}
+                pv_systems_file = os.path.join(pen_dir, PV_SYSTEMS_FILENAME)
+                if os.path.exists(pv_systems_file):
+                    pv_conf, pv_profiles = self.assign_profile(pv_systems_file, pv_shapes_file, pv_systems)
+                    self.attach_profile(pv_systems_file, pv_profiles)
+                    pv_configs += pv_conf
+            final = {"pv_systems": pv_configs}
             pv_config_file = self.save_pv_config(final, sample_path)
             config_files.append(pv_config_file)
         logger.info("%s PV config files generated in placement - %s", len(config_files), placement_path)
         return config_files
 
-    def assign_profile(self, pv_deployments_file: str, pv_shapes_file: str, pv_systems: set, limit: int = 5) -> dict:
+    def assign_profile(self, pv_systems_file: str, pv_shapes_file: str, pv_systems: set, limit: int = 5) -> dict:
         """Assign PV profile to PV systems."""
-        pv_dict = self.get_pvsys(pv_deployments_file)
+        pv_dict = self.get_pvsys(pv_systems_file)
         shape_list = self.get_shape_list(pv_shapes_file)
-        pv_conf = []
+        pv_conf, pv_profiles = [], {}
         for pv_name, pv_value in pv_dict.items():
             if pv_name in pv_systems:
                 continue
@@ -765,13 +768,14 @@ class PVScenarioGeneratorBase(abc.ABC):
                 "pv_profile": pv_profile
             })
             pv_systems.add(pv_name)
-        return pv_conf
+            pv_profiles[pv_name] = pv_profile
+        return pv_conf, pv_profiles
 
     @staticmethod
-    def get_pvsys(pv_deployments_file: str) -> dict:
+    def get_pvsys(pv_systems_file: str) -> dict:
         """Return a mapping of PV systems"""
         pv_dict = {}
-        with open(pv_deployments_file) as f:
+        with open(pv_systems_file) as f:
             slines = f.readlines()
             for line in slines:
                 if "pvsystem" in line.lower():
@@ -796,6 +800,35 @@ class PVScenarioGeneratorBase(abc.ABC):
             json.dump(pv_config, f, indent=2)
         logger.info("PV config file generated - %s", pv_config_file)
         return pv_config_file
+    
+    def attach_profile(self, pv_systems_file: str, pv_profiles: dict) -> None:
+        """Attach PV profile to each system with 'yearly=<pv-profile.csv>' in PVSystems.dss"""
+        regex = re.compile(r"new pvsystem\.([^\s]+)")
+        
+        updated_data = []
+        with open(pv_systems_file, "r") as fr:
+            for line in fr.readlines():
+                lowered_line = line.lower()
+                if "new pvsystem" not in lowered_line or "yearly" in lowered_line:
+                    updated_data.append(line)
+                    continue
+                
+                match = regex.search(lowered_line)
+                assert match, lowered_line
+                pv_name = match.group(1)
+                try:
+                    pv_profile = pv_profiles.get(pv_name)
+                except KeyError as e:
+                    logger.exception("No PV profile founded for %s", pv_name)
+                    raise e
+                new_line = line.strip() + f" yearly={}\n"
+                updated_data.append(new_line)
+        
+        with open(pv_systems_file, "w") as fw:
+            for line in updated_data:
+                fw.write(line)
+        
+        logger.info("Attached PV profiles into %s", pv_systems_file)
 
 
 class LargePVScenarioGenerator(PVScenarioGeneratorBase):
