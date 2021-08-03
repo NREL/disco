@@ -35,6 +35,9 @@ LOADS_FILENAME = "Loads.dss"
 ORIGINAL_LOADS_FILENAME = "Original_Loads.dss"
 TRANSFORMED_LOADS_FILENAME = "PV_Loads.dss"
 
+LOADSHAPES_FILENAME = "LoadShapes.dss"
+ORGINAL_LOADSHAPES_FILENAME = "Original_LoadShapes.dss"
+
 
 class DeploymentHierarchy(enum.Enum):
     FEEDER = "feeder"
@@ -85,26 +88,28 @@ class PVDSSInstance:
         updated_data = unidecode(data)
         with open(self.master_file, "w") as f:
             f.write(updated_data)
- 
-    def disable_monitors_export(self) -> None:
-        """
-        Disable monitors export in Master dss file.
 
-        For example, 
-        Solve mode=yearly stepsize=15m number=35040
-        ! Export monitors m1
-        Plot monitor object= m1 channels=(7 9 11 )
-        ! Export monitors m2
-        Plot monitor object= m2 channels=(1 3 5 )
-        Plot Profile Phases=All
+    def disable_loadshapes_redirect(self) -> None:
+        """To comment out 'Redirect LoadShapes.dss' in Master.dss file
+        
+        Redirect LoadShapes.dss is time consuming during OpenDSS loads the feeder, which
+        make the PV deployments take a long to run. However, LoadShapes is not in use during 
+        PV deployments. To speed up, we'll comment out the redirect and revert it back after
+        PV deployments finished.
         """
-        logger.info("Disable monitors export in master file - %s", self.master_file)
+        logger.info("Disable LoadShapes.dss redirect in master file - %s", self.master_file)
+        
+        redirected = False
         updated_data = []
         with open(self.master_file, "r") as f:
             for line in f.readlines():
-                if not line.startswith("!") and "export monitors" in line.lower():
-                    line = "! " + line
+                if not line.strip().startswith("!") and "redirect loadshapes.dss" in line.lower():
+                    line = "!" + line
+                    redirected = True
                 updated_data.append(line)
+
+        if not redirected:
+            return
         
         with open(self.master_file, "w") as f:
             for line in updated_data:
@@ -337,7 +342,7 @@ class PVScenarioGeneratorBase(abc.ABC):
             lock_file = master_file + ".lock"
             with SoftFileLock(lock_file=lock_file, timeout=900):
                 pvdss_instance.convert_to_ascii()
-                pvdss_instance.disable_monitors_export()
+                pvdss_instance.disable_loadshapes_redirect()
                 pvdss_instance.load_feeder()
                 flag = pvdss_instance.ensure_energy_meter()
                 if flag:
@@ -802,7 +807,7 @@ class PVScenarioGeneratorBase(abc.ABC):
         return pv_config_file
     
     def attach_profile(self, pv_systems_file: str, pv_profiles: dict) -> None:
-        """Attach PV profile to each system with 'yearly=<pv-profile.csv>' in PVSystems.dss"""
+        """Attach PV profile to each system with 'yearly=<pv-profile>' in PVSystems.dss"""
         regex = re.compile(r"new pvsystem\.([^\s]+)")
         
         updated_data = []
@@ -825,8 +830,7 @@ class PVScenarioGeneratorBase(abc.ABC):
                 updated_data.append(new_line)
         
         with open(pv_systems_file, "w") as fw:
-            for line in updated_data:
-                fw.write(line)
+            fw.writelines(updated_data)
         
         logger.info("Attached PV profiles into %s", pv_systems_file)
 
@@ -1177,9 +1181,8 @@ class PVDataManager(PVDataStorage):
         except Exception:
             pass
     
-    def rename_feeder_loads(self) -> None:
-        """After PV deployments, rename transformed Loads.dss to PV_Loads.dss"""
-        feeder_paths = self.get_feeder_paths()
+    def rename_feeder_loads(self, feeder_paths: list) -> None:
+        """Rename transformed Loads.dss to PV_Loads.dss"""
         logger.info("Renaming loads files in %s feeder directories...", len(feeder_paths))
         deployed = []
         for feeder_path in feeder_paths:
@@ -1191,6 +1194,40 @@ class PVDataManager(PVDataStorage):
         with ProcessPoolExecutor() as executor:
             executor.map(self.rename, deployed)
         logger.info("Feeder Loads rename done, total %s", len(deployed))
+    
+    def revert(self, feeder_path: str):
+        """Enable LoadShapes redirect by removing the starting symbol !."""
+        master_file = os.path.join(feeder_path, self.config.master_filename)
+        redirected = True
+        data = []
+        with open(master_file, "r") as fr:
+            for line in fr.readlines():
+                if line.startswith("!") and "redirect loadshapes.dss" in line.lower():
+                    line = line.lstrip("!")
+                    redirected = False
+                data.append(line)
+        
+        if redirected:
+            return
+        
+        with open(master_file, "w") as fw:
+            fw.writelines(data)
+        logger.info("Master file get reverted with LoadShape.dss redirected - %s", master_file)
+    
+    def revert_master_files(self, feeder_paths: list) -> None:
+        """Revert master files with LoadShapes.dss redirect enabled"""
+        with ProcessPoolExecutor() as executor:
+            executor.map(self.revert, feeder_paths)
+        logger.info("Feeder Redirect LoadShapes.dss enabled in master files, total %s", len(feeder_paths))
+    
+    def restore_feeder_data(self) -> None:
+        """After PV deployments, we need to restore feeder data tranformed during PV deployments
+            1) rename transformed Loads.dss to PV_Loads.dss;
+            2) uncomment on LoadShapes.dss redirect in master file.
+        """
+        feeder_paths = self.get_feeder_paths()
+        self.rename_feeder_loads(feeder_paths)
+        self.revert_master_files(feeder_paths)
     
     def transform(self, feeder_path: str) -> None:
         """Transform feeder Loads.dss
@@ -1207,7 +1244,8 @@ class PVDataManager(PVDataStorage):
         with open(original_loads_file, "r") as fr, open(loads_file, "w") as fw:
             load_lines = fr.readlines()
             rekeyed_load_dict = self.build_load_dictionary(load_lines)
-            new_lines = self.update_loads(load_lines, rekeyed_load_dict)
+            updated_lines = self.update_loads(load_lines, rekeyed_load_dict)
+            new_lines = self.strip_pv_profile(update_lines)
             fw.writelines(new_lines)
         logger.info("Loads transformed - '%s'.", loads_file)
     
@@ -1240,6 +1278,16 @@ class PVDataManager(PVDataStorage):
         except Exception:
             pass
         return True
+    
+    def strip_pv_profile(self, load_lines: list) -> list:
+        """To strip 'yearly=<pv-profile>' from load lines during PV deployments"""
+        new_lines = []
+        for line in loads_lines:
+            if " yearly=" in line
+                new_lines.append(line.split(" yearly=") + "\n")
+            else:
+                newlines.append(line)
+        return new_lines
     
     def get_attribute(self, line: str, attribute_id: str) -> str:
         """
