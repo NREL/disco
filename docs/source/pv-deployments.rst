@@ -223,7 +223,7 @@ Revert Feeders
 --------------
 
 As the ``Loads.dss`` in SourceTree1 models needs to be transformed during PV deployments, and the 
-content of ``Loads.dss`` was modified. However, we backuped the original ``Loads.dss`` before 
+content of ``Loads.dss`` was modified. However, we backed up the original ``Loads.dss`` before 
 PV deployments, so we can rename back after that. Simply, the steps look like this.
 
 One more thing, to speed up PV deployments, we commented out ``LoadShapes.dss`` before PV deployments in master
@@ -236,7 +236,7 @@ files, we need to revert it back after PV deployments.
 2. During PV deployments:
 
 * DISCO PV deployment program transformed ``Loads.dss`` in place.
-* and, striped ``yearly=<pv-profile>`` from the load lines.
+* and, stripped ``yearly=<pv-profile>`` from the load lines.
 
 3. After PV deployments:
 

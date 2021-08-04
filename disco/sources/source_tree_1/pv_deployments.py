@@ -111,9 +111,8 @@ class PVDSSInstance:
         if not redirected:
             return
         
-        with open(self.master_file, "w") as f:
-            for line in updated_data:
-                f.write(line)
+        with open(self.master_file, "w") as fw:
+            fw.writelines(updated_data)
 
     def load_feeder(self) -> None:
         """OpenDSS redirect master DSS file"""
@@ -340,7 +339,7 @@ class PVScenarioGeneratorBase(abc.ABC):
         pvdss_instance = PVDSSInstance(master_file)
         try:
             lock_file = master_file + ".lock"
-            with SoftFileLock(lock_file=lock_file, timeout=900):
+            with SoftFileLock(lock_file=lock_file, timeout=300):
                 pvdss_instance.convert_to_ascii()
                 pvdss_instance.disable_loadshapes_redirect()
                 pvdss_instance.load_feeder()
@@ -781,21 +780,21 @@ class PVScenarioGeneratorBase(abc.ABC):
         """Return a mapping of PV systems"""
         pv_dict = {}
         with open(pv_systems_file) as f:
-            slines = f.readlines()
-            for line in slines:
-                if "pvsystem" in line.lower():
-                    value = line.lower().split("pmpp=")[1].split(" ")[0]
-                    pv_dict[line.lower().split("pvsystem.")[1].split(" ")[0]] = value
+            for line in f.readlines():
+                lowered_line = line.lower()
+                if "pvsystem" in lowered_line:
+                    value = lowered_line.split("pmpp=")[1].split(" ")[0]
+                    pv_dict[lowered_line.split("pvsystem.")[1].split(" ")[0]] = value
         return pv_dict
 
     def get_shape_list(self, pv_shapes_file: str) -> list:
         """Return a list of loadshapes"""
         shape_list = []
         with open(pv_shapes_file) as f:
-            slines = f.readlines()
-            for line in slines:
-                if "loadshape" in line.lower():
-                    shape_list.append(line.lower().split("loadshape.")[1].split(' ')[0])
+            for line in f.readlines():
+                lowered_line = line.lower()
+                if "loadshape" in lowered_line:
+                    shape_list.append(lowered_line.split("loadshape.")[1].split(' ')[0])
         return shape_list
 
     def save_pv_config(self, pv_config: dict, sample_path: str) -> None:
@@ -1122,8 +1121,8 @@ class PVDataManager(PVDataStorage):
             raise
         
         index = 0
-        with open(master_file, "r") as f:
-            data = f.readlines()
+        with open(master_file, "r") as fr:
+            data = fr.readlines()
 
         for i, line in enumerate(data):
             line = line.strip().lower()
@@ -1137,8 +1136,8 @@ class PVDataManager(PVDataStorage):
 
         logger.info("Update master file %s to redirect %s", master_file, PV_SHAPES_FILENAME)
         data.insert(index, f"Redirect {PV_SHAPES_FILENAME}\n")
-        with open(master_file, "w") as f:
-            f.writelines(data)
+        with open(master_file, "w") as fw:
+            fw.writelines(data)
         return True
     
     def redirect_substation_pv_shapes(self) -> None:
@@ -1281,12 +1280,15 @@ class PVDataManager(PVDataStorage):
     
     def strip_pv_profile(self, load_lines: list) -> list:
         """To strip 'yearly=<pv-profile>' from load lines during PV deployments"""
+        regex = re.compile(r"\syearly=\S+", flags=re.IGNORECASE)
         new_lines = []
         for line in loads_lines:
-            if " yearly=" in line
-                new_lines.append(line.split(" yearly=") + "\n")
+            match = regex.search(line.strip())
+            if not match:
+                new_lines.append(line)
             else:
-                newlines.append(line)
+                line = "".join(line.split(match.group(0)))
+                new_lines.appen(line)
         return new_lines
     
     def get_attribute(self, line: str, attribute_id: str) -> str:
@@ -1300,8 +1302,9 @@ class PVDataManager(PVDataStorage):
         for kw: 'kw='
         """
         attribute = None
-        if attribute_id in line.lower():
-            attribute = line.lower().split(attribute_id)[1].split(" ")[0]
+        lowered_line = line.lower()
+        if attribute_id in lowered_line:
+            attribute = lowered_line.split(attribute_id)[1].split(" ")[0]
             if "kv" in attribute_id or "kw" in attribute_id:
                 attribute = float(attribute)
         return attribute
@@ -1310,7 +1313,8 @@ class PVDataManager(PVDataStorage):
         """Util function for building dict from load lines."""
         load_dict = {}
         for idx, line in enumerate(load_lines):
-            if 'new' not in line.lower():
+            lowered_line = line.lower()
+            if 'new' not in lowered_line:
                 continue
             
             bus_node = self.get_attribute(line, "bus1=")
@@ -1339,24 +1343,24 @@ class PVDataManager(PVDataStorage):
             if (bus, name) in load_dict.keys():
                 if nodes:
                     load_dict[bus, name]["node"] += nodes
-                if "kw=" in line.lower():
+                if "kw=" in lowered_line:
                     load_dict[bus, name]["kw"] += kw
-                if "kvar=" in line.lower():
+                if "kvar=" in lowered_line:
                     load_dict[bus, name]["kvar"] += kvar
-                if "kva=" in line.lower():
+                if "kva=" in lowered_line:
                     load_dict[bus, name]["kva"] += kva
             else:
                 load_dict[bus, name] = {}
                 load_dict[bus, name]["name"] = name
                 load_dict[bus, name]["bus"] = bus
                 load_dict[bus, name]["node"] = nodes
-                if "kw=" in line.lower():
+                if "kw=" in lowered_line:
                     load_dict[bus, name]["kw"] = kw
-                if "kvar=" in line.lower():
+                if "kvar=" in lowered_line:
                     load_dict[bus, name]["kvar"] = kvar
-                if "kva=" in line.lower():
+                if "kva=" in lowered_line:
                     load_dict[bus, name]["kva"] = kva
-                if "phases=" in line.lower():
+                if "phases=" in lowered_line:
                     load_dict[bus, name]["phases"] = phases
                 load_dict[bus,name]["line_idx"] = idx 
                 load_dict[bus,name]["kv"] = kv
@@ -1383,15 +1387,16 @@ class PVDataManager(PVDataStorage):
                 kv = v["kv"]
                 phases = v["phases"]
             
-            lines[k] = lines[k].lower().replace(f"kv={self.get_attribute(lines[k], 'kv=')}", f"kv={kv}")
-            lines[k] = lines[k].lower().replace(f"phases={self.get_attribute(lines[k], 'phases=')}", f"phases={phases}")
+            lowered_line = lines[k].lower()
+            lines[k] = lowered_line.replace(f"kv={self.get_attribute(lines[k], 'kv=')}", f"kv={kv}")
+            lines[k] = lowered_line.replace(f"phases={self.get_attribute(lines[k], 'phases=')}", f"phases={phases}")
         
-            if "kw=" in lines[k].lower():
-                lines[k] = lines[k].lower().replace(f"kw={self.get_attribute(lines[k], 'kw=')}", f"kw={str(v['kw'])}")
-            if "kvar=" in lines[k].lower():
-                lines[k] = lines[k].lower().replace(f"kvar={self.get_attribute(lines[k], 'kvar=')}", f"kvar={str(v['kvar'])}")
-            if "kva=" in lines[k].lower():
-                lines[k] = lines[k].lower().replace(f"kva={self.get_attribute(lines[k], 'kva=')}", f"kva={str(v['kva'])}")
+            if "kw=" in lowered_line:
+                lines[k] = lowered_line.replace(f"kw={self.get_attribute(lines[k], 'kw=')}", f"kw={str(v['kw'])}")
+            if "kvar=" in lowered_line:
+                lines[k] = lowered_line.replace(f"kvar={self.get_attribute(lines[k], 'kvar=')}", f"kvar={str(v['kvar'])}")
+            if "kva=" in lowered_line:
+                lines[k] = lowered_line.replace(f"kva={self.get_attribute(lines[k], 'kva=')}", f"kva={str(v['kva'])}")
         
         new_load_lines = [lines[x] for x in rekeyed_load_dict.keys()]
         return new_load_lines
