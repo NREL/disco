@@ -103,7 +103,7 @@ class PVDSSInstance:
         updated_data = []
         with open(self.master_file, "r") as f:
             for line in f.readlines():
-                if not line.strip().startswith("!") and "redirect loadshapes.dss" in line.lower():
+                if line.lower().startswith("redirect loadshapes.dss"):
                     line = "!" + line
                     redirected = True
                 updated_data.append(line)
