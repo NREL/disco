@@ -25,7 +25,7 @@ from disco.enums import Placement
 
 logger = logging.getLogger(__name__)
 
-PV_DEPLOYMENT_DIRNAME = "hc_pv_deployments"
+
 PV_SYSTEMS_FILENAME = "PVSystems.dss"
 PV_SHAPES_FILENAME = "PVShapes.dss"
 PV_CONFIG_FILENAME = "pv_config.json"
@@ -37,6 +37,8 @@ TRANSFORMED_LOADS_FILENAME = "PV_Loads.dss"
 
 LOADSHAPES_FILENAME = "LoadShapes.dss"
 ORGINAL_LOADSHAPES_FILENAME = "Original_LoadShapes.dss"
+
+RANDOM_SEED = 10000
 
 
 class DeploymentHierarchy(enum.Enum):
@@ -425,7 +427,7 @@ class PVScenarioGeneratorBase(abc.ABC):
 
     def get_output_root_path(self):
         """Return the root path of PV depployments"""
-        return os.path.join(self.feeder_path, PV_DEPLOYMENT_DIRNAME)
+        return os.path.join(self.feeder_path, self.config.pv_deployment_dirname)
 
     def get_output_placement_path(self) -> str:
         """Return the placement path of PV deployments"""
@@ -519,8 +521,7 @@ class PVScenarioGeneratorBase(abc.ABC):
                     break
 
                 while len(candidate_bus_array) > 0:
-                    random.shuffle(candidate_bus_array)
-                    picked_candidate = candidate_bus_array[0]
+                    picked_candidate = random.choice(candidate_bus_array)
                     if picked_candidate in data.base_existing_pv:
                         base_min_pv_size = data.base_existing_pv[picked_candidate]
                     else:
@@ -720,7 +721,11 @@ class PVScenarioGeneratorBase(abc.ABC):
         """Create PV configs JSON file"""
         root_path = self.get_output_root_path()
         if not os.path.exists(root_path):
-            logger.info("Deployment path %s not exis under %s", PV_DEPLOYMENT_DIRNAME, self.feeder_path)
+            logger.info(
+                "Deployment path %s not exis under %s",
+                self.config.pv_deployment_dirname,
+                self.feeder_path
+            )
             return []
 
         config_files = []
@@ -761,8 +766,7 @@ class PVScenarioGeneratorBase(abc.ABC):
                 control_name = "volt-var"
             else:
                 control_name = "pf1"
-            random.shuffle(shape_list)
-            pv_profile = shape_list[0]
+            pv_profile = random.choice(shape_list)
             pv_conf.append({
                 "name": pv_name,
                 "pydss_controller": {
@@ -927,9 +931,10 @@ def get_pv_scenario_generator(feeder_path: str, config: SimpleNamespace):
 class PVDataStorage:
     """A class for handling PV data storage on file system"""
 
-    def __init__(self, input_path: str, hierarchy: DeploymentHierarchy):
+    def __init__(self, input_path: str, hierarchy: DeploymentHierarchy, config: SimpleNamespace) ->None:
         self.input_path = input_path
         self.hierarchy = hierarchy
+        self.config = config
 
     def get_region_paths(self, city_path: str) -> list:
         """Given a city path, return all region paths of the city"""
@@ -1063,7 +1068,7 @@ class PVDataStorage:
 
     def get_deployment_path(self, feeder_path: str) -> str:
         """Return the deployment path"""
-        path = os.path.join(feeder_path, PV_DEPLOYMENT_DIRNAME)
+        path = os.path.join(feeder_path, self.config.pv_deployment_dirname)
         if os.path.exists(path):
             return path
         return None
@@ -1110,8 +1115,7 @@ class PVDataManager(PVDataStorage):
         input_path: str, the input path of raw dss data for generating pv deployments.
         config: SimpleNamespace, the pv deployment configuration namespace.
         """
-        super().__init__(input_path, hierarchy)
-        self.config = config
+        super().__init__(input_path, hierarchy, config)
 
     def redirect(self, feeder_path: str) -> bool:
         """Given a path, update the master file by redirecting PVShapes.dss"""
@@ -1288,7 +1292,7 @@ class PVDataManager(PVDataStorage):
                 new_lines.append(line)
             else:
                 line = "".join(line.split(match.group(0)))
-                new_lines.appen(line)
+                new_lines.append(line)
         return new_lines
     
     def get_attribute(self, line: str, attribute_id: str) -> str:
@@ -1422,8 +1426,7 @@ class PVDeploymentManager(PVDataStorage):
         input_path: str, the input path of raw dss data for generating pv deployments.
         config: SimpleNamespace, the pv deployment configuration namespace.
         """
-        super().__init__(input_path, hierarchy)
-        self.config = config
+        super().__init__(input_path, hierarchy, config)
 
     def generate_pv_deployments(self) -> dict:
         """Given input path, generate pv deployments"""
@@ -1431,6 +1434,8 @@ class PVDeploymentManager(PVDataStorage):
         feeder_paths = self.get_feeder_paths()
         for feeder_path in feeder_paths:
             generator = get_pv_scenario_generator(feeder_path, self.config)
+            if self.config.set_random_seed:
+                random.seed(RANDOM_SEED)
             feeder_stats = generator.deploy_all_pv_scenarios()
             summary[feeder_path] = feeder_stats
         return summary
@@ -1571,8 +1576,7 @@ class PVConfigManager(PVDataStorage):
         input_path: str, the input path of raw dss data for generating pv deployments.
         config: SimpleNamespace, the pv deployment configuration namespace.
         """
-        super().__init__(input_path, hierarchy)
-        self.config = config
+        super().__init__(input_path, hierarchy, config)
 
     def generate_pv_configs(self) -> list:
         """Generate pv config JSON files based on PV deployments"""

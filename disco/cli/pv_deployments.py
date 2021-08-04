@@ -96,7 +96,7 @@ def check_pv_configs(input_path: str, hierarchy: str, config: dict):
 
 def list_feeder_paths(input_path: str, hierarchy: str, config: dict):
     hierarchy = DeploymentHierarchy(hierarchy)
-    storage = PVDataStorage(input_path, hierarchy)
+    storage = PVDataStorage(input_path, hierarchy, config)
     result = storage.get_feeder_paths()
     for feeder_path in result:
         print(feeder_path)
@@ -252,6 +252,20 @@ def pv_deployments():
     help="Upscale PV in deployments."
 )
 @click.option(
+    "-o", "--pv-deployment-dirname",
+    type=click.STRING,
+    default="hc_pv_deployments",
+    show_default=True,
+    help="Output directory name of PV deployments"
+)
+@click.option(
+    "--set-random-seed/--no-set-random-seed",
+    is_flag=True,
+    default=True,
+    show_default=True,
+    help="Make PV deployments reproducible if set"
+)
+@click.option(
     "--verbose",
     type=click.BOOL,
     is_flag=True,
@@ -274,6 +288,8 @@ def source_tree_1(
     #percent_shares,
     pv_size_pdf,
     pv_upscale,
+    pv_deployment_dirname,
+    set_random_seed,
     verbose
 ):
     """Generate PV deployments for source tree 1."""
@@ -290,7 +306,9 @@ def source_tree_1(
         "sample_number": sample_number,
         "proximity_step": proximity_step,
         "percent_shares": [100, 0],
-        "pv_size_pdf": pv_size_pdf
+        "pv_size_pdf": pv_size_pdf,
+        "pv_deployment_dirname": pv_deployment_dirname,
+        "set_random_seed": set_random_seed
     }
     action_function = ACTION_MAPPING[action]
     action_function(input_path, hierarchy, config)
