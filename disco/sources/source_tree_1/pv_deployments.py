@@ -60,7 +60,7 @@ def get_subdir_names(input_path: str) -> list:
     subdir_names = next(os.walk(input_path))[1]
     
     # Ignore these folder names
-    ignored_names = ["subtransmission", "aggregate", "analysis", "hc_pv_deployments", "zip"]
+    ignored_names = {"subtransmission", "aggregate", "analysis", "hc_pv_deployments", "zip"}
     clean_names = [name for name in subdir_names if name not in ignored_names]
     return clean_names
 
