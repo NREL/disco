@@ -115,6 +115,9 @@ class PyDssSimulationBase(JobExecutionInterface):
                 "Clear old log file": True,
                 "Log time step updates": False,
             },
+            "Exports": {
+                "HDF Max Chunk Bytes": 1048576,
+            }
         }
 
         simulation_config = self._pydss_inputs[ConfigType.SIMULATION_CONFIG]
