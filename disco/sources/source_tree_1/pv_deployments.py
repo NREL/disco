@@ -1638,10 +1638,13 @@ class PVConfigManager(PVDataStorage):
         options += f"-s {self.config.penetration_step} "
         options += f"-n {self.config.sample_number} "
         options += f"-S {self.config.proximity_step} "
+        options += f"-o {self.config.pv_deployments_dirname}"
         if self.config.pv_size_pdf:
             options += f"-x {self.config.pv_size_pdf} "
         if not self.config.pv_upscale:
             options += "--no-pv-upscale "
+        if not self.config.set_random_seed:
+            options += "--no-set-random-seed"
         options.strip()
         
         commands = []
