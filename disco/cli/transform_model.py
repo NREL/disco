@@ -7,7 +7,11 @@ import sys
 import click
 
 from jade.loggers import setup_logging
+from jade.utils.utils import get_cli_string
 from disco.sources.factory import list_subcommands, make_source_model
+
+
+logger = logging.getLogger(__name__)
 
 
 class TransformCli(click.MultiCommand):
@@ -72,3 +76,4 @@ def show_help_and_exit():
 def transform_model(input_path):
     """Transform input data into a DISCO model"""
     setup_logging("disco", "transform_model.log")
+    logger.info(get_cli_string())
