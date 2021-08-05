@@ -738,16 +738,17 @@ class PVScenarioGeneratorBase(abc.ABC):
         for sample in samples:
             sample_path = os.path.join(placement_path, sample)
             pv_systems = set()
-            pv_configs = []
+            pv_configs, pv_profiles = [], {}
             for pen in os.listdir(sample_path):
                 pen_dir = os.path.join(sample_path, pen)
                 if not os.path.isdir(pen_dir):
                     continue
                 pv_systems_file = os.path.join(pen_dir, PV_SYSTEMS_FILENAME)
                 if os.path.exists(pv_systems_file):
-                    pv_conf, pv_profiles = self.assign_profile(pv_systems_file, pv_shapes_file, pv_systems)
-                    self.attach_profile(pv_systems_file, pv_profiles)
+                    pv_conf, pv_prof = self.assign_profile(pv_systems_file, pv_shapes_file, pv_systems)
                     pv_configs += pv_conf
+                    pv_profiles.update(pv_prof)
+                    self.attach_profile(pv_systems_file, pv_profiles)
             final = {"pv_systems": pv_configs}
             pv_config_file = self.save_pv_config(final, sample_path)
             config_files.append(pv_config_file)
@@ -758,7 +759,7 @@ class PVScenarioGeneratorBase(abc.ABC):
         """Assign PV profile to PV systems."""
         pv_dict = self.get_pvsys(pv_systems_file)
         shape_list = self.get_shape_list(pv_shapes_file)
-        pv_conf, pv_profiles = [], {}
+        pv_conf, pv_prof = [], {}
         for pv_name, pv_value in pv_dict.items():
             if pv_name in pv_systems:
                 continue
@@ -776,8 +777,8 @@ class PVScenarioGeneratorBase(abc.ABC):
                 "pv_profile": pv_profile
             })
             pv_systems.add(pv_name)
-            pv_profiles[pv_name] = pv_profile
-        return pv_conf, pv_profiles
+            pv_prof[pv_name] = pv_profile
+        return pv_conf, pv_prof
 
     @staticmethod
     def get_pvsys(pv_systems_file: str) -> dict:
@@ -824,7 +825,7 @@ class PVScenarioGeneratorBase(abc.ABC):
                 match = regex.search(lowered_line)
                 assert match, line
                 pv_name = match.group(0).split(".")[1]
-                pv_profile = pv_profiles.get(pv_name)
+                pv_profile = pv_profiles.get(pv_name, None)
                 if not pv_profile:
                     raise Exception(f"No PV profile founded for {pv_name} - [{line}]]")
                 new_line = line.strip() + f" yearly={pv_profile}\n"
