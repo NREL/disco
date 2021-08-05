@@ -7,6 +7,7 @@ import click
 
 from jade.loggers import setup_logging
 from disco.enums import Placement
+from disco.sources.base import DEFAULT_PV_DEPLOYMENTS_DIRNAME
 from disco.sources.source_tree_1.pv_deployments import (
     DeploymentHierarchy,
     DeploymentCategory,
@@ -254,7 +255,7 @@ def pv_deployments():
 @click.option(
     "-o", "--pv-deployment-dirname",
     type=click.STRING,
-    default="hc_pv_deployments",
+    default=DEFAULT_PV_DEPLOYMENTS_DIRNAME,
     show_default=True,
     help="Output directory name of PV deployments"
 )

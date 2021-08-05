@@ -822,14 +822,12 @@ class PVScenarioGeneratorBase(abc.ABC):
                     continue
                 
                 match = regex.search(lowered_line)
-                assert match, lowered_line
-                pv_name = match.group(1)
-                try:
-                    pv_profile = pv_profiles.get(pv_name)
-                except KeyError as e:
-                    logger.exception("No PV profile founded for %s", pv_name)
-                    raise e
-                new_line = line.strip() + f" yearly={}\n"
+                assert match, line
+                pv_name = match.group(0).split(".")[1]
+                pv_profile = pv_profiles.get(pv_name)
+                if not pv_profile:
+                    raise Exception(f"No PV profile founded for {pv_name} - [{line}]]")
+                new_line = line.strip() + f" yearly={pv_profile}\n"
                 updated_data.append(new_line)
         
         with open(pv_systems_file, "w") as fw:
@@ -1248,7 +1246,7 @@ class PVDataManager(PVDataStorage):
             load_lines = fr.readlines()
             rekeyed_load_dict = self.build_load_dictionary(load_lines)
             updated_lines = self.update_loads(load_lines, rekeyed_load_dict)
-            new_lines = self.strip_pv_profile(update_lines)
+            new_lines = self.strip_pv_profile(updated_lines)
             fw.writelines(new_lines)
         logger.info("Loads transformed - '%s'.", loads_file)
     
@@ -1257,7 +1255,7 @@ class PVDataManager(PVDataStorage):
         if not os.path.exists(original_loads_file):
             return False
         
-        loads_file = os.path.join(feeder_path, LOADS_FILENAME)
+        loads_file = os.path.join(os.path.dirname(original_loads_file), LOADS_FILENAME)
         if os.path.exists(loads_file):
             os.remove(loads_file)
         
@@ -1286,7 +1284,7 @@ class PVDataManager(PVDataStorage):
         """To strip 'yearly=<pv-profile>' from load lines during PV deployments"""
         regex = re.compile(r"\syearly=\S+", flags=re.IGNORECASE)
         new_lines = []
-        for line in loads_lines:
+        for line in load_lines:
             match = regex.search(line.strip())
             if not match:
                 new_lines.append(line)
