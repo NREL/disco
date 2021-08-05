@@ -253,7 +253,7 @@ def pv_deployments():
     help="Upscale PV in deployments."
 )
 @click.option(
-    "-o", "--pv-deployment-dirname",
+    "-o", "--pv-deployments-dirname",
     type=click.STRING,
     default=DEFAULT_PV_DEPLOYMENTS_DIRNAME,
     show_default=True,
@@ -289,7 +289,7 @@ def source_tree_1(
     #percent_shares,
     pv_size_pdf,
     pv_upscale,
-    pv_deployment_dirname,
+    pv_deployments_dirname,
     set_random_seed,
     verbose
 ):
@@ -308,7 +308,7 @@ def source_tree_1(
         "proximity_step": proximity_step,
         "percent_shares": [100, 0],
         "pv_size_pdf": pv_size_pdf,
-        "pv_deployment_dirname": pv_deployment_dirname,
+        "pv_deployments_dirname": pv_deployments_dirname,
         "set_random_seed": set_random_seed
     }
     action_function = ACTION_MAPPING[action]

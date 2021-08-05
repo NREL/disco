@@ -427,7 +427,7 @@ class PVScenarioGeneratorBase(abc.ABC):
 
     def get_output_root_path(self):
         """Return the root path of PV depployments"""
-        return os.path.join(self.feeder_path, self.config.pv_deployment_dirname)
+        return os.path.join(self.feeder_path, self.config.pv_deployments_dirname)
 
     def get_output_placement_path(self) -> str:
         """Return the placement path of PV deployments"""
@@ -723,7 +723,7 @@ class PVScenarioGeneratorBase(abc.ABC):
         if not os.path.exists(root_path):
             logger.info(
                 "Deployment path %s not exis under %s",
-                self.config.pv_deployment_dirname,
+                self.config.pv_deployments_dirname,
                 self.feeder_path
             )
             return []
@@ -1067,7 +1067,7 @@ class PVDataStorage:
 
     def get_deployment_path(self, feeder_path: str) -> str:
         """Return the deployment path"""
-        path = os.path.join(feeder_path, self.config.pv_deployment_dirname)
+        path = os.path.join(feeder_path, self.config.pv_deployments_dirname)
         if os.path.exists(path):
             return path
         return None
@@ -1534,10 +1534,13 @@ class PVDeploymentManager(PVDataStorage):
         options += f"-s {self.config.penetration_step} "
         options += f"-n {self.config.sample_number} "
         options += f"-S {self.config.proximity_step} "
+        options += f"-o {self.config.pv_deployments_dirname}"
         if self.config.pv_size_pdf:
             options += f"-x {self.config.pv_size_pdf} "
         if not self.config.pv_upscale:
             options += "--no-pv-upscale "
+        if not self.config.set_random_seed:
+            options += "--no-set-random-seed"
         options.strip()
         
         commands = []
