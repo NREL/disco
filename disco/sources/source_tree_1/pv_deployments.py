@@ -341,7 +341,7 @@ class PVScenarioGeneratorBase(abc.ABC):
         pvdss_instance = PVDSSInstance(master_file)
         try:
             lock_file = master_file + ".lock"
-            with SoftFileLock(lock_file=lock_file, timeout=300):
+            with SoftFileLock(lock_file=lock_file, timeout=900):
                 pvdss_instance.convert_to_ascii()
                 pvdss_instance.disable_loadshapes_redirect()
                 pvdss_instance.load_feeder()
