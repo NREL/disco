@@ -9,6 +9,7 @@ from PyDSS.exceptions import (
     PyDssConvergenceError,
     PyDssConvergenceErrorCountExceeded,
     PyDssConvergenceMaxError,
+    OpenDssConvergenceErrorCountExceeded,
 )
 from PyDSS.pydss_project import update_pydss_controllers
 from PyDSS.pydss_project import PyDssProject, PyDssScenario
@@ -247,7 +248,13 @@ class PyDssSimulationBase(JobExecutionInterface):
             ret = self.check_convergence_problems()
             # TODO DT:
             ret = EXIT_CODE_GOOD
-        except (PyDssConvergenceError, PyDssConvergenceErrorCountExceeded, PyDssConvergenceMaxError):
+        except (
+            PyDssConvergenceError,
+            PyDssConvergenceErrorCountExceeded,
+            PyDssConvergenceMaxError,
+            OpenDssConvergenceErrorCountExceeded,
+        ):
+            logger.exception("Simulation failed with a convergence error")
             ret = EXIT_CODE_CONVERGENCE_ERROR
         finally:
             os.chdir(orig_dir)
