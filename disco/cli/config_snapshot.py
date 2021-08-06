@@ -81,7 +81,7 @@ def snapshot(
     """Create JADE configuration for snapshot simulations."""
     level = logging.DEBUG if verbose else logging.INFO
     setup_logging(__name__, None, console_level=level)
-    print("======", with_loadshape)
+    
     simulation_config = PyDssConfiguration.get_default_pydss_simulation_config()
     simulation_config["Reports"] = load_data(reports_filename)["Reports"]
     if with_loadshape:
