@@ -39,6 +39,16 @@ To create pipeline template, use this command:
 
 The opendss model inputs - ``<INPUTS>``  can be source models or preconfigured models.
 
+
+.. note::
+
+    When creating the pipeline template for snapshot simulation (default), the flag ``--with-loadshape``
+    or ``--no-with-loadshape`` must be set to indicate if there's ``LoadShapes.dss`` redirected in  models
+    and the according mode it's going to run with,
+    
+    * if ``--no-with-loadshape``, DISCO runs snapshot simulation by using ``Snapshot`` mode.
+    * if ``--with-loadshape``, DISCO runs snapshot simulation by using ``QSTS`` mode with only one timestamp.
+
 a. Source Model Inputs
 
 .. code-block:: bash

@@ -45,7 +45,11 @@ class PipelineTemplate:
         return TemplateSection.POSTPROCESS.value in self.data
 
     def update_transform_params(self, data):
-        self.data[TemplateSection.MODEL.value][TemplateParams.TRANSFORM_PARAMS.value].update(data)
+        section = TemplateSection.MODEL
+        self.data[section.value][TemplateParams.TRANSFORM_PARAMS.value].update(data)
+
+    def update_config_params(self, data, section):
+        self.data[section.value][TemplateParams.CONFIG_PARAMS.value].update(data)
 
     def update_reports_params(self, data):
         if TemplateSection.REPORTS.value not in self.data:

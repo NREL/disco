@@ -46,6 +46,13 @@ def create_pipeline():
     help="Choose a DISCO simulation type"
 )
 @click.option(
+    "--with-loadshape/--no-with-loadshape",
+    type=click.BOOL,
+    is_flag=True,
+    default=None,
+    help="Indicate if loadshape file used for Snapshot simulation."
+)
+@click.option(
     "-i", "--impact-analysis",
     is_flag=True,
     default=False,
@@ -86,6 +93,7 @@ def template(
     inputs,
     preconfigured,
     simulation_type,
+    with_loadshape,
     impact_analysis,
     hosting_capacity,
     prescreen,
@@ -99,6 +107,18 @@ def template(
     
     template = get_default_pipeline_template(simulation_type=simulation_type)
     template.data["inputs"] = inputs
+    
+    if SimulationType(simulation_type) == SimulationType.SNAPSHOT:
+        if prescreen:
+            print("-p or --prescreen option has no effect on 'snapshot' pipeline, ignored!")
+        
+        if with_loadshape is None:
+            print("--with-loadshape option is required for Snapshot simulation.")
+            return
+        else:
+            config_params = template.get_config_params(TemplateSection.SIMULATION)
+            config_params["with_loadshape"] = with_loadshape
+            template.update_config_params(config_params, TemplateSection.SIMULATION)
     
     if preconfigured:
         template.data["preconfigured"] = True
@@ -115,10 +135,6 @@ def template(
     else:
         template.remove_section(TemplateSection.POSTPROCESS)
     
-    if SimulationType(simulation_type) == SimulationType.SNAPSHOT:
-        if prescreen:
-            print("-p or --prescreen option has no effect on 'snapshot' pipeline, ignored!")
-
     if SimulationType(simulation_type) == SimulationType.TIME_SERIES:
         if prescreen:
             template.remove_params(TemplateSection.SIMULATION, TemplateParams.CONFIG_PARAMS)

@@ -58,8 +58,8 @@ logger = logging.getLogger(__name__)
 )
 @click.option(
     "--with-loadshape/--no-with-loadshape",
-    default=False,
-    show_default=True,
+    is_flag=True,
+    required=True,
     help="Configure snapshot simulation with loashape profile."
 )
 @click.option(
@@ -74,14 +74,14 @@ def snapshot(
     exports_filename,
     reports_filename,
     pf1,
-    order_by_penetration=False,
-    with_loadshape=False,
+    order_by_penetration,
+    with_loadshape,
     verbose=False,
 ):
     """Create JADE configuration for snapshot simulations."""
     level = logging.DEBUG if verbose else logging.INFO
     setup_logging(__name__, None, console_level=level)
-
+    print("======", with_loadshape)
     simulation_config = PyDssConfiguration.get_default_pydss_simulation_config()
     simulation_config["Reports"] = load_data(reports_filename)["Reports"]
     if with_loadshape:
