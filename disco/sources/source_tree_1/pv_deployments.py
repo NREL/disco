@@ -1391,15 +1391,15 @@ class PVDataManager(PVDataStorage):
                 phases = v["phases"]
             
             lowered_line = lines[k].lower()
-            lines[k] = lowered_line.replace(f"kv={self.get_attribute(lines[k], 'kv=')}", f"kv={kv}")
-            lines[k] = lowered_line.replace(f"phases={self.get_attribute(lines[k], 'phases=')}", f"phases={phases}")
-        
+            lowered_line = lowered_line.replace(f"kv={self.get_attribute(lines[k], 'kv=')}", f"kv={kv}")
+            lowered_line = lowered_line.replace(f"phases={self.get_attribute(lines[k], 'phases=')}", f"phases={phases}")
             if "kw=" in lowered_line:
-                lines[k] = lowered_line.replace(f"kw={self.get_attribute(lines[k], 'kw=')}", f"kw={str(v['kw'])}")
+                lowered_line = lowered_line.replace(f"kw={self.get_attribute(lines[k], 'kw=')}", f"kw={str(v['kw'])}")
             if "kvar=" in lowered_line:
-                lines[k] = lowered_line.replace(f"kvar={self.get_attribute(lines[k], 'kvar=')}", f"kvar={str(v['kvar'])}")
+                lowered_line = lowered_line.replace(f"kvar={self.get_attribute(lines[k], 'kvar=')}", f"kvar={str(v['kvar'])}")
             if "kva=" in lowered_line:
-                lines[k] = lowered_line.replace(f"kva={self.get_attribute(lines[k], 'kva=')}", f"kva={str(v['kva'])}")
+                lowered_line = lowered_line.replace(f"kva={self.get_attribute(lines[k], 'kva=')}", f"kva={str(v['kva'])}")
+            lines[k] = lowered_line
         
         new_load_lines = [lines[x] for x in rekeyed_load_dict.keys()]
         return new_load_lines
