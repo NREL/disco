@@ -114,11 +114,11 @@ def template(
         
         if with_loadshape is None:
             print("--with-loadshape option is required for Snapshot simulation.")
-            return
-        else:
-            config_params = template.get_config_params(TemplateSection.SIMULATION)
-            config_params["with_loadshape"] = with_loadshape
-            template.update_config_params(config_params, TemplateSection.SIMULATION)
+            sys.exit(1)
+
+        config_params = template.get_config_params(TemplateSection.SIMULATION)
+        config_params["with_loadshape"] = with_loadshape
+        template.update_config_params(config_params, TemplateSection.SIMULATION)
     
     if preconfigured:
         template.data["preconfigured"] = True
