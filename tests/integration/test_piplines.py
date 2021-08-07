@@ -32,8 +32,11 @@ METADATA_TABLE = "metadata_table.csv"
 THERMAL_METRICS_TABLE = "thermal_metrics_table.csv"
 VOLTAGE_METRICS_TABLE = "voltage_metrics_table.csv"
 
-SCENARIO_HOSTING_CAPACITY_SUMMARY_FIFLE = "hosting_capacity_summary__scenario.json"
-SCENARIO_HOSTING_CAPACITY_OVERALL_FIFLE = "hosting_capacity_overall__scenario.json"
+SNAPSHOT_REPORTS_FILE = "generated_snapshot_reports.toml"
+TIME_SERIES_REPORTS_FILE = "generated_time_series_reports.toml"
+
+SCENARIO_HOSTING_CAPACITY_SUMMARY_FIFLE = "hosting_capacity_summary__control_mode.json"
+SCENARIO_HOSTING_CAPACITY_OVERALL_FIFLE = "hosting_capacity_overall__control_mode.json"
 
 
 CONFIG_HPC_COMMAND = (
@@ -63,6 +66,8 @@ def cleanup():
             PRESCREEN_CONFIG_FILE,
             FILTERED_CONFIG_FILE,
             POSTPROCESS_CONFIG_FILE,
+            SNAPSHOT_REPORTS_FILE,
+            TIME_SERIES_REPORTS_FILE,
             SCENARIO_HOSTING_CAPACITY_SUMMARY_FIFLE,
             SCENARIO_HOSTING_CAPACITY_OVERALL_FIFLE
         ]
@@ -86,7 +91,7 @@ def cleanup():
 
 
 def test_source_tree_1_create_snapshot_pipeline_template(smart_ds_substations, cleanup):
-    cmd = f"disco create-pipeline template {smart_ds_substations} -t {TEST_TEMPLATE_FILE}"
+    cmd = f"disco create-pipeline template {smart_ds_substations} -t {TEST_TEMPLATE_FILE} --with-loadshape"
     ret = ret = run_command(cmd)
     assert ret == 0
     
@@ -108,7 +113,7 @@ def test_source_tree_1_create_snapshot_pipeline_template(smart_ds_substations, c
 
 
 def test_source_tree_1_create_snapshot_pipeline_template__impact_analysis(smart_ds_substations, cleanup):
-    cmd = f"disco create-pipeline template {smart_ds_substations} --impact-analysis -t {TEST_TEMPLATE_FILE}"
+    cmd = f"disco create-pipeline template {smart_ds_substations} --impact-analysis -t {TEST_TEMPLATE_FILE} --with-loadshape"
     ret = ret = run_command(cmd)
     assert ret == 0
     
@@ -134,7 +139,7 @@ def test_source_tree_1_create_snapshot_pipeline_template__impact_analysis(smart_
 
 
 def test_source_tree_1_create_snapshot_pipeline_template__prescreen(smart_ds_substations, cleanup):
-    cmd = f"disco create-pipeline template {smart_ds_substations} --prescreen -t {TEST_TEMPLATE_FILE}"
+    cmd = f"disco create-pipeline template {smart_ds_substations} --prescreen -t {TEST_TEMPLATE_FILE} --with-loadshape"
     ret = run_command(cmd)
     assert ret == 0
     
@@ -151,7 +156,7 @@ def test_source_tree_1_create_snapshot_pipeline_template__preconfigured_models(s
     
     cmd = (
         f"disco create-pipeline template {TEST_PRECONFIGURED_MODELS} "
-        f"--preconfigured -t {TEST_TEMPLATE_FILE}"
+        f"--preconfigured -t {TEST_TEMPLATE_FILE} --with-loadshape"
     )
     ret = run_command(cmd)
     assert ret == 0
@@ -163,7 +168,7 @@ def test_source_tree_1_create_snapshot_pipeline_template__preconfigured_models(s
 
 
 def test_source_tree_1_config_snapshot_pipeline(smart_ds_substations, cleanup):
-    cmd1 = f"disco create-pipeline template {smart_ds_substations} -t {TEST_TEMPLATE_FILE}"
+    cmd1 = f"disco create-pipeline template {smart_ds_substations} -t {TEST_TEMPLATE_FILE} --with-loadshape"
     ret = run_command(cmd1)
     assert ret == 0
     ret = run_command(CONFIG_HPC_COMMAND)
@@ -190,7 +195,7 @@ def test_source_tree_1_config_snapshot_pipeline(smart_ds_substations, cleanup):
 def test_source_tree_1_config_snapshot_pipeline__impact_analysis(smart_ds_substations, cleanup):
     cmd1 = (
         f"disco create-pipeline template {smart_ds_substations} "
-        f"--impact-analysis -t {TEST_TEMPLATE_FILE}"
+        f"--impact-analysis -t {TEST_TEMPLATE_FILE} --with-loadshape"
     )
     ret = run_command(cmd1)
     assert ret == 0
@@ -453,7 +458,7 @@ def test_source_tree_1_config_time_series_pipeline__prescreen__impact_analysis(s
 def test_source_tree_1_snapshot_pipeline_submit__hosting_capacity(smart_ds_substations, cleanup):
     cmd1 = (
         f"disco create-pipeline template {smart_ds_substations} "
-        f"--hosting-capacity -t {TEST_TEMPLATE_FILE}"
+        f"--hosting-capacity -t {TEST_TEMPLATE_FILE} --with-loadshape"
     )
     ret = run_command(cmd1)
     assert ret == 0
