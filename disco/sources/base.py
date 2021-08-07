@@ -398,18 +398,34 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
         dst_file : Path
 
         """
-        with open(src_file) as f_in:
-            for line in f_in:
+        # Feeder-level has an "OpenDSS" directory but substation-level
+        # doesn't, hence this hack.
+        is_feeder_level = "OpenDSS" in str(dst_file)
+        if is_feeder_level:
+            profiles_dir = dst_file.parent.parent / "profiles"
+        else:
+            profiles_dir = dst_file.parent / "profiles"
+        # TODO: This could be optimized in the future. We could combine the caller's
+        # copy of src_file to dst_file with this rewrite.
+        with fileinput.input(files=[dst_file], inplace=True) as f:
+            for line in f:
                 matches = BaseOpenDssModel.REGEX_LOAD_SHAPE_DATA_FILE.findall(line)
+                replacements = {}
                 for match in matches:
                     src_data_file_rel_path = Path(match)
                     src_data_file_path = (src_file.parent / src_data_file_rel_path).resolve()
-                    dst_data_file_path = (dst_file.parent / src_data_file_rel_path).resolve()
-                    dst_data_dir = dst_data_file_path.parent
-                    if not dst_data_dir.exists():
-                        dst_data_dir.mkdir(parents=True)
-                    shutil.copyfile(src_data_file_path, dst_data_file_path)
-                    logger.debug("Copied load shape data file %s", dst_data_file_path)
+                    name = src_data_file_path.name
+                    dst_data_file_path = profiles_dir / name
+                    if not dst_data_file_path.exists():
+                        shutil.copyfile(src_data_file_path, dst_data_file_path)
+                        logger.debug("Copied load shape data file %s", dst_data_file_path)
+                    if is_feeder_level:
+                        replacements[match] = str(Path("..") / "profiles" / name)
+                    else:
+                        replacements[match] = str(Path("profiles") / name)
+                for old, new in replacements.items():
+                    line = line.replace(old, new)
+                print(line, end="")
 
     def _get_master_file_relative_path(self, deployment_file, master_path):
         return Path("..") / (master_path.relative_to(deployment_file.parent.parent))
@@ -440,10 +456,15 @@ class OpenDssSubstationWorkspace:
     def _create_directories(self):
         os.makedirs(self.substation_directory, exist_ok=True)
         os.makedirs(self.pv_deployments_directory, exist_ok=True)
+        os.makedirs(self.profiles_directory, exist_ok=True)
 
     @property
     def opendss_directory(self):
         return self.substation_directory
+
+    @property
+    def profiles_directory(self):
+        return os.path.join(self.substation_directory, "profiles")
 
     @property
     def pv_deployments_directory(self):
@@ -471,6 +492,7 @@ class OpenDssFeederWorkspace:
         os.makedirs(self.loadshape_directory, exist_ok=True)
         os.makedirs(self.opendss_directory, exist_ok=True)
         os.makedirs(self.pv_deployments_directory, exist_ok=True)
+        os.makedirs(self.profiles_directory, exist_ok=True)
 
     @property
     def feeder_directory(self):
@@ -483,6 +505,10 @@ class OpenDssFeederWorkspace:
     @property
     def opendss_directory(self):
         return os.path.join(self.feeder_directory, "OpenDSS")
+
+    @property
+    def profiles_directory(self):
+        return os.path.join(self.feeder_directory, "profiles")
 
     @property
     def pv_deployments_directory(self):
