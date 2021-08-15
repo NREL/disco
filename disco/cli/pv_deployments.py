@@ -1,5 +1,6 @@
 import json
 import logging
+import random
 import sys
 from types import SimpleNamespace
 
@@ -20,6 +21,9 @@ from disco.sources.source_tree_1.pv_deployments import (
 HIERARCHY_CHOICE = [item.value for item in DeploymentHierarchy]
 CATEGORY_CHOICE = [item.value for item in DeploymentCategory]
 PLACEMENT_CHOICE = [item.value for item in Placement]
+DEFAULT_RANDOM_SEED = 10000
+
+logger = logging.getLogger(__name__)
 
 
 def create_pv_deployments(input_path: str, hierarchy: str, config: dict):
@@ -260,11 +264,11 @@ def pv_deployments():
     help="Output directory name of PV deployments"
 )
 @click.option(
-    "--set-random-seed/--no-set-random-seed",
-    is_flag=True,
-    default=True,
+    "-r", "--random-seed",
+    type=click.INT,
+    default=DEFAULT_RANDOM_SEED,
     show_default=True,
-    help="Make PV deployments reproducible if set"
+    help="Set an integer seed to make PV deployments reproducible"
 )
 @click.option(
     "--verbose",
@@ -290,12 +294,18 @@ def source_tree_1(
     pv_size_pdf,
     pv_upscale,
     pv_deployments_dirname,
-    set_random_seed,
+    random_seed,
     verbose
 ):
     """Generate PV deployments for source tree 1."""
     level = logging.DEBUG if verbose else logging.INFO
     setup_logging("pv_deployments", None, console_level=level)
+    
+    if random_seed is None:
+        random_seed = random.randint(1, sys.maxsize)
+    
+    logger.info("Set integer seed %s for PV deployments.", random_seed)
+    
     config = {
         "placement": placement,
         "category": category,
@@ -309,7 +319,7 @@ def source_tree_1(
         "percent_shares": [100, 0],
         "pv_size_pdf": pv_size_pdf,
         "pv_deployments_dirname": pv_deployments_dirname,
-        "set_random_seed": set_random_seed
+        "random_seed": random_seed
     }
     action_function = ACTION_MAPPING[action]
     action_function(input_path, hierarchy, config)

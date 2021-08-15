@@ -38,8 +38,6 @@ TRANSFORMED_LOADS_FILENAME = "PV_Loads.dss"
 LOADSHAPES_FILENAME = "LoadShapes.dss"
 ORGINAL_LOADSHAPES_FILENAME = "Original_LoadShapes.dss"
 
-RANDOM_SEED = 10000
-
 
 class DeploymentHierarchy(enum.Enum):
     FEEDER = "feeder"
@@ -1433,8 +1431,11 @@ class PVDeploymentManager(PVDataStorage):
         feeder_paths = self.get_feeder_paths()
         for feeder_path in feeder_paths:
             generator = get_pv_scenario_generator(feeder_path, self.config)
-            if self.config.set_random_seed:
-                random.seed(RANDOM_SEED)
+            random.seed(self.config.random_seed)
+            logger.info(
+                "Set seed %s, and deploy all PV scenarios on feeder - %s",
+                self.config.random_seed, feeder_path
+            )
             feeder_stats = generator.deploy_all_pv_scenarios()
             summary[feeder_path] = feeder_stats
         return summary
@@ -1534,13 +1535,12 @@ class PVDeploymentManager(PVDataStorage):
         options += f"-s {self.config.penetration_step} "
         options += f"-n {self.config.sample_number} "
         options += f"-S {self.config.proximity_step} "
-        options += f"-o {self.config.pv_deployments_dirname}"
+        options += f"-o {self.config.pv_deployments_dirname} "
+        options += f"-r {self.config.random_seed} "
         if self.config.pv_size_pdf:
             options += f"-x {self.config.pv_size_pdf} "
         if not self.config.pv_upscale:
             options += "--no-pv-upscale "
-        if not self.config.set_random_seed:
-            options += "--no-set-random-seed"
         options.strip()
         
         commands = []
@@ -1638,13 +1638,12 @@ class PVConfigManager(PVDataStorage):
         options += f"-s {self.config.penetration_step} "
         options += f"-n {self.config.sample_number} "
         options += f"-S {self.config.proximity_step} "
-        options += f"-o {self.config.pv_deployments_dirname}"
+        options += f"-o {self.config.pv_deployments_dirname} "
+        options += f"-r {self.config.random_seed} "
         if self.config.pv_size_pdf:
             options += f"-x {self.config.pv_size_pdf} "
         if not self.config.pv_upscale:
             options += "--no-pv-upscale "
-        if not self.config.set_random_seed:
-            options += "--no-set-random-seed"
         options.strip()
         
         commands = []
