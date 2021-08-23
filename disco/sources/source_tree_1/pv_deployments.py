@@ -1114,9 +1114,13 @@ class PVDataManager(PVDataStorage):
         """
         super().__init__(input_path, hierarchy, config)
 
-    def redirect(self, feeder_path: str) -> bool:
+    def redirect(self, input_path: str) -> bool:
         """Given a path, update the master file by redirecting PVShapes.dss"""
-        master_file = os.path.join(feeder_path, self.config.master_filename)
+        pv_shapes_file = os.path.join(input_path, PV_SHAPES_FILENAME)
+        if not os.path.exists(pv_shapes_file):
+            self._copy_pv_shapes_file(input_path)
+        
+        master_file = os.path.join(input_path, self.config.master_filename)
         if not os.path.exists(master_file):
             logger.exception("'%s' not found in '%s'. System exits!", self.config.master_filename, path)
             raise
@@ -1140,7 +1144,31 @@ class PVDataManager(PVDataStorage):
         with open(master_file, "w") as fw:
             fw.writelines(data)
         return True
-    
+
+    def _copy_pv_shapes_file(self, input_path: str) -> None:
+        """Copy PVShapes.dss file from source to feeder/substatation directories"""
+        input_path  = Path(input_path)
+        # NOTE: Coordinate different path patterns among different cities
+        if "solar_none_batteries_none_timeseries" in str(input_path):
+            index = 3 if input_path.parent.name == "opendss" else 4
+        else:
+            index = 4 if input_path.parent.name == "opendss" else 5
+        src_file = input_path.parents[index] / "pv-profiles" / PV_SHAPES_FILENAME
+        if not src_file.exists():
+            raise ValueError("PVShapes.dss file does not exist - " + str(src_file))
+        dst_file = input_path / PV_SHAPES_FILENAME
+        
+        with open(src_file, "r") as fr, open(dst_file, "w") as fw:
+            new_lines = []
+            for line in fr.readlines():
+                pv_profile = re.findall(r"file=[a-zA-Z0-9\-\_\/\.]*", line)[0]
+                city_path = Path(os.path.sep.join([".."] * (index + 1)))
+                relative_pv_profile = city_path / "pv-profiles" / os.path.basename(pv_profile)
+                relative_pv_profile = "file=" + str(relative_pv_profile)
+                new_line = line.replace(pv_profile, relative_pv_profile)
+                new_lines.append(new_line)
+            fw.writelines(new_lines)
+
     def redirect_substation_pv_shapes(self) -> None:
         """Run PVShapes redirect in substation directories in parallel"""
         substation_paths = self.get_substation_paths()
