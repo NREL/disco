@@ -400,6 +400,7 @@ class PVScenarioGeneratorBase(abc.ABC):
         end = self.config.max_penetration + 1
         step = self.config.penetration_step
         for sample in range(1, snum):
+            random.seed(sample)
             existing_pv = deepcopy(base_existing_pv)
             pv_records = {}
             for penetration in range(start, end, step):
@@ -734,6 +735,7 @@ class PVScenarioGeneratorBase(abc.ABC):
 
         samples = get_subdir_names(placement_path)
         for sample in samples:
+            random.seed(sample)
             sample_path = os.path.join(placement_path, sample)
             pv_systems = set()
             pv_configs, pv_profiles = [], {}
@@ -1459,11 +1461,6 @@ class PVDeploymentManager(PVDataStorage):
         feeder_paths = self.get_feeder_paths()
         for feeder_path in feeder_paths:
             generator = get_pv_scenario_generator(feeder_path, self.config)
-            random.seed(self.config.random_seed)
-            logger.info(
-                "Set seed %s, and deploy all PV scenarios on feeder - %s",
-                self.config.random_seed, feeder_path
-            )
             feeder_stats = generator.deploy_all_pv_scenarios()
             summary[feeder_path] = feeder_stats
         return summary
@@ -1564,7 +1561,6 @@ class PVDeploymentManager(PVDataStorage):
         options += f"-n {self.config.sample_number} "
         options += f"-S {self.config.proximity_step} "
         options += f"-o {self.config.pv_deployments_dirname} "
-        options += f"-r {self.config.random_seed} "
         if self.config.pv_size_pdf:
             options += f"-x {self.config.pv_size_pdf} "
         if not self.config.pv_upscale:
@@ -1667,7 +1663,6 @@ class PVConfigManager(PVDataStorage):
         options += f"-n {self.config.sample_number} "
         options += f"-S {self.config.proximity_step} "
         options += f"-o {self.config.pv_deployments_dirname} "
-        options += f"-r {self.config.random_seed} "
         if self.config.pv_size_pdf:
             options += f"-x {self.config.pv_size_pdf} "
         if not self.config.pv_upscale:
