@@ -352,15 +352,15 @@ def make_element_bus_mapping_file(file_obj, output_file):
     return feeder_mapping
 
 
-def merge_feeder_mappings(mapping_master, mapping_new):
-    assert sorted(list(mapping_master.keys())) == sorted(list(mapping_new.keys()))
+def merge_feeder_mappings(mapping_main, mapping_new):
+    assert sorted(list(mapping_main.keys())) == sorted(list(mapping_new.keys()))
     for element_type in mapping_new.keys():
         if element_type == "bus_coords":
             continue
         for element, data in mapping_new[element_type].items():
-            if element in mapping_master[element_type]:
+            if element in mapping_main[element_type]:
                 logger.info("Overwriting element %s %s", element_type, element)
-            mapping_master[element_type][element] = data
+            mapping_main[element_type][element] = data
 
 
 def make_element_bus_mapping(path):
