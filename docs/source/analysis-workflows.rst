@@ -19,7 +19,5 @@ The following sections show the analysis workflow for each in detail.
 .. toctree::
    :maxdepth: 2
 
-   analysis-workflows/snapshot-impact-analysis
-   analysis-workflows/snapshot-hosting-capacity
-   analysis-workflows/time-series-impact-analysis
+   analysis-workflows/hosting-capacity-analysis
    analysis-workflows/upgrade-cost-analysis
