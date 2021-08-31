@@ -20,7 +20,7 @@ There are several actions here related to PV deployments manipulation, including
 * ``redirect-pvshapes``: Redirect PVShape.dss in both substation and feeder Master.dss files.
 * ``transform-loads``: Transform Loads.dss file before conducting PV deployments.
 * ``generate-jobs``: Help generate ``create-pv`` and ``create-configs`` jobs in JSON, i.e., jade config.
-* ``revert-feeders``: Before and during PV deployments, Loads.dss and Master.dss files were modified, need to revert back after that.
+* ``restore-feeders``: Before and during PV deployments, Loads.dss and Master.dss files were modified, need to restore after that.
 * ``create-pv``: create PV deployments on feeders based on `placement`, `sample` and `penetration` levels.
 * ``check-pv``: check if there are PV deployments missing at each `placement`, `sample` and `penetration` level.
 * ``remove-pv``: delete PV deployments in case there's something wrong.
@@ -219,8 +219,8 @@ The examples below show commands for creating, checking or removing PV config fi
     $ disco pv-deployments source-tree-1 -a remove-configs -h region -p random <region1_path>
 
 
-Revert Feeders
---------------
+Restore Feeders
+---------------
 
 As the ``Loads.dss`` in SourceTree1 models needs to be transformed during PV deployments, and the 
 content of ``Loads.dss`` was modified. However, we backed up the original ``Loads.dss`` before 
@@ -247,4 +247,4 @@ Run the command below to rename ``Loads.dss`` file and related,
 
 .. code-block:: bash
 
-    $ disco pv-deployments source-tree-1 -a revert-feeders -h <hierarchy> INPUT_PATH
+    $ disco pv-deployments source-tree-1 -a restore-feeders -h <hierarchy> INPUT_PATH
