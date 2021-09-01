@@ -1,6 +1,12 @@
+# USAGE:
+# docker build --secret id=access_token,env=ACCESS_TOKEN --tag disco --build-arg VERSION=x.y.z .
+# where ACCESS_TOKEN is a GitHub token that can clone the disco repository
+
 FROM python:3.7-slim
 
-ARG ACCESS_TOKEN
+ARG VERSION
+
+RUN if [ -z "$VERSION" ]; then echo "VERSION must be specified"; exit 1; fi
 
 USER root
 
@@ -17,7 +23,10 @@ COPY docker/vimrc $HOME/.vimrc
 # Singularity users can use this if they want.
 COPY docker/vimrc /data/vimrc
 COPY docker/setup_singularity.sh /data/setup_singularity.sh
-RUN git config --global url."https://${ACCESS_TOKEN}:@github.com/".insteadOf "https://github.com/"
+RUN echo "$VERSION" > /data/version.txt
+
+RUN --mount=type=secret,id=access_token ACCESS_TOKEN=$(cat /run/secrets/access_token) \
+    && git config --global url."https://${ACCESS_TOKEN}:@github.com/".insteadOf "https://github.com/"
 
 RUN echo "export LD_LIBRARY_PATH=/usr/lib64:/nopt/slurm/current/lib64/slurm:$LD_LIBRARY_PATH" >> $HOME/.bashrc
 RUN echo "export PATH=$PATH:/nopt/slurm/current/bin" >> $HOME/.bashrc
