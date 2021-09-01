@@ -1201,14 +1201,14 @@ class PVDataManager(PVDataStorage):
         
         os.rename(loads_file, transformed_loads_file)
         try:
-            os.chmod(loads_file, 0o666)
-        except Exception:
+            os.chmod(transformed_loads_file, 0o666)
+        except OSError:
             pass
         
         os.rename(original_loads_file, loads_file)
         try:
-            os.chmod(transformed_loads_file, 0o666)
-        except Exception:
+            os.chmod(loads_file, 0o666)
+        except OSError:
             pass
     
     def rename_feeder_loads(self, feeder_paths: list) -> None:
