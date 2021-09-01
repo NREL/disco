@@ -16,14 +16,15 @@ RUN apt-get update \
 
 RUN mkdir /data
 RUN mkdir /nopt
-RUN mkdir /scratch
 RUN mkdir /projects
+RUN mkdir /repos
+RUN mkdir /scratch
 # This works on Docker but not Singularity. Singularity user inside the container is the same as outside.
 COPY docker/vimrc $HOME/.vimrc
 # Singularity users can use this if they want.
 COPY docker/vimrc /data/vimrc
 COPY docker/setup_singularity.sh /data/setup_singularity.sh
-RUN echo "$VERSION" > /data/version.txt
+RUN echo "$VERSION" > /repos/version.txt
 
 RUN --mount=type=secret,id=access_token ACCESS_TOKEN=$(cat /run/secrets/access_token) \
     && git config --global url."https://${ACCESS_TOKEN}:@github.com/".insteadOf "https://github.com/"
