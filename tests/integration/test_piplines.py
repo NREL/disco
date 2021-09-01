@@ -367,6 +367,20 @@ def test_source_tree_1_config_time_series_pipeline(smart_ds_substations, cleanup
     assert len(pipeline_data["stages"]) == 1
 
 
+def test_source_tree_1_config_time_series_pipeline__singularity(smart_ds_substations, cleanup):
+    cmd1 = (
+        f"disco create-pipeline template {smart_ds_substations} -s time-series -p -h "
+        f"-t {TEST_TEMPLATE_FILE} -S -C ."  # It's OK that this is not a container.
+    )
+    ret = run_command(cmd1)
+    assert ret == 0
+    assert os.path.exists(TEST_TEMPLATE_FILE)
+    data = load_data(TEST_TEMPLATE_FILE)
+    assert data["prescreen"]["submitter-params"]["singularity_params"]["enabled"]
+    assert data["simulation"]["submitter-params"]["singularity_params"]["enabled"]
+    assert data["postprocess"]["submitter-params"]["singularity_params"]["enabled"]
+
+
 def test_source_tree_1_config_time_series_pipeline__prescreen(smart_ds_substations, cleanup):
     cmd1 = (
         f"disco create-pipeline template {smart_ds_substations} -s time-series "

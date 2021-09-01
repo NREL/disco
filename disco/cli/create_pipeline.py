@@ -7,6 +7,7 @@ import sys
 import click
 
 from jade.loggers import setup_logging
+from jade.models import SingularityParams
 from jade.utils.utils import dump_data, load_data
 
 from disco.enums import SimulationType
@@ -89,6 +90,20 @@ def create_pipeline():
     type=click.STRING,
     help="PyDSS report options. If None, use the default for the simulation type.",
 )
+@click.option(
+    "-S",
+    "--enable-singularity",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Add Singularity parameters and set the config to run in a container.",
+)
+@click.option(
+    "-C",
+    "--container",
+    type=click.Path(exists=True),
+    help="Path to container",
+)
 def template(
     inputs,
     preconfigured,
@@ -99,6 +114,8 @@ def template(
     prescreen,
     template_file,
     reports_filename,
+    enable_singularity,
+    container,
 ):
     """Create pipeline template file"""
     if hosting_capacity and impact_analysis:
@@ -144,6 +161,12 @@ def template(
     if reports_filename is None:
         reports_filename = get_default_reports_file(SimulationType(simulation_type))
     template.update_reports_params(load_data(reports_filename))
+
+    if enable_singularity:
+        singularity_params = SingularityParams(enabled=True, container=container)
+        for section in template.data.values():
+            if isinstance(section, dict) and "submitter-params" in section:
+                section["submitter-params"]["singularity_params"] = singularity_params.dict()
 
     dump_data(template.data, filename=template_file)
     print(f"Pipeline template file created - {template_file}")
