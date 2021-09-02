@@ -735,7 +735,7 @@ class PVScenarioGeneratorBase(abc.ABC):
 
         samples = get_subdir_names(placement_path)
         for sample in samples:
-            random.seed(self.config.random_seed + sample)
+            random.seed(self.config.random_seed + int(sample))
             sample_path = os.path.join(placement_path, sample)
             pv_systems = set()
             pv_configs, pv_profiles = [], {}
