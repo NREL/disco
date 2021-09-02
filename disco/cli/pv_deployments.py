@@ -263,6 +263,12 @@ def pv_deployments():
     help="Output directory name of PV deployments"
 )
 @click.option(
+    "-r", "--random-seed",
+    type=click.INT,
+    default=random.randint(1, 1000000),
+    help="Set an initial integer seed for making PV deployments reproducible"
+)
+@click.option(
     "--verbose",
     type=click.BOOL,
     is_flag=True,
@@ -286,11 +292,14 @@ def source_tree_1(
     pv_size_pdf,
     pv_upscale,
     pv_deployments_dirname,
+    random_seed,
     verbose
 ):
     """Generate PV deployments for source tree 1."""
     level = logging.DEBUG if verbose else logging.INFO
     setup_logging("pv_deployments", None, console_level=level)
+    
+    logger.info("Set integer %s as initial random seed for PV deployments.", random_seed)
     
     config = {
         "placement": placement,
@@ -304,7 +313,8 @@ def source_tree_1(
         "proximity_step": proximity_step,
         "percent_shares": [100, 0],
         "pv_size_pdf": pv_size_pdf,
-        "pv_deployments_dirname": pv_deployments_dirname
+        "pv_deployments_dirname": pv_deployments_dirname,
+        "random_seed": random_seed
     }
     action_function = ACTION_MAPPING[action]
     action_function(input_path, hierarchy, config)
