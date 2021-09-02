@@ -53,6 +53,12 @@ in *format.toml*.
         disco transform-model tests/data/smart-ds/substations/ time-series --help
         disco transform-model tests/data/smart-ds/substations/ upgrade --help
 
+.. note::
+
+    By default, the name of PV deployments directory is ``hc_pv_deployments``, if the PV deployments
+    are located in other directory, please specify the right directory by using option `-P/--pv-deployments-dirname`
+    in command ``transform-model``.
+
 
 Load Shape Data files
 ---------------------
