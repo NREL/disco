@@ -1119,8 +1119,7 @@ class PVDataManager(PVDataStorage):
     def redirect(self, input_path: str) -> bool:
         """Given a path, update the master file by redirecting PVShapes.dss"""
         pv_shapes_file = os.path.join(input_path, PV_SHAPES_FILENAME)
-        if not os.path.exists(pv_shapes_file):
-            self._copy_pv_shapes_file(input_path)
+        self._copy_pv_shapes_file(input_path)
         
         master_file = os.path.join(input_path, self.config.master_filename)
         if not os.path.exists(master_file):
