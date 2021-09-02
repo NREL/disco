@@ -264,7 +264,7 @@ def pv_deployments():
 )
 @click.option(
     "-r", "--random-seed",
-    type=click.INT,
+    type=click.IntRange(1, 1000000, clamp=True),
     default=random.randint(1, 1000000),
     help="Set an initial integer seed for making PV deployments reproducible"
 )
