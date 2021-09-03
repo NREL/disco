@@ -11,6 +11,7 @@ from jade.jobs.job_inputs_interface import JobInputsInterface
 from jade.exceptions import InvalidParameter
 from jade.utils.utils import handle_file_not_found, handle_key_error, load_data
 from disco.enums import get_placement_from_value
+from disco.sources.base import DEFAULT_PV_DEPLOYMENTS_DIRNAME
 
 
 logger = logging.getLogger(__name__)
@@ -19,7 +20,6 @@ logger = logging.getLogger(__name__)
 class SourceTree1ModelInputs(JobInputsInterface):
     """Implements functionality for Source Type 1 inputs."""
 
-    _DEPLOYMENTS_DIR = "hc_pv_deployments"
     _DEPLOYMENT_FILENAME = "PVSystems.dss"
     _LOAD_SHAPES_FILENAME = "LoadShapes.dss"
     _KEYS_TYPE = namedtuple(
@@ -28,7 +28,7 @@ class SourceTree1ModelInputs(JobInputsInterface):
     _PV_CONFIG_FILENAME = "pv_config.json"
     SUBSTATION_DELIMITER = "--"
 
-    def __init__(self, base_directory):
+    def __init__(self, base_directory, pv_deployments_dirname=None):
         """Constructs SourceTree1ModelInputs.
 
         Parameters
@@ -37,6 +37,7 @@ class SourceTree1ModelInputs(JobInputsInterface):
 
         """
         self._base = base_directory
+        self._pv_deployments_dirname = pv_deployments_dirname or DEFAULT_PV_DEPLOYMENTS_DIRNAME
 
         if not os.path.exists(self._base):
             raise InvalidParameter("inputs directory does not exist: {}"
@@ -105,7 +106,7 @@ class SourceTree1ModelInputs(JobInputsInterface):
             self._base,
             key.substation,
             self._feeder_dirname(key.substation, key.feeder),
-            self._DEPLOYMENTS_DIR,
+            self._pv_deployments_dirname,
             key.placement.value,
             str(sample),
             str(penetration_level),
@@ -293,7 +294,7 @@ class SourceTree1ModelInputs(JobInputsInterface):
             self._base,
             substation,
             self._feeder_dirname(substation, feeder),
-            self._DEPLOYMENTS_DIR,
+            self._pv_deployments_dirname,
             placement.value,
             str(sample),
             self._PV_CONFIG_FILENAME,
@@ -351,7 +352,7 @@ class SourceTree1ModelInputs(JobInputsInterface):
             self._base,
             substation,
             self._feeder_dirname(substation, feeder),
-            self._DEPLOYMENTS_DIR,
+            self._pv_deployments_dirname,
         )
         if not os.path.exists(placement_path):
             return []
@@ -367,7 +368,7 @@ class SourceTree1ModelInputs(JobInputsInterface):
             self._base,
             substation,
             self._feeder_dirname(substation, feeder),
-            self._DEPLOYMENTS_DIR,
+            self._pv_deployments_dirname,
             placement.value,
         )
         samples = self._get_items_from_directory(sample_path)
@@ -379,7 +380,7 @@ class SourceTree1ModelInputs(JobInputsInterface):
             self._base,
             substation,
             self._feeder_dirname(substation, feeder),
-            self._DEPLOYMENTS_DIR,
+            self._pv_deployments_dirname,
             placement.value,
             str(sample),
         )

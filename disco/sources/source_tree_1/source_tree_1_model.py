@@ -25,7 +25,8 @@ from disco.sources.base import (
     SOURCE_CONFIGURATION_FILENAME,
     DEFAULT_SNAPSHOT_IMPACT_ANALYSIS_PARAMS,
     DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS,
-    DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS
+    DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS,
+    DEFAULT_PV_DEPLOYMENTS_DIRNAME
 )
 from .source_tree_1_model_inputs import SourceTree1ModelInputs
 
@@ -50,7 +51,7 @@ COMMON_OPTIONS = (
         help="Level at which to configure the simulation",
     ),
     click.option(
-        "-s",
+        "-S",
         "--substations",
         default=["all"],
         multiple=True,
@@ -106,6 +107,14 @@ COMMON_OPTIONS = (
         show_default=True,
     ),
     click.option(
+        "-P",
+        "--pv-deployments-dirname",
+        help="The output directory name of PV deployments in feeder",
+        type=click.STRING,
+        default=DEFAULT_PV_DEPLOYMENTS_DIRNAME,
+        show_default=True,
+    ),
+    click.option(
         "-F",
         "--force",
         help="overwrite existing directory",
@@ -149,6 +158,7 @@ def snapshot(
     penetration_levels,
     master_file,
     copy_load_shape_data_files,
+    pv_deployments_dirname,
     force,
     start,
     output,
@@ -177,6 +187,7 @@ def snapshot(
         penetration_levels=penetration_levels,
         master_file=master_file,
         copy_load_shape_data_files=copy_load_shape_data_files,
+        pv_deployments_dirname=pv_deployments_dirname
     )
     print(f"Transformed data from {input_path} to {output} for Snapshot Analysis.")
 
@@ -223,6 +234,7 @@ def time_series(
     penetration_levels,
     master_file,
     copy_load_shape_data_files,
+    pv_deployments_dirname,
     force,
     start,
     end,
@@ -253,6 +265,7 @@ def time_series(
         master_file=master_file,
         hierarchy=hierarchy,
         copy_load_shape_data_files=copy_load_shape_data_files,
+        pv_deployments_dirname=pv_deployments_dirname
     )
     print(
         f"Transformed data from {input_path} to {output} for TimeSeries Analysis."
@@ -286,6 +299,7 @@ def upgrade(
     penetration_levels,
     master_file,
     copy_load_shape_data_files,
+    pv_deployments_dirname,
     force,
     start,
     output
@@ -314,6 +328,7 @@ def upgrade(
         penetration_levels=penetration_levels,
         master_file=master_file,
         copy_load_shape_data_files=copy_load_shape_data_files,
+        pv_deployments_dirname=pv_deployments_dirname
     )
     print(f"Transformed data from {input_path} to {output} for UpgradeCostAnalysis.")
 
@@ -431,8 +446,9 @@ class SourceTree1Model(BaseOpenDssModel):
         penetration_levels=("all",),
         master_file="Master.dss",
         copy_load_shape_data_files=False,
+        pv_deployments_dirname=DEFAULT_PV_DEPLOYMENTS_DIRNAME
     ):
-        inputs = SourceTree1ModelInputs(input_path)
+        inputs = SourceTree1ModelInputs(input_path, pv_deployments_dirname)
 
         if substations == ("all",):
             substations = inputs.list_substations()

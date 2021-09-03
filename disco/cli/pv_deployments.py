@@ -1,5 +1,6 @@
 import json
 import logging
+import random
 import sys
 from types import SimpleNamespace
 
@@ -7,6 +8,7 @@ import click
 
 from jade.loggers import setup_logging
 from disco.enums import Placement
+from disco.sources.base import DEFAULT_PV_DEPLOYMENTS_DIRNAME
 from disco.sources.source_tree_1.pv_deployments import (
     DeploymentHierarchy,
     DeploymentCategory,
@@ -19,6 +21,8 @@ from disco.sources.source_tree_1.pv_deployments import (
 HIERARCHY_CHOICE = [item.value for item in DeploymentHierarchy]
 CATEGORY_CHOICE = [item.value for item in DeploymentCategory]
 PLACEMENT_CHOICE = [item.value for item in Placement]
+
+logger = logging.getLogger(__name__)
 
 
 def create_pv_deployments(input_path: str, hierarchy: str, config: dict):
@@ -96,7 +100,7 @@ def check_pv_configs(input_path: str, hierarchy: str, config: dict):
 
 def list_feeder_paths(input_path: str, hierarchy: str, config: dict):
     hierarchy = DeploymentHierarchy(hierarchy)
-    storage = PVDataStorage(input_path, hierarchy)
+    storage = PVDataStorage(input_path, hierarchy, config)
     result = storage.get_feeder_paths()
     for feeder_path in result:
         print(feeder_path)
@@ -122,9 +126,25 @@ def generate_pv_deployment_jobs(input_path: str, hierarchy: str, config: dict):
     create_config_jobs_file = manager.generate_pv_config_jobs()
 
 
+def restore_feeder_data(input_path: str, hierarchy: str, config: dict):
+    hierarchy = DeploymentHierarchy(hierarchy)
+    config = SimpleNamespace(**config)
+    manager = PVDataManager(input_path, hierarchy, config)
+    manager.restore_feeder_data()
+
+
+def transform_feeder_loads(input_path: str, hierarchy: str, config: dict):
+    hierarchy = DeploymentHierarchy(hierarchy)
+    config = SimpleNamespace(**config)
+    manager = PVDataManager(input_path, hierarchy, config)
+    manager.transform_feeder_loads()
+
+
 ACTION_MAPPING = {
     "redirect-pvshapes": redirect_pv_shapes,
+    "transform-loads": transform_feeder_loads,
     "generate-jobs": generate_pv_deployment_jobs,
+    "restore-feeders": restore_feeder_data,
     
     "create-pv": create_pv_deployments,
     "create-configs": create_pv_configs,
@@ -236,6 +256,19 @@ def pv_deployments():
     help="Upscale PV in deployments."
 )
 @click.option(
+    "-o", "--pv-deployments-dirname",
+    type=click.STRING,
+    default=DEFAULT_PV_DEPLOYMENTS_DIRNAME,
+    show_default=True,
+    help="Output directory name of PV deployments"
+)
+@click.option(
+    "-r", "--random-seed",
+    type=click.IntRange(1, 1000000, clamp=True),
+    default=random.randint(1, 1000000),
+    help="Set an initial integer seed for making PV deployments reproducible"
+)
+@click.option(
     "--verbose",
     type=click.BOOL,
     is_flag=True,
@@ -258,11 +291,17 @@ def source_tree_1(
     #percent_shares,
     pv_size_pdf,
     pv_upscale,
+    pv_deployments_dirname,
+    random_seed,
     verbose
 ):
     """Generate PV deployments for source tree 1."""
     level = logging.DEBUG if verbose else logging.INFO
     setup_logging("pv_deployments", None, console_level=level)
+    
+    if action == "create-pv":
+        logger.info("Set integer %s as initial random seed for PV deployments.", random_seed)
+    
     config = {
         "placement": placement,
         "category": category,
@@ -274,7 +313,9 @@ def source_tree_1(
         "sample_number": sample_number,
         "proximity_step": proximity_step,
         "percent_shares": [100, 0],
-        "pv_size_pdf": pv_size_pdf
+        "pv_size_pdf": pv_size_pdf,
+        "pv_deployments_dirname": pv_deployments_dirname,
+        "random_seed": random_seed
     }
     action_function = ACTION_MAPPING[action]
     action_function(input_path, hierarchy, config)

@@ -43,6 +43,8 @@ DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS = {
     "simulation_type": SimulationType.SNAPSHOT.value,
 }
 
+DEFAULT_PV_DEPLOYMENTS_DIRNAME = "hc_pv_deployments"
+
 logger = logging.getLogger(__name__)
 
 
