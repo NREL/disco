@@ -7,6 +7,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+SCENARIO_NAME_DELIMITER = "__"
 SIMULATION_POSTPROCESS = "post_process"
 
 

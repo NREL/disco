@@ -6,6 +6,8 @@ import pytest
 from jade.utils.subprocess_manager import run_command
 from jade.utils.utils import load_data, dump_data
 
+from PyDSS.common import SnapshotTimePointSelectionMode
+
 # Pre-defined filenames
 TEST_TEMPLATE_FILE = "pipeline-test-template.toml"
 TEST_PIPELINE_CONFIG_FILE = "pipeline-test.json"
@@ -35,8 +37,8 @@ VOLTAGE_METRICS_TABLE = "voltage_metrics_table.csv"
 SNAPSHOT_REPORTS_FILE = "generated_snapshot_reports.toml"
 TIME_SERIES_REPORTS_FILE = "generated_time_series_reports.toml"
 
-SCENARIO_HOSTING_CAPACITY_SUMMARY_FIFLE = "hosting_capacity_summary__control_mode.json"
-SCENARIO_HOSTING_CAPACITY_OVERALL_FIFLE = "hosting_capacity_overall__control_mode.json"
+SCENARIO_HOSTING_CAPACITY_SUMMARY_FILE = "hosting_capacity_summary__control_mode.json"
+SCENARIO_HOSTING_CAPACITY_OVERALL_FILE = "hosting_capacity_overall__control_mode.json"
 
 
 CONFIG_HPC_COMMAND = (
@@ -68,13 +70,13 @@ def cleanup():
             POSTPROCESS_CONFIG_FILE,
             SNAPSHOT_REPORTS_FILE,
             TIME_SERIES_REPORTS_FILE,
-            SCENARIO_HOSTING_CAPACITY_SUMMARY_FIFLE,
-            SCENARIO_HOSTING_CAPACITY_OVERALL_FIFLE
+            SCENARIO_HOSTING_CAPACITY_SUMMARY_FILE,
+            SCENARIO_HOSTING_CAPACITY_OVERALL_FILE
         ]
         for path in result_files:
             if os.path.exists(path):
                 os.remove(path)
-        
+
         result_dirs = [
             SNAPSHOT_MODELS_DIR,
             TIME_SERIES_MODELS_DIR,
@@ -91,58 +93,58 @@ def cleanup():
 
 
 def test_source_tree_1_create_snapshot_pipeline_template(smart_ds_substations, cleanup):
-    cmd = f"disco create-pipeline template {smart_ds_substations} -t {TEST_TEMPLATE_FILE} --with-loadshape"
+    cmd = f"disco create-pipeline template {smart_ds_substations} -t {TEST_TEMPLATE_FILE} --with-loadshape -d1"
     ret = ret = run_command(cmd)
     assert ret == 0
-    
+
     assert os.path.exists(TEST_TEMPLATE_FILE)
     data = load_data(TEST_TEMPLATE_FILE)
-    
+
     assert "model" in data
     assert "prescreen" not in data
     assert "simulation" in data
     assert "postprocess" not in data
-    
+
     assert data["inputs"] == smart_ds_substations
     assert data["simulation_type"] == "snapshot"
     assert "analysis_type" not in data
-    
+
     assert "transform-params" in data["model"]
     assert "config-params" in data["simulation"]
     assert "submitter-params" in data["simulation"]
 
 
 def test_source_tree_1_create_snapshot_pipeline_template__impact_analysis(smart_ds_substations, cleanup):
-    cmd = f"disco create-pipeline template {smart_ds_substations} --impact-analysis -t {TEST_TEMPLATE_FILE} --with-loadshape"
+    cmd = f"disco create-pipeline template {smart_ds_substations} --impact-analysis -t {TEST_TEMPLATE_FILE} --with-loadshape -d1"
     ret = ret = run_command(cmd)
     assert ret == 0
-    
+
     assert os.path.exists(TEST_TEMPLATE_FILE)
     data = load_data(TEST_TEMPLATE_FILE)
-    
+
     assert "model" in data
     assert "prescreen" not in data
     assert "simulation" in data
     assert "postprocess" in data
-    
+
     assert data["inputs"] == smart_ds_substations
     assert data["simulation_type"] == "snapshot"
     assert data["analysis_type"] == "impact-analysis"
-    
+
     assert "transform-params" in data["model"]
-    
+
     assert "config-params" in data["simulation"]
     assert "submitter-params" in data["simulation"]
-    
+
     assert "config-params" in data["postprocess"]
     assert "submitter-params" in data["postprocess"]
 
 
 def test_source_tree_1_create_snapshot_pipeline_template__prescreen(smart_ds_substations, cleanup):
-    cmd = f"disco create-pipeline template {smart_ds_substations} --prescreen -t {TEST_TEMPLATE_FILE} --with-loadshape"
+    cmd = f"disco create-pipeline template {smart_ds_substations} --prescreen -t {TEST_TEMPLATE_FILE} --with-loadshape -d1"
     ret = run_command(cmd)
     assert ret == 0
-    
+
     assert os.path.exists(TEST_TEMPLATE_FILE)
     data = load_data(TEST_TEMPLATE_FILE)
     assert "prescreen" not in data
@@ -153,14 +155,14 @@ def test_source_tree_1_create_snapshot_pipeline_template__preconfigured_models(s
     ret = run_command(cmd1)
     assert ret == 0
     assert os.path.exists(TEST_PRECONFIGURED_MODELS)
-    
+
     cmd = (
         f"disco create-pipeline template {TEST_PRECONFIGURED_MODELS} "
-        f"--preconfigured -t {TEST_TEMPLATE_FILE} --with-loadshape"
+        f"--preconfigured -t {TEST_TEMPLATE_FILE} --with-loadshape -d1"
     )
     ret = run_command(cmd)
     assert ret == 0
-    
+
     assert os.path.exists(TEST_TEMPLATE_FILE)
     data = load_data(TEST_TEMPLATE_FILE)
     assert "model" not in data
@@ -168,26 +170,26 @@ def test_source_tree_1_create_snapshot_pipeline_template__preconfigured_models(s
 
 
 def test_source_tree_1_config_snapshot_pipeline(smart_ds_substations, cleanup):
-    cmd1 = f"disco create-pipeline template {smart_ds_substations} -t {TEST_TEMPLATE_FILE} --with-loadshape"
+    cmd1 = f"disco create-pipeline template {smart_ds_substations} -t {TEST_TEMPLATE_FILE} --with-loadshape -d1"
     ret = run_command(cmd1)
     assert ret == 0
     ret = run_command(CONFIG_HPC_COMMAND)
     assert ret == 0
-    
+
     assert os.path.exists(TEST_TEMPLATE_FILE)
     data = load_data(TEST_TEMPLATE_FILE)
     data["simulation"]["submitter-params"]["hpc_config"] = TEST_HPC_CONFIG_FILE
     dump_data(data, TEST_TEMPLATE_FILE)
-    
+
     ret = run_command(MAKE_PIPELINE_CONFIG_COMMAND)
     assert ret == 0
-    
+
     assert os.path.exists(TEST_HPC_CONFIG_FILE)
     assert os.path.exists(TEST_PIPELINE_CONFIG_FILE)
     assert not os.path.exists(PRESCREEN_AUTO_CONFIG_TEXT_FILE)
     assert os.path.exists(SIMULATION_AUTO_CONFIG_TEXT_FILE)
     assert not os.path.exists(POSTPROCESS_AUTO_CONFIG_TEXT_FILE)
-    
+
     pipeline_data = load_data(TEST_PIPELINE_CONFIG_FILE)
     assert len(pipeline_data["stages"]) == 1
 
@@ -195,22 +197,22 @@ def test_source_tree_1_config_snapshot_pipeline(smart_ds_substations, cleanup):
 def test_source_tree_1_config_snapshot_pipeline__impact_analysis(smart_ds_substations, cleanup):
     cmd1 = (
         f"disco create-pipeline template {smart_ds_substations} "
-        f"--impact-analysis -t {TEST_TEMPLATE_FILE} --with-loadshape"
+        f"--impact-analysis -t {TEST_TEMPLATE_FILE} --with-loadshape -d1"
     )
     ret = run_command(cmd1)
     assert ret == 0
     ret = run_command(CONFIG_HPC_COMMAND)
     assert ret == 0
-    
+
     assert os.path.exists(TEST_TEMPLATE_FILE)
     data = load_data(TEST_TEMPLATE_FILE)
     data["simulation"]["submitter-params"]["hpc_config"] = TEST_HPC_CONFIG_FILE
     data["postprocess"]["submitter-params"]["hpc_config"] = TEST_HPC_CONFIG_FILE
     dump_data(data, TEST_TEMPLATE_FILE)
-    
+
     ret = run_command(MAKE_PIPELINE_CONFIG_COMMAND)
     assert ret == 0
-    
+
     assert os.path.exists(TEST_HPC_CONFIG_FILE)
     assert os.path.exists(TEST_TEMPLATE_FILE)
     assert os.path.exists(TEST_PIPELINE_CONFIG_FILE)
@@ -230,19 +232,19 @@ def test_source_tree_1_create_time_series_pipeline_template(smart_ds_substations
     )
     ret = run_command(cmd)
     assert ret == 0
-    
+
     assert os.path.exists(TEST_TEMPLATE_FILE)
     data = load_data(TEST_TEMPLATE_FILE)
-    
+
     assert "model" in data
     assert "prescreen" not in data
     assert "simulation" in data
     assert "postprocess" not in data
-    
+
     assert data["inputs"] == smart_ds_substations
     assert data["simulation_type"] == "time-series"
     assert "analysis_type" not in data
-    
+
     assert "transform-params" in data["model"]
     assert "config-params" in data["simulation"]
     assert "submitter-params" in data["simulation"]
@@ -255,24 +257,24 @@ def test_source_tree_1_create_time_series_pipeline_template__impact_analysis(sma
     )
     ret = run_command(cmd)
     assert ret == 0
-    
+
     assert os.path.exists(TEST_TEMPLATE_FILE)
     data = load_data(TEST_TEMPLATE_FILE)
-    
+
     assert "model" in data
     assert "prescreen" not in data
     assert "simulation" in data
     assert "postprocess" in data
-    
+
     assert data["inputs"] == smart_ds_substations
     assert data["simulation_type"] == "time-series"
     assert data["analysis_type"] == "impact-analysis"
-    
+
     assert "transform-params" in data["model"]
-    
+
     assert "config-params" in data["simulation"]
     assert "submitter-params" in data["simulation"]
-    
+
     assert "config-params" in data["postprocess"]
     assert "submitter-params" in data["postprocess"]
 
@@ -284,25 +286,25 @@ def test_source_tree_1_create_time_series_pipeline_template__prescreen(smart_ds_
     )
     ret = run_command(cmd)
     assert ret == 0
-    
+
     assert os.path.exists(TEST_TEMPLATE_FILE)
     data = load_data(TEST_TEMPLATE_FILE)
-    
+
     assert "model" in data
     assert "prescreen" in data
     assert "simulation" in data
     assert "postprocess" not in data
-    
+
     assert data["inputs"] == smart_ds_substations
     assert data["simulation_type"] == "time-series"
     assert "analysis_type" not in data
-    
+
     assert "transform-params" in data["model"]
-    
+
     assert "config-params" in data["prescreen"]
     assert "prescreen-params" in data["prescreen"]
     assert "submitter-params" in data["prescreen"]
-    
+
     assert "config-params" not in data["simulation"]
     assert "submitter-params" in data["simulation"]
 
@@ -314,28 +316,28 @@ def test_source_tree_1_create_time_series_pipeline_template__prescreen__impact_a
     )
     ret = run_command(cmd)
     assert ret == 0
-    
+
     assert os.path.exists(TEST_TEMPLATE_FILE)
     data = load_data(TEST_TEMPLATE_FILE)
-    
+
     assert "model" in data
     assert "prescreen" in data
     assert "simulation" in data
     assert "postprocess" in data
-    
+
     assert data["inputs"] == smart_ds_substations
     assert data["simulation_type"] == "time-series"
     assert data["analysis_type"] == "impact-analysis"
-    
+
     assert "transform-params" in data["model"]
-    
+
     assert "config-params" in data["prescreen"]
     assert "prescreen-params" in data["prescreen"]
     assert "submitter-params" in data["prescreen"]
-    
+
     assert "config-params" not in data["simulation"]
     assert "submitter-params" in data["simulation"]
-    
+
     assert "config-params" in data["postprocess"]
     assert "submitter-params" in data["postprocess"]
 
@@ -349,20 +351,20 @@ def test_source_tree_1_config_time_series_pipeline(smart_ds_substations, cleanup
     assert ret == 0
     ret = run_command(CONFIG_HPC_COMMAND)
     assert ret == 0
-    
+
     assert os.path.exists(TEST_TEMPLATE_FILE)
     data = load_data(TEST_TEMPLATE_FILE)
     data["simulation"]["submitter-params"]["hpc_config"] = TEST_HPC_CONFIG_FILE
     dump_data(data, TEST_TEMPLATE_FILE)
-    
+
     ret = run_command(MAKE_PIPELINE_CONFIG_COMMAND)
-    
+
     assert os.path.exists(TEST_HPC_CONFIG_FILE)
     assert os.path.exists(TEST_PIPELINE_CONFIG_FILE)
     assert not os.path.exists(PRESCREEN_AUTO_CONFIG_TEXT_FILE)
     assert os.path.exists(SIMULATION_AUTO_CONFIG_TEXT_FILE)
     assert not os.path.exists(POSTPROCESS_AUTO_CONFIG_TEXT_FILE)
-    
+
     pipeline_data = load_data(TEST_PIPELINE_CONFIG_FILE)
     assert len(pipeline_data["stages"]) == 1
 
@@ -390,22 +392,22 @@ def test_source_tree_1_config_time_series_pipeline__prescreen(smart_ds_substatio
     assert ret == 0
     ret = run_command(CONFIG_HPC_COMMAND)
     assert ret == 0
-    
+
     assert os.path.exists(TEST_TEMPLATE_FILE)
     data = load_data(TEST_TEMPLATE_FILE)
     data["prescreen"]["submitter-params"]["hpc_config"] = TEST_HPC_CONFIG_FILE
     data["simulation"]["submitter-params"]["hpc_config"] = TEST_HPC_CONFIG_FILE
     dump_data(data, TEST_TEMPLATE_FILE)
-    
+
     ret = run_command(MAKE_PIPELINE_CONFIG_COMMAND)
     assert ret == 0
-    
+
     assert os.path.exists(TEST_HPC_CONFIG_FILE)
     assert os.path.exists(TEST_PIPELINE_CONFIG_FILE)
     assert os.path.exists(PRESCREEN_AUTO_CONFIG_TEXT_FILE)
     assert os.path.exists(SIMULATION_AUTO_CONFIG_TEXT_FILE)
     assert not os.path.exists(POSTPROCESS_AUTO_CONFIG_TEXT_FILE)
-    
+
     pipeline_data = load_data(TEST_PIPELINE_CONFIG_FILE)
     assert len(pipeline_data["stages"]) == 2
 
@@ -419,22 +421,22 @@ def test_source_tree_1_config_time_series_pipeline__impact_analysis(smart_ds_sub
     assert ret == 0
     ret = run_command(CONFIG_HPC_COMMAND)
     assert ret == 0
-    
+
     assert os.path.exists(TEST_TEMPLATE_FILE)
     data = load_data(TEST_TEMPLATE_FILE)
     data["simulation"]["submitter-params"]["hpc_config"] = TEST_HPC_CONFIG_FILE
     data["postprocess"]["submitter-params"]["hpc_config"] = TEST_HPC_CONFIG_FILE
     dump_data(data, TEST_TEMPLATE_FILE)
-    
+
     ret = run_command(MAKE_PIPELINE_CONFIG_COMMAND)
     assert ret == 0
-    
+
     assert os.path.exists(TEST_HPC_CONFIG_FILE)
     assert os.path.exists(TEST_PIPELINE_CONFIG_FILE)
     assert not os.path.exists(PRESCREEN_AUTO_CONFIG_TEXT_FILE)
     assert os.path.exists(SIMULATION_AUTO_CONFIG_TEXT_FILE)
     assert os.path.exists(POSTPROCESS_AUTO_CONFIG_TEXT_FILE)
-    
+
     pipeline_data = load_data(TEST_PIPELINE_CONFIG_FILE)
     assert len(pipeline_data["stages"]) == 2
 
@@ -448,23 +450,23 @@ def test_source_tree_1_config_time_series_pipeline__prescreen__impact_analysis(s
     assert ret == 0
     ret = run_command(CONFIG_HPC_COMMAND)
     assert ret == 0
-    
+
     assert os.path.exists(TEST_TEMPLATE_FILE)
     data = load_data(TEST_TEMPLATE_FILE)
     data["prescreen"]["submitter-params"]["hpc_config"] = TEST_HPC_CONFIG_FILE
     data["simulation"]["submitter-params"]["hpc_config"] = TEST_HPC_CONFIG_FILE
     data["postprocess"]["submitter-params"]["hpc_config"] = TEST_HPC_CONFIG_FILE
     dump_data(data, TEST_TEMPLATE_FILE)
-    
+
     ret = run_command(MAKE_PIPELINE_CONFIG_COMMAND)
     assert ret == 0
-    
+
     assert os.path.exists(TEST_HPC_CONFIG_FILE)
     assert os.path.exists(TEST_PIPELINE_CONFIG_FILE)
     assert os.path.exists(PRESCREEN_AUTO_CONFIG_TEXT_FILE)
     assert os.path.exists(SIMULATION_AUTO_CONFIG_TEXT_FILE)
     assert os.path.exists(POSTPROCESS_AUTO_CONFIG_TEXT_FILE)
-    
+
     pipeline_data = load_data(TEST_PIPELINE_CONFIG_FILE)
     assert len(pipeline_data["stages"]) == 3
 
@@ -472,7 +474,7 @@ def test_source_tree_1_config_time_series_pipeline__prescreen__impact_analysis(s
 def test_source_tree_1_snapshot_pipeline_submit__hosting_capacity(smart_ds_substations, cleanup):
     cmd1 = (
         f"disco create-pipeline template {smart_ds_substations} "
-        f"--hosting-capacity -t {TEST_TEMPLATE_FILE} --with-loadshape"
+        f"--hosting-capacity -t {TEST_TEMPLATE_FILE} --with-loadshape -d1"
     )
     ret = run_command(cmd1)
     assert ret == 0
@@ -483,26 +485,30 @@ def test_source_tree_1_snapshot_pipeline_submit__hosting_capacity(smart_ds_subst
     data["postprocess"]["submitter-params"]["hpc_config"] = TEST_HPC_CONFIG_FILE
     dump_data(data, TEST_TEMPLATE_FILE)
     ret = run_command(MAKE_PIPELINE_CONFIG_COMMAND)
-    
+
     cmd2 = f"jade pipeline submit {TEST_PIPELINE_CONFIG_FILE} -o {TEST_PIPELINE_OUTPUT}"
     ret = run_command(cmd2)
-    
+
     assert ret == 0
     assert not os.path.exists("snapshot-models")
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "snapshot-models"))
-    
+
     assert os.path.exists(TEST_PIPELINE_OUTPUT)
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1"))
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage2"))
-    
+
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", FEEDER_HEAD_TABLE))
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", FEEDER_LOSSES_TABLE))
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", METADATA_TABLE))
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", THERMAL_METRICS_TABLE))
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", VOLTAGE_METRICS_TABLE))
-    
-    assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", SCENARIO_HOSTING_CAPACITY_OVERALL_FIFLE))
-    assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", SCENARIO_HOSTING_CAPACITY_SUMMARY_FIFLE))
+
+    modes = (x.value for x in SnapshotTimePointSelectionMode if x != SnapshotTimePointSelectionMode.NONE)
+    for mode in modes:
+        expected1 = SCENARIO_HOSTING_CAPACITY_OVERALL_FILE.replace(".json", f"__{mode}.json")
+        expected2 = SCENARIO_HOSTING_CAPACITY_SUMMARY_FILE.replace(".json", f"__{mode}.json")
+        assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", expected1))
+        assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", expected2))
 
 
 def test_source_tree_1_time_series_pipeline_submit__prescreen__impact_analysis(smart_ds_substations, cleanup):
@@ -520,13 +526,13 @@ def test_source_tree_1_time_series_pipeline_submit__prescreen__impact_analysis(s
     data["postprocess"]["submitter-params"]["hpc_config"] = TEST_HPC_CONFIG_FILE
     dump_data(data, TEST_TEMPLATE_FILE)
     ret = run_command(MAKE_PIPELINE_CONFIG_COMMAND)
-    
+
     cmd2 = f"jade pipeline submit {TEST_PIPELINE_CONFIG_FILE} -o {TEST_PIPELINE_OUTPUT}"
     ret = run_command(cmd2)
     assert not os.path.exists("time-series-models")
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "time-series-models"))
     assert ret == 0
-    
+
     assert os.path.exists(TEST_PIPELINE_OUTPUT)
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1"))
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage2"))

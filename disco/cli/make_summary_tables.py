@@ -18,9 +18,11 @@ from jade.jobs.results_aggregator import ResultsAggregator
 
 from PyDSS.node_voltage_metrics import VOLTAGE_METRIC_FIELDS_TO_INCLUDE_AS_PASS_CRITERIA
 from PyDSS.pydss_results import PyDssResults, PyDssScenarioResults
+from PyDSS.reports.pv_reports import PF1_SCENARIO, CONTROL_MODE_SCENARIO
 from PyDSS.thermal_metrics import create_summary_from_dict
 
 from disco.pipelines.utils import ensure_jade_pipeline_output_dir
+from disco.pydss.common import SCENARIO_NAME_DELIMITER
 
 
 JobInfo = namedtuple(
@@ -110,6 +112,22 @@ def parse_job_results(job, output_path):
     )
 
 
+def add_scenario(row, scenario_name):
+    """Splits the PyDSS scenario name into name and time point.
+    Only applicable to loadshape-based snapshot simulations.
+
+    """
+    if SCENARIO_NAME_DELIMITER not in scenario_name:
+        row["scenario"] = scenario_name
+        return
+
+    name, time_point = scenario_name.split(SCENARIO_NAME_DELIMITER)
+    if name not in (CONTROL_MODE_SCENARIO, PF1_SCENARIO):
+        raise Exception(f"Unexpected parsing of scenario name: {scenario_name}")
+    row["scenario"] = name
+    row["time_point"] = time_point
+
+
 def get_metadata_table(results: PyDssResults, job_info: JobInfo):
     """Return capacity stats for each scenario in the PyDSS project"""
     metadata_table = []
@@ -120,12 +138,12 @@ def get_metadata_table(results: PyDssResults, job_info: JobInfo):
         row = job_info._asdict()
         row.update(
             {
-                "scenario": scenario.name,
                 "pct_pv_to_load_ratio": pct_pv_to_load_ratio,
                 "pv_capacity_kw": total_pv,
                 "load_capacity_kw": total_load,
             }
         )
+        add_scenario(row, scenario.name)
         metadata_table.append(row)
 
     return metadata_table
@@ -137,7 +155,7 @@ def get_feeder_losses(results: PyDssResults, job_info: JobInfo):
     data = json.loads(results.read_file("Reports/feeder_losses.json"))
     for scenario, values in data["scenarios"].items():
         row = job_info._asdict()
-        row["scenario"] = scenario
+        add_scenario(row, scenario)
         row.update(values)
         feeder_losses_table.append(row)
     return feeder_losses_table
@@ -149,7 +167,7 @@ def get_feeder_head_info(results: PyDssResults, job_info: JobInfo):
     for scenario in results.scenarios:
         data = json.loads(results.read_file(f"Exports/{scenario.name}/FeederHeadInfo.json"))
         row = job_info._asdict()
-        row["scenario"] = scenario.name
+        add_scenario(row, scenario.name)
         row.update(data)
         feeder_head_table.append(row)
     return feeder_head_table
@@ -161,7 +179,7 @@ def get_thermal_metrics(results: PyDssResults, job_info: JobInfo):
     data = json.loads(results.read_file("Reports/thermal_metrics.json"))
     for scenario, metrics in create_summary_from_dict(data).items():
         row = job_info._asdict()
-        row["scenario"] = scenario
+        add_scenario(row, scenario)
         row.update(metrics)
         thermal_metrics_table.append(row)
 
@@ -175,7 +193,7 @@ def get_voltage_metrics(results: PyDssResults, job_info: JobInfo):
     for scenario in data["scenarios"]:
         for node_type in data["scenarios"][scenario]:
             row = job_info._asdict()
-            row["scenario"] = scenario
+            add_scenario(row, scenario)
             row["node_type"] = node_type
             for field in VOLTAGE_METRIC_FIELDS_TO_INCLUDE_AS_PASS_CRITERIA:
                 row[field] = data["scenarios"][scenario][node_type]["summary"][field]

@@ -12,11 +12,17 @@ import click
 from jade.common import CONFIG_FILE
 from jade.loggers import setup_logging
 from jade.utils.utils import load_data
+from PyDSS.common import SnapshotTimePointSelectionMode
 from PyDSS.reports.pv_reports import PF1_SCENARIO, CONTROL_MODE_SCENARIO
 
 from disco.enums import SimulationType
 from disco.extensions.pydss_simulation.pydss_configuration import PyDssConfiguration
-from disco.pydss.pydss_configuration_base import get_default_exports_file, get_default_reports_file
+from disco.pydss.pydss_configuration_base import (
+    get_default_exports_file,
+    get_default_reports_file,
+    DEFAULT_LOAD_SHAPE_START_TIME,
+)
+from disco.pydss.common import SCENARIO_NAME_DELIMITER
 
 ESTIMATED_EXEC_SECS_PER_JOB = 10
 
@@ -63,6 +69,20 @@ logger = logging.getLogger(__name__)
     help="Configure snapshot simulation with loashape profile."
 )
 @click.option(
+    "--auto-select-time-point/--no-auto-select-time-point",
+    is_flag=True,
+    default=True,
+    show_default=True,
+    help="Automatically select the time point based on max PV-load ratio. Only applicable if "
+         "--with-loadshape."
+)
+@click.option(
+    "-d", "--auto-select-time-point-search-duration-days",
+    default=365,
+    show_default=True,
+    help="Search duration in days. Only applicable with --auto-select-time-point.",
+)
+@click.option(
     "--verbose",
     is_flag=True,
     default=False,
@@ -76,19 +96,38 @@ def snapshot(
     pf1,
     order_by_penetration,
     with_loadshape,
+    auto_select_time_point,
+    auto_select_time_point_search_duration_days,
     verbose=False,
 ):
     """Create JADE configuration for snapshot simulations."""
     level = logging.DEBUG if verbose else logging.INFO
     setup_logging(__name__, None, console_level=level)
-    
+
     simulation_config = PyDssConfiguration.get_default_pydss_simulation_config()
     simulation_config["Reports"] = load_data(reports_filename)["Reports"]
     if with_loadshape:
         simulation_config["Project"]["Simulation Type"] = SimulationType.QSTS.value
-        scenarios = [PyDssConfiguration.make_default_pydss_scenario(CONTROL_MODE_SCENARIO)]
+        names = [CONTROL_MODE_SCENARIO]
         if pf1:
-            scenarios.append(PyDssConfiguration.make_default_pydss_scenario(PF1_SCENARIO))
+            names.append(PF1_SCENARIO)
+        if auto_select_time_point:
+            scenarios = []
+            for scenario_name in names:
+                for mode in SnapshotTimePointSelectionMode:
+                    if mode == SnapshotTimePointSelectionMode.NONE:
+                        continue
+                    name = f"{scenario_name}{SCENARIO_NAME_DELIMITER}{mode.value}"
+                    duration_min = float(auto_select_time_point_search_duration_days) * 24 * 60
+                    scenario = PyDssConfiguration.make_default_pydss_scenario(name)
+                    scenario["snapshot_time_point_selection_config"] = {
+                        "mode": mode.value,
+                        "start_time": DEFAULT_LOAD_SHAPE_START_TIME,
+                        "search_duration_min": duration_min,
+                    }
+                    scenarios.append(scenario)
+        else:
+            scenarios = [PyDssConfiguration.make_default_pydss_scenario(x) for x in names]
     else:
         exports = {} if exports_filename is None else load_data(exports_filename)
         simulation_config["Project"]["Simulation Type"] = SimulationType.SNAPSHOT.value
@@ -98,7 +137,7 @@ def snapshot(
                 exports=exports,
             )
         ]
-    
+
     config = PyDssConfiguration.auto_config(
         inputs,
         simulation_config=simulation_config,
@@ -106,7 +145,7 @@ def snapshot(
         order_by_penetration=order_by_penetration,
         estimated_exec_secs_per_job=ESTIMATED_EXEC_SECS_PER_JOB,
     )
-    
+
     if with_loadshape:
         config = switch_snapshot_to_qsts(config)
 

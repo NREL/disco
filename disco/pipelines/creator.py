@@ -1,6 +1,9 @@
 import logging
 import os
 
+from PyDSS.common import SnapshotTimePointSelectionMode
+from PyDSS.reports.pv_reports import PF1_SCENARIO, CONTROL_MODE_SCENARIO
+
 import disco
 from disco.pipelines.enums import AnalysisType, TemplateSection
 from disco.pipelines.base import PipelineCreatorBase
@@ -21,7 +24,7 @@ class SnapshotPipelineCreator(PipelineCreatorBase):
         stages = [self.make_simulation_stage()]
         if self.template.contains_postprocess():
             stages.append(self.make_postprocess_stage())
-        
+
         config = PipelineConfig(stages=stages, stage_num=1)
         with open(config_file, "w") as f:
             f.write(config.json(indent=2))
@@ -46,31 +49,41 @@ class SnapshotPipelineCreator(PipelineCreatorBase):
             f"--reports-filename={reports_filename} --exports-filename={EXPORTS_FILENAME} {options}"
         )
         return command
-    
+
     def make_prescreen_create_command(self):
         pass
-    
+
     def make_prescreen_filter_command(self):
         pass
-    
+
     def make_postprocess_command(self):
-        command = ""
+        commands = []
         impact_analysis = self.template.analysis_type == AnalysisType.IMAPCT_ANALYSIS.value
         hosting_capacity = self.template.analysis_type == AnalysisType.HOSTING_CAPACITY.value
         if impact_analysis or hosting_capacity:
             inputs = os.path.join("$JADE_PIPELINE_OUTPUT_DIR", f"output-stage{self.stage_num-1}")
-            command += f"disco-internal make-summary-tables {inputs}"
+            commands.append(f"disco-internal make-summary-tables {inputs}")
             if hosting_capacity:
                 config_params = self.template.get_config_params(TemplateSection.SIMULATION)
                 with_loadshape = config_params["with_loadshape"]
+                auto_select_time_point = config_params["auto_select_time_point"]
                 pf1 = config_params["pf1"]
+                base_cmd = f"disco-internal compute-hosting-capacity {inputs}"
                 if with_loadshape:
-                    command += f"\ndisco-internal compute-hosting-capacity {inputs} --scenario=control_mode"
+                    scenarios = [CONTROL_MODE_SCENARIO]
                     if pf1:
-                        command += f"\ndisco-internal compute-hosting-capacity {inputs} --scenario=pf1"
+                        scenarios.append(PF1_SCENARIO)
+                    if auto_select_time_point:
+                        for scenario in scenarios:
+                            for mode in SnapshotTimePointSelectionMode:
+                                if mode != SnapshotTimePointSelectionMode.NONE:
+                                    commands.append(f"{base_cmd} --scenario={scenario} --time-point={mode.value}")
+                    else:
+                        for scenario in scenarios:
+                            commands.append(f"{base_cmd} --scenario={scenario}")
                 else:
-                    command += f"\ndisco-internal compute-hosting-capacity {inputs} --scenario=scenario"
-        return command
+                    commands.append(f"{base_cmd} --scenario=scenario")
+        return "\n".join(commands)
 
 
 class TimeSeriesPipelineCreator(PipelineCreatorBase):
@@ -84,7 +97,7 @@ class TimeSeriesPipelineCreator(PipelineCreatorBase):
         stages.append(self.make_simulation_stage())
         if self.template.contains_postprocess():
             stages.append(self.make_postprocess_stage())
-        
+
         config = PipelineConfig(stages=stages, stage_num=1)
         with open(config_file, "w") as f:
             f.write(config.json(indent=2))
@@ -125,7 +138,7 @@ class TimeSeriesPipelineCreator(PipelineCreatorBase):
     def make_prescreen_filter_command(self):
         config_params = self.template.get_config_params(TemplateSection.PRESCREEN)
         config_file = config_params["config_file"]
-        
+
         prescreen_params = self.template.get_prescreen_params(TemplateSection.PRESCREEN)
         prescreen_output = os.path.join("$JADE_PIPELINE_OUTPUT_DIR", f"output-stage{self.stage_num-1}")
         command = (
