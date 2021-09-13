@@ -66,14 +66,14 @@ class SnapshotPipelineCreator(PipelineCreatorBase):
             if hosting_capacity:
                 config_params = self.template.get_config_params(TemplateSection.SIMULATION)
                 with_loadshape = config_params["with_loadshape"]
-                auto_select_time_point = config_params["auto_select_time_point"]
+                auto_select_time_points = config_params["auto_select_time_points"]
                 pf1 = config_params["pf1"]
                 base_cmd = f"disco-internal compute-hosting-capacity {inputs}"
                 if with_loadshape:
                     scenarios = [CONTROL_MODE_SCENARIO]
                     if pf1:
                         scenarios.append(PF1_SCENARIO)
-                    if auto_select_time_point:
+                    if auto_select_time_points:
                         for scenario in scenarios:
                             for mode in SnapshotTimePointSelectionMode:
                                 if mode != SnapshotTimePointSelectionMode.NONE:

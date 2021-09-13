@@ -69,7 +69,7 @@ logger = logging.getLogger(__name__)
     help="Configure snapshot simulation with loashape profile."
 )
 @click.option(
-    "--auto-select-time-point/--no-auto-select-time-point",
+    "--auto-select-time-points/--no-auto-select-time-points",
     is_flag=True,
     default=True,
     show_default=True,
@@ -77,10 +77,10 @@ logger = logging.getLogger(__name__)
          "--with-loadshape."
 )
 @click.option(
-    "-d", "--auto-select-time-point-search-duration-days",
+    "-d", "--auto-select-time-points-search-duration-days",
     default=365,
     show_default=True,
-    help="Search duration in days. Only applicable with --auto-select-time-point.",
+    help="Search duration in days. Only applicable with --auto-select-time-points.",
 )
 @click.option(
     "--verbose",
@@ -96,8 +96,8 @@ def snapshot(
     pf1,
     order_by_penetration,
     with_loadshape,
-    auto_select_time_point,
-    auto_select_time_point_search_duration_days,
+    auto_select_time_points,
+    auto_select_time_points_search_duration_days,
     verbose=False,
 ):
     """Create JADE configuration for snapshot simulations."""
@@ -111,14 +111,14 @@ def snapshot(
         names = [CONTROL_MODE_SCENARIO]
         if pf1:
             names.append(PF1_SCENARIO)
-        if auto_select_time_point:
+        if auto_select_time_points:
             scenarios = []
             for scenario_name in names:
                 for mode in SnapshotTimePointSelectionMode:
                     if mode == SnapshotTimePointSelectionMode.NONE:
                         continue
                     name = f"{scenario_name}{SCENARIO_NAME_DELIMITER}{mode.value}"
-                    duration_min = float(auto_select_time_point_search_duration_days) * 24 * 60
+                    duration_min = float(auto_select_time_points_search_duration_days) * 24 * 60
                     scenario = PyDssConfiguration.make_default_pydss_scenario(name)
                     scenario["snapshot_time_point_selection_config"] = {
                         "mode": mode.value,

@@ -54,7 +54,7 @@ def create_pipeline():
     help="Indicate if loadshape file used for Snapshot simulation."
 )
 @click.option(
-    "--auto-select-time-point/--no-auto-select-time-point",
+    "--auto-select-time-points/--no-auto-select-time-points",
     is_flag=True,
     default=True,
     show_default=True,
@@ -62,10 +62,10 @@ def create_pipeline():
          "simulations. Only applicable if --with-loadshape.",
 )
 @click.option(
-    "-d", "--auto-select-time-point-search-duration-days",
+    "-d", "--auto-select-time-points-search-duration-days",
     default=365,
     show_default=True,
-    help="Search duration in days. Only applicable with --auto-select-time-point.",
+    help="Search duration in days. Only applicable with --auto-select-time-points.",
 )
 @click.option(
     "-i", "--impact-analysis",
@@ -123,8 +123,8 @@ def template(
     preconfigured,
     simulation_type,
     with_loadshape,
-    auto_select_time_point,
-    auto_select_time_point_search_duration_days,
+    auto_select_time_points,
+    auto_select_time_points_search_duration_days,
     impact_analysis,
     hosting_capacity,
     prescreen,
@@ -151,9 +151,9 @@ def template(
 
         config_params = template.get_config_params(TemplateSection.SIMULATION)
         config_params["with_loadshape"] = with_loadshape
-        config_params["auto_select_time_point"] = auto_select_time_point
-        config_params["auto_select_time_point_search_duration_days"] = \
-            auto_select_time_point_search_duration_days
+        config_params["auto_select_time_points"] = auto_select_time_points
+        config_params["auto_select_time_points_search_duration_days"] = \
+            auto_select_time_points_search_duration_days
         template.update_config_params(config_params, TemplateSection.SIMULATION)
     
     if preconfigured:
