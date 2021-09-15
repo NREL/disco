@@ -112,7 +112,7 @@ def parse_job_results(job, output_path):
     )
 
 
-def add_scenario(row, scenario_name):
+def add_scenario(row, scenario_name, include_time_point=True):
     """Splits the PyDSS scenario name into name and time point.
     Only applicable to loadshape-based snapshot simulations.
 
@@ -125,7 +125,8 @@ def add_scenario(row, scenario_name):
     if name not in (CONTROL_MODE_SCENARIO, PF1_SCENARIO):
         raise Exception(f"Unexpected parsing of scenario name: {scenario_name}")
     row["scenario"] = name
-    row["time_point"] = time_point
+    if include_time_point:
+        row["time_point"] = time_point
 
 
 def get_metadata_table(results: PyDssResults, job_info: JobInfo):
@@ -143,7 +144,7 @@ def get_metadata_table(results: PyDssResults, job_info: JobInfo):
                 "load_capacity_kw": total_load,
             }
         )
-        add_scenario(row, scenario.name)
+        add_scenario(row, scenario.name, include_time_point=False)
         metadata_table.append(row)
 
     return metadata_table
