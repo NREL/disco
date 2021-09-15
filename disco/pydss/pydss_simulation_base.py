@@ -4,6 +4,7 @@ import abc
 import copy
 import logging
 import os
+import re
 
 from PyDSS.exceptions import (
     PyDssConvergenceError,
@@ -36,6 +37,7 @@ class PyDssSimulationBase(JobExecutionInterface):
     _CONTROLLERS_FILENAME = "PvController.toml"
     _EXPORTS_FILENAME = "Exports.toml"
     _PYDSS_PROJECT_NAME = "pydss_project"
+    _REGEX_YEAR = re.compile(r"^(\d\d\d\d)(-.*)")
 
     def __init__(self,
                  pydss_inputs,
@@ -87,6 +89,15 @@ class PyDssSimulationBase(JobExecutionInterface):
     def _is_dss_file_path_absolute():
         """Return True if the deployment file path is absolute."""
 
+    def _make_years_match(self, start_time_year, other_dict, other_dict_key):
+        match = self._REGEX_YEAR.search(other_dict[other_dict_key])
+        assert match, other_dict[other_dict_key]
+        other_start_year = int(match.group(1))
+        if start_time_year != other_start_year:
+            logger.warning("start_time_year=%s does not match %s year=%s. Setting them to match.",
+                           start_time_year, other_dict_key, other_start_year)
+            other_dict[other_dict_key] = f"{start_time_year}{match.group(2)}"
+
     @abc.abstractmethod
     def _modify_open_dss_parameters(self):
         """Modify parameters in OpenDSS file; can be a no-op."""
@@ -132,8 +143,15 @@ class PyDssSimulationBase(JobExecutionInterface):
 
         logger.info("PyDSS args: %s", dss_args)
         scenarios = self._make_pydss_scenarios()
+        for scenario in scenarios:
+            if scenario.snapshot_time_point_selection_config is not None:
+                self._make_years_match(
+                    self._model.simulation.start_time.year,
+                    scenario.snapshot_time_point_selection_config,
+                    "start_time",
+                )
         self._pydss_project = PyDssProject.create_project(
-            os.path.join(self._run_dir),
+            self._run_dir,
             self._PYDSS_PROJECT_NAME,
             scenarios,
             options=dss_args,
@@ -202,6 +220,7 @@ class PyDssSimulationBase(JobExecutionInterface):
                 x["name"],
                 exports=self._make_pydss_exports(x),
                 post_process_infos=x["post_process_infos"],
+                snapshot_time_point_selection_config=x.get("snapshot_time_point_selection_config"),
             )
             for x in self._pydss_inputs[ConfigType.SCENARIOS]
         ]

@@ -46,11 +46,12 @@ def test_snapshot_basic_with_loadshape_no_pf1(cleanup):
     base = os.path.join(DISCO_PATH, "extensions", "pydss_simulation")
     config_file = CONFIG_FILE
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations snapshot -F -o {MODELS_DIR}"
-    config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} --with-loadshape --no-pf1 -c {CONFIG_FILE}"
+    config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} --with-loadshape --no-pf1 -c {CONFIG_FILE} -d1"
     submit_cmd = f"{SUBMIT_JOBS} {config_file} -o {OUTPUT}"
 
     assert run_command(transform_cmd) == 0
     assert run_command(config_cmd) == 0
+
     assert run_command(submit_cmd) == 0
 
     config = PyDssConfiguration.deserialize(CONFIG_FILE)
@@ -69,8 +70,8 @@ def test_snapshot_basic_with_loadshape_no_pf1(cleanup):
     assert len(results) == 18
     result = results[0]
     pydss_results = analysis.read_results(result.name)
-    assert len(pydss_results.scenarios) == 1
-    assert pydss_results.scenarios[0].name == "control_mode"
+    assert len(pydss_results.scenarios) == 4
+    assert pydss_results.scenarios[0].name == "control_mode__max_pv_load_ratio"
 
 
 def test_snapshot_impact_analysis(cleanup):
