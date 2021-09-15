@@ -3,11 +3,13 @@
 import enum
 import logging
 
+from PyDSS.reports.pv_reports import PF1_SCENARIO, CONTROL_MODE_SCENARIO
 
 logger = logging.getLogger(__name__)
 
 
 SIMULATION_POSTPROCESS = "post_process"
+TIME_SERIES_SCENARIOS = [CONTROL_MODE_SCENARIO, PF1_SCENARIO]
 
 
 class ConfigType(enum.Enum):

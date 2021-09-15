@@ -4,6 +4,7 @@ import os
 import disco
 from disco.pipelines.enums import AnalysisType, TemplateSection
 from disco.pipelines.base import PipelineCreatorBase
+from disco.pydss.common import TIME_SERIES_SCENARIOS
 from disco.pydss.pydss_configuration_base import get_default_exports_file
 from jade.models.pipeline import PipelineConfig
 from jade.utils.utils import dump_data
@@ -144,5 +145,6 @@ class TimeSeriesPipelineCreator(PipelineCreatorBase):
             inputs = os.path.join("$JADE_PIPELINE_OUTPUT_DIR", f"output-stage{self.stage_num-1}")
             command += f"disco-internal make-summary-tables {inputs}"
             if hosting_capacity:
-                command += f"\ndisco-internal compute-hosting-capacity {inputs} --scenario=control_mode"
+                for scenario in TIME_SERIES_SCENARIOS:
+                    command += f"\ndisco-internal compute-hosting-capacity {inputs} --scenario={scenario}"
         return command
