@@ -51,7 +51,10 @@ def build_queries(columns, thresholds, metric_class, on="all"):
 
 
 def synthesize_voltage(results_df): 
-    
+    """ Reduce voltage metrics table to one time-point like table
+    where for each metric, only the worst metric value of all time-points 
+    is recorded
+    """
     filter_cols = ["name", 
                    "substation", 
                    "feeder", 
@@ -61,11 +64,9 @@ def synthesize_voltage(results_df):
                    "scenario", 
                    "node_type"]
     
-    
     df = results_df.groupby(filter_cols)[["min_voltage"]].min().reset_index()
     df2 = results_df.groupby(filter_cols)[["max_voltage"]].max().reset_index()
-    df = df.merge(df2, how="left", on=filter_cols)
-     
+    df = df.merge(df2, how="left", on=filter_cols) 
     df3 = (
         results_df.groupby(filter_cols)[
             [
@@ -82,8 +83,11 @@ def synthesize_voltage(results_df):
     return df
 
 def synthesize_thermal(results_df):
-    
-    
+    """ Reduce thermal metrics table to one time-point like table
+    where for each metric, only the worst metric value of all time-points 
+    is recorded
+    """
+
     filter_cols = ["name", 
                    "substation", 
                    "feeder", 
@@ -91,8 +95,6 @@ def synthesize_thermal(results_df):
                    "sample", 
                    "penetration_level",  
                    "scenario"]
-    
-    
     df = (
         results_df.groupby(filter_cols)[
             [
@@ -102,11 +104,11 @@ def synthesize_thermal(results_df):
         .max()
         .reset_index()
     )
-
     return df
 
 def synthesize_metadata(metadata_df):
-    
+    """ Reduce metadata table to a table with one row per job
+    """
     df = metadata_df[[c for c in metadata_df.cols if c != "time_point"]]
     df.drop_duplicates(inplace=True)
 
@@ -114,8 +116,15 @@ def synthesize_metadata(metadata_df):
 
 
 def synthesize(metrics_df, metadata_df, metric_class):
+    """ For snapshot hosting capacity analysis,
+    reduce metrics and metadata tables to one time-point like tables
+    where for each metric, only the worst metric value of all time-points 
+    is recorded
+    """
     
-    if 'time_point' in metrics_df.columns:
+    """the presence of 'time_point' in the dataframe 
+    indicates that we are dealing with a snapshot case"""
+    if 'time_point' in metrics_df.columns: # 
         if metric_class == 'voltage':
             metrics_df = synthesize_voltage(metrics_df)
         if metric_class == 'thermal':
