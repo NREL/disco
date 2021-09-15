@@ -50,50 +50,50 @@ def build_queries(columns, thresholds, metric_class, on="all"):
     return queries
 
 
-def synthesize_voltage(results_df): 
+def synthesize_voltage(results_df):
     """ Reduce voltage metrics table to one time-point like table
-    where for each metric, only the worst metric value of all time-points 
+    where for each metric, only the worst metric value of all time-points
     is recorded
     """
-    filter_cols = ["name", 
-                   "substation", 
-                   "feeder", 
-                   "placement", 
-                   "sample", 
-                   "penetration_level",  
-                   "scenario", 
+    filter_cols = ["name",
+                   "substation",
+                   "feeder",
+                   "placement",
+                   "sample",
+                   "penetration_level",
+                   "scenario",
                    "node_type"]
-    
+
     df = results_df.groupby(filter_cols)[["min_voltage"]].min().reset_index()
     df2 = results_df.groupby(filter_cols)[["max_voltage"]].max().reset_index()
-    df = df.merge(df2, how="left", on=filter_cols) 
+    df = df.merge(df2, how="left", on=filter_cols)
     df3 = (
         results_df.groupby(filter_cols)[
             [
-                "num_nodes_any_outside_ansi_b", 
+                "num_nodes_any_outside_ansi_b",
                 "num_time_points_with_ansi_b_violations"
                 ]
         ]
         .max()
         .reset_index()
     )
-    
+
     df = df.merge(df3, how="left", on=filter_cols)
 
     return df
 
 def synthesize_thermal(results_df):
     """ Reduce thermal metrics table to one time-point like table
-    where for each metric, only the worst metric value of all time-points 
+    where for each metric, only the worst metric value of all time-points
     is recorded
     """
 
-    filter_cols = ["name", 
-                   "substation", 
-                   "feeder", 
-                   "placement", 
-                   "sample", 
-                   "penetration_level",  
+    filter_cols = ["name",
+                   "substation",
+                   "feeder",
+                   "placement",
+                   "sample",
+                   "penetration_level",
                    "scenario"]
     df = (
         results_df.groupby(filter_cols)[
@@ -106,35 +106,23 @@ def synthesize_thermal(results_df):
     )
     return df
 
-def synthesize_metadata(metadata_df):
-    """ Reduce metadata table to a table with one row per job
-    """
-    df = metadata_df[[c for c in metadata_df.cols if c != "time_point"]]
-    df.drop_duplicates(inplace=True)
-
-    return df
-
-
 def synthesize(metrics_df, metadata_df, metric_class):
     """ For snapshot hosting capacity analysis,
     reduce metrics and metadata tables to one time-point like tables
-    where for each metric, only the worst metric value of all time-points 
+    where for each metric, only the worst metric value of all time-points
     is recorded
     """
-    
-    """the presence of 'time_point' in the dataframe 
+
+    """the presence of 'time_point' in the dataframe
     indicates that we are dealing with a snapshot case"""
-    if 'time_point' in metrics_df.columns: # 
+    if 'time_point' in metrics_df.columns:
         if metric_class == 'voltage':
             metrics_df = synthesize_voltage(metrics_df)
         if metric_class == 'thermal':
             metrics_df = synthesize_thermal(metrics_df)
-            
-    if 'time_point' in metadata_df.columns:
-        metadata_df = synthesize_metadata(metadata_df)
-        
+
     return metrics_df, metadata_df
-        
+
 
 def compute_hc_per_metric_class(
     result_path,
@@ -147,7 +135,7 @@ def compute_hc_per_metric_class(
 ):
     """
     Given the metric class, compute its hosting capacity
-    
+
     Parameters
     ----------
     result_path: str, the output directory of metrics summary tables
@@ -157,13 +145,13 @@ def compute_hc_per_metric_class(
     on: list | str, the list of metrics of interest
         example: on = ['min_voltage', 'max_voltage']
     hc_summary: dict
-    
+
     """
     metric_table = f"{metric_class}_metrics_table.csv"
     metric_df = pd.read_csv(os.path.join(result_path, metric_table))
     metric_df = metric_df[metric_df.scenario == scenario]
     meta_df = pd.read_csv(os.path.join(result_path, "metadata_table.csv"))
-    
+
     metric_df, meta_df = synthesize(metric_df, meta_df, metric_class)
 
     if set(metric_df.feeder) == {'None'} or set(meta_df.feeder) == {'None'}:
@@ -248,7 +236,7 @@ def compute_hc(
 ):
     """
     Compute hosting capacity
-    
+
     Parameters
     ----------
     result_path: str, the output directory of metrics summary tables
@@ -257,7 +245,7 @@ def compute_hc(
     node_types: list, the node types in voltage scenario
     on: list | str, the list of metrics of interest
         example: on = ['min_voltage', 'max_voltage']
-    
+
     Returns
     -------
     dict: hc_summary
