@@ -25,26 +25,26 @@ Usage:
 Restructure to substation transformer
 =====================================
 The SMART-DS dataset has Open DSS models defined at the feeder and substation level. In this stage, Open DSS models are restructured and defined such that the analysis can be performed at the substation transformer level. 
-This can be performed using https://github.com/NREL/disco/blob/main/scripts/
+This can be performed using https://github.com/NREL/disco/blob/main/scripts/smartds_restructuring_transformer_folder.py
 
 Usage:
 
 .. code-block:: bash
 
-    python smartds_restructuring_transformer_folder.py BASE_PATH ORIGINAL_DATASET NEW_DATASET LIST_OF_REGIONS")
+    python smartds_restructuring_transformer_folder.py BASE_PATH ORIGINAL_DATASET NEW_DATASET LIST_OF_REGIONS
 
 Example:
 
 .. code-block:: bash
 
-    python smartds_restructuring_transformer_folder.py /projects/distcosts3/SMART-DS/v1.0/2018 SFO SFO_xfmr A,B,C")
+    python smartds_restructuring_transformer_folder.py /projects/distcosts3/SMART-DS/v1.0/2018 SFO SFO_xfmr P1U,P1R,P2U
 
 
 Feeder screening & model fixes
 ==============================
 In this, all the base-case feeders are passed through a preliminary screening process. 
 Here, disconnected nodes are removed, and the models are checked for connectivity, isolated nodes and extreme cases of thermal or voltage violations.
-These would need to be addressed before proceeding to the hosting capacity analysis.
+These would need to be addressed before proceeding to the hosting capacity analysis. This can be done using https://github.com/NREL/Distribution-Integration-Analysis/blob/master/scripts-simulation/feeder_screen_with_loadshapes.py
 
 
 Usage:
@@ -57,8 +57,4 @@ Usage:
 Create PV deployments
 =====================
 In this stage, PV deployments are generated for hosting capacity analysis. There are 10 sample PV deployments for every placement type (close, random, far) for every 5% increment upto 200% PV to load ratio . 
-This can be done using disco, documentation for which can found here:
-https://github.nrel.gov/pages/Hosting-Capacity-Analysis/disco/pv-deployments.html
-
-
-
+This can be done using disco, documentation for which can found here- :ref:`PV Deployments`
