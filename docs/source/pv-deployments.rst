@@ -1,3 +1,5 @@
+.. _PVDeployments:
+
 **************
 PV Deployments
 **************
