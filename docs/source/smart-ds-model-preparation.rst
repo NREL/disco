@@ -1,19 +1,17 @@
-******************************
-SMART-DS DSS Model Preparation
-******************************
-Pre-processing is performed on the SMART-DS data to prepare it for hosting capacity analysis.
-The chart below shows the various stages of pre-processing performed on the SMART-DS OpenDSS Models.
+**********************************
+SMART-DS OpenDSS Model Preparation
+**********************************
+Hosting Capacity Analysis makes use of the OpenDSS models from the `SMART-DS <https://data.openei.org/s3_viewer?bucket=oedi-data-lake&prefix=SMART-DS%2Fv1.0%2F2018%2F>`_ dataset.
+More documentation on the open source SMART-DS datasets can be found `here <https://github.com/openEDI/documentation/tree/main/SMART-DS>`_.
+Pre-processing is performed on this dataset to prepare it for the analysis. The chart below shows the various stages of pre-processing performed on the SMART-DS OpenDSS Models.
 
 .. image:: images/SMART-DS-flowchart.png
-   :align: center
    :width: 400
 
 
-SMART-DS Dataset
-================
-More documentation on the open source SMART-DS datasets can be found at https://www.nrel.gov/grid/smart-ds.html
-
-The dataset can be copied using https://github.com/NREL/disco/blob/main/scripts/copy_smart_ds_dataset.py
+Copy SMART-DS Dataset
+=====================
+The dataset can be copied to the analysis location using https://github.com/NREL/disco/blob/main/scripts/copy_smart_ds_dataset.py
 
 
 Usage:
@@ -48,27 +46,32 @@ Usage:
 
 .. code-block:: bash
 
-    $ python smartds_restructuring_transformer_folder.py BASE_PATH ORIGINAL_DATASET NEW_DATASET LIST_OF_REGIONS
+    $ python ~/sandboxes/disco/scripts/smartds_restructuring_transformer_folder.py BASE_PATH ORIGINAL_DATASET NEW_DATASET LIST_OF_REGIONS
 
 Example:
 
 .. code-block:: bash
 
-    $ python smartds_restructuring_transformer_folder.py /projects/distcosts3/SMART-DS/v1.0/2018 SFO SFO_xfmr P1U,P1R,P2U
+    $ python ~/sandboxes/disco/scripts/smartds_restructuring_transformer_folder.py /projects/distcosts3/SMART-DS/v1.0/2018 SFO SFO_xfmr P1U,P1R,P2U
 
 
 Feeder screening & model fixes
 ==============================
 In this, all the base-case feeders are passed through a preliminary screening process. 
 Here, disconnected nodes are removed, and the models are checked for connectivity, isolated nodes and extreme cases of thermal or voltage violations.
-These would need to be addressed before proceeding to the hosting capacity analysis. This can be done using https://github.com/NREL/Distribution-Integration-Analysis/blob/master/scripts-simulation/feeder_screen_with_loadshapes.py
-
+These would need to be addressed before proceeding to the hosting capacity analysis. This can be done using https://github.com/NREL/Distribution-Integration-Analysis/blob/master/scripts-simulation/generate_screening_jobs.py
 
 Usage:
 
 .. code-block:: bash
 
-    $ python
+    $ python generate_screening_jobs.py PATH_TO_REGIONS
+
+Example:
+
+.. code-block:: bash
+
+    $ python generate_screening_jobs.py /projects/distcosts3/SMART-DS/v1.0/2018/SFO
 
 
 Create PV deployments
