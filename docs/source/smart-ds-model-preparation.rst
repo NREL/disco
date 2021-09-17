@@ -1,5 +1,5 @@
 ******************************
-SMART-DS DSS MODEL PREPARATION
+SMART-DS DSS Model Preparation
 ******************************
 Pre-processing is performed on the SMART-DS data to prepare it for hosting capacity analysis.
 The chart below shows the various stages of pre-processing performed on the SMART-DS OpenDSS Models.
@@ -20,7 +20,24 @@ Usage:
 
 .. code-block:: bash
 
-    python
+    $ python ~/sandboxes/disco/scripts/copy_smart_ds_dataset.py -y 2018 -c SFO -v v1.0 /projects/distcosts3/SMART-DS
+
+Here is the help:
+
+.. code-block:: bash
+
+   $ python ~/sandboxes/disco/scripts/copy_smart_ds_dataset.py --help
+
+    Usage: copy_smart_ds_dataset.py [OPTIONS] OUTPUT_DIR
+
+      Copy a SMART-DS from the Eagle source directory to a destination directory.
+
+    Options:
+      -f, --force         overwrite output-dir if it exists
+      -c, --city TEXT     dataset city  [required]
+      -y, --year TEXT     dataset year  [required]
+      -v, --version TEXT  dataset version  [required]
+      --help              Show this message and exit.
 
 Restructure to substation transformer
 =====================================
@@ -31,13 +48,13 @@ Usage:
 
 .. code-block:: bash
 
-    python smartds_restructuring_transformer_folder.py BASE_PATH ORIGINAL_DATASET NEW_DATASET LIST_OF_REGIONS
+    $ python smartds_restructuring_transformer_folder.py BASE_PATH ORIGINAL_DATASET NEW_DATASET LIST_OF_REGIONS
 
 Example:
 
 .. code-block:: bash
 
-    python smartds_restructuring_transformer_folder.py /projects/distcosts3/SMART-DS/v1.0/2018 SFO SFO_xfmr P1U,P1R,P2U
+    $ python smartds_restructuring_transformer_folder.py /projects/distcosts3/SMART-DS/v1.0/2018 SFO SFO_xfmr P1U,P1R,P2U
 
 
 Feeder screening & model fixes
@@ -51,10 +68,10 @@ Usage:
 
 .. code-block:: bash
 
-    python
+    $ python
 
 
 Create PV deployments
 =====================
 In this stage, PV deployments are generated for hosting capacity analysis. There are 10 sample PV deployments for every placement type (close, random, far) for every 5% increment upto 200% PV to load ratio . 
-This can be done using disco, documentation for which can found here- :ref:`PV Deployments`
+This can be done using disco, refer to the :ref:`PVDeployments` documentation.
