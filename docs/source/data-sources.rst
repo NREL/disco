@@ -3,10 +3,19 @@ Data Sources
 ************
 
 DISCO currently supports OpenDSS models stored in several source formats,
-namely GEM, EPRI, SourceTree1, SourceTree2. The following sections show how to
+namely GEM, EPRI, SourceTree1, SourceTree2.
+
+The SMART-DS dataset is an open-source dataset which is in the SourceTree1 format.
+This dataset is prepared for performing DISCO hosting capacity analysis after some pre-processing which is described in the link below:
+
+.. toctree::
+  :maxdepth: 1
+
+  data-sources/smart-ds-model-preparation
+
+The following sections show how to
 prepare the source feeder models which are used as *input paths* for
 transforming models with a given analysis type.
-
 
 .. _GEM_JSON_Schema:
 

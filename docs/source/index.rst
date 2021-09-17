@@ -75,7 +75,6 @@ techno-economic analysis.
    overview
    quick-start
    data-sources
-   smart-ds-model-preparation
    pv-deployments
    transform-models
    analysis-workflows
