@@ -120,7 +120,7 @@ class OpenDssGenerator(ModelInputDataInterface):
 
         return list(patterns)
 
-    #@timed_info
+    @timed_info
     def generate_output_data(self, output_dir, include_pv_systems, simulation_model):
         self._output_dir = output_dir
 

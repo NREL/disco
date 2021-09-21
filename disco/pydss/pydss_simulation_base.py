@@ -253,7 +253,7 @@ class PyDssSimulationBase(JobExecutionInterface):
     def post_process(self, **kwargs):
         """Run post-processing on the output files."""
 
-    #@timed_info
+    @timed_info
     def run(self, verbose=False):
         """Runs the simulation."""
         self._setup_pydss_project()
