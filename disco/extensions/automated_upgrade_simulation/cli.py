@@ -7,12 +7,15 @@ import os
 from jade.jobs.job_configuration_factory import create_config_from_file
 from jade.utils.utils import get_cli_string
 
+from PyDSS import __version__ as pydss_version
+
 from disco.extensions.automated_upgrade_simulation.automated_upgrade_configuration import \
     AutomatedUpgradeConfiguration
 from disco.extensions.automated_upgrade_simulation.automated_upgrade_inputs import \
     AutomatedUpgradeInputs
 from disco.extensions.automated_upgrade_simulation.automated_upgrade_simulation import \
     AutomatedUpgradeSimulation
+from disco.version import __version__ as disco_version
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +57,9 @@ def run(config_file, name, output, output_format, verbose):
     config = create_config_from_file(config_file, do_not_deserialize_jobs=True)
     job = config.get_job(name)
 
-    print(get_cli_string())
+    logger.info("disco version = %s", disco_version)
+    logger.info("PyDSS version = %s", pydss_version)
+
     simulation = AutomatedUpgradeSimulation(
         pydss_inputs=config.pydss_inputs,
         job_global_config=config.job_global_config,

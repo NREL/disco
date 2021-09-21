@@ -8,11 +8,12 @@ import sys
 import click
 
 from jade.common import CONFIG_FILE, OUTPUT_DIR
-from disco.extensions.pydss_simulation.pydss_configuration import PyDssConfiguration
 from jade.jobs.job_configuration_factory import create_config_from_file
 from jade.exceptions import InvalidExtension
+from PyDSS import __version__ as pydss_version
+from disco.extensions.pydss_simulation.pydss_configuration import PyDssConfiguration
 from disco.extensions.pydss_simulation.pydss_simulation import PyDssSimulation
-from jade.utils.utils import get_cli_string
+from disco.version import __version__ as disco_version
 
 
 logger = logging.getLogger(__name__)
@@ -37,7 +38,8 @@ def run(config_file, name, output, output_format, verbose):
     config = create_config_from_file(config_file, do_not_deserialize_jobs=True)
     job = config.get_job(name)
 
-    print(get_cli_string())
+    logger.info("disco version = %s", disco_version)
+    logger.info("PyDSS version = %s", pydss_version)
 
     simulation = PyDssSimulation.create(config.pydss_inputs,
                                         job,
