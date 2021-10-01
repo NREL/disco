@@ -83,6 +83,13 @@ logger = logging.getLogger(__name__)
     help="Search duration in days. Only applicable with --auto-select-time-points.",
 )
 @click.option(
+    "--store-per-element-data/--no-store-per-element-data",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Store per-element data in thermal and voltage metrics.",
+)
+@click.option(
     "--verbose",
     is_flag=True,
     default=False,
@@ -98,6 +105,7 @@ def snapshot(
     with_loadshape,
     auto_select_time_points,
     auto_select_time_points_search_duration_days,
+    store_per_element_data,
     verbose=False,
 ):
     """Create JADE configuration for snapshot simulations."""
@@ -106,6 +114,10 @@ def snapshot(
 
     simulation_config = PyDssConfiguration.get_default_pydss_simulation_config()
     simulation_config["Reports"] = load_data(reports_filename)["Reports"]
+    for report in simulation_config["Reports"]["Types"]:
+        if report["name"] in ("Thermal Metrics", "Voltage Metrics"):
+            report["store_per_element_data"] = store_per_element_data
+
     if with_loadshape:
         simulation_config["Project"]["Simulation Type"] = SimulationType.QSTS.value
         names = [CONTROL_MODE_SCENARIO]

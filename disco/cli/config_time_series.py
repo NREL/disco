@@ -117,6 +117,13 @@ def _callback_is_enabled(_, __, value):
          "reduce the number of jobs that can run simultaneously.",
 )
 @click.option(
+    "--store-per-element-data/--no-store-per-element-data",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Store per-element data in thermal and voltage metrics.",
+)
+@click.option(
     "--verbose",
     is_flag=True,
     default=False,
@@ -135,6 +142,7 @@ def time_series(
     reports_filename=None,
     order_by_penetration=True,
     skip_night=False,
+    store_per_element_data=False,
     verbose=False,
 ):
     """Create JADE configuration for time series simulations."""
@@ -155,6 +163,8 @@ def time_series(
             report["enabled"] = thermal_metrics
         if report["name"] == "Voltage Metrics" and voltage_metrics is not None:
             report["enabled"] = voltage_metrics
+        if report["name"] in ("Thermal Metrics", "Voltage Metrics"):
+            report["store_per_element_data"] = store_per_element_data
 
     scenarios = [
         PyDssConfiguration.make_default_pydss_scenario(CONTROL_MODE_SCENARIO),
