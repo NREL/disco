@@ -132,25 +132,25 @@ class ScenarioParser(ParserBase):
         simulation_type = self._get_simulation_type(simulation, scenario_names)
         
         scenarios = []
-        if simulation_type == SimulationType.SNAPSHOT.value:
+        if simulation_type == SimulationType.SNAPSHOT:
             timepoints = self._get_snapshot_timepoints(simulation, scenario_names)
             for name in scenario_names:
                 scenario = {
                     "id": self._get_scenario_id(),
                     "job_id": self.job["id"],
-                    "simulation_type": simulation_type,
+                    "simulation_type": simulation_type.value,
                     "name": name,
                     "start_time": timepoints[name],
                     "end_time": None
                 }
                 scenarios.append(scenario)
 
-        elif simulation_type == SimulationType.QSTS.value:
+        elif simulation_type == SimulationType.TIME_SERIES:
             for name in scenario_names:
                 scenario = {
                     "id": self._get_scenario_id(),
                     "job_id": self.job["id"],
-                    "simulation_type": simulation_type,
+                    "simulation_type": simulation_type.value,
                     "name": name,
                     "start_time": parse(simulation["start_time"]),
                     "end_time": parse(simulation["end_time"])
@@ -172,12 +172,12 @@ class ScenarioParser(ParserBase):
         simulation_type = simulation["simulation_type"]
         
         if simulation_type == "Snapshot":
-            return SimulationType.SNAPSHOT.value
+            return SimulationType.SNAPSHOT
 
         if simulation_type == "QSTS":
             if len(scenario_names) > 2:
-                return SimulationType.SNAPSHOT.value
-            return SimulationType.QSTS.value
+                return SimulationType.SNAPSHOT
+            return SimulationType.TIME_SERIES
         
         return None
     
@@ -271,7 +271,7 @@ class ReportParser(ParserBase):
 
 class TableParserMixin:
 
-    def _set_indexes(self, data):
+    def _set_record_index(self, data):
         """
         Parameters
         ----------
@@ -287,6 +287,13 @@ class TableParserMixin:
             })
             indexed_data.append(item)
         return indexed_data
+    
+    @staticmethod
+    def _replace_none(df):
+        df.loc[df["placement"] == "None", "placement"] = None
+        df.loc[df["sample"] == "None", "sample"] = None
+        df.loc[df["penetration_level"] == "None", "penetration_level"] = None
+        return df
 
 
 class FeederHeadParser(ParserBase, TableParserMixin):
@@ -306,8 +313,9 @@ class FeederHeadParser(ParserBase, TableParserMixin):
     def parse(self, output):
         """Prase feeder head data from output report file"""
         df = pd.read_csv(output.feeder_head_table)
+        df = self._replace_none(df)
         data = df.rename(columns=self.field_mappings).to_dict(orient="records")
-        data = self._set_indexes(data)
+        data = self._set_record_index(data)
         return data
 
 
@@ -320,8 +328,9 @@ class FeederLossesParser(ParserBase, TableParserMixin):
     def parse(self, output):
         """Prase feeder losses data from output report file"""
         df = pd.read_csv(output.feeder_losses_table)
+        df = self._replace_none(df)
         data = df.to_dict(orient="records")
-        data = self._set_indexes(data)
+        data = self._set_record_index(data)
         return data
 
 
@@ -334,8 +343,9 @@ class MetadataParser(ParserBase, TableParserMixin):
     def parse(self, output):
         """Prase metadata data from output report file"""
         df = pd.read_csv(output.metadata_table)
+        df = self._replace_none(df)
         data = df.to_dict(orient="records")
-        data = self._set_indexes(data)
+        data = self._set_record_index(data)
         return data
 
 
@@ -348,8 +358,9 @@ class ThermalMetricsParser(ParserBase, TableParserMixin):
     def parse(self, output):
         """Prase thermal metrics data from output report file"""
         df = pd.read_csv(output.thermal_metrics_table)
+        df = self._replace_none(df)
         data = df.to_dict(orient="records")
-        data = self._set_indexes(data)
+        data = self._set_record_index(data)
         return data
 
 
@@ -362,8 +373,9 @@ class VoltageMetricsParser(ParserBase, TableParserMixin):
     def parse(self, output):
         """Prase voltage metrics data from output report file"""
         df = pd.read_csv(output.voltage_metrics_table)
+        df = self._replace_none(df)
         data = df.to_dict(orient="records")
-        data = self._set_indexes(data)
+        data = self._set_record_index(data)
         return data
 
 

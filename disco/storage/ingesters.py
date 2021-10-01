@@ -133,7 +133,7 @@ class TableIngesterMixin:
             "scenario",
             "time_point"
         ]
-        values = [item[k] for k in fields]
+        values = [str(item.get(k, None)) for k in fields]
         return " | ".join(values)
 
 
@@ -165,7 +165,7 @@ class MetadataIngester(TableIngesterMixin, IngesterBase):
             "penetration_level",
             "scenario"
         ]
-        values = [item[k] for k in fields]
+        values = [str(item.get(k, None)) for k in fields]
         return " | ".join(values)
 
 
