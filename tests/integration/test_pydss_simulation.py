@@ -40,9 +40,9 @@ def test_pydss_simulation(cleanup):
 
     element_info_files = scenario.list_element_info_files()
     assert element_info_files
-    transformer_warehouse = scenario.read_element_info_file("TransformersPhase")
-    assert isinstance(transformer_warehouse, pd.DataFrame)
-    assert len(transformer_warehouse) > 0
+    loads = scenario.read_element_info_file("Loads")
+    assert isinstance(loads, pd.DataFrame)
+    assert len(loads) > 0
 
     # TODO: the test circuit doesn't current produce anything
     capacitor_changes = scenario.read_capacitor_changes()

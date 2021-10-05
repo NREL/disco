@@ -54,6 +54,7 @@ DEFAULT_PYDSS_SIMULATION_CONFIG = {
         "Export Mode": "byClass",
         "Export Style": "Single file",
         "Export Elements": True,
+        "Export Element Types": ["Loads", "PVSystems"],  # Make this empty to export all types.
         "Export Event Log": True,
         "Export Format": "h5",
         "Export Compression": True,
