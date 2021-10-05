@@ -160,7 +160,7 @@ class PyDssSimulationBase(JobExecutionInterface):
         # TODO: this needs a better way of handling pf1
         self._apply_pydss_controllers(
             project_path=self._pydss_project.project_path,
-            scenario_names=[s.name for s in scenarios if s.name != "pf1"]
+            scenario_names=[s.name for s in scenarios if "pf1" not in s.name]
         )
         self._dss_dir = self._pydss_project.dss_files_path
         self._results_dir = [
