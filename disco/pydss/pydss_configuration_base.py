@@ -53,7 +53,7 @@ DEFAULT_PYDSS_SIMULATION_CONFIG = {
         "Log Results": True,
         "Export Mode": "byClass",
         "Export Style": "Single file",
-        "Export Elements": False,
+        "Export Elements": True,
         "Export Event Log": True,
         "Export Format": "h5",
         "Export Compression": True,
