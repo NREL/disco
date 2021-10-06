@@ -6,6 +6,7 @@ import shutil
 
 import pandas as pd
 import pytest
+import toml
 
 from jade.result import ResultsSummary
 from jade.utils.subprocess_manager import check_run_command, run_command
@@ -116,10 +117,25 @@ def test_time_series_hosting_capacity(cleanup):
     assert len(jobs) == num_jobs
 
     analysis = PyDssAnalysis(OUTPUT, config)
-    result = analysis.list_results()[0]
+    result = analysis.list_results()[1]
     pydss_results = analysis.read_results(result.name)
     assert len(pydss_results.scenarios) == 2
     
+    # Ensure that control_mode scenarios have PV controllers defined and pf1 scenarios do not.
+    job = config.get_job(result.name)
+    assert not job.model.is_base_case
+    for scenario in pydss_results.scenarios:
+        controller_file = f"Scenarios/{scenario.name}/pyControllerList/PvController.toml"
+        if "pf1" in scenario.name:
+            with pytest.raises(KeyError):
+                # The file should not exist.
+                pydss_results.read_file(controller_file)
+        else:
+            assert "control_mode" in scenario.name
+            controller_dict = toml.loads(pydss_results.read_file(controller_file))
+            assert controller_dict
+            assert list(controller_dict.values())
+
     # Verify Post-process & Results
     postprocess_cmd = f"disco-internal make-summary-tables {OUTPUT}"
     assert run_command(postprocess_cmd) == 0
