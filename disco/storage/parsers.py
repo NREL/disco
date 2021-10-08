@@ -112,7 +112,14 @@ class TaskParser(ParserBase):
     @staticmethod
     def _get_job0_run_log_file(output, results):
         job_name = results["results"][0]["name"]
-        return output.job_outputs / job_name / "run.log"
+        job_dir = output.job_outputs / job_name
+        
+        log_file = None
+        for d in job_dir.iterdir():
+            if not str(d.name).startswith("run.log"):
+                continue
+            log_file = output.job_outputs / job_name / str(d.name)
+        return log_file
 
 
 class ScenarioParser(ParserBase):
@@ -163,7 +170,7 @@ class ScenarioParser(ParserBase):
         return self._get_uuid()
 
     def _get_scenario_names(self):
-        project = PyDssProject.load_project(self.job["pydss_project"])
+        project = PyDssProject.load_project(self.job["project_path"])
         scenario_names = [s.name for s in project.scenarios]
         return scenario_names
 
@@ -184,7 +191,7 @@ class ScenarioParser(ParserBase):
     def _get_snapshot_timepoints(self, simulation, scenario_names):
         timestamps = {}
         if len(scenario_names) > 2:
-            interface = PyDssZipFileInterface(self.job["pydss_project"])
+            interface = PyDssZipFileInterface(self.job["project_path"])
             data = json.loads(interface.read_file("Exports/snapshot_time_points.json"))
             
             for name in scenario_names:
@@ -218,7 +225,7 @@ class JobParser(ParserBase):
                 "id": self._get_job_id(),
                 "task_id": self.task["id"],
                 "name": item["name"],
-                "pydss_project": self._get_pydss_project_dir(job_dir),
+                "project_path": self._get_project_path_dir(job_dir),
                 "date_created": self._get_creation_time(job_dir)
             }
             jobs.append(job)
@@ -232,7 +239,7 @@ class JobParser(ParserBase):
     def _get_job_id(self):
         return self._get_uuid()
 
-    def _get_pydss_project_dir(self, job_dir):
+    def _get_project_path_dir(self, job_dir):
         return str(job_dir / "pydss_project")
     
     def _get_creation_time(self, job_dir):

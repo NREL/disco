@@ -13,11 +13,13 @@ class Task(Base):
     name = Column(types.String(length=128))
     inputs = Column(types.String(length=256))
     output = Column(types.String(length=256))
-    image_version = Column(types.String(length=30))
-    disco_version = Column(types.String(length=30))
-    jade_version = Column(types.String(length=30))
-    pydss_version = Column(types.String(length=30))
-    notes = Column(types.Text, nullable=True)
+    image_version = Column(types.String(length=30), nullable=True, default=None)
+    disco_version = Column(types.String(length=30), nullable=True, default=None)
+    jade_version = Column(types.String(length=30), nullable=True, default=None)
+    pydss_version = Column(types.String(length=30), nullable=True, default=None)
+    opendssdirect_version = Column(types.String(length=30), nullable=True, default=None)
+    opendss_version = Column(types.String(length=30), nullable=True, default=None)
+    notes = Column(types.Text, nullable=True, default=None)
     date_created = Column(types.DateTime)
 
 
@@ -26,7 +28,7 @@ class Job(Base):
     id = Column(types.String(length=36), primary_key=True)
     task_id = Column(types.String(length=36), ForeignKey("task.id"))
     name = Column(types.String(length=128))
-    pydss_project = Column(types.String(length=256), nullable=True)
+    project_path = Column(types.String(length=256), nullable=True)
     date_created = Column(types.DateTime)
 
 
