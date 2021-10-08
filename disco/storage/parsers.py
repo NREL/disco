@@ -17,7 +17,7 @@ from PyDSS.pydss_project import PyDssProject
 from PyDSS.pydss_fs_interface import PyDssZipFileInterface
 from disco.enums import SimulationType
 from disco.storage.db import Task, Job, Report
-from disco.storage.outputs import get_simulation_output
+from disco.storage.outputs import get_simulation_output, get_creation_time
 from disco.version import __version__ as __disco_version__
 
 
@@ -243,7 +243,7 @@ class JobParser(ParserBase):
         return str(job_dir / "pydss_project")
     
     def _get_creation_time(self, job_dir):
-        timestamp = os.stat(job_dir).st_birthtime
+        timestamp = get_creation_time(job_dir)
         return datetime.fromtimestamp(timestamp)
 
 
@@ -272,7 +272,7 @@ class ReportParser(ParserBase):
         return self._get_uuid()
     
     def _get_creation_time(self, report_file):
-        timestamp = os.stat(report_file).st_birthtime
+        timestamp = get_creation_time(report_file)
         return datetime.fromtimestamp(timestamp)
 
 
