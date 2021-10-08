@@ -1,4 +1,5 @@
 import os
+import platform
 import pathlib
 from abc import ABC, abstractmethod
 from datetime import datetime
@@ -20,7 +21,7 @@ class OutputBase(ABC):
 
     @property
     def creation_time(self):
-        timestamp = os.stat(self.output).st_birthtime
+        timestamp = get_creation_time(self.output)
         return datetime.fromtimestamp(timestamp)
 
     @property
@@ -121,6 +122,18 @@ class PipelineSimulationOutput(OutputBase):
                 return d
         
         raise ValueError(f"All stage outputs in '{output}' do not contain valid reports.")
+
+
+def get_creation_time(dir_or_file):
+    if platform.system() == "Windows":
+        return os.path.getctime(dir_or_file)
+    
+    stat = os.stat(dir_or_file)
+    try:
+        return stat.st_birthtime  # For Mac
+    except AttributeError:
+        # Not easy to get creation time on Linux, use modification time
+        return stat.st_mtime
 
 
 def is_from_pipeline(output):
