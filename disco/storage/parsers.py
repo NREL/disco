@@ -170,8 +170,8 @@ class ScenarioParser(ParserBase):
         return self._get_uuid()
 
     def _get_scenario_names(self):
-        project = PyDssProject.load_project(self.job["project_path"])
-        scenario_names = [s.name for s in project.scenarios]
+        interface = PyDssZipFileInterface(self.job["project_path"])
+        scenario_names = interface._list_scenario_names()
         return scenario_names
 
     def _get_simulation_type(self, simulation, scenario_names):
