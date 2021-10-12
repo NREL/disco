@@ -83,11 +83,25 @@ logger = logging.getLogger(__name__)
     help="Search duration in days. Only applicable with --auto-select-time-points.",
 )
 @click.option(
+    "--shuffle/--no-shuffle",
+    is_flag=True,
+    default=True,
+    show_default=True,
+    help="Shuffle order of jobs.",
+)
+@click.option(
     "--store-per-element-data/--no-store-per-element-data",
     is_flag=True,
     default=False,
     show_default=True,
     help="Store per-element data in thermal and voltage metrics.",
+)
+@click.option(
+    "--strip-whitespace/--no-strip-whitespace",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Strip whitespace in file.",
 )
 @click.option(
     "--verbose",
@@ -105,7 +119,9 @@ def snapshot(
     with_loadshape,
     auto_select_time_points,
     auto_select_time_points_search_duration_days,
+    shuffle,
     store_per_element_data,
+    strip_whitespace,
     verbose=False,
 ):
     """Create JADE configuration for snapshot simulations."""
@@ -157,11 +173,18 @@ def snapshot(
         order_by_penetration=order_by_penetration,
         estimated_exec_secs_per_job=ESTIMATED_EXEC_SECS_PER_JOB,
     )
+    # We can't currently predict how long each job will take. If we did, we could set
+    # estimated_run_minutes for each job.
+    # Shuffle the jobs randomly so that we have a better chance of getting batches with similar
+    # runtimes.
+    if shuffle:
+        config.shuffle_jobs()
 
     if with_loadshape:
         config = switch_snapshot_to_qsts(config)
 
-    config.dump(filename=config_file)
+    indent = None if strip_whitespace else 2
+    config.dump(filename=config_file, indent=indent)
     print(f"Created {config_file} for Snapshot Analysis")
 
 
