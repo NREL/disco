@@ -2,10 +2,18 @@
 
 import os
 import subprocess
+from pathlib import Path
+from PyDSS import thermal_metrics
 
+import pytest
+import toml
+
+from jade.common import JOBS_OUTPUT_DIR
 from jade.result import ResultsSummary
 from jade.utils.subprocess_manager import run_command
 from jade.utils.utils import dump_data, load_data
+
+from PyDSS.pydss_results import PyDssResults
 
 import disco
 from disco.enums import SimulationType
@@ -79,7 +87,7 @@ def test_snapshot_impact_analysis(cleanup):
     base = os.path.join(DISCO_PATH, "extensions", "pydss_simulation")
     config_file = CONFIG_FILE
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations snapshot -F -o {MODELS_DIR}"
-    config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} -c {CONFIG_FILE}"
+    config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} -c {CONFIG_FILE} --with-loadshape -d1"
     submit_cmd = f"{SUBMIT_JOBS} {config_file} -o {OUTPUT}"
 
     assert run_command(transform_cmd) == 0
@@ -106,7 +114,7 @@ def test_snapshot_hosting_capacity(cleanup):
     base = os.path.join(DISCO_PATH, "extensions", "pydss_simulation")
     config_file = CONFIG_FILE
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations snapshot -F -o {MODELS_DIR}"
-    config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} -c {CONFIG_FILE}"
+    config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} -c {CONFIG_FILE} --with-loadshape -d1"
     submit_cmd = f"{SUBMIT_JOBS} {config_file} -o {OUTPUT} -p1"
 
     assert run_command(transform_cmd) == 0
@@ -118,11 +126,28 @@ def test_snapshot_hosting_capacity(cleanup):
     assert len(jobs) == 18
     assert not config.list_user_data_keys()
 
+    # Ensure that control_mode scenarios have PV controllers defined and pf1 scenarios do not.
+    job = jobs[-1]
+    assert not job.model.is_base_case
+    results = PyDssResults(Path(OUTPUT) / JOBS_OUTPUT_DIR / job.name / "pydss_project")
+    for scenario in results.scenarios:
+        controller_file = f"Scenarios/{scenario.name}/pyControllerList/PvController.toml"
+        if "pf1" in scenario.name:
+            with pytest.raises(KeyError):
+                # The file should not exist.
+                results.read_file(controller_file)
+        else:
+            assert "control_mode" in scenario.name
+            controller_dict = toml.loads(results.read_file(controller_file))
+            assert controller_dict
+            assert list(controller_dict.values())
+
     # Verify Post-process & Results
     postprocess_cmd = f"disco-internal make-summary-tables {OUTPUT}"
     assert run_command(postprocess_cmd) == 0
+    output_path = Path(OUTPUT)
     for filename in POSTPROCESS_RESULTS:
-        summary_table = os.path.join(OUTPUT, filename)
-        assert os.path.exists(summary_table)
-    
+        summary_table = output_path / filename
+        assert summary_table.exists()
+
     # TODO: Test hosting capacity function when code integrated.
