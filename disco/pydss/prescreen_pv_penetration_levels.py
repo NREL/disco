@@ -104,12 +104,12 @@ def create_job(config_file, name, prescreen_base_output):
     end_time = "2020-04-30T15:15:00.0"
     config["jobs"][0]["simulation"]["start_time"] = start_time
     config["jobs"][0]["simulation"]["end_time"] = end_time
-    config["pydss_inputs"]["Simulation"]["Project"]["Simulation range"] = {"start": "11:00:00", "end": "15:00:00"}
-    config["pydss_inputs"]["Simulation"]["Project"]["Convergence error percent threshold"] = 10.0
+    config["pydss_inputs"]["Simulation"]["project"]["simulation_range"] = {"start": "11:00:00", "end": "15:00:00"}
+    config["pydss_inputs"]["Simulation"]["project"]["convergence_error_percent_threshold"] = 10.0
 
-    config["pydss_inputs"]["Simulation"]["Exports"]["Log Results"] = False
-    config["pydss_inputs"]["Simulation"]["Exports"]["Export Elements"] = False
-    config["pydss_inputs"]["Simulation"]["Reports"].clear()
+    config["pydss_inputs"]["Simulation"]["exports"]["export_results"] = False
+    config["pydss_inputs"]["Simulation"]["exports"]["export_elements"] = False
+    config["pydss_inputs"]["Simulation"]["reports"].clear()
     config["pydss_inputs"]["Scenarios"] = [
         x for x in config["pydss_inputs"]["Scenarios"] if x["name"] == "control_mode"
     ]

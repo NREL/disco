@@ -110,30 +110,29 @@ class PyDssSimulationBase(JobExecutionInterface):
             deployment_filename = self._get_deployment_input_filename()
 
         dss_args = {
-            "Plots": {
-                "Create dynamic plots": False,
-                "Open plots in browser": False,
+            "plots": {
+                "create_dynamic_plots": False,
+                "open_plots_in_browser": False,
             },
-            "Project": {
-                "Project Path": os.path.abspath(self._run_dir),
-                "DSS File": deployment_filename,
-                "Return Results": False,
-                "DSS File Absolute Path": self._is_dss_file_path_absolute(),
+            "project": {
+                "project_path": os.path.abspath(self._run_dir),
+                "dss_file": deployment_filename,
+                "dss_file_absolute_path": self._is_dss_file_path_absolute(),
             },
-            "Logging": {
-                "Logging Level": "DEBUG" if verbose else "INFO",
-                "Log to external file": True,
-                "Display on screen": False,
-                "Clear old log file": True,
-                "Log time step updates": False,
+            "logging": {
+                "logging_level": "DEBUG" if verbose else "INFO",
+                "enable_file": True,
+                "enable_console": False,
+                "clear_old_log_file": True,
+                "log_time_step_updates": False,
             },
-            "Exports": {
-                "HDF Max Chunk Bytes": 1048576,
+            "exports": {
+                "hdf_max_chunk_bytes": 1048576,
             }
         }
 
         simulation_config = self._pydss_inputs[ConfigType.SIMULATION_CONFIG]
-        self._modify_pydss_simulation_params(simulation_config["Project"])
+        self._modify_pydss_simulation_params(simulation_config["project"])
 
         for category, params in simulation_config.items():
             if category in dss_args:
@@ -155,7 +154,7 @@ class PyDssSimulationBase(JobExecutionInterface):
             self._PYDSS_PROJECT_NAME,
             scenarios,
             options=dss_args,
-            master_dss_file=dss_args["Project"]["DSS File"],
+            master_dss_file=dss_args["project"]["dss_file"],
         )
         # TODO: this needs a better way of handling pf1
         self._apply_pydss_controllers(

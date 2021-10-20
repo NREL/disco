@@ -51,8 +51,8 @@ class AutomatedUpgradeSimulation(PyDssSimulation):
 
     def _get_exports(self):
         return {
-            "Log Results": False,
-            "Export Elements": False,
+            "export_results": False,
+            "export_elements": False,
         }
 
     def _get_upgrade_process_infos(self, scenario_name):

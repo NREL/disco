@@ -150,9 +150,9 @@ def time_series(
     setup_logging(__name__, None, console_level=level)
 
     simulation_config = PyDssConfiguration.get_default_pydss_simulation_config()
-    simulation_config["Project"]["Simulation Type"] = SimulationType.QSTS.value
-    simulation_config["Reports"] = load_data(reports_filename)["Reports"]
-    for report in simulation_config["Reports"]["Types"]:
+    simulation_config["project"]["simulation_type"] = SimulationType.QSTS.value
+    simulation_config["reports"] = load_data(reports_filename)["reports"]
+    for report in simulation_config["reports"]["types"]:
         if report["name"] == "Feeder Losses" and feeder_losses is not None:
             report["enabled"] = feeder_losses
         if report["name"] == "PV Clipping" and pv_clipping is not None:
@@ -183,7 +183,7 @@ def time_series(
 
     if skip_night:
         pydss_sim_config = config.get_pydss_config(ConfigType.SIMULATION_CONFIG)
-        pydss_sim_config["Project"]["Simulation range"] = {"start": "06:00:00", "end": "18:00:00"}
+        pydss_sim_config["project"]["simulation_range"] = {"start": "06:00:00", "end": "18:00:00"}
         # Note that we are using the same convergence error threshold percent.
         config.set_pydss_config(ConfigType.SIMULATION_CONFIG, pydss_sim_config)
 

@@ -129,13 +129,13 @@ def snapshot(
     setup_logging(__name__, None, console_level=level)
 
     simulation_config = PyDssConfiguration.get_default_pydss_simulation_config()
-    simulation_config["Reports"] = load_data(reports_filename)["Reports"]
-    for report in simulation_config["Reports"]["Types"]:
+    simulation_config["reports"] = load_data(reports_filename)["reports"]
+    for report in simulation_config["reports"]["types"]:
         if report["name"] in ("Thermal Metrics", "Voltage Metrics"):
             report["store_per_element_data"] = store_per_element_data
 
     if with_loadshape:
-        simulation_config["Project"]["Simulation Type"] = SimulationType.QSTS.value
+        simulation_config["project"]["simulation_type"] = SimulationType.QSTS.value
         names = [CONTROL_MODE_SCENARIO]
         if pf1:
             names.append(PF1_SCENARIO)
@@ -158,7 +158,7 @@ def snapshot(
             scenarios = [PyDssConfiguration.make_default_pydss_scenario(x) for x in names]
     else:
         exports = {} if exports_filename is None else load_data(exports_filename)
-        simulation_config["Project"]["Simulation Type"] = SimulationType.SNAPSHOT.value
+        simulation_config["project"]["simulation_type"] = SimulationType.SNAPSHOT.value
         scenarios = [
             PyDssConfiguration.make_default_pydss_scenario(
                 "scenario",
