@@ -158,7 +158,7 @@ class DERMSSimulationOutput(OutputBase):
     @property
     def result_file(self):
         for path in self.output.iterdir():
-            if not path.isdir():
+            if not path.is_dir():
                 continue
             result_file = self.output / path / "results.json"
             if not result_file.exists():
@@ -170,7 +170,6 @@ class DERMSSimulationOutput(OutputBase):
     def derms_info_file(self):
         return self.output / DERMS_INFO_FILENAME
 
-    @abstractmethod
     def validate_output(self, output):
         report_files = [output / table for table in self.table_names]
         report_exists = [report_file.exists() for report_file in report_files]
