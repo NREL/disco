@@ -20,7 +20,7 @@ class Task(Base):
     opendssdirect_version = Column(types.String(length=30), nullable=True, default=None)
     opendss_version = Column(types.String(length=30), nullable=True, default=None)
     notes = Column(types.Text, nullable=True, default=None)
-    date_created = Column(types.DateTime)
+    creation_time = Column(types.DateTime)
 
 
 class Job(Base):
@@ -29,7 +29,10 @@ class Job(Base):
     task_id = Column(types.String(length=36), ForeignKey("task.id"))
     name = Column(types.String(length=128))
     project_path = Column(types.String(length=256), nullable=True)
-    date_created = Column(types.DateTime)
+    return_code = Column(types.Integer, nullable=True)
+    status = Column(types.String(length=20), nullable=True)
+    exec_time_s = Column(types.Float, nullable=True)
+    completion_time = Column(types.DateTime)
 
 
 class Scenario(Base):
@@ -49,7 +52,7 @@ class Report(Base):
     file_name = Column(types.String(length=128))
     file_path = Column(types.String(length=256))
     file_size = Column(types.Integer)
-    date_created = Column(types.DateTime)
+    creation_time = Column(types.DateTime)
 
 
 class FeederHead(Base):
