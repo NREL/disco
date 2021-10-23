@@ -65,7 +65,7 @@ class OutputParsingStep(PipelineStep):
     
     def execute(self, data):
         """Parse desired data from output"""
-        logger.info("Parsing results from output directory - %s", data["output"])
+        logger.info("Parsing results - %s", data["output"])
         parser = OutputParser(
             task_name=data["task_name"],
             model_inputs=data["model_inputs"],

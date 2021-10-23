@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import pathlib
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict
@@ -11,13 +12,15 @@ from sqlalchemy import inspect
 from dateutil.parser import parse
 
 import jade
-import PyDSS
 from jade.utils.utils import load_data
+from dss.v7 import DSS_GR
+from opendssdirect._version import __version__ as __opendssdirect_version__
+from PyDSS import __version__ as __pydss_version__
 from PyDSS.pydss_project import PyDssProject
 from PyDSS.pydss_fs_interface import PyDssZipFileInterface
 from disco.enums import SimulationType
 from disco.storage.db import Task, Job, Report
-from disco.storage.outputs import get_simulation_output, get_creation_time
+from disco.storage.outputs import get_simulation_output, get_creation_time, OutputType
 from disco.version import __version__ as __disco_version__
 
 
@@ -47,21 +50,17 @@ class TaskParser(ParserBase):
         if isinstance(output, str):
             output = get_simulation_output(output)
         
-        results = load_data(output.result_file)
-        logfile = self._get_job0_run_log_file(output, results)
-        
         data = {
             "id": self._get_uuid(),
             "name": self.name,
             "inputs": self.model_inputs,
             "output": str(output),
             "image_version": self._get_image_version(),
-            "jade_version": results["jade_version"],
-            "pydss_version": self._get_disco_version(logfile),
-            "disco_version": self._get_pydss_version(logfile),
             "notes": self.notes,
-            "date_created": output.creation_time,
+            "creation_time": output.creation_time,
         }
+        package_versions = self._get_package_versions(output)
+        data.update(package_versions)
         return data
 
     def _get_task_id(self):
@@ -77,38 +76,43 @@ class TaskParser(ParserBase):
         # TODO: get image version if applicable
         return ""
     
-    def _get_disco_version(self, logfile):
-        """Return the version of disco"""
-        version = None
-        with open(logfile, "r") as f:  
-            for line in f.readlines():
+    def _get_package_versions(self, output):
+        results = load_data(output.result_file)
+        package_versions = {
+            "disco_version": None,
+            "pydss_version": None,
+            "jade_version": results["jade_version"],
+            "opendssdirect_version": None,
+            "opendss_version": None
+        }
+        
+        if output.output_type == OutputType.DERMS:
+            data = load_data(output.derms_info_file)
+            package_versions["opendssdirect_version"] = data["opendssdirect_version"]
+            package_versions["opendss_version"] = \
+                self._extract_opendss_svn_number(data["opendss_version"])
+        else:
+            logfile = self._get_job0_run_log_file(output, results)
+            with open(logfile, "r") as f:
+                lines = f.readlines()
+            
+            for line in lines:
                 line = line.strip()
-                if "disco version" not in line:
-                    continue
-                version = line.split("=")[1].strip()
-                break
-        
-        if not version:
-            version = __disco_version__
-        
-        return version
+                if "disco version" in line:
+                    package_versions["disco_version"] = line.split("=")[1].strip()
+                if "PyDSS version" in line:
+                    package_versions["pydss_version"] = line.split("=")[1].strip()
+                if "OpenDSSDirect version" in line:
+                    package_versions["opendssdirect_version"] = line.split("=")[1].strip()
+                if "OpendDSS version" in line:
+                    package_versions["opendss_version"] = \
+                        self._extract_opendss_svn_number(line.split("=")[1].strip())
+        return package_versions
     
-    def _get_pydss_version(self, logfile):
-        """Return the version of PyDSS"""
-        version = None
-        with open(logfile, "r") as f:  
-            for line in f.readlines():
-                line = line.strip()
-                if "PyDSS version" not in line:
-                    continue
-                version = line.split("=")[1].strip()
-                break
-        
-        if not version:
-            version = __disco_version__
-        
-        return version
-
+    @staticmethod
+    def _extract_opendss_svn_number(value):
+        return value.split("OpenDSS SVN ")[1][:4]
+    
     @staticmethod
     def _get_job0_run_log_file(output, results):
         job_name = results["results"][0]["name"]
@@ -122,7 +126,7 @@ class TaskParser(ParserBase):
         return log_file
 
 
-class ScenarioParser(ParserBase):
+class PyDssScenarioParser(ParserBase):
     
     SUFFIX_MAPPING = {
         "max_pv_load_ratio": "Max PV to Load Ratio",
@@ -131,20 +135,30 @@ class ScenarioParser(ParserBase):
         "pv_minus_load": "Max PV minus Load"
     }
     
-    def __init__(self, job):
-        self.job = job
+    def __init__(self, jobs):
+        self.jobs = jobs
     
-    def parse(self, simulation):
-        scenario_names = self._get_scenario_names()
+    def parse(self, config_file):
+        scenarios = []
+        config = load_data(config_file)
+        jobs_mapping = {job["name"]: job for job in self.jobs}
+        for item in config["jobs"]:
+            job = jobs_mapping[item["name"]]
+            job_scenarios = self._parse_job_scenarios(job, item["simulation"])
+            scenarios.extend(job_scenarios)
+        return scenarios
+    
+    def _parse_job_scenarios(self, job, simulation):
+        scenario_names = self._get_scenario_names(job)
         simulation_type = self._get_simulation_type(simulation, scenario_names)
         
         scenarios = []
         if simulation_type == SimulationType.SNAPSHOT:
-            timepoints = self._get_snapshot_timepoints(simulation, scenario_names)
+            timepoints = self._get_snapshot_timepoints(job, simulation, scenario_names)
             for name in scenario_names:
                 scenario = {
                     "id": self._get_scenario_id(),
-                    "job_id": self.job["id"],
+                    "job_id": job["id"],
                     "simulation_type": simulation_type.value,
                     "name": name,
                     "start_time": timepoints[name],
@@ -156,42 +170,55 @@ class ScenarioParser(ParserBase):
             for name in scenario_names:
                 scenario = {
                     "id": self._get_scenario_id(),
-                    "job_id": self.job["id"],
+                    "job_id": job["id"],
                     "simulation_type": simulation_type.value,
                     "name": name,
                     "start_time": parse(simulation["start_time"]),
                     "end_time": parse(simulation["end_time"])
                 }
                 scenarios.append(scenario)
-
         return scenarios
     
     def _get_scenario_id(self):
         return self._get_uuid()
 
-    def _get_scenario_names(self):
-        interface = PyDssZipFileInterface(self.job["project_path"])
-        scenario_names = interface._list_scenario_names()
+    @staticmethod
+    def _get_scenario_names(job):
+        # TODO: use PyDSS file interface to read scenaio names
+        # Currently, the interface raise error when check scenarios on some jobs
+        store_file = pathlib.Path(job["project_path"]) / "store.h5"
+        if not os.path.exists(store_file):
+            return []
+
+        scenario_names = None
+        with pd.HDFStore(store_file, "r") as store:
+            for (path, subgroups, _) in store.walk():
+                if path == "/Exports":
+                    scenario_names = subgroups
+                    break
+
+        if scenario_names:
+            scenario_names.sort()
+        
         return scenario_names
 
     def _get_simulation_type(self, simulation, scenario_names):
         """Convert PyDSS simulation type to DISCO type"""
         simulation_type = simulation["simulation_type"]
         
-        if simulation_type == "Snapshot":
+        if simulation_type.lower() == "snapshot":
             return SimulationType.SNAPSHOT
 
-        if simulation_type == "QSTS":
+        if simulation_type.lower() == "qsts":
             if len(scenario_names) > 2:
                 return SimulationType.SNAPSHOT
             return SimulationType.TIME_SERIES
-        
         return None
     
-    def _get_snapshot_timepoints(self, simulation, scenario_names):
+    def _get_snapshot_timepoints(self, job, simulation, scenario_names):
         timestamps = {}
         if len(scenario_names) > 2:
-            interface = PyDssZipFileInterface(self.job["project_path"])
+            interface = PyDssZipFileInterface(job["project_path"])
             data = json.loads(interface.read_file("Exports/snapshot_time_points.json"))
             
             for name in scenario_names:
@@ -202,8 +229,36 @@ class ScenarioParser(ParserBase):
                     timestamps[name] = None
         else:
             for name in scenario_names:
-                timestamps[name] = simulation["start_time"]
+                timestamps[name] = parse(simulation["start_time"])
         return timestamps
+
+
+class DermsScenaioParser(ParserBase):
+    
+    def __init__(self, jobs):
+        self.jobs = jobs
+    
+    def _get_scenario_id(self):
+        return self._get_uuid()
+
+    def parse(self, derms_info_file):
+        scenarios = [
+            self._parse_job_scenario(job, derms_info_file)
+            for job in self.jobs
+        ]
+        return scenarios
+    
+    def _parse_job_scenario(self, job, derms_info_file):
+        data = load_data(derms_info_file)
+        scenario = {
+            "id": self._get_scenario_id(),
+            "job_id": job["id"],
+            "simulation_type": "time-series",
+            "name": "derms",
+            "start_time": data["start_time"],
+            "end_time": data["end_time"]
+        }
+        return scenario
 
 
 class JobParser(ParserBase):
@@ -217,34 +272,27 @@ class JobParser(ParserBase):
         if isinstance(output, str):
             output = get_simulation_output(output)
         
-        config = load_data(output.config_file)
-        jobs, scenarios = [], []
-        for item in config["jobs"]:
-            job_dir = output.job_outputs / item["name"]
-            job = {
+        results = load_data(output.result_file)
+        jobs = [
+            {
                 "id": self._get_job_id(),
                 "task_id": self.task["id"],
                 "name": item["name"],
-                "project_path": self._get_project_path_dir(job_dir),
-                "date_created": self._get_creation_time(job_dir)
+                "project_path": self._get_project_path(output.job_outputs / item["name"]),
+                "return_code": item["return_code"],
+                "status": item["status"],
+                "exec_time_s": item["exec_time_s"],
+                "completion_time": datetime.fromtimestamp(item["completion_time"])
             }
-            jobs.append(job)
-            
-            # Parse scenarios from job
-            scenario_parser = ScenarioParser(job)
-            job_scenarios = scenario_parser.parse(item["simulation"])
-            scenarios.extend(job_scenarios)
-        return jobs, scenarios
+            for item in results["results"]
+        ]
+        return jobs
 
     def _get_job_id(self):
         return self._get_uuid()
 
-    def _get_project_path_dir(self, job_dir):
+    def _get_project_path(self, job_dir):
         return str(job_dir / "pydss_project")
-    
-    def _get_creation_time(self, job_dir):
-        timestamp = get_creation_time(job_dir)
-        return datetime.fromtimestamp(timestamp)
 
 
 class ReportParser(ParserBase):
@@ -262,7 +310,7 @@ class ReportParser(ParserBase):
                 "file_name": report_file.name,
                 "file_path": str(report_file),
                 "file_size": report_file.stat().st_size,
-                "date_created": self._get_creation_time(report_file),
+                "creation_time": self._get_creation_time(report_file),
             }
             key = report_file.name.split("_table")[0]
             reports[key] = report
@@ -400,8 +448,10 @@ class OutputParser(ParserBase):
         task = self.parse_task(output=output)
         result["task"] = task
         
-        jobs, scenarios = self.parse_jobs(task=task, output=output)
+        jobs = self.parse_jobs(task=task, output=output)
         result["jobs"] = jobs
+        
+        scenarios = self.parse_scenarios(jobs=jobs, output=output)
         result["scenarios"] = scenarios
         
         reports = self.parse_reports(task=task, output=output)
@@ -455,8 +505,17 @@ class OutputParser(ParserBase):
 
     def parse_jobs(self, task, output):
         parser = JobParser(task=task)
-        jobs, scenarios = parser.parse(output)
-        return jobs, scenarios
+        jobs = parser.parse(output)
+        return jobs
+
+    def parse_scenarios(self, jobs, output):
+        if output.output_type == OutputType.DERMS:
+            parser = DermsScenaioParser(jobs)
+            scenarios = parser.parse(output.derms_info_file)
+        else:
+            parser = PyDssScenarioParser(jobs)
+            scenarios = parser.parse(output.config_file)
+        return scenarios
 
     def parse_reports(self, task, output):
         parser = ReportParser(task=task)
