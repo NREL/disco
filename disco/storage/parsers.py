@@ -3,6 +3,7 @@ import logging
 import os
 import pathlib
 import uuid
+import zipfile
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict
 from datetime import datetime
@@ -17,7 +18,6 @@ from dss.v7 import DSS_GR
 from opendssdirect._version import __version__ as __opendssdirect_version__
 from PyDSS import __version__ as __pydss_version__
 from PyDSS.pydss_project import PyDssProject
-from PyDSS.pydss_fs_interface import PyDssZipFileInterface
 from disco.enums import SimulationType
 from disco.storage.db import Task, Job, Report
 from disco.storage.outputs import get_simulation_output, get_creation_time, OutputType
@@ -218,9 +218,9 @@ class PyDssScenarioParser(ParserBase):
     def _get_snapshot_timepoints(self, job, simulation, scenario_names):
         timestamps = {}
         if len(scenario_names) > 2:
-            interface = PyDssZipFileInterface(job["project_path"])
-            data = json.loads(interface.read_file("Exports/snapshot_time_points.json"))
-            
+            project = pathlib.Path(job["project_path"]) / "project.zip"
+            with zipfile.ZipFile(project, "r") as zf:
+                data = json.loads(zf.read("Exports/snapshot_time_points.json"))
             for name in scenario_names:
                 key = self.SUFFIX_MAPPING[name.split("__")[1]]
                 if key in data:
