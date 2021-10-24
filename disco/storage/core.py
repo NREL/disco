@@ -71,7 +71,7 @@ class OutputParsingStep(PipelineStep):
             model_inputs=data["model_inputs"],
             notes=data["notes"],
         )
-        result = parser.parse(output=self.output)
+        result = parser.parse(output=self.output, reports_only=data["reports_only"])
         return result
 
 

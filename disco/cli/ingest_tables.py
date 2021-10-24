@@ -42,12 +42,27 @@ from disco.storage.core import StoragePipeline
     help="Database path of SQLite on disk."
 )
 @click.option(
+    "--reports-only",
+    is_flag=True,
+    default=False,
+    help="Ingest reports only without jobs information"
+)
+@click.option(
     "-v", "--verbose",
     is_flag=True,
     default=False,
     help="Enable debug logging"
 )
-def ingest_tables(output, task_name, model_inputs, notes, batch_size, database, verbose):
+def ingest_tables(
+    output,
+    task_name,
+    model_inputs, 
+    notes,
+    batch_size,
+    database,
+    reports_only,
+    verbose
+):
     """Ingest DISCO simulation/analysis reports into SQLite database"""
     level = logging.DEBUG if verbose else logging.INFO
     logger = setup_logging(__name__, None, console_level=level)
@@ -65,6 +80,7 @@ def ingest_tables(output, task_name, model_inputs, notes, batch_size, database, 
             "notes": notes or "",
             "batch_size": batch_size,
             "database": database,
+            "reports_only": reports_only
         }
         pipeline = StoragePipeline(database=database)
         pipeline.run(data=data)
