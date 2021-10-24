@@ -335,21 +335,30 @@ class ReportParser(ParserBase):
 
 class TableParserMixin:
 
-    def _set_record_index(self, data):
+    def _set_record_index(self, data, reports_only=False):
         """
         Parameters
         ----------
         data: list[dict], A list of records in dict.
         """
         indexed_data = []
-        job_indexes = {job["name"]: job["id"] for job in self.jobs}
-        for item in data:
-            item.update({
-                "id": self._get_uuid(),
-                "report_id": self.report["id"],
-                "job_id": job_indexes[item["name"]]
-            })
-            indexed_data.append(item)
+        if reports_only:
+            for item in data:
+                item.update({
+                    "id": self._get_uuid(),
+                    "report_id": self.report["id"],
+                    "job_id": None
+                })
+                indexed_data.append(item)
+        else:
+            job_indexes = {job["name"]: job["id"] for job in self.jobs}
+            for item in data:
+                item.update({
+                    "id": self._get_uuid(),
+                    "report_id": self.report["id"],
+                    "job_id": job_indexes[item["name"]]
+                })
+                indexed_data.append(item)
         return indexed_data
     
     @staticmethod
@@ -374,12 +383,12 @@ class FeederHeadParser(ParserBase, TableParserMixin):
         self.report = report
         self.jobs = jobs
     
-    def parse(self, output):
+    def parse(self, output, reports_only=False):
         """Prase feeder head data from output report file"""
         df = pd.read_csv(output.feeder_head_table)
         df = self._replace_none(df)
         data = df.rename(columns=self.field_mappings).to_dict(orient="records")
-        data = self._set_record_index(data)
+        data = self._set_record_index(data, reports_only=reports_only)
         return data
 
 
@@ -389,12 +398,12 @@ class FeederLossesParser(ParserBase, TableParserMixin):
         self.report = report
         self.jobs = jobs
     
-    def parse(self, output):
+    def parse(self, output, reports_only=False):
         """Prase feeder losses data from output report file"""
         df = pd.read_csv(output.feeder_losses_table)
         df = self._replace_none(df)
         data = df.to_dict(orient="records")
-        data = self._set_record_index(data)
+        data = self._set_record_index(data, reports_only=reports_only)
         return data
 
 
@@ -404,12 +413,12 @@ class MetadataParser(ParserBase, TableParserMixin):
         self.report = report
         self.jobs = jobs
     
-    def parse(self, output):
+    def parse(self, output, reports_only=False):
         """Prase metadata data from output report file"""
         df = pd.read_csv(output.metadata_table)
         df = self._replace_none(df)
         data = df.to_dict(orient="records")
-        data = self._set_record_index(data)
+        data = self._set_record_index(data, reports_only=reports_only)
         return data
 
 
@@ -419,12 +428,12 @@ class ThermalMetricsParser(ParserBase, TableParserMixin):
         self.report = report
         self.jobs = jobs
     
-    def parse(self, output):
+    def parse(self, output, reports_only=False):
         """Prase thermal metrics data from output report file"""
         df = pd.read_csv(output.thermal_metrics_table)
         df = self._replace_none(df)
         data = df.to_dict(orient="records")
-        data = self._set_record_index(data)
+        data = self._set_record_index(data, reports_only=reports_only)
         return data
 
 
@@ -434,12 +443,12 @@ class VoltageMetricsParser(ParserBase, TableParserMixin):
         self.report = report
         self.jobs = jobs
     
-    def parse(self, output):
+    def parse(self, output, reports_only=False):
         """Prase voltage metrics data from output report file"""
         df = pd.read_csv(output.voltage_metrics_table)
         df = self._replace_none(df)
         data = df.to_dict(orient="records")
-        data = self._set_record_index(data)
+        data = self._set_record_index(data, reports_only=reports_only)
         return data
 
 
@@ -450,17 +459,21 @@ class OutputParser(ParserBase):
         self.model_inputs = model_inputs
         self.notes = notes
 
-    def parse(self, output):
+    def parse(self, output, reports_only=False):
         """Prase task, jobs, and reports data from output"""
         result = {}
         
         task = self.parse_task(output=output)
         result["task"] = task
         
-        jobs = self.parse_jobs(task=task, output=output)
-        result["jobs"] = jobs
+        if reports_only:
+            jobs = []
+            scenarios = []
+        else:
+            jobs = self.parse_jobs(task=task, output=output)
+            scenarios = self.parse_scenarios(jobs=jobs, output=output)
         
-        scenarios = self.parse_scenarios(jobs=jobs, output=output)
+        result["jobs"] = jobs
         result["scenarios"] = scenarios
         
         reports = self.parse_reports(task=task, output=output)
@@ -469,35 +482,40 @@ class OutputParser(ParserBase):
         feeder_head = self.parse_feeder_head(
             report=reports["feeder_head"],
             jobs=jobs,
-            output=output
+            output=output,
+            reports_only=reports_only
         )
         result["feeder_head"] = feeder_head
         
         feeder_losses = self.parse_feeder_losses(
             report=reports["feeder_losses"],
             jobs=jobs,
-            output=output
+            output=output,
+            reports_only=reports_only
         )
         result["feeder_losses"] = feeder_losses
         
         metadata = self.parse_metadata(
             report=reports["metadata"],
             jobs=jobs,
-            output=output
+            output=output,
+            reports_only=reports_only
         )
         result["metadata"] = metadata
         
         thermal_metrics = self.parse_thermal_metrics(
             report=reports["thermal_metrics"],
             jobs=jobs,
-            output=output
+            output=output,
+            reports_only=reports_only
         )
         result["thermal_metrics"] = thermal_metrics
         
         voltage_metrics = self.parse_voltage_metrics(
             report=reports["voltage_metrics"],
             jobs=jobs,
-            output=output
+            output=output,
+            reports_only=reports_only
         )
         result["voltage_metrics"] = voltage_metrics
 
@@ -531,27 +549,27 @@ class OutputParser(ParserBase):
         reports = parser.parse(output)
         return reports
 
-    def parse_feeder_head(self, report, jobs, output):
+    def parse_feeder_head(self, report, jobs, output, reports_only=False):
         parser = FeederHeadParser(report=report, jobs=jobs)
-        feeder_head = parser.parse(output)
+        feeder_head = parser.parse(output, reports_only=reports_only)
         return feeder_head
 
-    def parse_feeder_losses(self, report, jobs, output):
+    def parse_feeder_losses(self, report, jobs, output, reports_only=False):
         parser = FeederLossesParser(report=report, jobs=jobs)
-        feeder_losses = parser.parse(output)
+        feeder_losses = parser.parse(output, reports_only=reports_only)
         return feeder_losses
 
-    def parse_metadata(self, report, jobs, output):
+    def parse_metadata(self, report, jobs, output, reports_only=False):
         parser = MetadataParser(report=report, jobs=jobs)
-        metadata = parser.parse(output)
+        metadata = parser.parse(output, reports_only=reports_only)
         return metadata
     
-    def parse_thermal_metrics(self, report, jobs, output):
+    def parse_thermal_metrics(self, report, jobs, output, reports_only=False):
         parser = ThermalMetricsParser(report=report, jobs=jobs)
-        thermal_metrics = parser.parse(output)
+        thermal_metrics = parser.parse(output, reports_only=reports_only)
         return thermal_metrics
 
-    def parse_voltage_metrics(self, report, jobs, output):
+    def parse_voltage_metrics(self, report, jobs, output, reports_only=False):
         parser = VoltageMetricsParser(report=report, jobs=jobs)
-        voltage_metrics = parser.parse(output)
+        voltage_metrics = parser.parse(output, reports_only=reports_only)
         return voltage_metrics
