@@ -219,8 +219,15 @@ class PyDssScenarioParser(ParserBase):
         timestamps = {}
         if len(scenario_names) > 2:
             project = pathlib.Path(job["project_path"]) / "project.zip"
-            with zipfile.ZipFile(project, "r") as zf:
-                data = json.loads(zf.read("Exports/snapshot_time_points.json"))
+            try:
+                with zipfile.ZipFile(project, "r") as zf:
+                    data = json.loads(zf.read("Exports/snapshot_time_points.json"))
+            except KeyError:
+                logger.info(
+                    "There is no item named 'Exports/snapshot_time_points.json' in the archive"
+                )
+                data = {}
+            
             for name in scenario_names:
                 key = self.SUFFIX_MAPPING[name.split("__")[1]]
                 if key in data:
