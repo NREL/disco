@@ -5,8 +5,9 @@ import pathlib
 import uuid
 import zipfile
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, asdict
+from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
+from functools import partial
 
 import pandas as pd
 from sqlalchemy import inspect
@@ -136,16 +137,18 @@ class PyDssScenarioParser(ParserBase):
     }
     
     def __init__(self, jobs):
-        self.jobs = jobs
+        self.jobs = jobs  # Parsed jobs wiht uuid
     
     def parse(self, config_file):
-        scenarios = []
         config = load_data(config_file)
-        jobs_mapping = {job["name"]: job for job in self.jobs}
-        for item in config["jobs"]:
-            job = jobs_mapping[item["name"]]
-            job_scenarios = self._parse_job_scenarios(job, item["simulation"])
-            scenarios.extend(job_scenarios)
+        mapping = {job["name"]: job for job in self.jobs}
+        
+        jobs = [mapping[item["name"]] for item in config["jobs"]]
+        simulations = [item["simulation"] for item in config["jobs"]]
+        with ProcessPoolExecutor() as executor:
+            results = executor.map(self._parse_job_scenarios, jobs, simulations)
+        
+        scenarios = [scenario for sublist in results for scenario in sublist]
         return scenarios
     
     def _parse_job_scenarios(self, job, simulation):
@@ -190,13 +193,13 @@ class PyDssScenarioParser(ParserBase):
         if not os.path.exists(store_file):
             return []
 
-        scenario_names = None
+        scenario_names = []
         with pd.HDFStore(store_file, "r") as store:
             for (path, subgroups, _) in store.walk():
                 if path == "/Exports":
                     scenario_names = subgroups
                     break
-
+        
         if scenario_names:
             scenario_names.sort()
         
@@ -223,9 +226,6 @@ class PyDssScenarioParser(ParserBase):
                 with zipfile.ZipFile(project, "r") as zf:
                     data = json.loads(zf.read("Exports/snapshot_time_points.json"))
             except KeyError:
-                logger.info(
-                    "There is no item named 'Exports/snapshot_time_points.json' in the archive"
-                )
                 data = {}
             
             for name in scenario_names:
@@ -249,10 +249,12 @@ class DermsScenaioParser(ParserBase):
         return self._get_uuid()
 
     def parse(self, derms_info_file):
-        scenarios = [
-            self._parse_job_scenario(job, derms_info_file)
-            for job in self.jobs
-        ]
+        with ProcessPoolExecutor() as executor:
+            results = executor.map(
+                partial(self._parse_job_scenario, derms_info_file=derms_info_file),
+                self.jobs
+            )
+        scenarios = list(results)
         return scenarios
     
     def _parse_job_scenario(self, job, derms_info_file):

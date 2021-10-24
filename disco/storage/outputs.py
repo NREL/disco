@@ -149,7 +149,7 @@ class PipelineSimulationOutput(OutputBase):
         raise IngestionError(f"All stage outputs in '{output}' do not contain valid reports.")
 
 
-class DERMSSimulationOutput(OutputBase):
+class DermsSimulationOutput(OutputBase):
 
     @property
     def output_type(self):
@@ -236,6 +236,6 @@ def get_simulation_output(output):
         return PipelineSimulationOutput(output)
 
     if is_from_derms(output):
-        return DERMSSimulationOutput(output)
+        return DermsSimulationOutput(output)
     
     return SimulationOutput(output)
