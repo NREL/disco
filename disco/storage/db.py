@@ -59,7 +59,7 @@ class FeederHead(Base):
     __tablename__ = "feeder_head"
     id = Column(types.String(length=36), primary_key=True)
     report_id = Column(types.String(length=36), ForeignKey("report.id"))
-    job_id = Column(types.String(length=36), ForeignKey("job.id"))
+    job_id = Column(types.String(length=36), ForeignKey("job.id"), nullable=True)
     name = Column(types.String(length=128))
     substation = Column(types.String(length=128))
     feeder = Column(types.String(length=128))
@@ -79,7 +79,7 @@ class FeederLosses(Base):
     __tablename__ = "feeder_losses"
     id = Column(types.String(length=36), primary_key=True)
     report_id = Column(types.String(length=36), ForeignKey("report.id"))
-    job_id = Column(types.String(length=36), ForeignKey("job.id"))
+    job_id = Column(types.String(length=36), ForeignKey("job.id"), nullable=True)
     name = Column(types.String(length=128))
     substation = Column(types.String(length=128))
     feeder = Column(types.String(length=128))
@@ -98,7 +98,7 @@ class Metadata(Base):
     __tablename__ = "metadata"
     id = Column(types.String(length=36), primary_key=True)
     report_id = Column(types.String(length=36), ForeignKey("report.id"))
-    job_id = Column(types.String(length=36), ForeignKey("job.id"))
+    job_id = Column(types.String(length=36), ForeignKey("job.id"), nullable=True)
     name = Column(types.String(length=128))
     substation = Column(types.String(length=128))
     feeder = Column(types.String(length=128))
@@ -115,7 +115,7 @@ class VoltageMetrics(Base):
     __tablename__ = "voltage_metrics"
     id = Column(types.String(length=36), primary_key=True)
     report_id = Column(types.String(length=36), ForeignKey("report.id"))
-    job_id = Column(types.String(length=36), ForeignKey("job.id"))
+    job_id = Column(types.String(length=36), ForeignKey("job.id"), nullable=True)
     name = Column(types.String(length=128))
     substation = Column(types.String(length=128))
     feeder = Column(types.String(length=128))
@@ -140,7 +140,7 @@ class ThermalMetrics(Base):
     __tablename__ = "thermal_metrics"
     id = Column(types.String(length=36), primary_key=True)
     report_id = Column(types.String(length=36), ForeignKey("report.id"))
-    job_id = Column(types.String(length=36), ForeignKey("job.id"))
+    job_id = Column(types.String(length=36), ForeignKey("job.id"), nullable=True)
     name = Column(types.String(length=128))
     substation = Column(types.String(length=128))
     feeder = Column(types.String(length=128))
