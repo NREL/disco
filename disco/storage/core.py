@@ -78,16 +78,15 @@ class OutputParsingStep(PipelineStep):
 class ResultIngestionStep(PipelineStep):
     """A step for ingesting parsed result into database"""
     
-    def __init__(self, database, batch_size):
+    def __init__(self, database):
         self.database = database
-        self.batch_size = batch_size
 
     def execute(self, data):
         """Ingest parsed data into database"""
         logger.info("Ingesting results into database.")
         lock_file = self.database + ".lock"
         with SoftFileLock(lock_file=lock_file, timeout=3600):
-            ingester = OutputIngester(database=self.database, batch_size=self.batch_size)
+            ingester = OutputIngester(database=self.database)
             indexes = ingester.ingest(data=data)
             return indexes
 
@@ -115,7 +114,7 @@ class StoragePipeline(PipelineBase):
         step2 = OutputParsingStep(output=data["output"])
         result = step2.execute(data=valid_data)
         
-        step3 = ResultIngestionStep(database=data["database"], batch_size=data["batch_size"])
+        step3 = ResultIngestionStep(database=data["database"])
         indexes = step3.execute(data=result)
         
         step4 = FinalizatonStep(output=data["output"])

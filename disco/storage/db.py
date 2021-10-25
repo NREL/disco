@@ -1,3 +1,5 @@
+import sqlite3
+
 from sqlalchemy import Column, ForeignKey
 from sqlalchemy import types
 from sqlalchemy.engine import create_engine as _create_engine
@@ -173,9 +175,3 @@ def create_engine(database):
 def create_database(database):
     engine = create_engine(database)
     Base.metadata.create_all(engine)
-
-
-def create_session(database):
-    engine = create_engine(database)
-    session = sessionmaker(bind=engine)
-    return session()

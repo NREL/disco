@@ -30,12 +30,6 @@ from disco.storage.core import StoragePipeline
     help="Notes about this DISCO simulation/analysis task"
 )
 @click.option(
-    "-b", "--batch-size",
-    type=click.INT,
-    default=10000,
-    help="The batch size of records in table ingestion"
-)
-@click.option(
     "-d", "--database",
     type=click.Path(),
     default="disco.sqlite",
@@ -58,7 +52,6 @@ def ingest_tables(
     task_name,
     model_inputs, 
     notes,
-    batch_size,
     database,
     reports_only,
     verbose
@@ -78,7 +71,6 @@ def ingest_tables(
             "task_name": task_name,
             "model_inputs": os.path.abspath(model_inputs),
             "notes": notes or "",
-            "batch_size": batch_size,
             "database": database,
             "reports_only": reports_only
         }
