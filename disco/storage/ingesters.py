@@ -1,6 +1,8 @@
 import json
+import logging
 import os
 import pathlib
+import sqlite3
 from abc import ABC, abstractmethod
 
 from disco.storage.db import (
@@ -12,10 +14,11 @@ from disco.storage.db import (
     FeederLosses,
     Metadata,
     ThermalMetrics,
-    VoltageMetrics,
-    create_session
+    VoltageMetrics
 )
 from disco.storage.exceptions import IngestionError
+
+logger = logging.getLogger(__name__)
 
 
 class IngesterBase(ABC):
@@ -23,36 +26,31 @@ class IngesterBase(ABC):
     
     data_class = None
     
-    def __init__(self, database, batch_size):
+    def __init__(self, database):
         self.database = database
-        self.batch_size = batch_size
-        self.session = create_session(database)
 
     @abstractmethod
     def ingest(self, data):
         """Ingest data into database via sqlalchemy"""
     
-    def _perfrom_ingestion(self, data):
+    def _perform_ingestion(self, columns, data):
         """
         Parameters
         ----------
-        data: dict
-        """
-        if not self.data_class:
-            raise IngestionError("No data_class was set for this ingestion.")
-        self.session.add(self.data_class(**data))
-        self.session.commit()
-    
-    def _perform_batch_ingestion(self, data):
-        """
-        Parameters
-        ----------
+        columns: list[str]
         data: list[dict]
         """
-        for i in range(0, len(data), self.batch_size):
-            batch = data[i: i+self.batch_size]
-            self.session.add_all(batch)
-            self.session.commit()
+        table = self.data_class.__table__.name
+        values = ", ".join(["?"] * len(columns))
+        columns = ", ".join(columns)
+        conn = sqlite3.connect(self.database)
+        try:
+            sql = f"INSERT INTO {table} ({columns}) VALUES ({values})"
+            conn.executemany(sql, data)
+            conn.commit()
+        finally:
+            conn.close()
+        logger.info("Success ingestion - '%s'.", table)
 
 
 class TaskIngester(IngesterBase):
@@ -62,9 +60,11 @@ class TaskIngester(IngesterBase):
 
     def ingest(self, task):
         """Ingest task data into task table in database"""
-        self._perfrom_ingestion(data=task)
-        index = {task["name"]: task["id"]}
-        return index
+        columns = self.data_class.__table__.columns.keys()
+        data = [tuple([task[column] for column in columns])]
+        self._perform_ingestion(columns=columns, data=data)
+        indexes = {task["name"]: task["id"]}
+        return indexes
 
 
 class ScenarioIngester(IngesterBase):
@@ -74,8 +74,9 @@ class ScenarioIngester(IngesterBase):
     
     def ingest(self, scenarios):
         """Ingest a list of scenarios into scenario table in database"""
-        objects = [self.data_class(**data) for data in scenarios]
-        self._perform_batch_ingestion(data=objects)
+        columns = self.data_class.__table__.columns.keys()
+        data = [tuple([item[column] for column in columns]) for item in scenarios]
+        self._perform_ingestion(columns=columns, data=data)
         indexes = {self._generate_identifier(item): item["id"] for item in scenarios}
         return indexes
     
@@ -93,8 +94,9 @@ class JobIngester(IngesterBase):
     
     def ingest(self, jobs):
         """Ingest a list of jobs into job table in database"""
-        objects = [self.data_class(**data) for data in jobs]
-        self._perform_batch_ingestion(data=objects)
+        columns = self.data_class.__table__.columns.keys()
+        data = [tuple([item[column] for column in columns]) for item in jobs]
+        self._perform_ingestion(columns=columns, data=data)
         indexes = {job["name"]: job["id"] for job in jobs}
         return indexes
 
@@ -106,8 +108,9 @@ class ReportIngester(IngesterBase):
 
     def ingest(self, reports):
         """Ingest parsed reports into report table in database"""
-        objects = [self.data_class(**report) for report in reports]
-        self._perform_batch_ingestion(data=objects)
+        columns = self.data_class.__table__.columns.keys()
+        data = [tuple([item[column] for column in columns]) for item in reports]
+        self._perform_ingestion(columns=columns, data=data)
         indexes = {report["file_name"]: report["id"] for report in reports}
         return indexes
 
@@ -115,10 +118,11 @@ class ReportIngester(IngesterBase):
 class TableIngesterMixin:
     """Mixin class for handling report table ingestion"""
 
-    def ingest(self, data):
-        objects = [self.data_class(**item) for item in data]
-        self._perform_batch_ingestion(data=objects)
-        indexes = {self._generate_identifier(item): item["id"] for item in data}
+    def ingest(self, objects):
+        columns = self.data_class.__table__.columns.keys()
+        data = [tuple([item[column] for column in columns]) for item in objects]
+        self._perform_ingestion(columns=columns, data=data)
+        indexes = {self._generate_identifier(item): item["id"] for item in objects}
         return indexes
 
     @staticmethod
@@ -211,7 +215,7 @@ class OutputIngester(IngesterBase):
         ----------
         task: dict
         """
-        ingester = TaskIngester(self.database, self.batch_size)
+        ingester = TaskIngester(self.database)
         index = ingester.ingest(task)
         return index
 
@@ -222,7 +226,7 @@ class OutputIngester(IngesterBase):
         ----------
         jobs: list[dict]
         """
-        ingester = JobIngester(self.database, self.batch_size)
+        ingester = JobIngester(self.database)
         indexes = ingester.ingest(jobs)
         return indexes
     
@@ -233,7 +237,7 @@ class OutputIngester(IngesterBase):
         ----------
         scenarios: list[dict]
         """
-        ingester = ScenarioIngester(self.database, self.batch_size)
+        ingester = ScenarioIngester(self.database)
         indexes = ingester.ingest(scenarios)
         return indexes
 
@@ -244,7 +248,7 @@ class OutputIngester(IngesterBase):
         ----------
         reports: dict(str=dict)
         """
-        ingester = ReportIngester(self.database, self.batch_size)
+        ingester = ReportIngester(self.database)
         indexes = ingester.ingest(reports)
         return indexes
     
@@ -255,7 +259,7 @@ class OutputIngester(IngesterBase):
         ----------
         feeder_head: list[dict]
         """
-        ingester = FeederHeadIngester(self.database, self.batch_size)
+        ingester = FeederHeadIngester(self.database)
         indexes = ingester.ingest(feeder_head)
         return indexes
     
@@ -266,7 +270,7 @@ class OutputIngester(IngesterBase):
         ----------
         feeder_losses: list[dict]
         """
-        ingester = FeederLossesIngester(self.database, self.batch_size)
+        ingester = FeederLossesIngester(self.database)
         indexes = ingester.ingest(feeder_losses)
         return indexes
     
@@ -277,7 +281,7 @@ class OutputIngester(IngesterBase):
         ----------
         metadata: list[dict]
         """
-        ingester = MetadataIngester(self.database, self.batch_size)
+        ingester = MetadataIngester(self.database)
         indexes = ingester.ingest(metadata)
         return indexes
     
@@ -288,7 +292,7 @@ class OutputIngester(IngesterBase):
         ----------
         thermal_metrics: list[dict]
         """
-        ingester = ThermalMetricsIngester(self.database, self.batch_size)
+        ingester = ThermalMetricsIngester(self.database)
         indexes = ingester.ingest(thermal_metrics)
         return indexes
     
@@ -299,7 +303,7 @@ class OutputIngester(IngesterBase):
         ----------
         voltage_metrics: list[dict]
         """
-        ingester = VoltageMetricsIngester(self.database, self.batch_size)
+        ingester = VoltageMetricsIngester(self.database)
         indexes = ingester.ingest(voltage_metrics)
         return indexes
 

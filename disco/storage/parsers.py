@@ -24,7 +24,6 @@ from disco.storage.db import Task, Job, Report
 from disco.storage.outputs import get_simulation_output, get_creation_time, OutputType
 from disco.version import __version__ as __disco_version__
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -518,7 +517,6 @@ class OutputParser(ParserBase):
             reports_only=reports_only
         )
         result["voltage_metrics"] = voltage_metrics
-
         return result
 
     def parse_task(self, output):
