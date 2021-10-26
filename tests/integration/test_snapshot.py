@@ -105,6 +105,7 @@ def test_snapshot_impact_analysis(cleanup):
     for filename in POSTPROCESS_RESULTS:
         summary_table = os.path.join(OUTPUT, filename)
         assert os.path.exists(summary_table)
+    assert os.path.exists(os.path.join(OUTPUT, "snapshot_time_points_table.csv"))
     
     # TODO: Test impact analysis function after code integrated.
 
