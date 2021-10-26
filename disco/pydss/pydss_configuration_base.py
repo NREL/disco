@@ -37,31 +37,29 @@ DEFAULT_CONTROLLER_CONFIGS = [
 DEFAULT_LOAD_SHAPE_START_TIME = "2021-01-01 00:00:00.0"
 
 DEFAULT_PYDSS_SIMULATION_CONFIG = {
-    "Project": {
-        "Start time": "2021-01-01 00:00:00.0",
-        "Loadshape start time": DEFAULT_LOAD_SHAPE_START_TIME,
-        "Simulation duration (min)": 1.0,
-        "Step resolution (sec)": 900.0,
-        "Max Control Iterations": 50,
-        "Error tolerance": 0.0001,
-        "Max error tolerance": 0.01,
-        "Convergence error percent threshold": 1.0,
-        "Skip export on convergence error": True,
-        "Use Controller Registry": True
+    "project": {
+        "start_time": "2021-01-01 00:00:00.0",
+        "loadshape_start_time": DEFAULT_LOAD_SHAPE_START_TIME,
+        "simulation_duration_min": 1.0,
+        "step_resolution_sec": 900.0,
+        "max_control_iterations": 50,
+        "error_tolerance": 0.0001,
+        "max_error_tolerance": 0.01,
+        "convergence_error_percent_threshold": 1.0,
+        "skip_export_on_convergence_error": True,
+        "use_controller_registry": True
     },
-    "Exports": {
-        "Log Results": True,
-        "Export Mode": "byClass",
-        "Export Style": "Single file",
-        "Export Elements": True,
-        "Export Element Types": ["Loads", "PVSystems"],  # Make this empty to export all types.
-        "Export Event Log": True,
-        "Export Format": "h5",
-        "Export Compression": True,
-        "Export Data Tables": False,
-        "Export PV Profiles": False,
+    "exports": {
+        "export_results": True,
+        "export_elements": True,
+        "export_element_types": ["Loads", "PVSystems"],  # Make this empty to export all types.
+        "export_event_log": True,
+        "export_format": "h5",
+        "export_compression": True,
+        "export_data_tables": False,
+        "export_pv_profiles": False,
     },
-    "Reports": {},
+    "reports": {},
 }
 
 DEFAULT_PYDSS_CONFIG = {

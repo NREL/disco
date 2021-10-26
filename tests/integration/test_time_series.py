@@ -153,12 +153,12 @@ def test_time_series_config_options(cleanup):
 
     check_run_command(config_cmd)
     data = load_data(CONFIG_FILE)
-    assert "Simulation range" not in data["pydss_inputs"]["Simulation"]["Project"]
+    assert "Simulation range" not in data["pydss_inputs"]["Simulation"]["project"]
 
     skip_night_cmd = config_cmd + " --skip-night"
     check_run_command(skip_night_cmd)
     data = load_data(CONFIG_FILE)
-    assert data["pydss_inputs"]["Simulation"]["Project"]["Simulation range"] == {
+    assert data["pydss_inputs"]["Simulation"]["project"]["simulation_range"] == {
         "start": "06:00:00",
         "end": "18:00:00",
     }
@@ -185,7 +185,7 @@ def test_time_series_config_options(cleanup):
 
 
 def get_report_value(data, name):
-    for report in data["pydss_inputs"]["Simulation"]["Reports"]["Types"]:
+    for report in data["pydss_inputs"]["Simulation"]["reports"]["types"]:
         if report["name"] == name:
             return report["enabled"]
 

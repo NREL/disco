@@ -1,20 +1,20 @@
-[Reports]
-Format = "h5"
-Granularity = "per_element_per_time_point"
+[reports]
+format = "h5"
+granularity = "per_element_per_time_point"
 
-[[Reports.Types]]
+[[reports.types]]
 name = "Capacitor State Change Counts"
 enabled = true
 
-[[Reports.Types]]
+[[reports.types]]
 name = "Feeder Losses"
 enabled = true
 
-[[Reports.Types]]
+[[reports.types]]
 name = "RegControl Tap Number Change Counts"
 enabled = true
 
-[[Reports.Types]]
+[[reports.types]]
 name = "Thermal Metrics"
 enabled = true
 transformer_loading_percent_threshold = 150
@@ -25,7 +25,7 @@ line_loading_percent_threshold = 150
 line_loading_percent_moving_average_threshold = 120
 store_per_element_data = false
 
-[[Reports.Types]]
+[[reports.types]]
 name = "Voltage Metrics"
 enabled = true
 window_size_minutes = 60
