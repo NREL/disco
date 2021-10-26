@@ -2,6 +2,7 @@ click>=8.0
 feather-format
 filelock
 ipywidgets
+dsspy==2.0.4
 opendssdirect.py>=0.3.7
 openpyxl
 pandas
