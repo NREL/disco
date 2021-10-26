@@ -197,7 +197,9 @@ def get_voltage_metrics(results: PyDssResults, job_info: JobInfo):
             add_scenario(row, scenario)
             row["node_type"] = node_type
             for field in VOLTAGE_METRIC_FIELDS_TO_INCLUDE_AS_PASS_CRITERIA:
-                row[field] = data["scenarios"][scenario][node_type]["summary"][field]
+                summary = row[field] = data["scenarios"][scenario][node_type]["summary"]
+                if summary is not None:
+                    row[field] = data["scenarios"][scenario][node_type]["summary"][field]
             voltage_metrics_table.append(row)
 
     return voltage_metrics_table
@@ -206,7 +208,7 @@ def get_voltage_metrics(results: PyDssResults, job_info: JobInfo):
 def compute_total_pv_kw(scenario: PyDssScenarioResults):
     """Return the total PV capacity in kw."""
     df = scenario.read_element_info_file(f"Exports/{scenario.name}/PVSystemsInfo.csv")
-    if df.Name.isnull().all():
+    if "Name" not in df.columns or df.Name.isnull().all():
         return 0
     return df["Pmpp"].sum()
 
