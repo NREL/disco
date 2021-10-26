@@ -2,7 +2,6 @@
 
 import csv
 import itertools
-
 import json
 import logging
 from collections import namedtuple
@@ -28,6 +27,12 @@ from disco.pydss.common import SCENARIO_NAME_DELIMITER
 JobInfo = namedtuple(
     "JobInfo", ["name", "substation", "feeder", "placement", "sample", "penetration_level"]
 )
+SNAPSHOT_TIME_POINT_MAPPING = {
+    "max_pv_load_ratio": "Max PV to Load Ratio",
+    "max_load": "Max Load",
+    "daytime_min_load": "Min Daytime Load",
+    "pv_minus_load": "Max PV minus Load",
+}
 
 
 logger = logging.getLogger(__name__)
@@ -54,6 +59,7 @@ def parse_batch_results(output_dir):
     metadata_table = []
     thermal_metrics_table = []
     voltage_metrics_table = []
+    snapshot_time_points_table = []
 
     # This will create flattened tables for each metric across jobs and PyDSS scenarios
     # within eah job.
@@ -66,12 +72,14 @@ def parse_batch_results(output_dir):
             metadata_table += result[2]
             thermal_metrics_table += result[3]
             voltage_metrics_table += result[4]
+            snapshot_time_points_table += result[5]
 
     serialize_table(feeder_head_table, output_path / "feeder_head_table.csv")
     serialize_table(feeder_losses_table, output_path / "feeder_losses_table.csv")
     serialize_table(metadata_table, output_path / "metadata_table.csv")
     serialize_table(thermal_metrics_table, output_path / "thermal_metrics_table.csv")
     serialize_table(voltage_metrics_table, output_path / "voltage_metrics_table.csv")
+    serialize_table(snapshot_time_points_table, output_path / "snapshot_time_points_table.csv")
 
 
 def parse_job_results(job, output_path):
@@ -102,6 +110,10 @@ def parse_job_results(job, output_path):
     feeder_losses_table = get_feeder_losses(results, job_info)
     thermal_metrics_table = get_thermal_metrics(results, job_info)
     voltage_metrics_table = get_voltage_metrics(results, job_info)
+    if job.model.model_type == "SnapshotImpactAnalysisModel":
+        snapshot_time_points_table = get_snapshot_time_points_table(results, job_info)
+    else:
+        snapshot_time_points_table = []
 
     return (
         feeder_head_table,
@@ -109,6 +121,7 @@ def parse_job_results(job, output_path):
         metadata_table,
         thermal_metrics_table,
         voltage_metrics_table,
+        snapshot_time_points_table,
     )
 
 
@@ -203,6 +216,19 @@ def get_voltage_metrics(results: PyDssResults, job_info: JobInfo):
             voltage_metrics_table.append(row)
 
     return voltage_metrics_table
+
+
+def get_snapshot_time_points_table(results: PyDssResults, job_info: JobInfo):
+    """Return the snapshot time points determined by each job."""
+    snapshot_time_points_table = []
+    data = json.loads(results.read_file(f"Exports/snapshot_time_points.json"))
+    row = {"name": job_info.name}
+    for time_point in SNAPSHOT_TIME_POINT_MAPPING:
+        timestamp = data.get(SNAPSHOT_TIME_POINT_MAPPING[time_point])
+        if timestamp is not None:
+            timestamp = timestamp["Timepoints"]
+        row[time_point] = timestamp
+    return [row]
 
 
 def compute_total_pv_kw(scenario: PyDssScenarioResults):
