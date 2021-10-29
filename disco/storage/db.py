@@ -47,6 +47,16 @@ class Scenario(Base):
     end_time = Column(types.DateTime, nullable=True)
 
 
+class SnapshotTimePoints(Base):
+    __tablename__ = "snapshot_time_points"
+    id = Column(types.String(length=36), primary_key=True)
+    job_id = Column(types.String(length=36), ForeignKey("job.id"))
+    max_pv_load_ratio = Column(types.DateTime, nullable=True)
+    max_load = Column(types.DateTime, nullable=True)
+    daytime_min_load = Column(types.DateTime, nullable=True)
+    pv_minus_load = Column(types.DateTime, nullable=True)
+
+
 class Report(Base):
     __tablename__ = "report"
     id = Column(types.String(length=36), primary_key=True)
@@ -69,7 +79,6 @@ class FeederHead(Base):
     sample = Column(types.Integer, nullable=True)
     penetration_level = Column(types.Integer, nullable=True)
     scenario = Column(types.String(length=128))
-    time_point = Column(types.String(length=30), default=None)
     line = Column(types.String(length=128))
     loading = Column(types.Float)
     load_kw = Column(types.Float)
@@ -89,7 +98,6 @@ class FeederLosses(Base):
     sample = Column(types.Integer, nullable=True)
     penetration_level = Column(types.Integer, nullable=True)
     scenario = Column(types.String(length=128))
-    time_point = Column(types.String(length=30), nullable=True, default=None)
     total_losses_kwh = Column(types.Float)
     line_losses_kwh = Column(types.Float)
     transformer_losses_kwh = Column(types.Float)
@@ -125,7 +133,6 @@ class VoltageMetrics(Base):
     sample = Column(types.Integer, nullable=True)
     penetration_level = Column(types.Integer, nullable=True)
     scenario = Column(types.String(length=128))
-    time_point = Column(types.String(length=30), nullable=True, default=None)
     node_type = Column(types.String(length=10))
     num_nodes_any_outside_ansi_b = Column(types.Integer)
     num_time_points_with_ansi_b_violations = Column(types.Integer)
@@ -150,7 +157,6 @@ class ThermalMetrics(Base):
     sample = Column(types.Integer, nullable=True)
     penetration_level = Column(types.Integer, nullable=True)
     scenario = Column(types.String(length=128))
-    time_point = Column(types.String(length=30), nullable=True, default=None)
     line_max_instantaneous_loading_pct = Column(types.Float)
     line_max_moving_average_loading_pct = Column(types.Float)
     line_window_size_hours = Column(types.Integer)

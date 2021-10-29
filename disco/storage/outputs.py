@@ -1,3 +1,4 @@
+import logging
 import os
 import platform
 import pathlib
@@ -13,10 +14,16 @@ TABLE_NAMES = [
     "feeder_losses_table.csv",
     "metadata_table.csv",
     "thermal_metrics_table.csv",
-    "voltage_metrics_table.csv"
+    "voltage_metrics_table.csv",
+    
+    # Only apply to snapshot simulaiton 
+    # with --auto-select-time-points option enabled
+    "snapshot_time_points_table.csv"
 ]
 
 DERMS_INFO_FILENAME = "derms_simulation_info.json"
+
+logger = logging.getLogger(__name__)
 
 
 class OutputType(Enum):
@@ -58,13 +65,6 @@ class OutputBase(ABC):
         return TABLE_NAMES
     
     @property
-    def report_files(self):
-        return [
-            self.output / table_name
-            for table_name in self.table_names
-        ]
-    
-    @property
     def feeder_head_table(self):
         return self.output / TABLE_NAMES[0]
     
@@ -83,6 +83,10 @@ class OutputBase(ABC):
     @property
     def voltage_metrics_table(self):
         return self.output / TABLE_NAMES[4]
+
+    @property
+    def snapshot_time_points_table(self):
+        return self.output / TABLE_NAMES[5]
 
     def __str__(self):
         """Return string representation of the output instance"""
@@ -116,7 +120,7 @@ class SimulationOutput(OutputBase):
         ----------
         output: pathlib.Path
         """
-        report_files = [output / table for table in self.table_names]
+        report_files = [output / table_name for table_name in self.table_names[:-1]]
         report_exists = [report_file.exists() for report_file in report_files]
         if not all(report_exists):
             raise ValueError(f"The output '{output}' does not contain valid reports.")
@@ -140,13 +144,12 @@ class PipelineSimulationOutput(OutputBase):
         for path in output.iterdir():
             if not str(path.name).startswith("output-stage"):
                 continue
-            report_files = [path / table for table in self.table_names]
+            report_files = [path / table_name for table_name in self.table_names[:-1]]
             report_exists = [report_file.exists() for report_file in report_files]
-            
             if all(report_exists):
                 return path
         
-        raise IngestionError(f"All stage outputs in '{output}' do not contain valid reports.")
+        raise IngestionError(f"No stage output in '{output}' contain valid reports")
 
 
 class DermsSimulationOutput(OutputBase):
@@ -171,7 +174,7 @@ class DermsSimulationOutput(OutputBase):
         return self.output / DERMS_INFO_FILENAME
 
     def validate_output(self, output):
-        report_files = [output / table for table in self.table_names]
+        report_files = [output / table_name for table_name in self.table_names[:-1]]
         report_exists = [report_file.exists() for report_file in report_files]
         if not all(report_exists):
             raise IngestionError(f"The output '{output}' does not contain valid reports.")
@@ -233,9 +236,12 @@ def get_simulation_output(output):
         raise IngestionError(f"Output path does not exist - {output}.")
     
     if is_from_pipeline(output):
-        return PipelineSimulationOutput(output)
-
-    if is_from_derms(output):
-        return DermsSimulationOutput(output)
+        output = PipelineSimulationOutput(output)
+    elif is_from_derms(output):
+        output = DermsSimulationOutput(output)
+    else:
+        output = SimulationOutput(output)
     
-    return SimulationOutput(output)
+    logger.info("Simulation report tables are located in '%s'", output.output)
+    
+    return output
