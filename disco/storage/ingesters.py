@@ -14,7 +14,8 @@ from disco.storage.db import (
     FeederLosses,
     Metadata,
     ThermalMetrics,
-    VoltageMetrics
+    VoltageMetrics,
+    SnapshotTimePoints
 )
 from disco.storage.exceptions import IngestionError
 
@@ -50,7 +51,7 @@ class IngesterBase(ABC):
             conn.commit()
         finally:
             conn.close()
-        logger.info("Success ingestion - '%s'.", table)
+        logger.info("Ingestion success - '%s'.", table)
 
 
 class TaskIngester(IngesterBase):
@@ -134,8 +135,7 @@ class TableIngesterMixin:
             "placement",
             "sample",
             "penetration_level",
-            "scenario",
-            "time_point"
+            "scenario"
         ]
         values = [str(item.get(k, None)) for k in fields]
         return " | ".join(values)
@@ -157,20 +157,6 @@ class MetadataIngester(TableIngesterMixin, IngesterBase):
     """Class used for ingesting metadata into database"""
     
     data_class = Metadata
-    
-    @staticmethod
-    def _generate_identifier(item):
-        fields = [
-            "name",
-            "substation",
-            "feeder",
-            "placement",
-            "sample",
-            "penetration_level",
-            "scenario"
-        ]
-        values = [str(item.get(k, None)) for k in fields]
-        return " | ".join(values)
 
 
 class ThermalMetricsIngester(TableIngesterMixin, IngesterBase):
@@ -191,6 +177,17 @@ class VoltageMetricsIngester(TableIngesterMixin, IngesterBase):
         return identifier
 
 
+class SnapshotTimePointsIngester(TableIngesterMixin, IngesterBase):
+
+    data_class = SnapshotTimePoints
+    
+    @staticmethod
+    def _generate_identifier(item):
+        fields = ["job_id", "name"]
+        values = [item[k] for k in fields]
+        return " | ".join(values)
+
+
 class OutputIngester(IngesterBase):
     """Class used for ingesting all parsed results into SQLite database"""
 
@@ -206,6 +203,9 @@ class OutputIngester(IngesterBase):
         indexes["metadata"] = self._ingest_metadata(data["metadata"])
         indexes["thermal_metrics"] = self._ingest_thermal_metrics(data["thermal_metrics"])
         indexes["voltage_metrics"] = self._ingest_voltage_metrics(data["voltage_metrics"])
+        if "snapshot_time_points" in data:
+            res = self._ingest_snapshot_time_points(data["snapshot_time_points"])
+            indexes["snapshot_time_points"] = res
         return indexes
 
     def _ingest_task(self, task):
@@ -305,6 +305,17 @@ class OutputIngester(IngesterBase):
         """
         ingester = VoltageMetricsIngester(self.database)
         indexes = ingester.ingest(voltage_metrics)
+        return indexes
+    
+    def _ingest_snapshot_time_points(self, snapshot_time_points):
+        """Ingest snapshot time points via SnapshotTimePointsIngester
+        
+        Parameters
+        ----------
+        snapshot_time_points: list[dict]
+        """
+        ingester = SnapshotTimePointsIngester(self.database)
+        indexes = ingester.ingest(snapshot_time_points)
         return indexes
 
 

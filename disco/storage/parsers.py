@@ -18,8 +18,10 @@ from jade.utils.utils import load_data
 from dss.v7 import DSS_GR
 from opendssdirect._version import __version__ as __opendssdirect_version__
 from PyDSS import __version__ as __pydss_version__
+from PyDSS.common import SnapshotTimePointSelectionMode
 from PyDSS.pydss_project import PyDssProject
 from disco.enums import SimulationType
+from disco.pydss.common import SNAPSHOT_SCENARIO, TIME_SERIES_SCENARIOS, SCENARIO_NAME_DELIMITER
 from disco.storage.db import Task, Job, Report
 from disco.storage.outputs import get_simulation_output, get_creation_time, OutputType
 from disco.version import __version__ as __disco_version__
@@ -47,6 +49,8 @@ class TaskParser(ParserBase):
         self.notes = notes
 
     def parse(self, output):
+        logger.info("Parsing data - 'task'...")
+        
         if isinstance(output, str):
             output = get_simulation_output(output)
         
@@ -126,157 +130,16 @@ class TaskParser(ParserBase):
         return log_file
 
 
-class PyDssScenarioParser(ParserBase):
-    
-    SUFFIX_MAPPING = {
-        "max_pv_load_ratio": "Max PV to Load Ratio",
-        "max_load": "Max Load",
-        "daytime_min_load": "Min Daytime Load",
-        "pv_minus_load": "Max PV minus Load"
-    }
-    
-    def __init__(self, jobs):
-        self.jobs = jobs  # Parsed jobs wiht uuid
-    
-    def parse(self, config_file):
-        config = load_data(config_file)
-        mapping = {job["name"]: job for job in self.jobs}
-        
-        jobs = [mapping[item["name"]] for item in config["jobs"]]
-        simulations = [item["simulation"] for item in config["jobs"]]
-        with ProcessPoolExecutor() as executor:
-            results = executor.map(self._parse_job_scenarios, jobs, simulations)
-        
-        scenarios = [scenario for sublist in results for scenario in sublist]
-        return scenarios
-    
-    def _parse_job_scenarios(self, job, simulation):
-        scenario_names = self._get_scenario_names(job)
-        simulation_type = self._get_simulation_type(simulation, scenario_names)
-        
-        scenarios = []
-        if simulation_type == SimulationType.SNAPSHOT:
-            timepoints = self._get_snapshot_timepoints(job, simulation, scenario_names)
-            for name in scenario_names:
-                scenario = {
-                    "id": self._get_scenario_id(),
-                    "job_id": job["id"],
-                    "simulation_type": simulation_type.value,
-                    "name": name,
-                    "start_time": timepoints[name],
-                    "end_time": None
-                }
-                scenarios.append(scenario)
-
-        elif simulation_type == SimulationType.TIME_SERIES:
-            for name in scenario_names:
-                scenario = {
-                    "id": self._get_scenario_id(),
-                    "job_id": job["id"],
-                    "simulation_type": simulation_type.value,
-                    "name": name,
-                    "start_time": parse(simulation["start_time"]),
-                    "end_time": parse(simulation["end_time"])
-                }
-                scenarios.append(scenario)
-        return scenarios
-    
-    def _get_scenario_id(self):
-        return self._get_uuid()
-
-    @staticmethod
-    def _get_scenario_names(job):
-        # TODO: use PyDSS file interface to read scenaio names
-        # Currently, the interface raise error when check scenarios on some jobs
-        store_file = pathlib.Path(job["project_path"]) / "store.h5"
-        if not os.path.exists(store_file):
-            return []
-
-        scenario_names = []
-        with pd.HDFStore(store_file, "r") as store:
-            for (path, subgroups, _) in store.walk():
-                if path == "/Exports":
-                    scenario_names = subgroups
-                    break
-        
-        if scenario_names:
-            scenario_names.sort()
-        
-        return scenario_names
-
-    def _get_simulation_type(self, simulation, scenario_names):
-        """Convert PyDSS simulation type to DISCO type"""
-        simulation_type = simulation["simulation_type"]
-        
-        if simulation_type.lower() == "snapshot":
-            return SimulationType.SNAPSHOT
-
-        if simulation_type.lower() == "qsts":
-            if len(scenario_names) > 2:
-                return SimulationType.SNAPSHOT
-            return SimulationType.TIME_SERIES
-        return None
-    
-    def _get_snapshot_timepoints(self, job, simulation, scenario_names):
-        timestamps = {}
-        if len(scenario_names) > 2:
-            project = pathlib.Path(job["project_path"]) / "project.zip"
-            try:
-                with zipfile.ZipFile(project, "r") as zf:
-                    data = json.loads(zf.read("Exports/snapshot_time_points.json"))
-            except KeyError:
-                data = {}
-            
-            for name in scenario_names:
-                key = self.SUFFIX_MAPPING[name.split("__")[1]]
-                if key in data:
-                    timestamps[name] = parse(data[key]["Timepoints"])
-                else:
-                    timestamps[name] = None
-        else:
-            for name in scenario_names:
-                timestamps[name] = parse(simulation["start_time"])
-        return timestamps
-
-
-class DermsScenaioParser(ParserBase):
-    
-    def __init__(self, jobs):
-        self.jobs = jobs
-    
-    def _get_scenario_id(self):
-        return self._get_uuid()
-
-    def parse(self, derms_info_file):
-        with ProcessPoolExecutor() as executor:
-            results = executor.map(
-                partial(self._parse_job_scenario, derms_info_file=derms_info_file),
-                self.jobs
-            )
-        scenarios = list(results)
-        return scenarios
-    
-    def _parse_job_scenario(self, job, derms_info_file):
-        data = load_data(derms_info_file)
-        scenario = {
-            "id": self._get_scenario_id(),
-            "job_id": job["id"],
-            "simulation_type": "time-series",
-            "name": "derms",
-            "start_time": data["start_time"],
-            "end_time": data["end_time"]
-        }
-        return scenario
-
-
 class JobParser(ParserBase):
-    """Parse both job and scenario data from output"""
+    """Parse jobs data from output"""
     
     def __init__(self, task):
         self.task = task
 
     def parse(self, output):
         """Parse jobs data from output"""
+        logger.info("Parsing data - 'jobs'...")
+        
         if isinstance(output, str):
             output = get_simulation_output(output)
         
@@ -303,6 +166,117 @@ class JobParser(ParserBase):
         return str(job_dir / "pydss_project")
 
 
+class PyDssScenarioParser(ParserBase):
+    
+    def __init__(self, jobs):
+        self.jobs = jobs  # Parsed jobs wiht uuid
+    
+    def _get_scenario_id(self):
+        return self._get_uuid()
+
+    def parse(self, config_file, snapshot_time_points_table):
+        logger.info("Parsing data - 'scenarios'...")
+        
+        if snapshot_time_points_table.exists():
+            return self._parse_scenarios_from_snapshot_time_points(snapshot_time_points_table)
+        
+        return self._parse_scenarios_from_config_file(config_file)
+    
+    def _parse_scenarios_from_snapshot_time_points(self, snapshot_time_points_table):
+        mapping = {job["name"]: job for job in self.jobs}
+        df = pd.read_csv(snapshot_time_points_table)
+        time_points = {item["name"]: item for item in df.to_dict(orient="records")}
+        
+        scenarios = []
+        for job in self.jobs:
+            tp = time_points[job["name"]]
+            for scenario_name in TIME_SERIES_SCENARIOS:
+                for mode in SnapshotTimePointSelectionMode:
+                    if mode == SnapshotTimePointSelectionMode.NONE:
+                        continue
+                    _scenario_name = f"{scenario_name}{SCENARIO_NAME_DELIMITER}{mode.value}"
+                    scenarios.append({
+                        "id": self._get_scenario_id(),
+                        "job_id": job["id"],
+                        "simulation_type": "snapshot",
+                        "name": _scenario_name,
+                        "start_time": tp[mode.value],
+                        "end_time": None
+                    })
+        return scenarios
+    
+    def _parse_scenarios_from_config_file(self, config_file):
+        config = load_data(config_file)
+        simulations = {item["name"]: item["simulation"] for item in config["jobs"]}
+        simulation_type = config["jobs"][0]["simulation"]["simulation_type"].lower()
+        
+        scenarios = []
+        if simulation_type == "snapshot":
+            for job in self.jobs:
+                simulation = simulations[job["name"]]
+                scenario = {
+                    "id": self._get_scenario_id(),
+                    "job_id": job["id"],
+                    "simulation_type": "snapshot",
+                    "name": SNAPSHOT_SCENARIO,
+                    "start_time": parse(simulation["start_time"]),
+                    "end_time": None
+                }
+                scenarios.append(scenario)
+            return scenarios
+        
+        if simulation_type == "qsts":
+            for job in self.jobs:
+                simulation = simulations[job["name"]]
+                job_scenarios = [
+                    {
+                        "id": self._get_scenario_id(),
+                        "job_id": job["id"],
+                        "simulation_type": "time-series",
+                        "name": scenario_name,
+                        "start_time": parse(simulation["start_time"]),
+                        "end_time": parse(simulation["end_time"])
+                    }
+                    for scenario_name in TIME_SERIES_SCENARIOS
+                ]
+                scenarios.extend(job_scenarios)
+            return scenarios
+
+        return []
+
+
+class DermsScenaioParser(ParserBase):
+    
+    def __init__(self, jobs):
+        self.jobs = jobs
+    
+    def _get_scenario_id(self):
+        return self._get_uuid()
+
+    def parse(self, derms_info_file):
+        logger.info("Parsing data - 'scenarios'...")
+        
+        with ProcessPoolExecutor() as executor:
+            results = executor.map(
+                partial(self._parse_job_scenario, derms_info_file=derms_info_file),
+                self.jobs
+            )
+        scenarios = list(results)
+        return scenarios
+    
+    def _parse_job_scenario(self, job, derms_info_file):
+        data = load_data(derms_info_file)
+        scenario = {
+            "id": self._get_scenario_id(),
+            "job_id": job["id"],
+            "simulation_type": "time-series",
+            "name": "derms",
+            "start_time": data["start_time"],
+            "end_time": data["end_time"]
+        }
+        return scenario
+
+
 class ReportParser(ParserBase):
 
     def __init__(self, task):
@@ -310,8 +284,16 @@ class ReportParser(ParserBase):
 
     def parse(self, output):
         """Parse reports information from output"""
+        logger.info("Parsing data - 'reports'...")
+        
         reports = {}
-        for report_file in output.report_files:
+        if output.snapshot_time_points_table.exists():
+            table_names = output.table_names
+        else:
+            table_names = output.table_names[:-1]
+        report_files = [output.output / table_name for table_name in table_names]
+        
+        for report_file in report_files:
             report = {
                 "id": self._get_report_id(),
                 "task_id": self.task["id"],
@@ -334,30 +316,21 @@ class ReportParser(ParserBase):
 
 class TableParserMixin:
 
-    def _set_record_index(self, data, reports_only=False):
+    def _set_record_index(self, data):
         """
         Parameters
         ----------
         data: list[dict], A list of records in dict.
         """
         indexed_data = []
-        if reports_only:
-            for item in data:
-                item.update({
-                    "id": self._get_uuid(),
-                    "report_id": self.report["id"],
-                    "job_id": None
-                })
-                indexed_data.append(item)
-        else:
-            job_indexes = {job["name"]: job["id"] for job in self.jobs}
-            for item in data:
-                item.update({
-                    "id": self._get_uuid(),
-                    "report_id": self.report["id"],
-                    "job_id": job_indexes[item["name"]]
-                })
-                indexed_data.append(item)
+        job_indexes = {job["name"]: job["id"] for job in self.jobs}
+        for item in data:
+            item.update({
+                "id": self._get_uuid(),
+                "report_id": self.report["id"],
+                "job_id": job_indexes[item["name"]]
+            })
+            indexed_data.append(item)
         return indexed_data
     
     @staticmethod
@@ -382,12 +355,13 @@ class FeederHeadParser(ParserBase, TableParserMixin):
         self.report = report
         self.jobs = jobs
     
-    def parse(self, output, reports_only=False):
+    def parse(self, output):
         """Prase feeder head data from output report file"""
+        logger.info("Parsing data - 'feeder_head'...")
         df = pd.read_csv(output.feeder_head_table)
         df = self._replace_none(df)
         data = df.rename(columns=self.field_mappings).to_dict(orient="records")
-        data = self._set_record_index(data, reports_only=reports_only)
+        data = self._set_record_index(data)
         return data
 
 
@@ -397,12 +371,13 @@ class FeederLossesParser(ParserBase, TableParserMixin):
         self.report = report
         self.jobs = jobs
     
-    def parse(self, output, reports_only=False):
+    def parse(self, output):
         """Prase feeder losses data from output report file"""
+        logger.info("Parsing data - 'feeder_losses'...")
         df = pd.read_csv(output.feeder_losses_table)
         df = self._replace_none(df)
         data = df.to_dict(orient="records")
-        data = self._set_record_index(data, reports_only=reports_only)
+        data = self._set_record_index(data)
         return data
 
 
@@ -412,12 +387,13 @@ class MetadataParser(ParserBase, TableParserMixin):
         self.report = report
         self.jobs = jobs
     
-    def parse(self, output, reports_only=False):
+    def parse(self, output):
         """Prase metadata data from output report file"""
+        logger.info("Parsing data - 'metadata'...")
         df = pd.read_csv(output.metadata_table)
         df = self._replace_none(df)
         data = df.to_dict(orient="records")
-        data = self._set_record_index(data, reports_only=reports_only)
+        data = self._set_record_index(data)
         return data
 
 
@@ -427,12 +403,13 @@ class ThermalMetricsParser(ParserBase, TableParserMixin):
         self.report = report
         self.jobs = jobs
     
-    def parse(self, output, reports_only=False):
+    def parse(self, output):
         """Prase thermal metrics data from output report file"""
+        logger.info("Parsing data - 'thermal_metrics'...")
         df = pd.read_csv(output.thermal_metrics_table)
         df = self._replace_none(df)
         data = df.to_dict(orient="records")
-        data = self._set_record_index(data, reports_only=reports_only)
+        data = self._set_record_index(data)
         return data
 
 
@@ -442,13 +419,38 @@ class VoltageMetricsParser(ParserBase, TableParserMixin):
         self.report = report
         self.jobs = jobs
     
-    def parse(self, output, reports_only=False):
+    def parse(self, output):
         """Prase voltage metrics data from output report file"""
+        logger.info("Parsing data - 'voltage_metrics'...")
         df = pd.read_csv(output.voltage_metrics_table)
         df = self._replace_none(df)
         data = df.to_dict(orient="records")
-        data = self._set_record_index(data, reports_only=reports_only)
+        data = self._set_record_index(data)
         return data
+
+
+class SnapshotTimePointsParser(ParserBase, TableParserMixin):
+    
+    def __init__(self, report, jobs):
+        self.report = report
+        self.jobs = jobs
+    
+    def parse(self, output):
+        """Parse time points data for snapshot simulation"""
+        logger.info("Parsing data - 'snapshot_time_points'...")
+        df = pd.read_csv(output.snapshot_time_points_table)
+        df = self._replace_none(df)
+        data = df.to_dict(orient="records")
+        data = self._set_record_index(data)
+        return data
+
+    @staticmethod
+    def _replace_none(df):
+        df.loc[df["max_pv_load_ratio"] == "None", "max_pv_load_ratio"] = None
+        df.loc[df["max_load"] == "None", "max_load"] = None
+        df.loc[df["daytime_min_load"] == "None", "daytime_min_load"] = None
+        df.loc[df["pv_minus_load"] == "None", "pv_minus_load"] = None
+        return df
 
 
 class OutputParser(ParserBase):
@@ -458,20 +460,17 @@ class OutputParser(ParserBase):
         self.model_inputs = model_inputs
         self.notes = notes
 
-    def parse(self, output, reports_only=False):
+    def parse(self, output):
         """Prase task, jobs, and reports data from output"""
+        logger.info("Parsing results from output directory...")
+        
         result = {}
         
         task = self.parse_task(output=output)
         result["task"] = task
         
-        if reports_only:
-            jobs = []
-            scenarios = []
-        else:
-            jobs = self.parse_jobs(task=task, output=output)
-            scenarios = self.parse_scenarios(jobs=jobs, output=output)
-        
+        jobs = self.parse_jobs(task=task, output=output)
+        scenarios = self.parse_scenarios(jobs=jobs, output=output)
         result["jobs"] = jobs
         result["scenarios"] = scenarios
         
@@ -481,42 +480,46 @@ class OutputParser(ParserBase):
         feeder_head = self.parse_feeder_head(
             report=reports["feeder_head"],
             jobs=jobs,
-            output=output,
-            reports_only=reports_only
+            output=output
         )
         result["feeder_head"] = feeder_head
         
         feeder_losses = self.parse_feeder_losses(
             report=reports["feeder_losses"],
             jobs=jobs,
-            output=output,
-            reports_only=reports_only
+            output=output
         )
         result["feeder_losses"] = feeder_losses
         
         metadata = self.parse_metadata(
             report=reports["metadata"],
             jobs=jobs,
-            output=output,
-            reports_only=reports_only
+            output=output
         )
         result["metadata"] = metadata
         
         thermal_metrics = self.parse_thermal_metrics(
             report=reports["thermal_metrics"],
             jobs=jobs,
-            output=output,
-            reports_only=reports_only
+            output=output
         )
         result["thermal_metrics"] = thermal_metrics
         
         voltage_metrics = self.parse_voltage_metrics(
             report=reports["voltage_metrics"],
             jobs=jobs,
-            output=output,
-            reports_only=reports_only
+            output=output
         )
         result["voltage_metrics"] = voltage_metrics
+        
+        if output.snapshot_time_points_table.exists():
+            snapshot_time_points = self.parse_snapshot_time_points_table(
+                report=reports["snapshot_time_points"],
+                jobs=jobs,
+                output=output
+            )
+            result["snapshot_time_points"] = snapshot_time_points
+        
         return result
 
     def parse_task(self, output):
@@ -539,7 +542,7 @@ class OutputParser(ParserBase):
             scenarios = parser.parse(output.derms_info_file)
         else:
             parser = PyDssScenarioParser(jobs)
-            scenarios = parser.parse(output.config_file)
+            scenarios = parser.parse(output.config_file, output.snapshot_time_points_table)
         return scenarios
 
     def parse_reports(self, task, output):
@@ -547,27 +550,32 @@ class OutputParser(ParserBase):
         reports = parser.parse(output)
         return reports
 
-    def parse_feeder_head(self, report, jobs, output, reports_only=False):
+    def parse_feeder_head(self, report, jobs, output):
         parser = FeederHeadParser(report=report, jobs=jobs)
-        feeder_head = parser.parse(output, reports_only=reports_only)
+        feeder_head = parser.parse(output)
         return feeder_head
 
-    def parse_feeder_losses(self, report, jobs, output, reports_only=False):
+    def parse_feeder_losses(self, report, jobs, output):
         parser = FeederLossesParser(report=report, jobs=jobs)
-        feeder_losses = parser.parse(output, reports_only=reports_only)
+        feeder_losses = parser.parse(output)
         return feeder_losses
 
-    def parse_metadata(self, report, jobs, output, reports_only=False):
+    def parse_metadata(self, report, jobs, output):
         parser = MetadataParser(report=report, jobs=jobs)
-        metadata = parser.parse(output, reports_only=reports_only)
+        metadata = parser.parse(output)
         return metadata
     
-    def parse_thermal_metrics(self, report, jobs, output, reports_only=False):
+    def parse_thermal_metrics(self, report, jobs, output):
         parser = ThermalMetricsParser(report=report, jobs=jobs)
-        thermal_metrics = parser.parse(output, reports_only=reports_only)
+        thermal_metrics = parser.parse(output)
         return thermal_metrics
 
-    def parse_voltage_metrics(self, report, jobs, output, reports_only=False):
+    def parse_voltage_metrics(self, report, jobs, output):
         parser = VoltageMetricsParser(report=report, jobs=jobs)
-        voltage_metrics = parser.parse(output, reports_only=reports_only)
+        voltage_metrics = parser.parse(output)
         return voltage_metrics
+
+    def parse_snapshot_time_points_table(self, report, jobs, output):
+        parser = SnapshotTimePointsParser(report=report, jobs=jobs)
+        time_points = parser.parse(output)
+        return time_points
