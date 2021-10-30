@@ -189,6 +189,8 @@ class PyDssScenarioParser(ParserBase):
         
         scenarios = []
         for job in self.jobs:
+            if job["name"] not in time_points:
+                continue
             tp = time_points[job["name"]]
             for scenario_name in TIME_SERIES_SCENARIOS:
                 for mode in SnapshotTimePointSelectionMode:
