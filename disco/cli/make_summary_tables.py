@@ -79,7 +79,8 @@ def parse_batch_results(output_dir):
     serialize_table(metadata_table, output_path / "metadata_table.csv")
     serialize_table(thermal_metrics_table, output_path / "thermal_metrics_table.csv")
     serialize_table(voltage_metrics_table, output_path / "voltage_metrics_table.csv")
-    serialize_table(snapshot_time_points_table, output_path / "snapshot_time_points_table.csv")
+    if job.model.model_type == "SnapshotImpactAnalysisModel":
+        serialize_table(snapshot_time_points_table, output_path / "snapshot_time_points_table.csv")
 
 
 def parse_job_results(job, output_path):
