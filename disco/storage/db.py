@@ -173,6 +173,21 @@ class ThermalMetrics(Base):
     transformer_moving_average_threshold = Column(types.Integer)
 
 
+class HostingCapacity(Base):
+    __tablename__ = "hosting_capacity"
+    id = Column(types.String(length=36), primary_key=True)
+    task_id = Column(types.String(length=36), ForeignKey("task.id"))
+    hc_type = Column(types.String(length=20))
+    metrics_type = Column(types.String(length=20))
+    feeder = Column(types.String(length=128))
+    scenario = Column(types.String(length=128))
+    time_point = Column(types.String(length=60), nullable=True, default=None)
+    min_hc_pct = Column(types.Float)
+    max_hc_pct = Column(types.Float)
+    min_hc_kw = Column(types.Float)
+    max_hc_kw = Column(types.Float)
+
+
 def create_engine(database):
     engine = _create_engine("sqlite:///" + database)
     return engine

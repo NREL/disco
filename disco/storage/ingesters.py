@@ -15,7 +15,8 @@ from disco.storage.db import (
     Metadata,
     ThermalMetrics,
     VoltageMetrics,
-    SnapshotTimePoints
+    SnapshotTimePoints,
+    HostingCapacity
 )
 from disco.storage.exceptions import IngestionError
 
@@ -188,6 +189,25 @@ class SnapshotTimePointsIngester(TableIngesterMixin, IngesterBase):
         return " | ".join(values)
 
 
+class HostingCapacityIngester(IngesterBase):
+
+    data_class = HostingCapacity
+    
+    @staticmethod
+    def _generate_identifier(item):
+        fields = ["hc_type", "metrics_type", "feeder", "scenario", "time_point"]
+        values = [str(item[k]) for k in fields]
+        return " | ".join(values)
+
+    def ingest(self, hc_results):
+        """Ingest a list of hosting capacity results into hosting_capacity table in database"""
+        columns = self.data_class.__table__.columns.keys()
+        data = [tuple([item[column] for column in columns]) for item in hc_results]
+        self._perform_ingestion(columns=columns, data=data)
+        indexes = {self._generate_identifier(item): item["id"] for item in hc_results}
+        return indexes
+
+
 class OutputIngester(IngesterBase):
     """Class used for ingesting all parsed results into SQLite database"""
 
@@ -206,6 +226,7 @@ class OutputIngester(IngesterBase):
         if "snapshot_time_points" in data:
             res = self._ingest_snapshot_time_points(data["snapshot_time_points"])
             indexes["snapshot_time_points"] = res
+        indexes["hosting_capacity"] = self._ingest_hosting_capacity(data["hosting_capacity"])
         return indexes
 
     def _ingest_task(self, task):
@@ -316,6 +337,17 @@ class OutputIngester(IngesterBase):
         """
         ingester = SnapshotTimePointsIngester(self.database)
         indexes = ingester.ingest(snapshot_time_points)
+        return indexes
+    
+    def _ingest_hosting_capacity(self, hosting_capacity):
+        """Ingest hosting capacity via HostingCapacityIngester
+        
+        Parameters
+        ----------
+        hosting_capacity: list[dict]
+        """
+        ingester = HostingCapacityIngester(self.database)
+        indexes = ingester.ingest(hosting_capacity)
         return indexes
 
 
