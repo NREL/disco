@@ -88,6 +88,10 @@ class OutputBase(ABC):
     def snapshot_time_points_table(self):
         return self.output / TABLE_NAMES[5]
 
+    @property
+    def hosting_capacity_results(self):
+        return self.output.glob("hosting_capacity_*.json")
+
     def __str__(self):
         """Return string representation of the output instance"""
         return str(self.output)

@@ -455,6 +455,68 @@ class SnapshotTimePointsParser(ParserBase, TableParserMixin):
         return df
 
 
+class HostingCapacityParser(ParserBase):
+
+    def __init__(self, task):
+        self.task = task
+    
+    def _get_hc_id(self):
+        return self._get_uuid()
+    
+    def parse(self, output):
+        logger.info("Parsing data - 'hosting_capacity'...")
+        
+        data = []
+        for result_file in output.hosting_capacity_results:
+            results = self._parse_result(result_file)
+            data.extend(list(results))
+        return data
+
+    def _parse_result(self, hosting_capacity_filename):
+        items = hosting_capacity_filename.name.split(".")[0].split(SCENARIO_NAME_DELIMITER)
+        hc_type = "summary" if "summary" in items[0] else "overall"
+        scenario = items[1]
+        time_point = None if len(items) != 3 else items[2]
+        
+        result = load_data(hosting_capacity_filename)
+        if hc_type == "summary":
+            data = [
+                {
+                    "id": self._get_hc_id(),
+                    "task_id": self.task["id"],
+                    "hc_type": hc_type,
+                    "metrics_type": metrics_type,
+                    "feeder": feeder,
+                    "scenario": scenario,
+                    "time_point": time_point,
+                    "min_hc_pct": value["min_hc_pct"],
+                    "max_hc_pct": value["max_hc_pct"],
+                    "min_hc_kw": value["min_hc_kw"],
+                    "max_hc_kw": value["max_hc_kw"]
+                }
+                for feeder, values in result.items()
+                for metrics_type, value in values.items()
+            ]
+        elif hc_type == "overall":
+            data = [
+                {
+                    "id": self._get_hc_id(),
+                    "task_id": self.task["id"],
+                    "hc_type": hc_type,
+                    "metrics_type": None,
+                    "feeder": feeder,
+                    "scenario": scenario,
+                    "time_point": time_point,
+                    "min_hc_pct": value["min_hc_pct"],
+                    "max_hc_pct": value["max_hc_pct"],
+                    "min_hc_kw": value["min_hc_kw"],
+                    "max_hc_kw": value["max_hc_kw"]
+                }
+                for feeder, value in result.items()
+            ]
+        return data
+
+
 class OutputParser(ParserBase):
 
     def __init__(self, task_name, model_inputs=None, notes=None):
@@ -515,12 +577,18 @@ class OutputParser(ParserBase):
         result["voltage_metrics"] = voltage_metrics
         
         if output.snapshot_time_points_table.exists():
-            snapshot_time_points = self.parse_snapshot_time_points_table(
+            snapshot_time_points = self.parse_snapshot_time_points(
                 report=reports["snapshot_time_points"],
                 jobs=jobs,
                 output=output
             )
             result["snapshot_time_points"] = snapshot_time_points
+        
+        hosting_capacity = self.parse_hosting_capacity(
+            task=task,
+            output=output
+        )
+        result["hosting_capacity"] = hosting_capacity
         
         return result
 
@@ -577,7 +645,12 @@ class OutputParser(ParserBase):
         voltage_metrics = parser.parse(output)
         return voltage_metrics
 
-    def parse_snapshot_time_points_table(self, report, jobs, output):
+    def parse_snapshot_time_points(self, report, jobs, output):
         parser = SnapshotTimePointsParser(report=report, jobs=jobs)
         time_points = parser.parse(output)
         return time_points
+
+    def parse_hosting_capacity(self, task, output):
+        parser = HostingCapacityParser(task=task)
+        hosting_capacity = parser.parse(output=output)
+        return hosting_capacity
