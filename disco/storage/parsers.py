@@ -474,18 +474,18 @@ class HostingCapacityParser(ParserBase):
 
     def _parse_result(self, hosting_capacity_filename):
         items = hosting_capacity_filename.name.split(".")[0].split(SCENARIO_NAME_DELIMITER)
-        hc_type = "summary" if "summary" in items[0] else "overall"
+        hc_type = "summary_by_metric" if "summary" in items[0] else "summary"
         scenario = items[1]
         time_point = None if len(items) != 3 else items[2]
         
         result = load_data(hosting_capacity_filename)
-        if hc_type == "summary":
+        if hc_type == "summary_by_metric":
             data = [
                 {
                     "id": self._get_hc_id(),
                     "task_id": self.task["id"],
                     "hc_type": hc_type,
-                    "metrics_type": metrics_type,
+                    "metric_type": metric_type,
                     "feeder": feeder,
                     "scenario": scenario,
                     "time_point": time_point,
@@ -495,15 +495,15 @@ class HostingCapacityParser(ParserBase):
                     "max_hc_kw": value["max_hc_kw"]
                 }
                 for feeder, values in result.items()
-                for metrics_type, value in values.items()
+                for metric_type, value in values.items()
             ]
-        elif hc_type == "overall":
+        elif hc_type == "summary":
             data = [
                 {
                     "id": self._get_hc_id(),
                     "task_id": self.task["id"],
                     "hc_type": hc_type,
-                    "metrics_type": None,
+                    "metric_type": None,
                     "feeder": feeder,
                     "scenario": scenario,
                     "time_point": time_point,
