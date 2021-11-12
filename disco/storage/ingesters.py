@@ -195,7 +195,7 @@ class HostingCapacityIngester(IngesterBase):
     
     @staticmethod
     def _generate_identifier(item):
-        fields = ["hc_type", "metrics_type", "feeder", "scenario", "time_point"]
+        fields = ["hc_type", "metric_type", "feeder", "scenario", "time_point"]
         values = [str(item[k]) for k in fields]
         return " | ".join(values)
 

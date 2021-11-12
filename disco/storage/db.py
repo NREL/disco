@@ -178,7 +178,7 @@ class HostingCapacity(Base):
     id = Column(types.String(length=36), primary_key=True)
     task_id = Column(types.String(length=36), ForeignKey("task.id"))
     hc_type = Column(types.String(length=20))
-    metrics_type = Column(types.String(length=20))
+    metric_type = Column(types.String(length=20))
     feeder = Column(types.String(length=128))
     scenario = Column(types.String(length=128))
     time_point = Column(types.String(length=60), nullable=True, default=None)
