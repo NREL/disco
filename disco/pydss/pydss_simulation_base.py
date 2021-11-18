@@ -31,7 +31,7 @@ from disco.pydss.pydss_utils import detect_convergence_problems
 logger = logging.getLogger(__name__)
 
 
-class PyDssSimulationBase(JobExecutionInterface):
+class PyDssSimulationBase(JobExecutionInterface, abc.ABC):
     """Runs a PyDss simulation."""
 
     _CONTROLLERS_FILENAME = "PvController.toml"
@@ -71,6 +71,14 @@ class PyDssSimulationBase(JobExecutionInterface):
         self._results_dir = None
         self._add_pct_pmpp = add_pct_pmpp
         self._irradiance_scaling_factor = irradiance_scaling_factor
+
+    def _get_control_mode(self):
+        sim_type = self._model.simulation.simulation_type
+        if self._model.model_type in ("SnapshotImpactAnalysisModel", "UpgradeCostAnalysisModel"):
+            return "Static"
+        if self._model.model_type == "TimeSeriesAnalysisModel":
+            return "Time"
+        assert False, "unsupported type = {self._model.model_type}"
 
     @abc.abstractmethod
     def _get_deployment_input_path(self):
@@ -118,6 +126,7 @@ class PyDssSimulationBase(JobExecutionInterface):
                 "project_path": os.path.abspath(self._run_dir),
                 "dss_file": deployment_filename,
                 "dss_file_absolute_path": self._is_dss_file_path_absolute(),
+                "control_mode": self._get_control_mode(),
             },
             "logging": {
                 "logging_level": "DEBUG" if verbose else "INFO",
