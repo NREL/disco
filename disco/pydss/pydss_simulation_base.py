@@ -74,10 +74,12 @@ class PyDssSimulationBase(JobExecutionInterface, abc.ABC):
 
     def _get_control_mode(self):
         sim_type = self._model.simulation.simulation_type
-        if self._model.model_type in ("SnapshotImpactAnalysisModel", "UpgradeCostAnalysisModel"):
+        if self._model.model_type in (
+            "SnapshotImpactAnalysisModel",
+            "TimeSeriesAnalysisModel",
+            "UpgradeCostAnalysisModel",
+        ):
             return "Static"
-        if self._model.model_type == "TimeSeriesAnalysisModel":
-            return "Time"
         assert False, "unsupported type = {self._model.model_type}"
 
     @abc.abstractmethod
