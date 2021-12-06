@@ -31,7 +31,7 @@ def _handle_snapshot_time_point(_, __, val):
 )
 @click.option(
     "--scenario",
-    type=click.Choice(["scenario", "control_mode", "pf1"], case_sensitive=True),
+    type=click.Choice(["scenario", "control_mode", "pf1", "derms"], case_sensitive=True),
     default="scenario",
     show_default=True,
     help="Choose the PyDSS scenario"
