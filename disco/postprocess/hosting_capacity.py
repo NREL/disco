@@ -195,37 +195,38 @@ def get_hosting_capacity(meta_df, metric_df, query_phrase, metric_class, hc_summ
         temp_pass = pass_df[pass_df.feeder == feeder]
         temp_fail = fail_df[fail_df.feeder == feeder]
         temp_df = metric_df[metric_df.feeder == feeder]
-        violation_frequency_by_sample = {d:len(temp_fail[temp_fail['sample']==d])/len(temp_df[temp_df['sample']==d]) for d in temp_df['sample']}
+        violation_frequency_by_sample = {d:len(temp_fail.query('sample == @d'))/len(temp_df.query('sample == @d')) for d in temp_df['sample'].unique()}
         recommended_cba_sample = max(violation_frequency_by_sample, key=violation_frequency_by_sample.get)
-        
+        fail_penetration_levels = set(temp_fail.penetration_level.values)
+        pass_penetration_levels = set(temp_pass.penetration_level.values)
         if len(temp_fail) != 0 and len(temp_pass) == 0:
-            min_hc = min(list(temp_fail.penetration_level.values))
+            min_hc = min(temp_fail.penetration_level.values)
 
         elif len(temp_fail) != 0 and len(temp_pass) != 0:
             temp_min_list = [
                 p
-                for p in list(temp_pass.penetration_level.values)
-                if not p in list(temp_fail.penetration_level.values)
+                for p in pass_penetration_levels
+                if not p in fail_penetration_levels
             ]
             if temp_min_list:
                 min_hc = max(
                     [
                         p
-                        for p in list(temp_pass.penetration_level.values)
-                        if not p in list(temp_fail.penetration_level.values)
+                        for p in pass_penetration_levels
+                        if not p in fail_penetration_levels
                     ]
                 )
-                violation_starting_penetration = min(temp_fail.penetration_level.values)
+                violation_starting_penetration = min(fail_penetration_levels)
                 cba_samples = set(temp_fail.loc[temp_fail.penetration_level==violation_starting_penetration, 'sample'])
             else:
                 min_hc = 0
         else:
-            min_hc = max(list(temp_pass.penetration_level.values))
+            min_hc = max(pass_penetration_levels)
 
         if len(temp_pass) != 0:
-            max_hc = max(list(temp_pass.penetration_level.values))
+            max_hc = max(pass_penetration_levels)
         else:
-            max_hc = min(list(temp_fail.penetration_level.values))
+            max_hc = min(fail_penetration_levels)
 
         total_feeder_load = meta_df[meta_df.feeder == feeder][
             "load_capacity_kw"
