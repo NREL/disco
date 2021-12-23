@@ -774,11 +774,20 @@ class PVScenarioGeneratorBase(abc.ABC):
                     "controller_type": "PvController",
                     "name": control_name
                 },
-                "pv_profile": pv_profile
+                "pv_profile": pv_profile,
+                "customer_type": self.get_customer_type(pv_profile)
             })
             pv_systems.add(pv_name)
             pv_prof[pv_name] = pv_profile
         return pv_conf, pv_prof
+    
+    @staticmethod
+    def get_customer_type(pv_profile):
+        if "com_" in pv_profile:
+            return "commercial"
+        elif "res_" in pv_profile:
+            return "residential"
+        raise ValueError("No valid customer type detected.")
 
     @staticmethod
     def get_pvsys(pv_systems_file: str) -> dict:
