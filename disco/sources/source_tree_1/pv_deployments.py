@@ -315,6 +315,7 @@ class PVScenarioGeneratorBase(abc.ABC):
         self.substation_path = os.path.dirname(feeder_path)
         self.config = config
         self.current_cycle = None
+        self.customer_types = {}
 
     @property
     @abc.abstractmethod
@@ -625,13 +626,12 @@ class PVScenarioGeneratorBase(abc.ABC):
         pv_size = max_size
         return pv_size
 
-    @staticmethod
-    def add_pv_string(bus: str, pv_type: str, pv_size: float, pv_string: str) -> str:
+    def add_pv_string(self, bus: str, pv_type: str, pv_size: float, pv_string: str) -> str:
         """Add PV string to exiting string"""
         if round(pv_size, 3) <= 0:
             return pv_string
 
-        pv_name = f"{pv_type}_{bus.replace('.', '_')}_pv"
+        pv_name = self.generate_pv_name(bus, pv_type)
         dss.Circuit.SetActiveBus(bus)
         node_list = bus.split(".")
         ph = len(node_list) - 1
@@ -661,6 +661,14 @@ class PVScenarioGeneratorBase(abc.ABC):
         )
         pv_string += new_pv_string
         return pv_string
+    
+    @staticmethod
+    def generate_pv_name(bus, pv_type):
+        return f"{pv_type}_{bus.replace('.', '_')}_pv"
+    
+    @staticmethod
+    def extract_bus_name(pv_name):
+        return ".".join(pv_name.split("_")[1:-1])
 
     def write_pv_string(self, pv_string: str, data: SimpleNamespace) -> None:
         """Write PV string to PV deployment file."""
@@ -710,11 +718,6 @@ class PVScenarioGeneratorBase(abc.ABC):
         """Return the loadshapes file in feeder path"""
         pv_shapes_file = os.path.join(input_path, PV_SHAPES_FILENAME)
         return pv_shapes_file
-
-    def get_loads_file(self, input_path: str) -> str:
-        """Return the loads file in feeder path"""
-        loads_file = os.path.join(input_path, LOADS_FILENAME)
-        return loads_file
 
     def create_all_pv_configs(self) -> None:
         """Create PV configs JSON file"""
@@ -775,19 +778,47 @@ class PVScenarioGeneratorBase(abc.ABC):
                     "name": control_name
                 },
                 "pv_profile": pv_profile,
-                "customer_type": self.get_customer_type(pv_profile)
+                "customer_type": self.get_customer_type(pv_name)
             })
             pv_systems.add(pv_name)
             pv_prof[pv_name] = pv_profile
         return pv_conf, pv_prof
     
-    @staticmethod
-    def get_customer_type(pv_profile):
-        if "com_" in pv_profile:
-            return "commercial"
-        elif "res_" in pv_profile:
-            return "residential"
-        raise ValueError("No valid customer type detected.")
+    def get_customer_type(self, pv_name):
+        if not self.customer_types:
+            self.customer_types = self.load_customer_types()
+        
+        bus_name = self.extract_bus_name(pv_name)
+        customer_type = self.customer_types[bus_name]
+        return customer_type
+
+    def load_customer_types(self):
+        # NOTE: In Loads.dss file, each line contains "yearly=com_kw_29321_pu"
+        # "yearly=xxxx" exists in original loads file, but not the transformed one
+        # during the PV deployment process. After the deployments, the original
+        # loads files were renmaed back, and would not exist.
+        loads_file = os.path.join(self.feeder_path, ORIGINAL_LOADS_FILENAME)
+        if not os.path.exists(loads_file):
+            loads_file = os.path.join(self.feeder_path, LOADS_FILENAME)
+        
+        bus_key = "bus1="
+        shape_key = "yearly="
+
+        customer_types = {}
+        with open(loads_file, "r") as f:
+            for line in f.readlines():
+                if bus_key not in line.lower():
+                    continue
+                bus_name = line.split("bus1=")[1].split(" ")[0]
+                shape_name = line.split(shape_key)[1].split(" ")[0]
+                if "com_" in shape_name:
+                    customer_type = "commercial"
+                elif "res_" in shape_name:
+                    customer_type = "residential"
+                else:
+                    raise ValueError("No valid customer type detected.")
+                customer_types[bus_name] = customer_type
+        self.customer_types = customer_types
 
     @staticmethod
     def get_pvsys(pv_systems_file: str) -> dict:
