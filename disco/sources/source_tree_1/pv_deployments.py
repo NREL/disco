@@ -818,7 +818,7 @@ class PVScenarioGeneratorBase(abc.ABC):
                 else:
                     raise ValueError("No valid customer type detected.")
                 customer_types[bus_name] = customer_type
-        self.customer_types = customer_types
+        return customer_types
 
     @staticmethod
     def get_pvsys(pv_systems_file: str) -> dict:
