@@ -816,7 +816,7 @@ class PVScenarioGeneratorBase(abc.ABC):
                 elif "res_" in shape_name:
                     customer_type = "residential"
                 else:
-                    raise ValueError("No valid customer type detected.")
+                    customer_type = None
                 customer_types[bus_name] = customer_type
         return customer_types
 
