@@ -8,6 +8,7 @@ from pathlib import Path
 
 from disco.analysis import GENERIC_COST_DATABASE
 from disco.enums import AnalysisType, SimulationType, SimulationHierarchy
+from disco.exceptions import AnalysisConfigurationException
 from disco.models.base import OpenDssDeploymentModel
 from disco.utils.dss_utils import comment_out_leading_strings
 
@@ -150,7 +151,7 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
     def pv_locations(self):
         """PV systems file of OpenDSS model."""
 
-    def _create_common_files(self, workspace, copy_load_shape_data_files):
+    def _create_common_files(self, workspace, copy_load_shape_data_files, hierarchy):
         """Create files common to all deployments.
 
         Parameters
@@ -164,19 +165,24 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
             dst_dir=workspace.opendss_directory,
             copy_load_shape_data_files=copy_load_shape_data_files,
         )
-        # This may overwrite a file copied above.
-        shutil.copyfile(self.master_file, workspace.master_file)
-        # If you modify this list, compare the similar list in scripts/copy_smart_ds_dataset.py
-        # The two locations may have different goals, and so do not share the same list reference.
-        strings_to_remove = (
-            "solve",
-            "batchedit fuse",
-            "new energymeter",
-            "new monitor",
-            "export monitors",
-            "plot",
-        )
-        comment_out_leading_strings(workspace.master_file, strings_to_remove)
+        if hierarchy == SimulationHierarchy.FEEDER and not os.path.exists(self.master_file):
+            raise AnalysisConfigurationException(f"{self.master_file} is not present")
+
+        if os.path.exists(self.master_file):
+            # This may overwrite a file copied above.
+            shutil.copyfile(self.master_file, workspace.master_file)
+            # If you modify this list, compare the similar list in scripts/copy_smart_ds_dataset.py
+            # The two locations may have different goals, and so do not share the same list reference.
+            strings_to_remove = (
+                "solve",
+                "batchedit fuse",
+                "new energymeter",
+                "new monitor",
+                "export monitors",
+                "plot",
+            )
+            comment_out_leading_strings(workspace.master_file, strings_to_remove)
+
         if self.loadshape_directory is not None:
             self._copy_files(
                 src_dir=self.loadshape_directory,
@@ -202,7 +208,11 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
         """
         workspace = OpenDssFeederWorkspace(outdir)
         if not os.path.exists(workspace.master_file):
-            self._create_common_files(workspace, copy_load_shape_data_files)
+            self._create_common_files(
+                workspace,
+                copy_load_shape_data_files,
+                SimulationHierarchy.FEEDER,
+            )
 
         deployment_file = Path(workspace.pv_deployments_directory) / (name + ".dss")
         rel_path = self._get_master_file_relative_path(deployment_file, Path(workspace.master_file))
@@ -241,7 +251,11 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
         """
         workspace = OpenDssSubstationWorkspace(outdir)
         if not os.path.exists(workspace.master_file):
-            self._create_common_files(workspace, copy_load_shape_data_files)
+            self._create_common_files(
+                workspace,
+                copy_load_shape_data_files,
+                SimulationHierarchy.SUBSTATION,
+            )
 
         deployment_file = Path(workspace.pv_deployments_directory) / (name + ".dss")
         rel_path = self._get_master_file_relative_path(deployment_file, Path(workspace.master_file))
@@ -283,7 +297,7 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
         """
         workspace = OpenDssFeederWorkspace(outdir)
         if not os.path.exists(workspace.master_file):
-            self._create_common_files(workspace, copy_load_shape_data_files)
+            self._create_common_files(workspace, copy_load_shape_data_files, hierarchy)
         deployment_file = self._create_deployment_file(
             name, workspace, hierarchy, pv_profile=pv_profile
         )
