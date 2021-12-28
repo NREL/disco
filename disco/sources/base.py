@@ -379,10 +379,11 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
                             match = regex.search(lowered)
                             assert match, lowered
                             pv_system = match.group(1)
-                            profile = pv_profile.get(pv_system)
-                            if profile is None:
+                            if pv_system not in pv_profile:
                                 raise Exception(f"no profile found for {pv_system}")
-                        line = line.strip() + f" yearly={profile}\n"
+                            profile = pv_profile[pv_system]
+                        if profile is not None:
+                            line = line.strip() + f" yearly={profile}\n"
                 fw.write(line)
 
             if hierarchy == SimulationHierarchy.FEEDER:
