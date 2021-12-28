@@ -799,7 +799,7 @@ def get_pydss_controller_and_profiles(pv_configs):
             f"only 1 pydss controller is currently supported: {pydss_controllers}"
         )
 
-    assert pydss_controller is not None
+    #assert pydss_controller is not None
     return pydss_controller, pv_profiles
 
 
