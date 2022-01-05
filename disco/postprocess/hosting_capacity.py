@@ -203,19 +203,11 @@ def get_hosting_capacity(meta_df, metric_df, query_phrase, metric_class, hc_summ
             min_hc = min(temp_fail.penetration_level.values)
 
         elif len(temp_fail) != 0 and len(temp_pass) != 0:
-            temp_min_list = [
-                p
-                for p in pass_penetration_levels
-                if not p in fail_penetration_levels
-            ]
+            temp_min_values = pass_penetration_levels.difference(fail_penetration_levels)
+           
             if temp_min_list:
-                min_hc = max(
-                    [
-                        p
-                        for p in pass_penetration_levels
-                        if not p in fail_penetration_levels
-                    ]
-                )
+                min_hc = max(temp_min_values)
+                
                 violation_starting_penetration = min(fail_penetration_levels)
                 cba_samples = set(temp_fail.loc[temp_fail.penetration_level==violation_starting_penetration, 'sample'])
             else:
