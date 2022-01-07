@@ -789,15 +789,16 @@ class PVScenarioGeneratorBase(abc.ABC):
         
         bus_key = "bus1="
         shape_key = "yearly="
+        load_key = "Load."
 
         customer_types = []
         with open(loads_file, "r") as f:
             for line in f.readlines():
                 if bus_key not in line.lower():
                     continue
-                bus_name = line.split("bus1=")[1].split(" ")[0]
+                bus_name = line.split(bus_key)[1].split(" ")[0]
                 shape_name = line.split(shape_key)[1].split(" ")[0]
-                load_name = line.split("load.")[1].split(" ")[0]
+                load_name = line.split(load_key)[1].split(" ")[0]
                 if "com_" in shape_name:
                     customer_type = "commercial"
                 elif "res_" in shape_name:
