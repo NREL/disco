@@ -760,6 +760,7 @@ class PVScenarioGeneratorBase(abc.ABC):
                 pv_config_file = self.save_pv_config(final, sample_path)
                 config_files.append(pv_config_file)
         logger.info("%s PV config files generated for feeder - %s", len(config_files), self.feeder_path)
+        logger.info("Attached PV profiles to PV systems for feeder - %s", self.feeder_path)
         return config_files
 
     def get_customer_types(self):
@@ -897,8 +898,6 @@ class PVScenarioGeneratorBase(abc.ABC):
         
         with open(pv_systems_file, "w") as fw:
             fw.writelines(updated_data)
-        
-        logger.info("Attached PV profiles into %s", pv_systems_file)
     
     def create_pv_systems_sum_group_file(self, pv_config_files):
         """
@@ -941,7 +940,7 @@ class PVScenarioGeneratorBase(abc.ABC):
             {"name": customer_type, "elements": list(elements)}
             for customer_type, elements in sum_groups.items()
         ]
-        filename = os.path.join(self.get_pv_deployments_path, LOADS_SUM_GROUP_FILENAME)
+        filename = os.path.join(self.get_pv_deployments_path(), LOADS_SUM_GROUP_FILENAME)
         dump_data(result, filename)
         logger.info("Loads sum group file created _ %s", filename)
 
