@@ -317,7 +317,7 @@ class PVScenarioGeneratorBase(abc.ABC):
         self.substation_path = os.path.dirname(feeder_path)
         self.config = config
         self.current_cycle = None
-        self.customer_types = []
+        self.customer_types = {}
 
     @property
     @abc.abstractmethod
@@ -673,10 +673,6 @@ class PVScenarioGeneratorBase(abc.ABC):
     @staticmethod
     def generate_pv_name(bus, pv_type):
         return f"{pv_type}_{bus.replace('.', '_')}_pv"
-    
-    @staticmethod
-    def extract_bus_name(pv_name):
-        return ".".join(pv_name.split("_")[1:-1])
 
     def write_pv_string(self, pv_string: str, data: SimpleNamespace) -> None:
         """Write PV string to PV deployment file."""
@@ -738,13 +734,6 @@ class PVScenarioGeneratorBase(abc.ABC):
             )
             return []
         
-        if not self.customer_types:
-            self.customer_types = self.get_customer_types()
-            bus_customer_types = {
-                item["bus_name"]: item["customer_type"]
-                for item in self.customer_types
-            }
-        
         config_files = []
         pv_shapes_file = self.get_pv_shapes_file(self.feeder_path)
         placement_paths = self.get_deployment_placement_paths()
@@ -763,12 +752,7 @@ class PVScenarioGeneratorBase(abc.ABC):
                         continue
                     pv_systems_file = os.path.join(pen_dir, PV_SYSTEMS_FILENAME)
                     if os.path.exists(pv_systems_file):
-                        pv_conf, pv_prof = self.assign_profile(
-                            pv_systems_file=pv_systems_file,
-                            pv_shapes_file=pv_shapes_file,
-                            pv_systems=pv_systems,
-                            bus_customer_types=bus_customer_types
-                        )
+                        pv_conf, pv_prof = self.assign_profile(pv_systems_file, pv_shapes_file, pv_systems)
                         pv_configs += pv_conf
                         pv_profiles.update(pv_prof)
                         self.attach_profile(pv_systems_file, pv_profiles)
@@ -791,14 +775,14 @@ class PVScenarioGeneratorBase(abc.ABC):
         shape_key = "yearly="
         load_key = "Load."
 
-        customer_types = []
+        bus_customer_types, load_customer_types = {}, {}
         with open(loads_file, "r") as f:
             for line in f.readlines():
                 if bus_key not in line.lower():
                     continue
-                bus_name = line.split(bus_key)[1].split(" ")[0]
+                bus = line.split(bus_key)[1].split(" ")[0].split(".")[0]
                 shape_name = line.split(shape_key)[1].split(" ")[0]
-                load_name = line.split(load_key)[1].split(" ")[0]
+                load = line.split(load_key)[1].split(" ")[0]
                 if "com_" in shape_name:
                     customer_type = "commercial"
                 elif "res_" in shape_name:
@@ -806,27 +790,28 @@ class PVScenarioGeneratorBase(abc.ABC):
                 else:
                     customer_type = None
                 
-                customer_types.append({
-                    "bus_name": bus_name,
-                    "load_name": load_name,
-                    "customer_type": customer_type
-                })
-        
-        return customer_types
+                # NOTE: here assume all nodes on same bus have same customer type
+                bus_customer_types[bus] = customer_type
+                load_customer_types[load] = customer_type
+
+        return {
+            "bus_customer_types": bus_customer_types,
+            "load_customer_types": load_customer_types
+        }
 
     def assign_profile(
         self,
         pv_systems_file: str,
         pv_shapes_file: str,
         pv_systems: set,
-        bus_customer_types: dict,
         limit: int = 5
     ) -> dict:
         """Assign PV profile to PV systems."""
         pv_dict = self.get_pvsys(pv_systems_file)
         shape_list = self.get_shape_list(pv_shapes_file)
         pv_conf, pv_prof = [], {}
-        for pv_name, pv_value in pv_dict.items():
+        for pv_name, value in pv_dict.items():
+            pv_value = value["pmpp"]
             if pv_name in pv_systems:
                 continue
             if float(pv_value) > limit:
@@ -834,7 +819,7 @@ class PVScenarioGeneratorBase(abc.ABC):
             else:
                 control_name = "pf1"
             pv_profile = random.choice(shape_list)
-            bus_name = self.extract_bus_name(pv_name)
+
             pv_conf.append({
                 "name": pv_name,
                 "pydss_controller": {
@@ -842,12 +827,18 @@ class PVScenarioGeneratorBase(abc.ABC):
                     "name": control_name
                 },
                 "pv_profile": pv_profile,
-                "customer_type": bus_customer_types[bus_name]
+                "customer_type": self.get_bus_customer_type(value["bus"])
             })
             pv_systems.add(pv_name)
             pv_prof[pv_name] = pv_profile
         return pv_conf, pv_prof
     
+    def get_bus_customer_type(self, bus):
+        if not self.customer_types:
+            self.customer_types = self.get_customer_types()
+        
+        return self.customer_types["bus_customer_types"][bus]
+
     @staticmethod
     def get_pvsys(pv_systems_file: str) -> dict:
         """Return a mapping of PV systems"""
@@ -856,8 +847,13 @@ class PVScenarioGeneratorBase(abc.ABC):
             for line in f.readlines():
                 lowered_line = line.lower()
                 if "pvsystem" in lowered_line:
-                    value = lowered_line.split("pmpp=")[1].split(" ")[0]
-                    pv_dict[lowered_line.split("pvsystem.")[1].split(" ")[0]] = value
+                    pmpp = lowered_line.split("pmpp=")[1].split(" ")[0]
+                    pv_name = lowered_line.split("pvsystem.")[1].split(" ")[0]
+                    bus = lowered_line.split("bus1=")[1].split(" ")[0].split(".")[0]
+                    pv_dict[pv_name] = {
+                        "pmpp": pmpp,
+                        "bus": bus
+                    }
         return pv_dict
 
     def get_shape_list(self, pv_shapes_file: str) -> list:
@@ -935,10 +931,11 @@ class PVScenarioGeneratorBase(abc.ABC):
         """Create a sum group file for loads based on customer types"""
         if not self.customer_types:
             self.customer_types = self.get_customer_types()
+        customer_types = self.customer_types["load_customer_types"]
 
         sum_groups = defaultdict(set)
-        for item in self.customer_types:
-            sum_groups[item["customer_type"]].add(item["load_name"])
+        for load, customer_type in customer_types.items():
+            sum_groups[customer_type].add(load)
         
         result = [
             {"name": customer_type, "elements": list(elements)}
