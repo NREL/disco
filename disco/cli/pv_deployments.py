@@ -41,9 +41,10 @@ def create_pv_configs(input_path: str, hierarchy: str, config: dict):
     """A method for generating pv config JSON files """
     hierarchy = DeploymentHierarchy(hierarchy)
     config = SimpleNamespace(**config)
-    if not config.placement:
-        print(f"'-p' or '--placement' should not be None for this action, choose from {PLACEMENT_CHOICE}")
-        sys.exit()
+    if config.placement:
+        config.placement = None
+        print(f"'-p' or '--placement' option is ignored for this action.")
+    
     manager = PVConfigManager(input_path, hierarchy, config)
     config_files = manager.generate_pv_configs()
     print(f"PV configs created! Total: {len(config_files)}")
