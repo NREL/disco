@@ -121,10 +121,10 @@ def generate_pv_deployment_jobs(input_path: str, hierarchy: str, config: dict):
     config = SimpleNamespace(**config)
     
     manager = PVDeploymentManager(input_path, hierarchy, config)
-    create_pv_jobs_file = manager.generate_pv_creation_jobs()
+    manager.generate_pv_creation_jobs()
     
     manager = PVConfigManager(input_path, hierarchy, config)
-    create_config_jobs_file = manager.generate_pv_config_jobs()
+    manager.generate_pv_config_jobs()
 
 
 def restore_feeder_data(input_path: str, hierarchy: str, config: dict):

@@ -30,7 +30,8 @@ PV_SYSTEMS_FILENAME = "PVSystems.dss"
 PV_SHAPES_FILENAME = "PVShapes.dss"
 PV_CONFIG_FILENAME = "pv_config.json"
 PV_INSTALLATION_TOLERANCE = 1.0e-10
-CUSTOMER_TYPES_FILENAME = "customer_types.json"
+PV_SYSTEMS_SUM_GROUP_FILENAME = "pv_systems_sum_groups.json"
+LOADS_SUM_GROUP_FILENAME = "loads_sum_groups.json"
 
 LOADS_FILENAME = "Loads.dss"
 ORIGINAL_LOADS_FILENAME = "Original_Loads.dss"
@@ -316,7 +317,7 @@ class PVScenarioGeneratorBase(abc.ABC):
         self.substation_path = os.path.dirname(feeder_path)
         self.config = config
         self.current_cycle = None
-        self.customer_types = {}
+        self.customer_types = []
 
     @property
     @abc.abstractmethod
@@ -736,7 +737,14 @@ class PVScenarioGeneratorBase(abc.ABC):
                 self.feeder_path
             )
             return []
-
+        
+        if not self.customer_types:
+            self.customer_types = self.get_customer_types()
+            bus_customer_types = {
+                item["bus_name"]: item["customer_type"]
+                for item in self.customer_types
+            }
+        
         config_files = []
         pv_shapes_file = self.get_pv_shapes_file(self.feeder_path)
         placement_paths = self.get_deployment_placement_paths()
@@ -755,17 +763,64 @@ class PVScenarioGeneratorBase(abc.ABC):
                         continue
                     pv_systems_file = os.path.join(pen_dir, PV_SYSTEMS_FILENAME)
                     if os.path.exists(pv_systems_file):
-                        pv_conf, pv_prof = self.assign_profile(pv_systems_file, pv_shapes_file, pv_systems)
+                        pv_conf, pv_prof = self.assign_profile(
+                            pv_systems_file=pv_systems_file,
+                            pv_shapes_file=pv_shapes_file,
+                            pv_systems=pv_systems,
+                            bus_customer_types=bus_customer_types
+                        )
                         pv_configs += pv_conf
                         pv_profiles.update(pv_prof)
                         self.attach_profile(pv_systems_file, pv_profiles)
                 final = {"pv_systems": pv_configs}
                 pv_config_file = self.save_pv_config(final, sample_path)
                 config_files.append(pv_config_file)
-        logger.info("%s PV config files generated - %s", len(config_files), root_path)
+        logger.info("%s PV config files generated for feeder - %s", len(config_files), self.feeder_path)
         return config_files
 
-    def assign_profile(self, pv_systems_file: str, pv_shapes_file: str, pv_systems: set, limit: int = 5) -> dict:
+    def get_customer_types(self):
+        # NOTE: In Loads.dss file, each line contains string like "yearly=com_kw_29321_pu".
+        # However "yearly=xxxx" only exists in the original loads file, but not the transformed
+        # one during the PV deployment process. After the deployments, the original
+        # loads files were renmaed back, and would not exist.
+        loads_file = os.path.join(self.feeder_path, ORIGINAL_LOADS_FILENAME)
+        if not os.path.exists(loads_file):
+            loads_file = os.path.join(self.feeder_path, LOADS_FILENAME)
+        
+        bus_key = "bus1="
+        shape_key = "yearly="
+
+        customer_types = []
+        with open(loads_file, "r") as f:
+            for line in f.readlines():
+                if bus_key not in line.lower():
+                    continue
+                bus_name = line.split("bus1=")[1].split(" ")[0]
+                shape_name = line.split(shape_key)[1].split(" ")[0]
+                load_name = line.split("load.")[1].split(" ")[0]
+                if "com_" in shape_name:
+                    customer_type = "commercial"
+                elif "res_" in shape_name:
+                    customer_type = "residential"
+                else:
+                    customer_type = None
+                
+                customer_types.append({
+                    "bus_name": bus_name,
+                    "load_name": load_name,
+                    "customer_type": customer_type
+                })
+        
+        return customer_types
+
+    def assign_profile(
+        self,
+        pv_systems_file: str,
+        pv_shapes_file: str,
+        pv_systems: set,
+        bus_customer_types: dict,
+        limit: int = 5
+    ) -> dict:
         """Assign PV profile to PV systems."""
         pv_dict = self.get_pvsys(pv_systems_file)
         shape_list = self.get_shape_list(pv_shapes_file)
@@ -778,6 +833,7 @@ class PVScenarioGeneratorBase(abc.ABC):
             else:
                 control_name = "pf1"
             pv_profile = random.choice(shape_list)
+            bus_name = self.extract_bus_name(pv_name)
             pv_conf.append({
                 "name": pv_name,
                 "pydss_controller": {
@@ -785,48 +841,12 @@ class PVScenarioGeneratorBase(abc.ABC):
                     "name": control_name
                 },
                 "pv_profile": pv_profile,
-                "customer_type": self.get_customer_type(pv_name)
+                "customer_type": bus_customer_types[bus_name]
             })
             pv_systems.add(pv_name)
             pv_prof[pv_name] = pv_profile
         return pv_conf, pv_prof
     
-    def get_customer_type(self, pv_name):
-        if not self.customer_types:
-            self.customer_types = self.load_customer_types()
-        
-        bus_name = self.extract_bus_name(pv_name)
-        customer_type = self.customer_types[bus_name]
-        return customer_type
-
-    def load_customer_types(self):
-        # NOTE: In Loads.dss file, each line contains "yearly=com_kw_29321_pu"
-        # "yearly=xxxx" exists in original loads file, but not the transformed one
-        # during the PV deployment process. After the deployments, the original
-        # loads files were renmaed back, and would not exist.
-        loads_file = os.path.join(self.feeder_path, ORIGINAL_LOADS_FILENAME)
-        if not os.path.exists(loads_file):
-            loads_file = os.path.join(self.feeder_path, LOADS_FILENAME)
-        
-        bus_key = "bus1="
-        shape_key = "yearly="
-
-        customer_types = {}
-        with open(loads_file, "r") as f:
-            for line in f.readlines():
-                if bus_key not in line.lower():
-                    continue
-                bus_name = line.split("bus1=")[1].split(" ")[0]
-                shape_name = line.split(shape_key)[1].split(" ")[0]
-                if "com_" in shape_name:
-                    customer_type = "commercial"
-                elif "res_" in shape_name:
-                    customer_type = "residential"
-                else:
-                    customer_type = None
-                customer_types[bus_name] = customer_type
-        return customer_types
-
     @staticmethod
     def get_pvsys(pv_systems_file: str) -> dict:
         """Return a mapping of PV systems"""
@@ -883,9 +903,9 @@ class PVScenarioGeneratorBase(abc.ABC):
         
         logger.info("Attached PV profiles into %s", pv_systems_file)
     
-    def create_sum_group_file(self, pv_config_files):
+    def create_pv_systems_sum_group_file(self, pv_config_files):
         """
-        Walk through all PV configs created in each sample, and generate a sum group JSON file 
+        Walk through all PV configs created in each sample, and generate a sum group JSON file
         at the feeder level.
 
         Parameters
@@ -906,9 +926,26 @@ class PVScenarioGeneratorBase(abc.ABC):
             {"name": customer_type, "elements": list(elements)}
             for customer_type, elements in sum_groups.items()
         ]
-        filename = os.path.join(self.get_pv_deployments_path(), CUSTOMER_TYPES_FILENAME)
+        filename = os.path.join(self.get_pv_deployments_path(), PV_SYSTEMS_SUM_GROUP_FILENAME)
         dump_data(result, filename)
-        logger.info("Sum group file created based on customer types - %s", filename)
+        logger.info("PV Systems sum group file created - %s", filename)
+    
+    def create_loads_sum_group_file(self):
+        """Create a sum group file for loads based on customer types"""
+        if not self.customer_types:
+            self.customer_types = self.get_customer_types()
+
+        sum_groups = defaultdict(set)
+        for item in self.customer_types:
+            sum_groups[item["customer_type"]].add(item["load_name"])
+        
+        result = [
+            {"name": customer_type, "elements": list(elements)}
+            for customer_type, elements in sum_groups.items()
+        ]
+        filename = os.path.join(self.get_pv_deployments_path, LOADS_SUM_GROUP_FILENAME)
+        dump_data(result, filename)
+        logger.info("Loads sum group file created _ %s", filename)
 
 
 class LargePVScenarioGenerator(PVScenarioGeneratorBase):
@@ -1689,7 +1726,10 @@ class PVConfigManager(PVDataStorage):
             generator = get_pv_scenario_generator(feeder_path, self.config)
             result = generator.create_all_pv_configs()
             config_files.extend(result)
-            generator.create_sum_group_file(pv_config_files=result)
+            
+            generator.create_pv_systems_sum_group_file(pv_config_files=result)
+            generator.create_loads_sum_group_file()
+
         return config_files
 
     def remove_pv_configs(self, placement: Placement = None) -> list:
