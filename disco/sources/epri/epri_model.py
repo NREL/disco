@@ -171,6 +171,7 @@ class EpriModel(BaseOpenDssModel):
         self._feeder = data.pop("feeder")
         self._loadshape_directory = data.pop("loadshape_directory")
         self._opendss_directory = data.pop("opendss_directory")
+        self._metadata_directory = data.pop("metadata_directory", None)
         self._master = data.pop("master")
         self._name = data.pop("name")
         self._pv_locations = data.pop("pv_locations")
@@ -198,6 +199,10 @@ class EpriModel(BaseOpenDssModel):
     @property
     def master_file(self):
         return os.path.join(self._opendss_directory, self._master)
+
+    @property
+    def metadata_directory(self):
+        return self._metadata_directory
 
     @property
     def name(self):

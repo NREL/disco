@@ -87,6 +87,15 @@ class SourceTree1ModelInputs(JobInputsInterface):
         """
         return self._parameters
 
+    def get_deployment_directory(self, substation, feeder):
+        """Get the path of deployment directory"""
+        return os.path.join(
+            self._base,
+            substation,
+            self._feeder_dirname(substation, feeder),
+            self._pv_deployments_dirname
+        )
+
     def get_deployment_file(self, key, sample, penetration_level):
         """Get the path to an input deployment file for the given parameters.
 
@@ -357,8 +366,13 @@ class SourceTree1ModelInputs(JobInputsInterface):
         if not os.path.exists(placement_path):
             return []
 
-        placements = [get_placement_from_value(x)
-                      for x in self._get_items_from_directory(placement_path)]
+        placements = []
+        for x in self._get_items_from_directory(placement_path):
+            try:
+                placement = get_placement_from_value(x)
+            except Exception:
+                continue
+            placements.append(placement)
         placements.sort(key=lambda x: x.value)
         return placements
 
