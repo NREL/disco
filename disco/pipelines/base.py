@@ -46,15 +46,28 @@ class PipelineTemplate:
 
     def update_transform_params(self, data):
         section = TemplateSection.MODEL
-        self.data[section.value][TemplateParams.TRANSFORM_PARAMS.value].update(data)
+        _data = self._keep_null_value(data)
+        self.data[section.value][TemplateParams.TRANSFORM_PARAMS.value].update(_data)
 
     def update_config_params(self, data, section):
-        self.data[section.value][TemplateParams.CONFIG_PARAMS.value].update(data)
+        _data = self._keep_null_value(data)
+        self.data[section.value][TemplateParams.CONFIG_PARAMS.value].update(_data)
 
     def update_reports_params(self, data):
         if TemplateSection.REPORTS.value not in self.data:
             self.data[TemplateSection.REPORTS.value] = {}
-        self.data[TemplateSection.REPORTS.value].update(data)
+        _data = self._keep_null_value(data)
+        self.data[TemplateSection.REPORTS.value].update(_data)
+    
+    @staticmethod
+    def _keep_null_value(data):
+        _data = {}
+        for key, value in data.items():
+            if value is None:
+                _data[key] = "null"
+            else:
+                _data[key] = value
+        return _data
 
     def get_command_params(self, section, params_type):
         """Return command params in dict"""

@@ -94,6 +94,12 @@ def _callback_is_enabled(_, __, value):
          "--reports-filename.",
 )
 @click.option(
+    "--exports-filename",
+    default=None,
+    show_default=True,
+    help="PyDSS export options, default is None.",
+)
+@click.option(
     "-r",
     "--reports-filename",
     default=get_default_reports_file(SimulationType.QSTS),
@@ -139,6 +145,7 @@ def time_series(
     pv_curtailment,
     thermal_metrics,
     voltage_metrics,
+    exports_filename=None,
     reports_filename=None,
     order_by_penetration=True,
     skip_night=False,
@@ -166,9 +173,10 @@ def time_series(
         if report["name"] in ("Thermal Metrics", "Voltage Metrics"):
             report["store_per_element_data"] = store_per_element_data
 
+    exports = {} if exports_filename is None else load_data(exports_filename)
     scenarios = [
-        PyDssConfiguration.make_default_pydss_scenario(CONTROL_MODE_SCENARIO),
-        PyDssConfiguration.make_default_pydss_scenario(PF1_SCENARIO),
+        PyDssConfiguration.make_default_pydss_scenario(CONTROL_MODE_SCENARIO, exports),
+        PyDssConfiguration.make_default_pydss_scenario(PF1_SCENARIO, exports),
     ]
     config = PyDssConfiguration.auto_config(
         inputs,

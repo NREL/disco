@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 )
 @click.option(
     "-e", "--exports-filename",
-    default=get_default_exports_file(),
+    default=get_default_exports_file(SimulationType.SNAPSHOT),
     show_default=True,
     help="PyDSS export options",
 )

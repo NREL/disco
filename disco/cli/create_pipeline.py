@@ -15,7 +15,7 @@ from disco.pipelines.base import TemplateSection, TemplateParams, PipelineTempla
 from disco.pipelines.enums import AnalysisType
 from disco.pipelines.factory import PipelineCreatorFactory
 from disco.pipelines.utils import get_default_pipeline_template, check_hpc_config
-from disco.pydss.pydss_configuration_base import get_default_reports_file
+from disco.pydss.pydss_configuration_base import get_default_reports_file, get_default_exports_file
 from disco.sources.factory import make_source_model
 
 
@@ -82,6 +82,13 @@ def create_pipeline():
     help="Enable hosting capacity computations",
 )
 @click.option(
+    "-c", "--cost-benefit",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Enable cost benefit computations"
+)
+@click.option(
     "-p", "--prescreen",
     type=click.BOOL,
     is_flag=True,
@@ -127,6 +134,7 @@ def template(
     auto_select_time_points_search_duration_days,
     impact_analysis,
     hosting_capacity,
+    cost_benefit,
     prescreen,
     template_file,
     reports_filename,
@@ -140,22 +148,8 @@ def template(
     
     template = get_default_pipeline_template(simulation_type=simulation_type)
     template.data["inputs"] = inputs
-    
-    if SimulationType(simulation_type) == SimulationType.SNAPSHOT:
-        if prescreen:
-            print("-p or --prescreen option has no effect on 'snapshot' pipeline, ignored!")
-        
-        if with_loadshape is None:
-            print("--with-loadshape option is required for Snapshot simulation.")
-            sys.exit(1)
 
-        config_params = template.get_config_params(TemplateSection.SIMULATION)
-        config_params["with_loadshape"] = with_loadshape
-        config_params["auto_select_time_points"] = auto_select_time_points
-        config_params["auto_select_time_points_search_duration_days"] = \
-            auto_select_time_points_search_duration_days
-        template.update_config_params(config_params, TemplateSection.SIMULATION)
-    
+    # model transformation
     if preconfigured:
         template.data["preconfigured"] = True
         template.remove_section(TemplateSection.MODEL)
@@ -164,23 +158,53 @@ def template(
         transform_defaults = source_model.get_transform_defaults()
         template.update_transform_params(transform_defaults)
     
-    if impact_analysis:
-        template.data["analysis_type"] = AnalysisType.IMAPCT_ANALYSIS.value
-    elif hosting_capacity:
-        template.data["analysis_type"] = AnalysisType.HOSTING_CAPACITY.value
-    else:
-        template.remove_section(TemplateSection.POSTPROCESS)
+    simulation_type = SimulationType(simulation_type)
+    config_params = template.get_config_params(TemplateSection.SIMULATION)
     
-    if SimulationType(simulation_type) == SimulationType.TIME_SERIES:
+    # snapshot special cases
+    if simulation_type == SimulationType.SNAPSHOT:
+        if prescreen:
+            print("-p or --prescreen option has no effect on 'snapshot' pipeline, ignored!")
+        
+        if cost_benefit:
+            print("-c or --cost-benefit option has no effect on 'snapshot' pipeline, ignored!")
+
+        if with_loadshape is None:
+            print("--with-loadshape option is required for Snapshot simulation.")
+            sys.exit(1)
+
+        config_params["with_loadshape"] = with_loadshape
+        config_params["auto_select_time_points"] = auto_select_time_points
+        config_params["auto_select_time_points_search_duration_days"] = \
+            auto_select_time_points_search_duration_days
+    
+    # time-series special cases
+    if simulation_type == SimulationType.TIME_SERIES:
         if prescreen:
             template.remove_params(TemplateSection.SIMULATION, TemplateParams.CONFIG_PARAMS)
         else:
             template.remove_section(TemplateSection.PRESCREEN)
+        
+        if cost_benefit:
+            if config_params["exports_filename"] is None:
+                exports_filename = get_default_exports_file(SimulationType.TIME_SERIES)
+                config_params["exports_filename"] = exports_filename
+    
+    template.update_config_params(config_params, TemplateSection.SIMULATION)
 
     if reports_filename is None:
-        reports_filename = get_default_reports_file(SimulationType(simulation_type))
+        reports_filename = get_default_reports_file(simulation_type)
     template.update_reports_params(load_data(reports_filename))
 
+    if impact_analysis:
+        template.data["analysis_type"] = AnalysisType.IMAPCT_ANALYSIS.value
+    elif hosting_capacity:
+        template.data["analysis_type"] = AnalysisType.HOSTING_CAPACITY.value
+    elif cost_benefit and simulation_type == SimulationType.TIME_SERIES:
+        template.data["analysis_type"] = AnalysisType.COST_BENEFIT.value
+    else:
+        template.remove_section(TemplateSection.POSTPROCESS)
+    
     if enable_singularity:
         singularity_params = SingularityParams(enabled=True, container=container)
         for section in template.data.values():

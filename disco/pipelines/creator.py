@@ -5,6 +5,7 @@ from PyDSS.common import SnapshotTimePointSelectionMode
 from PyDSS.reports.pv_reports import PF1_SCENARIO, CONTROL_MODE_SCENARIO
 
 import disco
+from disco.enums import SimulationType
 from disco.pipelines.enums import AnalysisType, TemplateSection
 from disco.pipelines.base import PipelineCreatorBase
 from disco.pydss.common import TIME_SERIES_SCENARIOS
@@ -13,9 +14,6 @@ from jade.models.pipeline import PipelineConfig
 from jade.utils.utils import dump_data
 
 logger = logging.getLogger(__name__)
-
-
-EXPORTS_FILENAME = get_default_exports_file()
 
 
 class SnapshotPipelineCreator(PipelineCreatorBase):
@@ -45,9 +43,10 @@ class SnapshotPipelineCreator(PipelineCreatorBase):
         options = self.template.get_config_options(section)
         reports_filename = "generated_snapshot_reports.toml"
         dump_data(self.template.reports, reports_filename)
+        exports_filename = get_default_exports_file(SimulationType.SNAPSHOT)
         command = (
             f"disco config snapshot {model_inputs} "
-            f"--reports-filename={reports_filename} --exports-filename={EXPORTS_FILENAME} {options}"
+            f"--reports-filename={reports_filename} --exports-filename={exports_filename} {options}"
         )
         return command
 
