@@ -922,7 +922,9 @@ class PVScenarioGeneratorBase(abc.ABC):
             {"name": customer_type, "elements": list(elements)}
             for customer_type, elements in sum_groups.items()
         ]
-        filename = os.path.join(self.get_pv_deployments_path(), PV_SYSTEMS_SUM_GROUP_FILENAME)
+        metadata_directory = os.path.join(self.get_pv_deployments_path(), "metadata")
+        os.makedirs(metadata_directory, exist_ok=True)
+        filename = os.path.join(metadata_directory, PV_SYSTEMS_SUM_GROUP_FILENAME)
         dump_data(result, filename, indent=2)
         logger.info("PV Systems sum group file created - %s", filename)
     
@@ -940,9 +942,11 @@ class PVScenarioGeneratorBase(abc.ABC):
             {"name": customer_type, "elements": list(elements)}
             for customer_type, elements in sum_groups.items()
         ]
-        filename = os.path.join(self.get_pv_deployments_path(), LOADS_SUM_GROUP_FILENAME)
+        metadata_directory = os.path.join(self.get_pv_deployments_path(), "metadata")
+        os.makedirs(metadata_directory, exist_ok=True)
+        filename = os.path.join(metadata_directory, LOADS_SUM_GROUP_FILENAME)
         dump_data(result, filename, indent=2)
-        logger.info("Loads sum group file created _ %s", filename)
+        logger.info("Loads sum group file created - %s", filename)
 
 
 class LargePVScenarioGenerator(PVScenarioGeneratorBase):
