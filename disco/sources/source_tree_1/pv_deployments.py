@@ -924,10 +924,12 @@ class PVScenarioGeneratorBase(abc.ABC):
             for item in data:
                 sum_groups[item["customer_type"]].add(item["name"])
         
-        result = [
-            {"name": customer_type, "elements": list(elements)}
-            for customer_type, elements in sum_groups.items()
-        ]
+        result = {
+            "sum_groups":[
+                {"name": customer_type, "elements": list(elements)}
+                for customer_type, elements in sum_groups.items()
+            ]
+        }
         filename = os.path.join(self.get_metadata_directory(), PV_SYSTEMS_SUM_GROUP_FILENAME)
         dump_data(result, filename, indent=2)
         logger.info("PV Systems sum group file created - %s", filename)
@@ -942,10 +944,12 @@ class PVScenarioGeneratorBase(abc.ABC):
         for load, customer_type in customer_types.items():
             sum_groups[customer_type].add(load)
         
-        result = [
-            {"name": customer_type, "elements": list(elements)}
-            for customer_type, elements in sum_groups.items()
-        ]
+        result = {
+            "sum_groups": [
+                {"name": customer_type, "elements": list(elements)}
+                for customer_type, elements in sum_groups.items()
+            ]
+        }
         filename = os.path.join(self.get_metadata_directory(), LOADS_SUM_GROUP_FILENAME)
         dump_data(result, filename, indent=2)
         logger.info("Loads sum group file created - %s", filename)
