@@ -112,8 +112,6 @@ class PyDssConfiguration(PyDssConfigurationBase):
         if order_by_penetration:
             config.apply_job_order_by_penetration_level()
         
-        config.generate_pv_systems_sum_group_files()
-
         return config
 
     def apply_job_order_by_penetration_level(self):
@@ -240,11 +238,3 @@ class PyDssConfiguration(PyDssConfigurationBase):
         """
         # TODO: callers should just call this.
         return self.get_job(job_name)
-
-    def generate_pv_systems_sum_group_files(self):
-        for job in self.iter_jobs():
-            if not isinstance(job, DeploymentParameters):
-                continue
-            breakpoint()
-            m = job.model
-            break

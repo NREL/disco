@@ -26,6 +26,7 @@ class SourceTree1ModelInputs(JobInputsInterface):
         "SourceTree1Keys", "substation, feeder, placement"
     )
     _PV_CONFIG_FILENAME = "pv_config.json"
+    _METADATA_DIRNAME = "metadata"
     SUBSTATION_DELIMITER = "--"
 
     def __init__(self, base_directory, pv_deployments_dirname=None):
@@ -87,13 +88,13 @@ class SourceTree1ModelInputs(JobInputsInterface):
         """
         return self._parameters
 
-    def get_deployment_directory(self, substation, feeder):
-        """Get the path of deployment directory"""
+    def get_metadata_directory(self, substation, feeder):
+        """Get the path of feeder metadata directory"""
         return os.path.join(
             self._base,
             substation,
             self._feeder_dirname(substation, feeder),
-            self._pv_deployments_dirname
+            self._METADATA_DIRNAME
         )
 
     def get_deployment_file(self, key, sample, penetration_level):

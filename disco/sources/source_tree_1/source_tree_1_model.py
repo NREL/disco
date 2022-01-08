@@ -508,7 +508,6 @@ class SourceTree1Model(BaseOpenDssModel):
                 if feeders != ("all",) and feeder not in feeders:
                     continue
                 base_case_name = SourceTree1Model.make_feeder_base_case_name(substation, feeder)
-                deployment_directory = inputs.get_deployment_directory(substation, feeder)
                 if base_case_name not in base_cases and issubclass(simulation_model, ImpactAnalysisBaseModel):
                     data = {
                         "path": input_path,
@@ -523,7 +522,7 @@ class SourceTree1Model(BaseOpenDssModel):
                         "opendss_directory": inputs.get_opendss_directory(
                             substation, feeder
                         ),
-                        "metadata_directory": os.path.join(deployment_directory, "metadata"),
+                        "metadata_directory": inputs.get_metadata_directory(substation, feeder),
                         "pv_locations": [],
                         "pydss_controllers": None,
                         "is_base_case": True,
@@ -574,7 +573,7 @@ class SourceTree1Model(BaseOpenDssModel):
                             "opendss_directory": inputs.get_opendss_directory(
                                 substation, feeder
                             ),
-                            "metadata_direcotry": os.path.join(deployment_directory, "metadata"),
+                            "metadata_directory": inputs.get_metadata_directory(substation, feeder),
                             "pv_locations": [deployment_file],
                             "pydss_controllers": pydss_controller,
                             "is_base_case": False,

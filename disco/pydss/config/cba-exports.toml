@@ -6,8 +6,8 @@ store_values_type = "all"
 
 [Loads.Powers]
 store_values_type = "all"
-sum_group_file = "null"
+sum_group_file = 
 
 [PVSystems.Powers]
 store_values_type = "all"
-sum_group_file = "null"
+sum_group_file = 
