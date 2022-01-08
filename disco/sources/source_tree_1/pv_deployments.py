@@ -923,7 +923,7 @@ class PVScenarioGeneratorBase(abc.ABC):
             for customer_type, elements in sum_groups.items()
         ]
         filename = os.path.join(self.get_pv_deployments_path(), PV_SYSTEMS_SUM_GROUP_FILENAME)
-        dump_data(result, filename)
+        dump_data(result, filename, indent=2)
         logger.info("PV Systems sum group file created - %s", filename)
     
     def create_loads_sum_group_file(self):
@@ -941,7 +941,7 @@ class PVScenarioGeneratorBase(abc.ABC):
             for customer_type, elements in sum_groups.items()
         ]
         filename = os.path.join(self.get_pv_deployments_path(), LOADS_SUM_GROUP_FILENAME)
-        dump_data(result, filename)
+        dump_data(result, filename, indent=2)
         logger.info("Loads sum group file created _ %s", filename)
 
 
