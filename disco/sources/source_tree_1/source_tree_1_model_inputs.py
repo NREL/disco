@@ -369,10 +369,7 @@ class SourceTree1ModelInputs(JobInputsInterface):
 
         placements = []
         for x in self._get_items_from_directory(placement_path):
-            try:
-                placement = get_placement_from_value(x)
-            except Exception:
-                continue
+            placement = get_placement_from_value(x)
             placements.append(placement)
         placements.sort(key=lambda x: x.value)
         return placements
