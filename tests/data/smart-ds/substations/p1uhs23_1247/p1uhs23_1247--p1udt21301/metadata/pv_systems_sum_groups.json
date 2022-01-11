@@ -1,0 +1,49 @@
+{
+  "sum_groups": [
+    {
+      "name": "residential",
+      "elements": [
+        "small_p1ulv65457_1_2_pv",
+        "small_p1ulv36135_1_2_pv",
+        "small_p1ulv12590_1_2_pv",
+        "small_p1ulv16326_1_2_pv",
+        "small_p1ulv17002_1_2_pv",
+        "small_p1ulv59156_1_2_pv",
+        "small_p1ulv58566_1_2_pv",
+        "small_p1ulv9482_1_2_pv",
+        "small_p1ulv43666_1_2_pv",
+        "small_p1ulv8854_1_2_pv",
+        "small_p1ulv42994_1_2_pv",
+        "small_p1ulv35483_1_2_pv",
+        "small_p1ulv3843_1_2_pv",
+        "small_p1ulv10719_1_2_pv",
+        "small_p1ulv11340_1_2_pv",
+        "small_p1ulv22116_1_2_pv",
+        "small_p1ulv47451_1_2_pv",
+        "small_p1ulv8215_1_2_pv",
+        "small_p1ulv31633_1_2_pv",
+        "small_p1ulv62924_1_2_pv",
+        "small_p1ulv46851_1_2_pv",
+        "small_p1ulv41131_1_2_pv",
+        "small_p1ulv51773_1_2_pv",
+        "small_p1ulv4428_1_2_pv",
+        "small_p1ulv18941_1_2_pv",
+        "small_p1ulv59768_1_2_pv",
+        "small_p1ulv2538_1_2_pv",
+        "small_p1ulv12585_1_2_pv",
+        "small_p1ulv49293_1_2_pv",
+        "small_p1ulv32242_1_2_pv",
+        "small_p1ulv64195_1_2_pv",
+        "small_p1ulv5055_1_2_pv",
+        "small_p1ulv28507_1_2_pv",
+        "small_p1ulv10092_1_2_pv"
+      ]
+    },
+    {
+      "name": "commercial",
+      "elements": [
+        "small_p1ulv43670_1_2_pv"
+      ]
+    }
+  ]
+}
