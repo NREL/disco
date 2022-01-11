@@ -94,6 +94,13 @@ def _callback_is_enabled(_, __, value):
          "--reports-filename.",
 )
 @click.option(
+    "--export-data-tables",
+    default=False,
+    is_flag=True,
+    show_default=True,
+    help="Export collected circuit element properties as tables."
+)
+@click.option(
     "--exports-filename",
     default=None,
     show_default=True,
@@ -145,6 +152,7 @@ def time_series(
     pv_curtailment,
     thermal_metrics,
     voltage_metrics,
+    export_data_tables=False,
     exports_filename=None,
     reports_filename=None,
     order_by_penetration=True,
@@ -159,6 +167,7 @@ def time_series(
     simulation_config = PyDssConfiguration.get_default_pydss_simulation_config()
     simulation_config["project"]["simulation_type"] = SimulationType.QSTS.value
     simulation_config["reports"] = load_data(reports_filename)["reports"]
+    simulation_config["exports"]["export_data_tables"] = export_data_tables
     for report in simulation_config["reports"]["types"]:
         if report["name"] == "Feeder Losses" and feeder_losses is not None:
             report["enabled"] = feeder_losses

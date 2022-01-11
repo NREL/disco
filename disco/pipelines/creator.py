@@ -126,7 +126,8 @@ class TimeSeriesPipelineCreator(PipelineCreatorBase):
         )
         if self.template.analysis_type == AnalysisType.COST_BENEFIT.value:
             # These must not be user-configurable and don't go in the template.
-            command += " --feeder-losses=false --thermal-metrics=false --voltage-metrics=false"
+            command += " --feeder-losses=false --thermal-metrics=false --voltage-metrics=false" \
+                       " --export-data-tables"
 
         logger.info("Make command - '%s'", command)
         return command
@@ -166,4 +167,7 @@ class TimeSeriesPipelineCreator(PipelineCreatorBase):
             if hosting_capacity:
                 for scenario in TIME_SERIES_SCENARIOS:
                     command += f"\ndisco-internal compute-hosting-capacity {inputs} --scenario={scenario}"
+        elif self.template.analysis_type == AnalysisType.COST_BENEFIT.value:
+            inputs = os.path.join("$JADE_PIPELINE_OUTPUT_DIR", f"output-stage{self.stage_num-1}")
+            command += f"disco-internal make-cba-tables {inputs}"
         return command
