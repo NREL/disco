@@ -201,7 +201,7 @@ def template(
     template.update_reports_params(load_data(reports_filename))
 
     if impact_analysis:
-        template.data["analysis_type"] = AnalysisType.IMAPCT_ANALYSIS.value
+        template.data["analysis_type"] = AnalysisType.IMPACT_ANALYSIS.value
     elif hosting_capacity:
         template.data["analysis_type"] = AnalysisType.HOSTING_CAPACITY.value
     elif cost_benefit:

@@ -61,7 +61,7 @@ class SnapshotPipelineCreator(PipelineCreatorBase):
 
     def make_postprocess_command(self):
         commands = []
-        impact_analysis = self.template.analysis_type == AnalysisType.IMAPCT_ANALYSIS.value
+        impact_analysis = self.template.analysis_type == AnalysisType.IMPACT_ANALYSIS.value
         hosting_capacity = self.template.analysis_type == AnalysisType.HOSTING_CAPACITY.value
         if impact_analysis or hosting_capacity:
             inputs = os.path.join("$JADE_PIPELINE_OUTPUT_DIR", f"output-stage{self.stage_num-1}")
@@ -159,7 +159,7 @@ class TimeSeriesPipelineCreator(PipelineCreatorBase):
 
     def make_postprocess_command(self):
         command = ""
-        impact_analysis = self.template.analysis_type == AnalysisType.IMAPCT_ANALYSIS.value
+        impact_analysis = self.template.analysis_type == AnalysisType.IMPACT_ANALYSIS.value
         hosting_capacity = self.template.analysis_type == AnalysisType.HOSTING_CAPACITY.value
         if impact_analysis or hosting_capacity:
             inputs = os.path.join("$JADE_PIPELINE_OUTPUT_DIR", f"output-stage{self.stage_num-1}")

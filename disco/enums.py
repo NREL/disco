@@ -116,7 +116,7 @@ class AnalysisModelType(enum.Enum):
 
 class AnalysisType(enum.Enum):
     """DISCO user analysis types"""
-    IMAPCT_ANALYSIS = "impact-analysis"
+    IMPACT_ANALYSIS = "impact-analysis"
     HOSTING_CAPACITY = "hosting-capacity"
     COST_BENEFIT = "cost-benefit"
     NONE = "none"
