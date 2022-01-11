@@ -167,7 +167,8 @@ def template(
             print("-p or --prescreen option has no effect on 'snapshot' pipeline, ignored!")
         
         if cost_benefit:
-            print("-c or --cost-benefit option has no effect on 'snapshot' pipeline, ignored!")
+            print("--cost-benefit is not supported in snapshot simulations", file=sys.stderr)
+            sys.exit(1)
 
         if with_loadshape is None:
             print("--with-loadshape option is required for Snapshot simulation.")
