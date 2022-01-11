@@ -6,7 +6,8 @@
         "controller_type": "PvController",
         "name": "volt-var"
       },
-      "pv_profile": "1557038_30.40_-97.57_2019"
+      "pv_profile": "1566661_30.26_-97.45_2019",
+      "customer_type": "residential"
     },
     {
       "name": "small_p1ulv62436_1_2_pv",
@@ -14,167 +15,8 @@
         "controller_type": "PvController",
         "name": "volt-var"
       },
-      "pv_profile": "1561947_30.28_-97.51_2019"
-    },
-    {
-      "name": "small_p1ulv53232_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1561945_30.32_-97.51_2019"
-    },
-    {
-      "name": "small_p1ulv10887_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1552055_30.40_-97.63_2019"
-    },
-    {
-      "name": "small_p1ulv29261_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1563526_30.24_-97.49_2019"
-    },
-    {
-      "name": "small_p1ulv4595_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1542084_30.26_-97.75_2019"
-    },
-    {
-      "name": "small_p1ulv17169_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1512174_30.26_-98.11_2019"
-    },
-    {
-      "name": "small_p1ulv15856_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1557041_30.34_-97.57_2019"
-    },
-    {
-      "name": "small_p1ulv44471_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1558705_30.20_-97.55_2019"
-    },
-    {
-      "name": "small_p1ulv36321_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1545409_30.28_-97.71_2019"
-    },
-    {
-      "name": "small_p1ulv5237_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1563527_30.22_-97.49_2019"
-    },
-    {
-      "name": "small_p1ulv24237_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1542083_30.28_-97.75_2019"
-    },
-    {
-      "name": "small_p1ulv37000_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1561951_30.20_-97.51_2019"
-    },
-    {
-      "name": "small_p1ulv5951_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1542083_30.28_-97.75_2019"
-    },
-    {
-      "name": "small_p1ulv61814_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1545411_30.24_-97.71_2019"
-    },
-    {
-      "name": "small_p1ulv64358_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1552056_30.38_-97.63_2019"
-    },
-    {
-      "name": "small_p1ulv63094_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1552061_30.28_-97.63_2019"
-    },
-    {
-      "name": "small_p1ulv61813_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1553723_30.30_-97.61_2019"
-    },
-    {
-      "name": "small_p1ulv45758_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1565105_30.20_-97.47_2019"
-    },
-    {
-      "name": "small_p1ulv64357_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1568225_30.16_-97.43_2019"
-    },
-    {
-      "name": "small_p1ulv12152_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1510518_30.24_-98.13_2019"
-    },
-    {
-      "name": "small_p1ulv57547_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "pf1"
-      },
-      "pv_profile": "1535432_30.26_-97.83_2019"
+      "pv_profile": "1505550_30.26_-98.19_2019",
+      "customer_type": "residential"
     }
   ]
 }
