@@ -1,4 +1,4 @@
-"""Make hosting capacity summary tables for all jobs in a batch."""
+"""Make cost benefit analysis summary tables for all jobs in a batch."""
 
 import csv
 import itertools
