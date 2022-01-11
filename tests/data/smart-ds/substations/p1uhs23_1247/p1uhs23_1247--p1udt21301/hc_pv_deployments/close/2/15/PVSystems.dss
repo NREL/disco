@@ -1,15 +1,15 @@
 // PV Scenario for 377.31348613163505 kW total size, Scenario type close, Sample 2 and penetration 15% (PV to load ratio) 
 ! =====================PV SCENARIO FILE==============================
-New PVSystem.small_p1ulv22116_1_2_pv phases=1 bus1=p1ulv22116.1.2 kv=0.2402 irradiance=1 Pmpp=24.931 pctPmpp=100 kVA=24.931 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
-New PVSystem.small_p1ulv18941_1_2_pv phases=1 bus1=p1ulv18941.1.2 kv=0.2402 irradiance=1 Pmpp=22.217 pctPmpp=100 kVA=22.217 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
-New PVSystem.small_p1ulv58566_1_2_pv phases=1 bus1=p1ulv58566.1.2 kv=0.2402 irradiance=1 Pmpp=21.015 pctPmpp=100 kVA=21.015 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
-New PVSystem.small_p1ulv35483_1_2_pv phases=1 bus1=p1ulv35483.1.2 kv=0.2402 irradiance=1 Pmpp=49.881 pctPmpp=100 kVA=49.881 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
-New PVSystem.small_p1ulv17002_1_2_pv phases=1 bus1=p1ulv17002.1.2 kv=0.2402 irradiance=1 Pmpp=70.805 pctPmpp=100 kVA=70.805 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
-New PVSystem.small_p1ulv65457_1_2_pv phases=1 bus1=p1ulv65457.1.2 kv=0.2402 irradiance=1 Pmpp=21.224 pctPmpp=100 kVA=21.224 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
-New PVSystem.small_p1ulv2538_1_2_pv phases=1 bus1=p1ulv2538.1.2 kv=0.2402 irradiance=1 Pmpp=23.059 pctPmpp=100 kVA=23.059 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
-New PVSystem.small_p1ulv32242_1_2_pv phases=1 bus1=p1ulv32242.1.2 kv=0.2402 irradiance=1 Pmpp=20.882 pctPmpp=100 kVA=20.882 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
-New PVSystem.small_p1ulv5055_1_2_pv phases=1 bus1=p1ulv5055.1.2 kv=0.2402 irradiance=1 Pmpp=36.944 pctPmpp=100 kVA=36.944 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
-New PVSystem.small_p1ulv12590_1_2_pv phases=1 bus1=p1ulv12590.1.2 kv=0.2402 irradiance=1 Pmpp=44.969 pctPmpp=100 kVA=44.969 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
-New PVSystem.small_p1ulv43670_1_2_pv phases=1 bus1=p1ulv43670.1.2 kv=0.2402 irradiance=1 Pmpp=12.892 pctPmpp=100 kVA=12.892 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
-New PVSystem.small_p1ulv9482_1_2_pv phases=1 bus1=p1ulv9482.1.2 kv=0.2402 irradiance=1 Pmpp=25.615 pctPmpp=100 kVA=25.615 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
-New PVSystem.small_p1ulv28507_1_2_pv phases=1 bus1=p1ulv28507.1.2 kv=0.2402 irradiance=1 Pmpp=2.879 pctPmpp=100 kVA=2.879 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
+New PVSystem.small_p1ulv22116_1_2_pv phases=1 bus1=p1ulv22116.1.2 kv=0.2402 irradiance=1 Pmpp=24.931 pctPmpp=100 kVA=24.931 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1565103_30.24_-97.47_2019
+New PVSystem.small_p1ulv18941_1_2_pv phases=1 bus1=p1ulv18941.1.2 kv=0.2402 irradiance=1 Pmpp=22.217 pctPmpp=100 kVA=22.217 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1555384_30.34_-97.59_2019
+New PVSystem.small_p1ulv58566_1_2_pv phases=1 bus1=p1ulv58566.1.2 kv=0.2402 irradiance=1 Pmpp=21.015 pctPmpp=100 kVA=21.015 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1566664_30.20_-97.45_2019
+New PVSystem.small_p1ulv35483_1_2_pv phases=1 bus1=p1ulv35483.1.2 kv=0.2402 irradiance=1 Pmpp=49.881 pctPmpp=100 kVA=49.881 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1505552_30.22_-98.19_2019
+New PVSystem.small_p1ulv17002_1_2_pv phases=1 bus1=p1ulv17002.1.2 kv=0.2402 irradiance=1 Pmpp=70.805 pctPmpp=100 kVA=70.805 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1560320_30.36_-97.53_2019
+New PVSystem.small_p1ulv65457_1_2_pv phases=1 bus1=p1ulv65457.1.2 kv=0.2402 irradiance=1 Pmpp=21.224 pctPmpp=100 kVA=21.224 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1515489_30.24_-98.07_2019
+New PVSystem.small_p1ulv2538_1_2_pv phases=1 bus1=p1ulv2538.1.2 kv=0.2402 irradiance=1 Pmpp=23.059 pctPmpp=100 kVA=23.059 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1552058_30.34_-97.63_2019
+New PVSystem.small_p1ulv32242_1_2_pv phases=1 bus1=p1ulv32242.1.2 kv=0.2402 irradiance=1 Pmpp=20.882 pctPmpp=100 kVA=20.882 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1540423_30.22_-97.77_2019
+New PVSystem.small_p1ulv5055_1_2_pv phases=1 bus1=p1ulv5055.1.2 kv=0.2402 irradiance=1 Pmpp=36.944 pctPmpp=100 kVA=36.944 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1561952_30.18_-97.51_2019
+New PVSystem.small_p1ulv12590_1_2_pv phases=1 bus1=p1ulv12590.1.2 kv=0.2402 irradiance=1 Pmpp=44.969 pctPmpp=100 kVA=44.969 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1565103_30.24_-97.47_2019
+New PVSystem.small_p1ulv43670_1_2_pv phases=1 bus1=p1ulv43670.1.2 kv=0.2402 irradiance=1 Pmpp=12.892 pctPmpp=100 kVA=12.892 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1538760_30.22_-97.79_2019
+New PVSystem.small_p1ulv9482_1_2_pv phases=1 bus1=p1ulv9482.1.2 kv=0.2402 irradiance=1 Pmpp=25.615 pctPmpp=100 kVA=25.615 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1572850_30.20_-97.37_2019
+New PVSystem.small_p1ulv28507_1_2_pv phases=1 bus1=p1ulv28507.1.2 kv=0.2402 irradiance=1 Pmpp=2.879 pctPmpp=100 kVA=2.879 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1545410_30.26_-97.71_2019

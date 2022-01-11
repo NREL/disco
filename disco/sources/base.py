@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 from disco.analysis import GENERIC_COST_DATABASE
-from disco.enums import AnalysisType, SimulationType, SimulationHierarchy
+from disco.enums import AnalysisModelType, SimulationType, SimulationHierarchy
 from disco.exceptions import AnalysisConfigurationException
 from disco.models.base import OpenDssDeploymentModel
 from disco.utils.dss_utils import comment_out_leading_strings
@@ -137,6 +137,11 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
         """Master file of OpenDSS model"""
 
     @property
+    @abstractmethod
+    def metadata_directory(self):
+        """The directory of project metadata"""
+
+    @property
     def project_data(self):
         """PyDSS controllers"""
         return {}
@@ -188,6 +193,12 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
                 src_dir=self.loadshape_directory,
                 dst_dir=workspace.loadshape_directory,
                 copy_load_shape_data_files=copy_load_shape_data_files,
+            )
+        
+        if self.metadata_directory is not None:
+            self._copy_files(
+                src_dir=self.metadata_directory,
+                dst_dir=workspace.metadata_directory
             )
 
     def create_base_case(self, name, outdir, copy_load_shape_data_files=False):
@@ -510,6 +521,7 @@ class OpenDssFeederWorkspace:
         os.makedirs(self.opendss_directory, exist_ok=True)
         os.makedirs(self.pv_deployments_directory, exist_ok=True)
         os.makedirs(self.profiles_directory, exist_ok=True)
+        os.makedirs(self.metadata_directory, exist_ok=True)
 
     @property
     def feeder_directory(self):
@@ -534,3 +546,7 @@ class OpenDssFeederWorkspace:
     @property
     def master_file(self):
         return os.path.join(self.opendss_directory, "Master.dss")
+
+    @property
+    def metadata_directory(self):
+        return os.path.join(self.feeder_directory, "Metadata")

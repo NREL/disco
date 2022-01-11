@@ -6,7 +6,8 @@ from jade.jobs.pipeline_manager import PipelineManager
 from jade.models import HpcConfig
 from jade.models.pipeline import PipelineStage
 from jade.utils.utils import dump_data, load_data
-from disco.pipelines.enums import TemplateSection, TemplateParams, AnalysisType
+from disco.pipelines.enums import TemplateSection, TemplateParams
+from disco.enums import AnalysisType
 
 logger = logging.getLogger(__name__)
 
@@ -46,15 +47,28 @@ class PipelineTemplate:
 
     def update_transform_params(self, data):
         section = TemplateSection.MODEL
-        self.data[section.value][TemplateParams.TRANSFORM_PARAMS.value].update(data)
+        _data = self._keep_null_value(data)
+        self.data[section.value][TemplateParams.TRANSFORM_PARAMS.value].update(_data)
 
     def update_config_params(self, data, section):
-        self.data[section.value][TemplateParams.CONFIG_PARAMS.value].update(data)
+        _data = self._keep_null_value(data)
+        self.data[section.value][TemplateParams.CONFIG_PARAMS.value].update(_data)
 
     def update_reports_params(self, data):
         if TemplateSection.REPORTS.value not in self.data:
             self.data[TemplateSection.REPORTS.value] = {}
-        self.data[TemplateSection.REPORTS.value].update(data)
+        _data = self._keep_null_value(data)
+        self.data[TemplateSection.REPORTS.value].update(_data)
+    
+    @staticmethod
+    def _keep_null_value(data):
+        _data = {}
+        for key, value in data.items():
+            if value is None:
+                _data[key] = "null"
+            else:
+                _data[key] = value
+        return _data
 
     def get_command_params(self, section, params_type):
         """Return command params in dict"""
@@ -214,6 +228,7 @@ class PipelineCreatorBase(ABC):
         text_file = self.get_prescreen_auto_config_text_file()
         with open(text_file, "w") as f:
             f.write(auto_config_command)
+            f.write("\n")
         return text_file
     
     def create_simulation_auto_config_text_file(self):
@@ -230,6 +245,7 @@ class PipelineCreatorBase(ABC):
         text_file = self.get_simulation_auto_config_text_file()
         with open(text_file, "w") as f:
             f.write(auto_config_command)
+            f.write("\n")
         return text_file
 
     def create_postprocess_auto_config_text_file(self):

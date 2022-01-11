@@ -41,9 +41,10 @@ def create_pv_configs(input_path: str, hierarchy: str, config: dict):
     """A method for generating pv config JSON files """
     hierarchy = DeploymentHierarchy(hierarchy)
     config = SimpleNamespace(**config)
-    if not config.placement:
-        print(f"'-p' or '--placement' should not be None for this action, choose from {PLACEMENT_CHOICE}")
-        sys.exit()
+    if config.placement:
+        config.placement = None
+        print(f"'-p' or '--placement' option is ignored for this action.")
+    
     manager = PVConfigManager(input_path, hierarchy, config)
     config_files = manager.generate_pv_configs()
     print(f"PV configs created! Total: {len(config_files)}")
@@ -120,10 +121,10 @@ def generate_pv_deployment_jobs(input_path: str, hierarchy: str, config: dict):
     config = SimpleNamespace(**config)
     
     manager = PVDeploymentManager(input_path, hierarchy, config)
-    create_pv_jobs_file = manager.generate_pv_creation_jobs()
+    manager.generate_pv_creation_jobs()
     
     manager = PVConfigManager(input_path, hierarchy, config)
-    create_config_jobs_file = manager.generate_pv_config_jobs()
+    manager.generate_pv_config_jobs()
 
 
 def restore_feeder_data(input_path: str, hierarchy: str, config: dict):

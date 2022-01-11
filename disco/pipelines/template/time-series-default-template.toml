@@ -39,6 +39,7 @@ node_shutdown_script = "null"
 config_file = "config.json"
 estimated_run_minutes = "null"
 skip_night = false
+exports_filename = "null"
 order_by_penetration = false
 verbose = false
 

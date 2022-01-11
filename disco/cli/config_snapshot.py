@@ -15,7 +15,7 @@ from jade.utils.utils import load_data
 from PyDSS.common import SnapshotTimePointSelectionMode
 from PyDSS.reports.pv_reports import PF1_SCENARIO, CONTROL_MODE_SCENARIO
 
-from disco.enums import SimulationType
+from disco.enums import SimulationType, AnalysisType
 from disco.extensions.pydss_simulation.pydss_configuration import PyDssConfiguration
 from disco.pydss.pydss_configuration_base import (
     get_default_exports_file,
@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 )
 @click.option(
     "-e", "--exports-filename",
-    default=get_default_exports_file(),
+    default=get_default_exports_file(SimulationType.SNAPSHOT, AnalysisType.IMPACT_ANALYSIS),
     show_default=True,
     help="PyDSS export options",
 )

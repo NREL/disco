@@ -21,7 +21,12 @@ from jade.loggers import log_event
 from jade.utils.utils import dump_data
 from jade.utils.timing_utils import timed_info
 
-from disco.common import EXIT_CODE_GOOD, EXIT_CODE_CONVERGENCE_ERROR
+from disco.common import (
+    EXIT_CODE_GOOD,
+    EXIT_CODE_CONVERGENCE_ERROR,
+    LOADS_SUM_GROUP_FILENAME,
+    PV_SYSTEMS_SUM_GROUP_FILENAME,
+)
 from disco.pydss.common import ConfigType
 from disco.events import EVENT_NO_CONVERGENCE
 from disco.models.base import PyDSSControllerModel
@@ -219,6 +224,16 @@ class PyDssSimulationBase(JobExecutionInterface, abc.ABC):
         pass
 
     def _make_pydss_exports(self, scenario):
+        for class_name, properties in scenario["exports"].items():
+            for vals in properties.values():
+                if vals.get("sum_groups_file") == "assign at runtime":
+                    if class_name == "Loads":
+                        filename = LOADS_SUM_GROUP_FILENAME
+                    elif class_name == "PVSystems":
+                        filename = PV_SYSTEMS_SUM_GROUP_FILENAME
+                    else:
+                        raise Exception(f"Not supported: {class_name}")
+                    vals["sum_groups_file"] = str(self._model.deployment.directory / "Metadata" / filename)
         filename = os.path.join(self._run_dir, self._EXPORTS_FILENAME)
         dump_data(scenario["exports"], filename)
         return filename

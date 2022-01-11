@@ -356,6 +356,7 @@ class SourceTree1Model(BaseOpenDssModel):
         self._opendss_directory = data.pop("opendss_directory")
         self._pv_locations = data.pop("pv_locations")
         self._pydss_controllers = data.pop("pydss_controllers")
+        self._metadata_directory = data.pop("metadata_directory", None)
         if data.pop("is_base_case"):
             self._name = self.make_feeder_base_case_name(
                 self._substation,
@@ -405,6 +406,10 @@ class SourceTree1Model(BaseOpenDssModel):
     @property
     def master_file(self):
         return os.path.join(self._opendss_directory, self._master_file)
+
+    @property
+    def metadata_directory(self):
+        return self._metadata_directory
 
     @property
     def name(self):
@@ -517,6 +522,7 @@ class SourceTree1Model(BaseOpenDssModel):
                         "opendss_directory": inputs.get_opendss_directory(
                             substation, feeder
                         ),
+                        "metadata_directory": inputs.get_metadata_directory(substation, feeder),
                         "pv_locations": [],
                         "pydss_controllers": None,
                         "is_base_case": True,
@@ -548,11 +554,11 @@ class SourceTree1Model(BaseOpenDssModel):
                         levels = inputs.list_penetration_levels(key, sample)
                     else:
                         levels = [int(x) for x in penetration_levels]
+                    pv_configs = inputs.list_pv_configs(
+                        substation, feeder, placement, sample
+                    )
                     for level in levels:
                         deployment_file = inputs.get_deployment_file(key, sample, level)
-                        pv_configs = inputs.list_pv_configs(
-                            substation, feeder, placement, sample
-                        )
                         pydss_controller, pv_profiles = get_pydss_controller_and_profiles(pv_configs)
                         data = {
                             "path": input_path,
@@ -567,6 +573,7 @@ class SourceTree1Model(BaseOpenDssModel):
                             "opendss_directory": inputs.get_opendss_directory(
                                 substation, feeder
                             ),
+                            "metadata_directory": inputs.get_metadata_directory(substation, feeder),
                             "pv_locations": [deployment_file],
                             "pydss_controllers": pydss_controller,
                             "is_base_case": False,

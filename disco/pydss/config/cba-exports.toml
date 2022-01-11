@@ -1,0 +1,14 @@
+[Circuits.TotalPower]
+store_values_type = "all"
+
+[Circuits.Losses]
+store_values_type = "all"
+
+[Loads.Powers]
+store_values_type = "all"
+sum_groups_file = "assign at runtime"
+
+[PVSystems.Powers]
+store_values_type = "all"
+sum_groups_file = "assign at runtime"
+

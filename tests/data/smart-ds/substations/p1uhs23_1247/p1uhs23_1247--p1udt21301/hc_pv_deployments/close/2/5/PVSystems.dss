@@ -1,7 +1,7 @@
 // PV Scenario for 125.77116204387836 kW total size, Scenario type close, Sample 2 and penetration 5% (PV to load ratio) 
 ! =====================PV SCENARIO FILE==============================
-New PVSystem.small_p1ulv22116_1_2_pv phases=1 bus1=p1ulv22116.1.2 kv=0.2402 irradiance=1 Pmpp=24.931 pctPmpp=100 kVA=24.931 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
-New PVSystem.small_p1ulv18941_1_2_pv phases=1 bus1=p1ulv18941.1.2 kv=0.2402 irradiance=1 Pmpp=22.217 pctPmpp=100 kVA=22.217 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
-New PVSystem.small_p1ulv58566_1_2_pv phases=1 bus1=p1ulv58566.1.2 kv=0.2402 irradiance=1 Pmpp=21.015 pctPmpp=100 kVA=21.015 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
-New PVSystem.small_p1ulv35483_1_2_pv phases=1 bus1=p1ulv35483.1.2 kv=0.2402 irradiance=1 Pmpp=49.881 pctPmpp=100 kVA=49.881 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
-New PVSystem.small_p1ulv17002_1_2_pv phases=1 bus1=p1ulv17002.1.2 kv=0.2402 irradiance=1 Pmpp=7.727 pctPmpp=100 kVA=7.727 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
+New PVSystem.small_p1ulv22116_1_2_pv phases=1 bus1=p1ulv22116.1.2 kv=0.2402 irradiance=1 Pmpp=24.931 pctPmpp=100 kVA=24.931 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1565103_30.24_-97.47_2019
+New PVSystem.small_p1ulv18941_1_2_pv phases=1 bus1=p1ulv18941.1.2 kv=0.2402 irradiance=1 Pmpp=22.217 pctPmpp=100 kVA=22.217 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1555384_30.34_-97.59_2019
+New PVSystem.small_p1ulv58566_1_2_pv phases=1 bus1=p1ulv58566.1.2 kv=0.2402 irradiance=1 Pmpp=21.015 pctPmpp=100 kVA=21.015 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1566664_30.20_-97.45_2019
+New PVSystem.small_p1ulv35483_1_2_pv phases=1 bus1=p1ulv35483.1.2 kv=0.2402 irradiance=1 Pmpp=49.881 pctPmpp=100 kVA=49.881 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1505552_30.22_-98.19_2019
+New PVSystem.small_p1ulv17002_1_2_pv phases=1 bus1=p1ulv17002.1.2 kv=0.2402 irradiance=1 Pmpp=7.727 pctPmpp=100 kVA=7.727 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1560320_30.36_-97.53_2019

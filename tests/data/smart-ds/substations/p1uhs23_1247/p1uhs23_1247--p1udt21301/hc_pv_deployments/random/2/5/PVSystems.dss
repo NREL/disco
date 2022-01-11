@@ -1,7 +1,7 @@
 // PV Scenario for 125.77116204387836 kW total size, Scenario type random, Sample 2 and penetration 5% (PV to load ratio) 
 ! =====================PV SCENARIO FILE==============================
-New PVSystem.small_p1ulv10719_1_2_pv phases=1 bus1=p1ulv10719.1.2 kv=0.2402 irradiance=1 Pmpp=25.307 pctPmpp=100 kVA=25.307 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
-New PVSystem.small_p1ulv42994_1_2_pv phases=1 bus1=p1ulv42994.1.2 kv=0.2402 irradiance=1 Pmpp=31.574 pctPmpp=100 kVA=31.574 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
-New PVSystem.small_p1ulv46851_1_2_pv phases=1 bus1=p1ulv46851.1.2 kv=0.2402 irradiance=1 Pmpp=44.833 pctPmpp=100 kVA=44.833 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
-New PVSystem.small_p1ulv43666_1_2_pv phases=1 bus1=p1ulv43666.1.2 kv=0.2402 irradiance=1 Pmpp=18.465 pctPmpp=100 kVA=18.465 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
-New PVSystem.small_p1ulv3843_1_2_pv phases=1 bus1=p1ulv3843.1.2 kv=0.2402 irradiance=1 Pmpp=5.592 pctPmpp=100 kVA=5.592 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
+New PVSystem.small_p1ulv10719_1_2_pv phases=1 bus1=p1ulv10719.1.2 kv=0.2402 irradiance=1 Pmpp=25.307 pctPmpp=100 kVA=25.307 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1565103_30.24_-97.47_2019
+New PVSystem.small_p1ulv42994_1_2_pv phases=1 bus1=p1ulv42994.1.2 kv=0.2402 irradiance=1 Pmpp=31.574 pctPmpp=100 kVA=31.574 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1555384_30.34_-97.59_2019
+New PVSystem.small_p1ulv46851_1_2_pv phases=1 bus1=p1ulv46851.1.2 kv=0.2402 irradiance=1 Pmpp=44.833 pctPmpp=100 kVA=44.833 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1566664_30.20_-97.45_2019
+New PVSystem.small_p1ulv43666_1_2_pv phases=1 bus1=p1ulv43666.1.2 kv=0.2402 irradiance=1 Pmpp=18.465 pctPmpp=100 kVA=18.465 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1505552_30.22_-98.19_2019
+New PVSystem.small_p1ulv3843_1_2_pv phases=1 bus1=p1ulv3843.1.2 kv=0.2402 irradiance=1 Pmpp=5.592 pctPmpp=100 kVA=5.592 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1560320_30.36_-97.53_2019

@@ -260,6 +260,7 @@ class SourceTree2Model(BaseOpenDssModel):
         self._loadshape_directory = data.pop("loadshape_directory")
         self._opendss_directory = data.pop("opendss_directory")
         self._pv_locations = data.pop("pv_locations")
+        self._metadata_directory = data.pop("metadata_directory", None)
         if data.pop("is_base_case"):
             self._name = self.make_base_case_name(self._feeder, self._dcac)
         else:
@@ -297,6 +298,10 @@ class SourceTree2Model(BaseOpenDssModel):
     @property
     def master_file(self):
         return os.path.join(self._opendss_directory, self._master)
+
+    @property
+    def metadata_directory(self):
+        return self._metadata_directory
 
     @property
     def name(self):

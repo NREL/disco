@@ -6,7 +6,8 @@
         "controller_type": "PvController",
         "name": "volt-var"
       },
-      "pv_profile": "1560322_30.32_-97.53_2019"
+      "pv_profile": "1571313_30.20_-97.39_2019",
+      "customer_type": "residential"
     },
     {
       "name": "small_p1ulv57596_1_2_3_pv",
@@ -14,143 +15,8 @@
         "controller_type": "PvController",
         "name": "volt-var"
       },
-      "pv_profile": "1555382_30.38_-97.59_2019"
-    },
-    {
-      "name": "small_p1ulv61813_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1574387_30.20_-97.35_2019"
-    },
-    {
-      "name": "small_p1ulv57547_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1505551_30.24_-98.19_2019"
-    },
-    {
-      "name": "small_p1ulv4595_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1512173_30.28_-98.11_2019"
-    },
-    {
-      "name": "small_p1ulv29261_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1569767_30.22_-97.41_2019"
-    },
-    {
-      "name": "small_p1ulv17169_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1557037_30.42_-97.57_2019"
-    },
-    {
-      "name": "small_p1ulv15856_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1518806_30.26_-98.03_2019"
-    },
-    {
-      "name": "small_p1ulv10887_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1550397_30.30_-97.65_2019"
-    },
-    {
-      "name": "small_p1ulv64358_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1560328_30.20_-97.53_2019"
-    },
-    {
-      "name": "small_p1ulv24237_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1547072_30.28_-97.69_2019"
-    },
-    {
-      "name": "small_p1ulv21045_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1561951_30.20_-97.51_2019"
-    },
-    {
-      "name": "small_p1ulv5951_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1513831_30.26_-98.09_2019"
-    },
-    {
-      "name": "small_p1ulv45758_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1569771_30.14_-97.41_2019"
-    },
-    {
-      "name": "small_p1ulv59420_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1561952_30.18_-97.51_2019"
-    },
-    {
-      "name": "small_p1ulv37000_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1557036_30.44_-97.57_2019"
-    },
-    {
-      "name": "small_p1ulv12765_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1537097_30.22_-97.81_2019"
-    },
-    {
-      "name": "small_p1ulv19767_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "volt-var"
-      },
-      "pv_profile": "1553716_30.44_-97.61_2019"
-    },
-    {
-      "name": "small_p1ulv12152_1_2_pv",
-      "pydss_controller": {
-        "controller_type": "PvController",
-        "name": "pf1"
-      },
-      "pv_profile": "1545412_30.22_-97.71_2019"
+      "pv_profile": "1537094_30.28_-97.81_2019",
+      "customer_type": "commercial"
     }
   ]
 }

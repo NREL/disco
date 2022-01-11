@@ -5,7 +5,8 @@ from PyDSS.common import SnapshotTimePointSelectionMode
 from PyDSS.reports.pv_reports import PF1_SCENARIO, CONTROL_MODE_SCENARIO
 
 import disco
-from disco.pipelines.enums import AnalysisType, TemplateSection
+from disco.enums import SimulationType, AnalysisType
+from disco.pipelines.enums import TemplateSection
 from disco.pipelines.base import PipelineCreatorBase
 from disco.pydss.common import TIME_SERIES_SCENARIOS
 from disco.pydss.pydss_configuration_base import get_default_exports_file
@@ -13,9 +14,6 @@ from jade.models.pipeline import PipelineConfig
 from jade.utils.utils import dump_data
 
 logger = logging.getLogger(__name__)
-
-
-EXPORTS_FILENAME = get_default_exports_file()
 
 
 class SnapshotPipelineCreator(PipelineCreatorBase):
@@ -45,9 +43,13 @@ class SnapshotPipelineCreator(PipelineCreatorBase):
         options = self.template.get_config_options(section)
         reports_filename = "generated_snapshot_reports.toml"
         dump_data(self.template.reports, reports_filename)
+        exports_filename = get_default_exports_file(
+            SimulationType.SNAPSHOT,
+            AnalysisType(self.template.analysis_type),
+        )
         command = (
             f"disco config snapshot {model_inputs} "
-            f"--reports-filename={reports_filename} --exports-filename={EXPORTS_FILENAME} {options}"
+            f"--reports-filename={reports_filename} --exports-filename={exports_filename} {options}"
         )
         return command
 
@@ -59,7 +61,7 @@ class SnapshotPipelineCreator(PipelineCreatorBase):
 
     def make_postprocess_command(self):
         commands = []
-        impact_analysis = self.template.analysis_type == AnalysisType.IMAPCT_ANALYSIS.value
+        impact_analysis = self.template.analysis_type == AnalysisType.IMPACT_ANALYSIS.value
         hosting_capacity = self.template.analysis_type == AnalysisType.HOSTING_CAPACITY.value
         if impact_analysis or hosting_capacity:
             inputs = os.path.join("$JADE_PIPELINE_OUTPUT_DIR", f"output-stage{self.stage_num-1}")
@@ -122,6 +124,11 @@ class TimeSeriesPipelineCreator(PipelineCreatorBase):
             f"disco config time-series {model_inputs} "
             f"--reports-filename={reports_filename} {options}"
         )
+        if self.template.analysis_type == AnalysisType.COST_BENEFIT.value:
+            # These must not be user-configurable and don't go in the template.
+            command += " --feeder-losses=false --thermal-metrics=false --voltage-metrics=false" \
+                       " --export-data-tables"
+
         logger.info("Make command - '%s'", command)
         return command
 
@@ -152,7 +159,7 @@ class TimeSeriesPipelineCreator(PipelineCreatorBase):
 
     def make_postprocess_command(self):
         command = ""
-        impact_analysis = self.template.analysis_type == AnalysisType.IMAPCT_ANALYSIS.value
+        impact_analysis = self.template.analysis_type == AnalysisType.IMPACT_ANALYSIS.value
         hosting_capacity = self.template.analysis_type == AnalysisType.HOSTING_CAPACITY.value
         if impact_analysis or hosting_capacity:
             inputs = os.path.join("$JADE_PIPELINE_OUTPUT_DIR", f"output-stage{self.stage_num-1}")
@@ -160,4 +167,7 @@ class TimeSeriesPipelineCreator(PipelineCreatorBase):
             if hosting_capacity:
                 for scenario in TIME_SERIES_SCENARIOS:
                     command += f"\ndisco-internal compute-hosting-capacity {inputs} --scenario={scenario}"
+        elif self.template.analysis_type == AnalysisType.COST_BENEFIT.value:
+            inputs = os.path.join("$JADE_PIPELINE_OUTPUT_DIR", f"output-stage{self.stage_num-1}")
+            command += f"disco-internal make-cba-tables {inputs}"
         return command

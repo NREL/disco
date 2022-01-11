@@ -33,6 +33,8 @@ FEEDER_LOSSES_TABLE = "feeder_losses_table.csv"
 METADATA_TABLE = "metadata_table.csv"
 THERMAL_METRICS_TABLE = "thermal_metrics_table.csv"
 VOLTAGE_METRICS_TABLE = "voltage_metrics_table.csv"
+CAPACITOR_TABLE = "capacitor_table.csv"
+REG_CONTROL_TABLE = "reg_control_tap_value_change_table.csv"
 
 SNAPSHOT_REPORTS_FILE = "generated_snapshot_reports.toml"
 TIME_SERIES_REPORTS_FILE = "generated_time_series_reports.toml"
@@ -107,7 +109,6 @@ def test_source_tree_1_create_snapshot_pipeline_template(smart_ds_substations, c
 
     assert data["inputs"] == smart_ds_substations
     assert data["simulation_type"] == "snapshot"
-    assert "analysis_type" not in data
 
     assert "transform-params" in data["model"]
     assert "config-params" in data["simulation"]
@@ -243,7 +244,6 @@ def test_source_tree_1_create_time_series_pipeline_template(smart_ds_substations
 
     assert data["inputs"] == smart_ds_substations
     assert data["simulation_type"] == "time-series"
-    assert "analysis_type" not in data
 
     assert "transform-params" in data["model"]
     assert "config-params" in data["simulation"]
@@ -297,7 +297,6 @@ def test_source_tree_1_create_time_series_pipeline_template__prescreen(smart_ds_
 
     assert data["inputs"] == smart_ds_substations
     assert data["simulation_type"] == "time-series"
-    assert "analysis_type" not in data
 
     assert "transform-params" in data["model"]
 
@@ -543,3 +542,31 @@ def test_source_tree_1_time_series_pipeline_submit__prescreen__impact_analysis(s
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage2", METADATA_TABLE))
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage2", THERMAL_METRICS_TABLE))
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage2", VOLTAGE_METRICS_TABLE))
+
+
+def test_source_tree_1_time_series_pipeline_submit__cost_benefit(smart_ds_substations, cleanup):
+    cmd1 = (
+        f"disco create-pipeline template {smart_ds_substations} -s time-series "
+        f"--cost-benefit -t {TEST_TEMPLATE_FILE}"
+    )
+    ret = run_command(cmd1)
+    assert ret == 0
+    ret = run_command(CONFIG_HPC_COMMAND)
+    assert ret == 0
+    data = load_data(TEST_TEMPLATE_FILE)
+    data["simulation"]["submitter-params"]["hpc_config"] = TEST_HPC_CONFIG_FILE
+    data["postprocess"]["submitter-params"]["hpc_config"] = TEST_HPC_CONFIG_FILE
+    dump_data(data, TEST_TEMPLATE_FILE)
+    ret = run_command(MAKE_PIPELINE_CONFIG_COMMAND)
+
+    cmd2 = f"jade pipeline submit {TEST_PIPELINE_CONFIG_FILE} -o {TEST_PIPELINE_OUTPUT}"
+    ret = run_command(cmd2)
+    assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "time-series-models"))
+    assert ret == 0
+
+    assert os.path.exists(TEST_PIPELINE_OUTPUT)
+    assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1"))
+    assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage2"))
+
+    assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", CAPACITOR_TABLE))
+    assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", REG_CONTROL_TABLE))

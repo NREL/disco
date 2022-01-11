@@ -1,14 +1,14 @@
 
 from jade.exceptions import InvalidParameter
-from disco.enums import AnalysisType
+from disco.enums import AnalysisModelType
 from disco.models.snapshot_impact_analysis_model import SnapshotImpactAnalysisModel
 from disco.models.time_series_analysis_model import TimeSeriesAnalysisModel
 from disco.models.upgrade_cost_analysis_model import UpgradeCostAnalysisModel
 
 _MAPPING = {
-    AnalysisType.SnapshotImpactAnalysis: SnapshotImpactAnalysisModel,
-    AnalysisType.TimeSeriesImpactAnalysis: TimeSeriesAnalysisModel,
-    AnalysisType.UpgradeCostAnalysis: UpgradeCostAnalysisModel
+    AnalysisModelType.SnapshotImpactAnalysis: SnapshotImpactAnalysisModel,
+    AnalysisModelType.TimeSeriesImpactAnalysis: TimeSeriesAnalysisModel,
+    AnalysisModelType.UpgradeCostAnalysis: UpgradeCostAnalysisModel
 }
 
 _MAPPING_BY_NAME = {
@@ -23,7 +23,7 @@ def get_model_class_by_analysis_type(analysis_type):
 
     Parameters
     ----------
-    analysis_type : AnalysisType
+    analysis_type : AnalysisModelType
 
     Returns
     -------

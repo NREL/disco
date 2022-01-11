@@ -185,15 +185,20 @@ The examples below show commands for creating, checking or removing PV config fi
 
 .. code-block:: bash
 
-    $ disco pv-deployments source-tree-1 -a create-configs -h feeder -p random <feeder1_path>
+    $ disco pv-deployments source-tree-1 -a create-configs -h feeder <feeder1_path>
 
 
 2. Create PV configs on substation1 with a few feeders.
 
 .. code-block:: bash
 
-    $ disco pv-deployments source-tree-1 -a create-configs -h substation -p random <substation1_path>
+    $ disco pv-deployments source-tree-1 -a create-configs -h substation <substation1_path>
 
+.. warning::
+
+    The option ``-p`` or ``--placement`` does not apply to ``create-configs`` action, as after all 
+    pv configs created in each feeder, a sum group file based on customer types would be created
+    based on the pv configs of the feeder.
 
 3. Create PV configs on region1 with many feeders in parallel by using JADE.
 

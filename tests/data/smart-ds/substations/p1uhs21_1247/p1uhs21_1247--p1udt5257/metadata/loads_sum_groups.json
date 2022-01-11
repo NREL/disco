@@ -1,0 +1,43 @@
+{
+  "sum_groups": [
+    {
+      "name": "residential",
+      "elements": [
+        "load_p1ulv59420",
+        "load_p1ulv29904",
+        "load_p1ulv29261",
+        "load_p1ulv21045",
+        "load_p1ulv12152",
+        "load_p1ulv5237",
+        "load_p1ulv62436",
+        "load_p1ulv10887",
+        "load_p1ulv24237",
+        "load_p1ulv64358",
+        "load_p1ulv44471",
+        "load_p1ulv63094",
+        "load_p1ulv37000",
+        "load_p1ulv17169",
+        "load_p1ulv12765",
+        "load_p1ulv53232",
+        "load_p1ulv36321",
+        "load_p1ulv61814",
+        "load_p1ulv19767",
+        "load_p1ulv15856",
+        "load_p1ulv45758",
+        "load_p1ulv61813",
+        "load_p1ulv31790",
+        "load_p1ulv2723",
+        "load_p1ulv64357",
+        "load_p1ulv57547"
+      ]
+    },
+    {
+      "name": "commercial",
+      "elements": [
+        "load_p1ulv4595",
+        "load_p1ulv5951",
+        "load_p1ulv57596"
+      ]
+    }
+  ]
+}

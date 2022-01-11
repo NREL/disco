@@ -9,7 +9,7 @@ from jade.jobs.job_post_process import JobPostProcess
 from jade.loggers import setup_logging
 from jade.utils.custom_click_options import CustomOptions
 from jade.utils.utils import load_data
-from disco.enums import ANALYSIS_TYPES
+from disco.enums import ANALYSIS_MODEL_TYPES
 from disco.analysis import load_custom_overrides
 from disco.analysis.configure import create_analysis_config
 
@@ -18,7 +18,7 @@ from disco.analysis.configure import create_analysis_config
     "-t", "--analysis-type",
     cls=CustomOptions,
     required=True,
-    allowed_values=ANALYSIS_TYPES,
+    allowed_values=ANALYSIS_MODEL_TYPES,
     not_required_if='config_file',
     help="Analysis type"
 )

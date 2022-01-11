@@ -10,7 +10,7 @@ from PyDSS.registry import Registry
 
 import disco
 from disco.distribution.distribution_configuration import DistributionConfiguration
-from disco.enums import get_enum_from_value, SimulationType
+from disco.enums import AnalysisType, get_enum_from_value, SimulationType
 from disco.pydss.common import ConfigType
 
 
@@ -19,11 +19,6 @@ logger = logging.getLogger(__name__)
 DEFAULT_CONTROLLER_CONFIG_FILE = os.path.join(
     os.path.dirname(getattr(disco, "__path__")[0]), "disco", "pydss",
     "config", "pv_controllers.toml"
-)
-
-DEFAULT_EXPORTS_FILE = os.path.join(
-    os.path.dirname(getattr(disco, "__path__")[0]), "disco", "pydss",
-    "config", "Exports.toml"
 )
 
 DEFAULT_CONTROLLER_CONFIGS = [
@@ -71,15 +66,36 @@ DEFAULT_PYDSS_CONFIG = {
 }
 
 
-def get_default_exports_file():
-    """Return the default exports file.
+def get_default_exports_file(simulation_type: SimulationType, analysis_type: AnalysisType):
+    """Return the default exports file
+
+    Parameters
+    ----------
+    simulation_type: SimulationType
+    analysis_type: AnalysisType
 
     Returns
     -------
     str
 
     """
-    return DEFAULT_EXPORTS_FILE
+    if simulation_type == SimulationType.SNAPSHOT:
+        filename = "snapshot-exports.toml"
+    elif simulation_type in (SimulationType.QSTS, SimulationType.TIME_SERIES):
+        if analysis_type == AnalysisType.COST_BENEFIT:
+            filename = "cba-exports.toml"
+        else:
+            filename = "exports.toml"
+    else:
+        assert False, f"Exports for {simulation_type} is not supported."
+
+    return os.path.join(
+        os.path.dirname(getattr(disco, "__path__")[0]),
+        "disco",
+        "pydss",
+        "config",
+        filename
+    )
 
 
 def get_default_reports_file(simulation_type: SimulationType):

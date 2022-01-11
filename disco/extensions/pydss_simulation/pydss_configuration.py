@@ -14,7 +14,6 @@ from disco.pydss.pydss_configuration_base import PyDssConfigurationBase
 from disco.pydss.common import ConfigType
 from disco.extensions.pydss_simulation.pydss_inputs import PyDssInputs
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -112,6 +111,7 @@ class PyDssConfiguration(PyDssConfigurationBase):
 
         if order_by_penetration:
             config.apply_job_order_by_penetration_level()
+        
         return config
 
     def apply_job_order_by_penetration_level(self):
