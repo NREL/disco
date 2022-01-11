@@ -178,6 +178,8 @@ def template(
         config_params["auto_select_time_points_search_duration_days"] = \
             auto_select_time_points_search_duration_days
     
+        template.update_config_params(config_params, TemplateSection.SIMULATION)
+
     # time-series special cases
     if simulation_type == SimulationType.TIME_SERIES:
         if prescreen:
@@ -189,9 +191,8 @@ def template(
             if config_params["exports_filename"] is None:
                 exports_filename = get_default_exports_file(SimulationType.TIME_SERIES)
                 config_params["exports_filename"] = exports_filename
+                template.update_config_params(config_params, TemplateSection.SIMULATION)
     
-    template.update_config_params(config_params, TemplateSection.SIMULATION)
-
     if reports_filename is None:
         reports_filename = get_default_reports_file(simulation_type)
     template.update_reports_params(load_data(reports_filename))
