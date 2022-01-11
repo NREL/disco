@@ -12,7 +12,7 @@ from jade.utils.utils import dump_data, load_data
 
 from disco.enums import SimulationType
 from disco.pipelines.base import TemplateSection, TemplateParams, PipelineTemplate
-from disco.pipelines.enums import AnalysisType
+from disco.enums import AnalysisType
 from disco.pipelines.factory import PipelineCreatorFactory
 from disco.pipelines.utils import get_default_pipeline_template, check_hpc_config
 from disco.pydss.pydss_configuration_base import get_default_reports_file, get_default_exports_file
@@ -189,7 +189,10 @@ def template(
         
         if cost_benefit:
             if config_params["exports_filename"] is None:
-                exports_filename = get_default_exports_file(SimulationType.TIME_SERIES)
+                exports_filename = get_default_exports_file(
+                    SimulationType.TIME_SERIES,
+                    AnalysisType.COST_BENEFIT,
+                )
                 config_params["exports_filename"] = exports_filename
                 template.update_config_params(config_params, TemplateSection.SIMULATION)
     
@@ -201,9 +204,10 @@ def template(
         template.data["analysis_type"] = AnalysisType.IMAPCT_ANALYSIS.value
     elif hosting_capacity:
         template.data["analysis_type"] = AnalysisType.HOSTING_CAPACITY.value
-    elif cost_benefit and simulation_type == SimulationType.TIME_SERIES:
+    elif cost_benefit:
         template.data["analysis_type"] = AnalysisType.COST_BENEFIT.value
     else:
+        template.data["analysis_type"] = AnalysisType.NONE.value
         template.remove_section(TemplateSection.POSTPROCESS)
     
     if enable_singularity:

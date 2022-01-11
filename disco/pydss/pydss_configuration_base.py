@@ -10,7 +10,7 @@ from PyDSS.registry import Registry
 
 import disco
 from disco.distribution.distribution_configuration import DistributionConfiguration
-from disco.enums import get_enum_from_value, SimulationType
+from disco.enums import AnalysisType, get_enum_from_value, SimulationType
 from disco.pydss.common import ConfigType
 
 
@@ -66,12 +66,13 @@ DEFAULT_PYDSS_CONFIG = {
 }
 
 
-def get_default_exports_file(simulation_type: SimulationType):
+def get_default_exports_file(simulation_type: SimulationType, analysis_type: AnalysisType):
     """Return the default exports file
 
     Parameters
     ----------
     simulation_type: SimulationType
+    analysis_type: AnalysisType
 
     Returns
     -------
@@ -81,7 +82,10 @@ def get_default_exports_file(simulation_type: SimulationType):
     if simulation_type == SimulationType.SNAPSHOT:
         filename = "snapshot-exports.toml"
     elif simulation_type in (SimulationType.QSTS, SimulationType.TIME_SERIES):
-        filename = "cba-exports.toml"
+        if analysis_type == AnalysisType.COST_BENEFIT:
+            filename = "cba-exports.toml"
+        else:
+            filename = "exports.toml"
     else:
         assert False, f"Exports for {simulation_type} is not supported."
 

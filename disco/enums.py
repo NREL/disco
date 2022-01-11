@@ -105,17 +105,28 @@ class SimulationType(enum.Enum):
     UPGRADE = "upgrade"
 
 
-class AnalysisType(enum.Enum):
-    """Enum the possible analysis types in disco."""
+class AnalysisModelType(enum.Enum):
+    """Represents the type of model used for each analysis type."""
+    # ImpactAnalysis is improperly used here. Leaving for backwards compatibility.
+    # The same data model is used for time-series impact analysis and hosting capacity analysis.
     SnapshotImpactAnalysis = "SnapshotImpactAnalysis"
     TimeSeriesImpactAnalysis = "TimeSeriesImpactAnalysis"
     UpgradeCostAnalysis = "UpgradeCostAnalysis"
 
-ANALYSIS_TYPES = [t.value for t in AnalysisType]
+
+class AnalysisType(enum.Enum):
+    """DISCO user analysis types"""
+    IMAPCT_ANALYSIS = "impact-analysis"
+    HOSTING_CAPACITY = "hosting-capacity"
+    COST_BENEFIT = "cost-benefit"
+    NONE = "none"
+
+
+ANALYSIS_MODEL_TYPES = [t.value for t in AnalysisModelType]
 
 
 PUBLIC_ENUMS = {
-    "AnalysisType": AnalysisType,
+    "AnalysisModelType": AnalysisModelType,
     "Mode": Mode,
     "Placement": Placement,
     "Scale": Scale,

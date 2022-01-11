@@ -107,7 +107,6 @@ def test_source_tree_1_create_snapshot_pipeline_template(smart_ds_substations, c
 
     assert data["inputs"] == smart_ds_substations
     assert data["simulation_type"] == "snapshot"
-    assert "analysis_type" not in data
 
     assert "transform-params" in data["model"]
     assert "config-params" in data["simulation"]
@@ -243,7 +242,6 @@ def test_source_tree_1_create_time_series_pipeline_template(smart_ds_substations
 
     assert data["inputs"] == smart_ds_substations
     assert data["simulation_type"] == "time-series"
-    assert "analysis_type" not in data
 
     assert "transform-params" in data["model"]
     assert "config-params" in data["simulation"]
@@ -297,7 +295,6 @@ def test_source_tree_1_create_time_series_pipeline_template__prescreen(smart_ds_
 
     assert data["inputs"] == smart_ds_substations
     assert data["simulation_type"] == "time-series"
-    assert "analysis_type" not in data
 
     assert "transform-params" in data["model"]
 

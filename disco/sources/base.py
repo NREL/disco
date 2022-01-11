@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 from disco.analysis import GENERIC_COST_DATABASE
-from disco.enums import AnalysisType, SimulationType, SimulationHierarchy
+from disco.enums import AnalysisModelType, SimulationType, SimulationHierarchy
 from disco.exceptions import AnalysisConfigurationException
 from disco.models.base import OpenDssDeploymentModel
 from disco.utils.dss_utils import comment_out_leading_strings

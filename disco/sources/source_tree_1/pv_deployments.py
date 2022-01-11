@@ -21,6 +21,7 @@ from unidecode import unidecode
 
 from jade.utils.run_command import check_run_command
 from jade.utils.utils import load_data, dump_data
+from disco.common import LOADS_SUM_GROUP_FILENAME, PV_SYSTEMS_SUM_GROUP_FILENAME
 from disco.enums import Placement
 
 logger = logging.getLogger(__name__)
@@ -30,8 +31,6 @@ PV_SYSTEMS_FILENAME = "PVSystems.dss"
 PV_SHAPES_FILENAME = "PVShapes.dss"
 PV_CONFIG_FILENAME = "pv_config.json"
 PV_INSTALLATION_TOLERANCE = 1.0e-10
-PV_SYSTEMS_SUM_GROUP_FILENAME = "pv_systems_sum_groups.json"
-LOADS_SUM_GROUP_FILENAME = "loads_sum_groups.json"
 
 LOADS_FILENAME = "Loads.dss"
 ORIGINAL_LOADS_FILENAME = "Original_Loads.dss"
@@ -434,7 +433,7 @@ class PVScenarioGeneratorBase(abc.ABC):
         return metadata_directory
 
     def get_pv_deployments_path(self):
-        """Return the root path of PV depployments"""
+        """Return the root path of PV deployments"""
         return os.path.join(self.feeder_path, self.config.pv_deployments_dirname)
 
     def get_deployment_placement_paths(self) -> str:

@@ -1,13 +1,6 @@
 import enum
 
 
-class AnalysisType(enum.Enum):
-    """DISCO analysis types"""
-    IMAPCT_ANALYSIS = "impact-analysis"
-    HOSTING_CAPACITY = "hosting-capacity"
-    COST_BENEFIT = "cost-benefit"
-
-
 class TemplateSection(enum.Enum):
     PRESCREEN = "prescreen"
     SIMULATION = "simulation"

@@ -5,8 +5,8 @@ from PyDSS.common import SnapshotTimePointSelectionMode
 from PyDSS.reports.pv_reports import PF1_SCENARIO, CONTROL_MODE_SCENARIO
 
 import disco
-from disco.enums import SimulationType
-from disco.pipelines.enums import AnalysisType, TemplateSection
+from disco.enums import SimulationType, AnalysisType
+from disco.pipelines.enums import TemplateSection
 from disco.pipelines.base import PipelineCreatorBase
 from disco.pydss.common import TIME_SERIES_SCENARIOS
 from disco.pydss.pydss_configuration_base import get_default_exports_file
@@ -43,7 +43,10 @@ class SnapshotPipelineCreator(PipelineCreatorBase):
         options = self.template.get_config_options(section)
         reports_filename = "generated_snapshot_reports.toml"
         dump_data(self.template.reports, reports_filename)
-        exports_filename = get_default_exports_file(SimulationType.SNAPSHOT)
+        exports_filename = get_default_exports_file(
+            SimulationType.SNAPSHOT,
+            AnalysisType(self.template.analysis_type),
+        )
         command = (
             f"disco config snapshot {model_inputs} "
             f"--reports-filename={reports_filename} --exports-filename={exports_filename} {options}"
@@ -121,6 +124,10 @@ class TimeSeriesPipelineCreator(PipelineCreatorBase):
             f"disco config time-series {model_inputs} "
             f"--reports-filename={reports_filename} {options}"
         )
+        if self.template.analysis_type == AnalysisType.COST_BENEFIT.value:
+            # These must not be user-configurable and don't go in the template.
+            command += " --feeder-losses=false --thermal-metrics=false --voltage-metrics=false"
+
         logger.info("Make command - '%s'", command)
         return command
 

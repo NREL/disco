@@ -6,7 +6,8 @@ from jade.jobs.pipeline_manager import PipelineManager
 from jade.models import HpcConfig
 from jade.models.pipeline import PipelineStage
 from jade.utils.utils import dump_data, load_data
-from disco.pipelines.enums import TemplateSection, TemplateParams, AnalysisType
+from disco.pipelines.enums import TemplateSection, TemplateParams
+from disco.enums import AnalysisType
 
 logger = logging.getLogger(__name__)
 
@@ -227,6 +228,7 @@ class PipelineCreatorBase(ABC):
         text_file = self.get_prescreen_auto_config_text_file()
         with open(text_file, "w") as f:
             f.write(auto_config_command)
+            f.write("\n")
         return text_file
     
     def create_simulation_auto_config_text_file(self):
@@ -243,6 +245,7 @@ class PipelineCreatorBase(ABC):
         text_file = self.get_simulation_auto_config_text_file()
         with open(text_file, "w") as f:
             f.write(auto_config_command)
+            f.write("\n")
         return text_file
 
     def create_postprocess_auto_config_text_file(self):
