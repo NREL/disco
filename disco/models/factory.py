@@ -9,13 +9,11 @@ _MAPPING = {
     AnalysisModelType.SnapshotImpactAnalysis: SnapshotImpactAnalysisModel,
     AnalysisModelType.TimeSeriesImpactAnalysis: TimeSeriesAnalysisModel,
     AnalysisModelType.UpgradeCostAnalysis: UpgradeCostAnalysisModel
-
 }
 
 _MAPPING_BY_NAME = {
     "SnapshotImpactAnalysisModel": SnapshotImpactAnalysisModel,
-    "TimeSeriesAnalysisModel": TimeSeriesAnalysisModel,
-    "UpgradeCostAnalysisModel": UpgradeCostAnalysisModel
+    "TimeSeriesAnalysisModel": TimeSeriesAnalysisModel
 }
 
 
