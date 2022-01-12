@@ -102,7 +102,6 @@ class SimulationType(enum.Enum):
     SNAPSHOT = "snapshot"
     QSTS = "QSTS"
     TIME_SERIES = "time-series"  # This should be duplicate with QSTS.
-    UPGRADE = "upgrade"
 
 
 class AnalysisModelType(enum.Enum):
@@ -111,7 +110,6 @@ class AnalysisModelType(enum.Enum):
     # The same data model is used for time-series impact analysis and hosting capacity analysis.
     SnapshotImpactAnalysis = "SnapshotImpactAnalysis"
     TimeSeriesImpactAnalysis = "TimeSeriesImpactAnalysis"
-    UpgradeCostAnalysis = "UpgradeCostAnalysis"
 
 
 class AnalysisType(enum.Enum):

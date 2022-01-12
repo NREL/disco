@@ -20,15 +20,3 @@ class ConfigType(enum.Enum):
     SIMULATION_CONFIG = "Simulation"
     CONTROLLER_CONFIG = "PvControllers"
     SCENARIOS = "Scenarios"
-
-
-class UpgradeType(enum.Enum):
-    """Upgrade types in PyDSS"""
-    ThermalUpgrade = "ThermalUpgrade"
-    VoltageUpgrade = "VoltageUpgrade"
-
-
-UPGRADE_SCRIPT_MAPPING = {
-    UpgradeType.ThermalUpgrade: "AutomatedThermalUpgrade",
-    UpgradeType.VoltageUpgrade: "AutomatedVoltageUpgrade"
-}

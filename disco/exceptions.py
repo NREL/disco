@@ -15,10 +15,6 @@ class AnalysisConfigurationException(DiscoBaseException):
     """Raise when Analysis configuration is not valid."""
 
 
-class UpgradeCostAnalysisRunException(AnalysisRunException):
-    """Raise when UpgradeCostAnalysis run failed."""
-
-
 class PyDssException(DiscoBaseException):
     """Raise when PyDSS-related operations failed"""
 
