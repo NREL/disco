@@ -19,13 +19,11 @@ from disco.enums import Placement, SimulationType, SimulationHierarchy
 from disco.models.base import PyDSSControllerModel, ImpactAnalysisBaseModel
 from disco.models.snapshot_impact_analysis_model import SnapshotImpactAnalysisModel
 from disco.models.time_series_analysis_model import TimeSeriesAnalysisModel
-from disco.models.upgrade_cost_analysis_model import UpgradeCostAnalysisModel
 from disco.sources.base import (
     BaseOpenDssModel,
     SOURCE_CONFIGURATION_FILENAME,
     DEFAULT_SNAPSHOT_IMPACT_ANALYSIS_PARAMS,
     DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS,
-    DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS,
     DEFAULT_PV_DEPLOYMENTS_DIRNAME
 )
 from .source_tree_1_model_inputs import SourceTree1ModelInputs
@@ -272,75 +270,13 @@ def time_series(
     )
 
 
-@click.command()
-@common_options
-@click.option(
-    "-s",
-    "--start",
-    default=DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS["start_time"],
-    show_default=True,
-    help="simulation start time",
-)
-@click.option(
-    "-o",
-    "--output",
-    default=None,
-    show_default=True,
-    help="output directory"
-)
-@click.pass_context
-def upgrade(
-    ctx,
-    hierarchy,
-    substations,
-    feeders,
-    placements,
-    samples,
-    penetration_levels,
-    master_file,
-    copy_load_shape_data_files,
-    pv_deployments_dirname,
-    force,
-    start,
-    output
-):
-    """Transform input data for an automated upgrade simulation"""
-    if output is None:
-        output = f"upgrade-{hierarchy.value}-models"
-    input_path = ctx.parent.params["input_path"]
-    handle_existing_dir(output, force)
-    simulation_params = {
-        "start_time": start,
-        "end_time": start,
-        "step_resolution": 900,
-        "simulation_type": SimulationType.SNAPSHOT,
-    }
-    SourceTree1Model.transform(
-        input_path=input_path,
-        output_path=output,
-        hierarchy=hierarchy,
-        simulation_params=simulation_params,
-        simulation_model=UpgradeCostAnalysisModel,
-        substations=substations,
-        feeders=feeders,
-        placements=placements,
-        samples=samples,
-        penetration_levels=penetration_levels,
-        master_file=master_file,
-        copy_load_shape_data_files=copy_load_shape_data_files,
-        pv_deployments_dirname=pv_deployments_dirname
-    )
-    print(f"Transformed data from {input_path} to {output} for UpgradeCostAnalysis.")
-
-
 class SourceTree1Model(BaseOpenDssModel):
     """OpenDSS Model for Source Tree 1"""
 
     DEPLOYMENT_FILE = "PVSystems.dss"
     TRANSFORM_SUBCOMMANDS = {
         "snapshot": snapshot,
-        "time-series": time_series,
-        "upgrade": upgrade
+        "time-series": time_series
     }
 
     def __init__(self, data):

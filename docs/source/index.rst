@@ -27,13 +27,7 @@ and load changes on distribution systems. Analysis modules currently included in
   be economically interconnected to a given feeder.  
 * Dynamic impact analysis, which is to dynamic hosting capacity analysis as 
   snapshot impact analysis is to snapshot hosting capacity analyses. 
-* Automated upgrade cost analysis, which involves automatically determine 
-  distribution system upgrades required to mitigate any voltage and thermal 
-  violations that exist on the feeder and then calculate the cost associated 
-  with those upgrades. This module current only considers traditional infrastructure 
-  upgrade options (reconductoring, upgrade transformers, installing voltage 
-  regulators and capacitor banks, and changing the controls or setpoints on 
-  voltage regulators and capacitor banks). 
+
 
 DISCO analysis is based on power flow modeling with OpenDSS used as the simulation engine. 
 PyDSS (https://nrel.github.io/PyDSS) is used to interface with OpenDSS 
@@ -46,18 +40,9 @@ The benefit of using DISCO instead of just directly using OpenDSS or PyDSS is tw
 * DISCO provides ready-made, tested code to calculate snapshot and dynamic impact 
   metrics, allowing for repeatable analyses across projects and teams without 
   having to re-create code to process OpenDSS results. 
-* DISCO’s automated upgrade cost analysis tool provides a way to conduct upgrade 
-  cost analyses over a large number of feeders where manual upgrade analysis 
-  would be too time-consuming to execute. The default unit cost database 
-  included with DISCO also provides unit cost information that can be used in 
-  cost estimates if the user does not have any cost data specific to their own 
-  company or scenario. 
 
 Examples of how DISCO has been or is currently being used are:
 
-* Automated impact and upgrade cost analysis for the Los Angeles 100% Renewable 
-  Energy Study, which required understanding upgrade needs on ~2,000 circuits 
-  based on load and DER changes associated with 100% renewables pathways.
 * Evaluating curtailment risk associated with using advanced inverter controls 
   and flexible interconnection options for PV grid integration on 100’s of circuits. 
 
