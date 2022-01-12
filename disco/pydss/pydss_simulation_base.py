@@ -78,11 +78,9 @@ class PyDssSimulationBase(JobExecutionInterface, abc.ABC):
         self._irradiance_scaling_factor = irradiance_scaling_factor
 
     def _get_control_mode(self):
-        sim_type = self._model.simulation.simulation_type
         if self._model.model_type in (
             "SnapshotImpactAnalysisModel",
             "TimeSeriesAnalysisModel",
-            "UpgradeCostAnalysisModel",
         ):
             return "Static"
         assert False, "unsupported type = {self._model.model_type}"

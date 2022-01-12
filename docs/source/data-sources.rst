@@ -72,17 +72,7 @@ Here is an example JSON file:
         "name": "MyFeeder",
         "opendss_location": "/opendss/location/path/",
         "start_time": "2010-08-11_15:00:00.000",
-        "step_resolution": 900,
-        "thermal_upgrade_overrides": {
-          "line_loading_limit": 1.5,
-          "dt_loading_limit": 1.5
-        },
-        "voltage_upgrade_overrides": {
-          "initial_voltage_upper_limit": 1.058333,
-          "initial_voltage_lower_limit": 0.9167,
-          "final_voltage_upper_limit": 1.05,
-          "final_voltage_lower_limit": 0.95
-        }
+        "step_resolution": 900
       },
     ]
   }
