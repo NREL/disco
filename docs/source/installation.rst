@@ -39,14 +39,13 @@ Optional: Install desired packages.
 
     $ pip install NREL-jade
 
-3. Clone PyDSS repo from GitHub and install our development branch.
+3. Clone PyDSS repo from GitHub and install the master branch.
 
 .. code-block:: bash
 
     $ cd <path-to-your-local-repos>
     $ git clone git@github.com:NREL/PyDSS.git
     $ cd PyDSS
-    $ git checkout report-metrics
     $ pip install -e .
 
 Known Windows installation problem: In some cases Shapely will fail to install.
