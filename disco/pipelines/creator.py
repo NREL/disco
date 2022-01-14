@@ -126,8 +126,7 @@ class TimeSeriesPipelineCreator(PipelineCreatorBase):
         )
         if self.template.analysis_type == AnalysisType.COST_BENEFIT.value:
             # These must not be user-configurable and don't go in the template.
-            command += " --feeder-losses=false --thermal-metrics=false --voltage-metrics=false" \
-                       " --export-data-tables"
+            command += " --feeder-losses=false --thermal-metrics=false --voltage-metrics=false"
 
         logger.info("Make command - '%s'", command)
         return command
