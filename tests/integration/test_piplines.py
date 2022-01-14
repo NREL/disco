@@ -35,6 +35,7 @@ THERMAL_METRICS_TABLE = "thermal_metrics_table.csv"
 VOLTAGE_METRICS_TABLE = "voltage_metrics_table.csv"
 CAPACITOR_TABLE = "capacitor_table.csv"
 REG_CONTROL_TABLE = "reg_control_tap_value_change_table.csv"
+POWERS_TABLE = "powers_table.csv"
 
 SNAPSHOT_REPORTS_FILE = "generated_snapshot_reports.toml"
 TIME_SERIES_REPORTS_FILE = "generated_time_series_reports.toml"
@@ -570,3 +571,4 @@ def test_source_tree_1_time_series_pipeline_submit__cost_benefit(smart_ds_substa
 
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", CAPACITOR_TABLE))
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", REG_CONTROL_TABLE))
+    assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", POWERS_TABLE))
