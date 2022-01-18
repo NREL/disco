@@ -56,7 +56,6 @@ def parse_batch_results(output_dir):
     # well as the metrics.
     with ProcessPoolExecutor() as executor:
         for result in executor.map(parse_job_results, jobs, itertools.repeat(output_path)):
-            result = parse_job_results(job, output_path)
             powers_tables.append(result[0])
             capacitor_table += result[1]
             reg_control_change_table += result[2]
@@ -116,7 +115,7 @@ def get_element_info(results: PyDssResults, job_info: JobInfo):
     dfs = {}
     for filename in scenario.list_element_info_files():
         # Format follows this example: "Exports/pf1/LoadsInfo.csv"
-        name = filename.split("/")[2].split("Info")[0]
+        name = Path(filename).name.split("Info")[0]
         dfs[name] = scenario.read_element_info_file(filename)
         for field, val in job_info._asdict().items():
             dfs[name][field] = val
