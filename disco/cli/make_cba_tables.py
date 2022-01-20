@@ -4,27 +4,29 @@ import csv
 import itertools
 import json
 import logging
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import click
-import numpy as np
 import pandas as pd
+import toml
 
 from jade.common import CONFIG_FILE, JOBS_OUTPUT_DIR
 from jade.jobs.job_configuration_factory import create_config_from_file
 from jade.loggers import setup_logging
 from jade.jobs.results_aggregator import ResultsAggregator
+from jade.utils.utils import load_data
 
-from PyDSS.exceptions import InvalidParameter
 from PyDSS.pydss_results import PyDssResults
+
 from disco.pipelines.utils import ensure_jade_pipeline_output_dir
 
 
 JobInfo = namedtuple(
     "JobInfo", ["name", "substation", "feeder", "placement", "sample", "penetration_level"]
 )
+REQUIRED_RESOLUTION = pd.Timedelta(hours=1)
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +50,8 @@ def parse_batch_results(output_dir):
     powers_tables = []
     capacitor_table = []
     reg_control_change_table = []
-    element_infos = []
+    load_sum_group_files = set()
+    pv_sum_group_files = set()
 
     # This will create flattened tables for each metric across jobs and PyDSS scenarios
     # within eah job.
@@ -59,7 +62,8 @@ def parse_batch_results(output_dir):
             powers_tables.append(result[0])
             capacitor_table += result[1]
             reg_control_change_table += result[2]
-            element_infos += result[3]
+            load_sum_group_files.update(result[3])
+            pv_sum_group_files.update(result[4])
 
     df = pd.concat(powers_tables)
     df.to_csv(output_path / "powers_table.csv")
@@ -68,7 +72,10 @@ def parse_batch_results(output_dir):
     serialize_table(
         reg_control_change_table, output_path / "reg_control_tap_value_change_table.csv"
     )
-    # TODO: element_infos
+    loads = make_customer_type_table(load_sum_group_files, "Load")
+    serialize_table(loads, output_path / "load_customer_types.csv")
+    pvs = make_customer_type_table(pv_sum_group_files, "PVSystem")
+    serialize_table(pvs, output_path / "pv_system_customer_types.csv")
 
 
 def parse_job_results(job, output_path):
@@ -97,31 +104,15 @@ def parse_job_results(job, output_path):
     powers_table = get_powers_table(results, job_info)
     capacitor_table = get_capacitor_table(results, job_info)
     reg_control_table = get_reg_control_table(results, job_info)
-    element_infos = {}  # get_element_info(results, job_info)
+    load_sum_group_files, pv_sum_group_files = get_sum_group_files(results)
 
     return (
         powers_table,
         capacitor_table,
         reg_control_table,
-        element_infos,
+        load_sum_group_files,
+        pv_sum_group_files,
     )
-
-
-# TODO: We're not sure exactly how this information will be used yet.
-def get_element_info(results: PyDssResults, job_info: JobInfo):
-    """Return a dict of pd.DataFrames for static information about each circuit element."""
-    # All scenarios have the same information.
-    scenario = results.scenarios[0]
-    dfs = {}
-    for filename in scenario.list_element_info_files():
-        # Format follows this example: "Exports/pf1/LoadsInfo.csv"
-        name = Path(filename).name.split("Info")[0]
-        dfs[name] = scenario.read_element_info_file(filename)
-        for field, val in job_info._asdict().items():
-            dfs[name][field] = val
-        dfs[name]["scenario"] = np.NaN
-
-    return dfs
 
 
 def get_powers_table(results: PyDssResults, job_info: JobInfo):
@@ -129,19 +120,19 @@ def get_powers_table(results: PyDssResults, job_info: JobInfo):
     dfs = []
     column_order = list(job_info._asdict().keys()) + [
         "scenario",
-        "Loads__Powers__commercial (kW)",
-        "Loads__Powers__residential (kW)",
-        "PVSystems__Powers__commercial (kW)",
-        "PVSystems__Powers__residential (kW)",
-        "Circuits__TotalPower (kW)",
-        "Circuits__Losses (kW)",
+        "Loads__Powers__commercial (kWh)",
+        "Loads__Powers__residential (kWh)",
+        "PVSystems__Powers__commercial (kWh)",
+        "PVSystems__Powers__residential (kWh)",
+        "Circuits__TotalPower (kWh)",
+        "Circuits__Losses (kWh)",
     ]
     for scenario in results.scenarios:
         main_df = pd.DataFrame()
         missing = []
         for customer in ("commercial", "residential"):
             for elem_class in ("Loads", "PVSystems"):
-                column = f"{elem_class}__Powers__{customer} (kW)"
+                column = f"{elem_class}__Powers__{customer} (kWh)"
                 if elem_class not in scenario.list_element_classes():
                     # Base case doesn't have PVSystems.
                     missing.append(column)
@@ -158,21 +149,25 @@ def get_powers_table(results: PyDssResults, job_info: JobInfo):
                     # Not all jobs will have commercial and residential.
                     missing.append(column)
         for column in missing:
-            main_df[column] = np.NaN
+            main_df[column] = 0.0
 
         df = scenario.get_full_dataframe("Circuits", "TotalPower")
         assert len(df.columns) == 1
-        main_df["Circuits__TotalPower (kW)"] = [x.real for x in df[df.columns[0]]]
+        main_df["Circuits__TotalPower (kWh)"] = [x.real for x in df[df.columns[0]]]
         # OpenDSS returns this in Watts.
         df = scenario.get_full_dataframe("Circuits", "Losses") / 1000
         assert len(df.columns) == 1
-        main_df["Circuits__Losses (kW)"] = [x.real for x in df[df.columns[0]]]
+        main_df["Circuits__Losses (kWh)"] = [x.real for x in df[df.columns[0]]]
+        if main_df.index[1] - main_df.index[0] == REQUIRED_RESOLUTION:
+            df = main_df
+        else:
+            df = main_df.resample(REQUIRED_RESOLUTION).sum()
 
         for field, val in job_info._asdict().items():
-            main_df[field] = val
-        main_df["scenario"] = scenario.name
-        main_df = main_df[column_order]
-        dfs.append(main_df)
+            df[field] = val
+        df["scenario"] = scenario.name
+        df = df[column_order]
+        dfs.append(df)
 
     return pd.concat(dfs)
 
@@ -201,6 +196,34 @@ def get_reg_control_table(results: PyDssResults, job_info: JobInfo):
             row["change_count"] = reg_control["change_count"]
             reg_control_table.append(row)
     return reg_control_table
+
+
+def get_sum_group_files(results: PyDssResults):
+    """Return a set of filenames defining sum_groups and Load/PV customer types."""
+    load_sum_group_files = set()
+    pv_sum_group_files = set()
+    for scenario in results.scenarios:
+        data = toml.loads(
+            scenario.read_file(f"Scenarios/{scenario.name}/ExportLists/Exports.toml")
+        )
+        load_sum_group_files.add(data["Loads"]["Powers"]["sum_groups_file"])
+        pv_sum_group_files.add(data["PVSystems"]["Powers"]["sum_groups_file"])
+    return load_sum_group_files, pv_sum_group_files
+
+
+def make_customer_type_table(sum_group_files, element_type):
+    """Return a dict of customer type to set of element names."""
+    elements = defaultdict(set)
+    for filename in sum_group_files:
+        data = load_data(filename)
+        for group in data["sum_groups"]:
+            elements[group["name"]].update(set(group["elements"]))
+
+    table = []
+    for group, element_names in elements.items():
+        for name in element_names:
+            table.append({"customer_type": group, "element_type": element_type, "name": name})
+    return table
 
 
 def serialize_table(table, filename):
