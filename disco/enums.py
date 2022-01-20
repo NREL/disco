@@ -110,6 +110,7 @@ class AnalysisModelType(enum.Enum):
     # The same data model is used for time-series impact analysis and hosting capacity analysis.
     SnapshotImpactAnalysis = "SnapshotImpactAnalysis"
     TimeSeriesImpactAnalysis = "TimeSeriesImpactAnalysis"
+    UpgradeCostAnalysis = "UpgradeCostAnalysis"
 
 
 class AnalysisType(enum.Enum):
@@ -117,6 +118,7 @@ class AnalysisType(enum.Enum):
     IMPACT_ANALYSIS = "impact-analysis"
     HOSTING_CAPACITY = "hosting-capacity"
     COST_BENEFIT = "cost-benefit"
+    UPGRADE_ANALYSIS = "upgrade-analysis"
     NONE = "none"
 
 

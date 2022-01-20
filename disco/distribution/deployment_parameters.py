@@ -9,7 +9,7 @@ from disco.models.factory import make_model
 from disco.models.base import ImpactAnalysisBaseModel
 from disco.models.snapshot_impact_analysis_model import SnapshotImpactAnalysisModel
 from disco.models.time_series_analysis_model import TimeSeriesAnalysisModel
-
+from disco.models.upgrade_cost_analysis_model import UpgradeCostAnalysisModel
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +22,7 @@ class DeploymentParameters(JobParametersInterface):
     _EXTENSIONS = {
         SnapshotImpactAnalysisModel: "pydss_simulation",
         TimeSeriesAnalysisModel: "pydss_simulation",
+        UpgradeCostAnalysisModel: "upgrade_simulation"
     }
 
     def __init__(self, estimated_run_minutes=None, **kwargs):
