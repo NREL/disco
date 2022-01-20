@@ -16,6 +16,7 @@ from jade.common import CONFIG_FILE, JOBS_OUTPUT_DIR
 from jade.jobs.job_configuration_factory import create_config_from_file
 from jade.loggers import setup_logging
 from jade.jobs.results_aggregator import ResultsAggregator
+from jade.utils.subprocess_manager import check_run_command
 from jade.utils.utils import load_data
 
 from PyDSS.pydss_results import PyDssResults
@@ -66,7 +67,8 @@ def parse_batch_results(output_dir):
             pv_sum_group_files.update(result[4])
 
     df = pd.concat(powers_tables)
-    df.to_csv(output_path / "powers_table.csv")
+    powers_file = output_path / "powers_table.csv"
+    df.to_csv(powers_file)
     logger.info("Wrote power data to %s", output_path / "powers_table.csv")
     serialize_table(capacitor_table, output_path / "capacitor_table.csv")
     serialize_table(
@@ -76,6 +78,7 @@ def parse_batch_results(output_dir):
     serialize_table(loads, output_path / "load_customer_types.csv")
     pvs = make_customer_type_table(pv_sum_group_files, "PVSystem")
     serialize_table(pvs, output_path / "pv_system_customer_types.csv")
+    check_run_command(f"disco-internal cba-post-process {powers_file}")
 
 
 def parse_job_results(job, output_path):
@@ -144,7 +147,11 @@ def get_powers_table(results: PyDssResults, job_info: JobInfo):
                         main_df.index = df.index
                     # Exclude neutral phase.
                     cols = [col for col in df.columns if "__N" not in col]
-                    main_df[column] = [x.real for x in df[cols].sum(axis=1)]
+                    if elem_class == "Loads":
+                        data = [x.real for x in df[cols].sum(axis=1)]
+                    else:
+                        data = [get_pv_power_value(x.real) for x in df[cols].sum(axis=1)]
+                    main_df[column] = data
                 else:
                     # Not all jobs will have commercial and residential.
                     missing.append(column)
@@ -170,6 +177,18 @@ def get_powers_table(results: PyDssResults, job_info: JobInfo):
         dfs.append(df)
 
     return pd.concat(dfs)
+
+
+def get_pv_power_value(val):
+    if val > 0.0:
+        if val < 0.0001:  # 1 Watt
+            val = 0.0
+        else:
+            logger.warning("Unexpected PVSystem power value: %s", val)
+            val *= -1
+    else:
+        val *= -1
+    return val
 
 
 def get_capacitor_table(results: PyDssResults, job_info: JobInfo):
