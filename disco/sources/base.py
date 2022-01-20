@@ -10,7 +10,7 @@ from disco.enums import SimulationType, SimulationHierarchy
 from disco.exceptions import AnalysisConfigurationException
 from disco.models.base import OpenDssDeploymentModel
 from disco.utils.dss_utils import comment_out_leading_strings
-
+from disco.postprocess.config import GENERIC_COST_DATABASE, UPGRADE_PARAMS_FILE
 
 FORMAT_FILENAME = "format.toml"
 TYPE_KEY = "type"
@@ -30,6 +30,15 @@ DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS = {
     "end_time": "2020-01-02T00:00:00",
     "simulation_type": SimulationType.QSTS.value,
     "step_resolution": 900,
+}
+
+DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS = {
+    "output_dir": "upgrade-models",
+    "cost_database": GENERIC_COST_DATABASE,
+    "params_file": UPGRADE_PARAMS_FILE,
+    "start_time": "2020-01-01T00:00:00",
+    "end_time": "2020-01-08T00:00:00",
+    "simulation_type": SimulationType.SNAPSHOT.value,
 }
 
 DEFAULT_PV_DEPLOYMENTS_DIRNAME = "hc_pv_deployments"
