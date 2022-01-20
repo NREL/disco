@@ -13,7 +13,8 @@ _MAPPING = {
 
 _MAPPING_BY_NAME = {
     "SnapshotImpactAnalysisModel": SnapshotImpactAnalysisModel,
-    "TimeSeriesAnalysisModel": TimeSeriesAnalysisModel
+    "TimeSeriesAnalysisModel": TimeSeriesAnalysisModel,
+    "UpgradeCostAnalysisModel": UpgradeCostAnalysisModel
 }
 
 
