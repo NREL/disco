@@ -2,7 +2,9 @@ import logging
 import os
 
 from jade.jobs.job_configuration_factory import create_config_from_file
+from PyDSS.controllers import PvControllerModel
 
+from disco.pydss.common import ConfigType
 from disco.extensions.upgrade_simulation.upgrade_configuration import UpgradeConfiguration
 from disco.extensions.upgrade_simulation.upgrade_inputs import UpgradeInputs
 from disco.extensions.upgrade_simulation.upgrade_simulation import UpgradeSimulation
@@ -35,7 +37,7 @@ def auto_config(inputs, **kwargs):
     return config
 
 
-def run(config_file, name, output, verbose):
+def run(config_file, name, output, output_format, verbose):
     """Run automated upgrade simulation through command line"""
     os.makedirs(output, exist_ok=True)
 
@@ -44,9 +46,26 @@ def run(config_file, name, output, verbose):
 
     logger.info("disco version = %s", disco_version)
 
-    simulation = UpgradeSimulation(job=job)
+    simulation = UpgradeSimulation(
+        job=job,
+        job_global_config=config.job_global_config,
+        output=output
+    )
     try:
-        ret = simulation.run(verbose=verbose)
+        enable_pydss_solve = config.pydss_inputs[ConfigType.SIMULATION_CONFIG]["default"]["enable_pydss_solve"]
+        controller = config.get_pydss_controller_model(name="volt_var_upgrade")  # TODO: User custom pv controller?
+        pydss_controller_model = PvControllerModel(**controller)
+        thermal_config = config.job_global_config["thermal_upgrade_params"]
+        voltage_config = config.job_global_config["voltage_upgrade_params"]
+        cost_database_filepath = config.job_global_config["upgrade_cost_database"]
+        ret = simulation.run(
+            enable_pydss_solve=enable_pydss_solve,
+            pydss_controller_model=pydss_controller_model,
+            thermal_config=thermal_config,
+            voltage_config=voltage_config,
+            cost_database_filepath=cost_database_filepath,
+            verbose=verbose
+        )
         return ret
     except Exception:
         logger.exception("Unexcepted error in automatic upgrade analysis job=%s", job)

@@ -3,6 +3,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import logging
 from sklearn.cluster import AgglomerativeClustering
+
 from .common_functions import *
 from .thermal_upgrade_functions import define_xfmr_object
 

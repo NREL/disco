@@ -1,15 +1,28 @@
 import os
 import ast
 import math
-import enum
 import logging
 import numpy as np
 import pandas as pd
 import opendssdirect as dss
+
 from .pydss_parameters import *
 
 logger = logging.getLogger(__name__)
 
+
+def get_default_upgrade_cost_database():
+    return os.path.join(
+        os.path.dirname(__file__),
+        "Generic_DISCO_cost_database_v2.xlsx"
+    )
+
+
+def get_default_upgrade_params_file():
+    return os.path.join(
+        os.path.dirname(__file__),
+        "upgrade_parameters.toml"
+    )
 
 def reload_dss_circuit(dss_file_list=None, commands_list=None, **kwargs):
     """This function clears the circuit and loads dss files and commands.
