@@ -10,7 +10,10 @@ from disco.enums import SimulationType, SimulationHierarchy
 from disco.exceptions import AnalysisConfigurationException
 from disco.models.base import OpenDssDeploymentModel
 from disco.utils.dss_utils import comment_out_leading_strings
-from disco.postprocess.config import GENERIC_COST_DATABASE, UPGRADE_PARAMS_FILE
+from disco.extensions.upgrade_simulation.upgrades.common_functions import (
+    get_default_upgrade_params_file,
+    get_default_upgrade_cost_database,
+)
 
 FORMAT_FILENAME = "format.toml"
 TYPE_KEY = "type"
@@ -34,8 +37,8 @@ DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS = {
 
 DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS = {
     "output_dir": "upgrade-models",
-    "cost_database": GENERIC_COST_DATABASE,
-    "params_file": UPGRADE_PARAMS_FILE,
+    "cost_database": get_default_upgrade_cost_database(),
+    "params_file": get_default_upgrade_params_file(),
     "start_time": "2020-01-01T00:00:00",
     "end_time": "2020-01-08T00:00:00",
     "simulation_type": SimulationType.SNAPSHOT.value,

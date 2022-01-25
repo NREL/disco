@@ -1,27 +1,21 @@
-import pandas as pd
-from .filepath import (
-    output_csv_xfmr_upgrades_filepath,
-    output_csv_line_upgrades_filepath,
-    output_csv_voltage_upgrades_filepath,
-)
-from .cost_parameters import *
-from .common_functions import convert_list_string_to_list
-from .loggers import setup_logging
 
-setup_logging(
-    "CostAnalysis",
-    filename=cost_upgrades_log_filepath,
-    console_level=log_console_level,
-    file_level=log_file_level,
-)
-# TODO remove-added cause setup_logging isnt working
-logging.basicConfig(
-    filename=cost_upgrades_log_filepath, filemode="w", level=logging.DEBUG
-)
+import logging
+
+import pandas as pd
+
+from disco.extensions.upgrade_simulation.upgrades.common_functions import convert_list_string_to_list
+
 logger = logging.getLogger(__name__)
 
 
-def compute_all_costs():
+def compute_all_costs(
+    output_csv_xfmr_upgrades_filepath,
+    output_csv_line_upgrades_filepath,
+    cost_database_filepath,
+    thermal_cost_output_filepath,
+    voltage_cost_output_filepath,
+    total_cost_output_filepath
+):
     # upgrades files
     # TODO add except statement for FileNotFoundError
     xfmr_upgrades_df = pd.read_csv(output_csv_xfmr_upgrades_filepath)

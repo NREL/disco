@@ -1,0 +1,23 @@
+[thermal_upgrade_params]
+xfmr_upper_limit = 1.25
+line_upper_limit = 1.25
+line_design_pu = 0.75
+xfmr_design_pu = 0.75
+voltage_upper_limit = 1.05
+voltage_lower_limit = 0.95
+
+[voltage_upgrade_params]
+initial_upper_limit = 1.05
+initial_lower_limit = 0.95
+final_upper_limit = 1.05
+final_lower_limit = 0.95
+target_v = 1
+nominal_voltage = 120
+nominal_pu_voltage = 1
+tps_to_test = []
+capacitor_sweep_voltage_gap = 1
+reg_control_bands = [1, 2]
+reg_v_delta = 0.5
+max_regulators = 4
+place_new_regulators = false
+use_ltc_placement = false
