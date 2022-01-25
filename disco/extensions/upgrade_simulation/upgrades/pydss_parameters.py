@@ -1,13 +1,10 @@
-from PyDSS.simulation_input_models import ProjectModel, SimulationSettingsModel
-from PyDSS.common import LoggingLevel, SimulationType
-from PyDSS.controllers import CircuitElementController, ControllerManager
-
-# from PyDSS.get_snapshot_timepoints import get_snapshot_timepoint
-# new_start = get_snapshot_timepoint(SimulationSettingsModel, SnapshotTimePointSelectionMode.DAYTIME_MIN_LOAD)
-# new_start = get_snapshot_timepoint(SimulationSettingsModel, SnapshotTimePointSelectionMode.DAYTIME_MIN_LOAD).strftime(DATE_FORMAT)
-from .upgrade_parameters import volt_var_model
 import logging
 import opendssdirect as dss
+
+from PyDSS.simulation_input_models import ProjectModel
+from PyDSS.common import SimulationType
+from PyDSS.controllers import CircuitElementController, ControllerManager
+
 
 logger = logging.getLogger(__name__)
 
