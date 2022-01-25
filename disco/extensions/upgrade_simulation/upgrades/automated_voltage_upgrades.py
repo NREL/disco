@@ -1,40 +1,64 @@
 import json
+import logging
+import os
 import time
-from .filepath import *
-from .fixed_upgrade_parameters import *
-from .voltage_upgrade_functions import *
-from .loggers import setup_logging
 
-setup_logging(
-    "VoltageUpgrades",
-    filename=voltage_upgrades_log_filepath,
-    console_level=log_console_level,
-    file_level=log_file_level,
+from .fixed_upgrade_parameters import (
+    CAPACITOR_ACTION_FLAG,
+    DEFAULT_CAPACITOR_SETTINGS,
+    DEFAULT_SUBLTC_SETTINGS,
+    EXISTING_REGULATOR_SWEEP_ACTION,
 )
-# TODO remove-added cause setup_logging isnt working
-logging.basicConfig(
-    filename=voltage_upgrades_log_filepath, filemode="w", level=logging.DEBUG
-)
-# set up logging to console
-console = logging.StreamHandler()
-console.setLevel(logging.INFO)
-# set a format which is simpler for console use
-formatter = logging.Formatter("%(name)-12s: %(levelname)-8s %(message)s")
-console.setFormatter(formatter)
-# add the handler to the root logger
-logging.getLogger("").addHandler(console)
+from .voltage_upgrade_functions import *
 
 logger = logging.getLogger(__name__)
 
 
-def determine_voltage_upgrades(**PYDSS_PARAMS):
+def determine_voltage_upgrades(
+    master_path,
+    enable_pydss_solve,
+    pydss_volt_var_model,
+    thermal_config,
+    voltage_config,
+    thermal_upgrades_dss_filepath,
+    voltage_upgrades_dss_filepath,
+    voltage_summary_file,
+    output_folder,
+    ignore_switch=True,
+    verbose=False
+):
+    # default_capacitor settings and customization
+    default_capacitor_settings = DEFAULT_CAPACITOR_SETTINGS
+    default_capacitor_settings["capON"] = round(
+        (
+            voltage_config["nominal_voltage"]
+            - voltage_config["capacitor_sweep_voltage_gap"] / 2
+        ),
+        1,
+    )
+    default_capacitor_settings["capOFF"] = round(
+        (
+            voltage_config["nominal_voltage"]
+            + voltage_config["capacitor_sweep_voltage_gap"] / 2
+        ),
+        1,
+    )
+
+    # default subltc settings and customization
+    default_subltc_settings = DEFAULT_SUBLTC_SETTINGS
+    default_subltc_settings["vreg"] = 1.03 * voltage_config["nominal_voltage"]
+
     if not os.path.exists(thermal_upgrades_dss_filepath):
         raise Exception(
             f"AutomatedThermalUpgrade did not produce thermal upgrades dss file"
         )
+    pydss_params = {
+        "enable_pydss_solve": enable_pydss_solve,
+        "pydss_volt_var_model": pydss_volt_var_model
+    }
     dss_file_list = [master_path, thermal_upgrades_dss_filepath]
-    PYDSS_PARAMS = reload_dss_circuit(
-        dss_file_list=dss_file_list, commands_list=None, **PYDSS_PARAMS
+    pydss_params = reload_dss_circuit(
+        dss_file_list=dss_file_list, commands_list=None, **pydss_params
     )
 
     # reading original objects (before upgrades)
@@ -71,7 +95,7 @@ def determine_voltage_upgrades(**PYDSS_PARAMS):
     ) = get_bus_voltages(
         upper_limit=thermal_config["voltage_upper_limit"],
         lower_limit=thermal_config["voltage_lower_limit"],
-        **PYDSS_PARAMS,
+        **pydss_params,
     )
 
     initial_overloaded_xfmr_list = list(
@@ -134,7 +158,7 @@ def determine_voltage_upgrades(**PYDSS_PARAMS):
 
         start_time = time.time()
         # start with capacitors
-        if capacitor_action_flag and len(orig_capacitors_df) > 0:
+        if CAPACITOR_ACTION_FLAG and len(orig_capacitors_df) > 0:
             logger.info(
                 "Capacitors are present in the network. Perform capacitor bank control modifications."
             )
@@ -143,7 +167,7 @@ def determine_voltage_upgrades(**PYDSS_PARAMS):
                 default_capacitor_settings=default_capacitor_settings,
                 orig_capacitors_df=orig_capacitors_df,
                 nominal_voltage=voltage_config["nominal_voltage"],
-                **PYDSS_PARAMS,
+                **pydss_params,
             )
             dss_commands_list = dss_commands_list + capcontrol_parameter_commands_list
             (
@@ -154,7 +178,7 @@ def determine_voltage_upgrades(**PYDSS_PARAMS):
             ) = get_bus_voltages(
                 upper_limit=voltage_upper_limit,
                 lower_limit=voltage_lower_limit,
-                **PYDSS_PARAMS,
+                **pydss_params,
             )
 
             if len(buses_with_violations) > 0:
@@ -169,7 +193,7 @@ def determine_voltage_upgrades(**PYDSS_PARAMS):
                     default_capacitor_settings=default_capacitor_settings,
                     upper_limit=voltage_upper_limit,
                     lower_limit=voltage_lower_limit,
-                    **PYDSS_PARAMS,
+                    **pydss_params,
                 )
                 # choose best capacitor settings
                 (
@@ -178,7 +202,7 @@ def determine_voltage_upgrades(**PYDSS_PARAMS):
                 ) = choose_best_capacitor_sweep_setting(
                     capacitor_sweep_df=capacitor_sweep_df,
                     initial_capacitors_df=nosetting_changes_capacitors_df,
-                    **PYDSS_PARAMS,
+                    **pydss_params,
                 )
                 dss_commands_list = (
                     dss_commands_list + capcontrol_settings_commands_list
@@ -192,7 +216,7 @@ def determine_voltage_upgrades(**PYDSS_PARAMS):
             ) = get_bus_voltages(
                 upper_limit=voltage_upper_limit,
                 lower_limit=voltage_lower_limit,
-                **PYDSS_PARAMS,
+                **pydss_params,
             )
         else:
             logger.info("No capacitor banks exist in the system")
@@ -201,13 +225,13 @@ def determine_voltage_upgrades(**PYDSS_PARAMS):
         # Do a settings sweep of existing reg control devices (other than sub LTC) after correcting their other
         #  parameters such as ratios etc
         if (
-            existing_regulator_sweep_action
+            EXISTING_REGULATOR_SWEEP_ACTION
             and (len(orig_regcontrols_df) > 0)
             and (len(buses_with_violations) > 0)
         ):
             # first correct regcontrol parameters (ptratio) including substation LTC, if present
             regcontrols_parameter_command_list = correct_regcontrol_parameters(
-                orig_regcontrols_df=orig_regcontrols_df, **PYDSS_PARAMS
+                orig_regcontrols_df=orig_regcontrols_df, **pydss_params
             )
             logger.info(
                 "Settings sweep for existing reg control devices (excluding substation LTC)."
@@ -219,13 +243,13 @@ def determine_voltage_upgrades(**PYDSS_PARAMS):
                 lower_limit=voltage_lower_limit,
                 exclude_sub_ltc=True,
                 only_sub_ltc=False,
-                **PYDSS_PARAMS,
+                **pydss_params,
             )
             # reload circuit after settings sweep
             reload_dss_circuit(
                 dss_file_list=dss_file_list,
                 commands_list=dss_commands_list,
-                **PYDSS_PARAMS,
+                **pydss_params,
             )
             (
                 regcontrols_df,
@@ -235,7 +259,7 @@ def determine_voltage_upgrades(**PYDSS_PARAMS):
                 initial_regcontrols_df=orig_regcontrols_df,
                 exclude_sub_ltc=True,
                 only_sub_ltc=False,
-                **PYDSS_PARAMS,
+                **pydss_params,
             )
             # added to commands list only if it is different from original
             # TODO will this need to be removed if it's different later? Sherin
@@ -259,7 +283,7 @@ def determine_voltage_upgrades(**PYDSS_PARAMS):
         ) = get_bus_voltages(
             upper_limit=voltage_upper_limit,
             lower_limit=voltage_lower_limit,
-            **PYDSS_PARAMS,
+            **pydss_params,
         )
 
         # Use this block for adding a substation LTC, correcting its settings and running a sub LTC settings sweep.
@@ -279,12 +303,12 @@ def determine_voltage_upgrades(**PYDSS_PARAMS):
             # if there is no substation transformer in the network
             if orig_ckt_info["substation_xfmr"] is None:
                 # TODO check add substation transformer and add ltc reg control on it
-                add_subxfmr_commands = add_substation_xfmr(**PYDSS_PARAMS)
+                add_subxfmr_commands = add_substation_xfmr(**pydss_params)
                 pass_flag, add_subltc_commands = add_new_regcontrol(
                     xfmr_info_series=pd.Series(orig_ckt_info["substation_xfmr"]),
                     default_regcontrol_settings=default_subltc_settings,
                     nominal_voltage=voltage_config["nominal_voltage"],
-                    **PYDSS_PARAMS,
+                    **pydss_params,
                 )
                 if not pass_flag:
                     logger.info(
@@ -294,7 +318,7 @@ def determine_voltage_upgrades(**PYDSS_PARAMS):
                     reload_dss_circuit(
                         dss_file_list=dss_file_list,
                         commands_list=dss_commands_list + add_subltc_commands,
-                        **PYDSS_PARAMS,
+                        **pydss_params,
                     )
                 # this needs to be collected again, since a new regulator control might have been added at the substation
                 initial_sub_regcontrols_df = get_regcontrol_info(
@@ -314,9 +338,9 @@ def determine_voltage_upgrades(**PYDSS_PARAMS):
                     only_sub_ltc=True,
                     dss_file_list=dss_file_list,
                     dss_commands_list=dss_commands_list + add_subltc_commands,
-                    **PYDSS_PARAMS,
+                    **pydss_params,
                 )
-                circuit_solve_and_check(raise_exception=True, **PYDSS_PARAMS)
+                circuit_solve_and_check(raise_exception=True, **pydss_params)
                 dss_commands_list = (
                     dss_commands_list
                     + add_subxfmr_commands
@@ -331,7 +355,7 @@ def determine_voltage_upgrades(**PYDSS_PARAMS):
                     xfmr_info_series=pd.Series(orig_ckt_info["substation_xfmr"]),
                     default_regcontrol_settings=default_subltc_settings,
                     nominal_voltage=voltage_config["nominal_voltage"],
-                    **PYDSS_PARAMS,
+                    **pydss_params,
                 )
                 if not pass_flag:
                     logger.info(
@@ -341,7 +365,7 @@ def determine_voltage_upgrades(**PYDSS_PARAMS):
                     reload_dss_circuit(
                         dss_file_list=dss_file_list,
                         commands_list=dss_commands_list + add_subltc_commands,
-                        **PYDSS_PARAMS,
+                        **pydss_params,
                     )
                 # this needs to be collected again, since a new regulator control might have been added at the substation
                 initial_sub_regcontrols_df = get_regcontrol_info(
@@ -361,9 +385,9 @@ def determine_voltage_upgrades(**PYDSS_PARAMS):
                     only_sub_ltc=True,
                     dss_file_list=dss_file_list,
                     dss_commands_list=dss_commands_list + add_subltc_commands,
-                    **PYDSS_PARAMS,
+                    **pydss_params,
                 )
-                circuit_solve_and_check(raise_exception=True, **PYDSS_PARAMS)
+                circuit_solve_and_check(raise_exception=True, **pydss_params)
                 dss_commands_list = (
                     dss_commands_list
                     + add_subltc_commands
@@ -388,9 +412,9 @@ def determine_voltage_upgrades(**PYDSS_PARAMS):
                     only_sub_ltc=True,
                     dss_file_list=dss_file_list,
                     dss_commands_list=dss_commands_list,
-                    **PYDSS_PARAMS,
+                    **pydss_params,
                 )
-                circuit_solve_and_check(raise_exception=True, **PYDSS_PARAMS)
+                circuit_solve_and_check(raise_exception=True, **pydss_params)
                 dss_commands_list = (
                     dss_commands_list + subltc_control_settings_commands_list
                 )
@@ -404,7 +428,7 @@ def determine_voltage_upgrades(**PYDSS_PARAMS):
         ) = get_bus_voltages(
             upper_limit=voltage_upper_limit,
             lower_limit=voltage_lower_limit,
-            **PYDSS_PARAMS,
+            **pydss_params,
         )
 
         if len(buses_with_violations) >= min(
@@ -448,7 +472,7 @@ def determine_voltage_upgrades(**PYDSS_PARAMS):
                 voltage_lower_limit=voltage_lower_limit,
                 create_plot=False,
                 fig_folder=output_folder,
-                **PYDSS_PARAMS,
+                **pydss_params,
             )
             # min_cluster = ''
             # for key, vals in cluster_optimal_reg_nodes.items():
@@ -465,13 +489,13 @@ def determine_voltage_upgrades(**PYDSS_PARAMS):
                 lower_limit=voltage_lower_limit,
                 exclude_sub_ltc=True,
                 only_sub_ltc=False,
-                **PYDSS_PARAMS,
+                **pydss_params,
             )
             # reload circuit after settings sweep
             reload_dss_circuit(
                 dss_file_list=dss_file_list,
                 commands_list=dss_commands_list,
-                **PYDSS_PARAMS,
+                **pydss_params,
             )  # reload circuit after settings sweep
             (
                 regcontrols_df,
@@ -479,7 +503,7 @@ def determine_voltage_upgrades(**PYDSS_PARAMS):
             ) = choose_best_regcontrol_sweep_setting(
                 regcontrol_sweep_df=regcontrol_sweep_df,
                 initial_regcontrols_df=orig_regcontrols_df,
-                **PYDSS_PARAMS,
+                **pydss_params,
             )
             dss_commands_list = dss_commands_list + regcontrol_settings_commands_list
 
@@ -500,7 +524,7 @@ def determine_voltage_upgrades(**PYDSS_PARAMS):
             voltage_upgrades_dss_filepath,
         ],
         commands_list=None,
-        **PYDSS_PARAMS,
+        **pydss_params,
     )
     (
         bus_voltages_df,
@@ -508,7 +532,7 @@ def determine_voltage_upgrades(**PYDSS_PARAMS):
         overvoltage_bus_list,
         buses_with_violations,
     ) = get_bus_voltages(
-        upper_limit=voltage_upper_limit, lower_limit=voltage_lower_limit, **PYDSS_PARAMS
+        upper_limit=voltage_upper_limit, lower_limit=voltage_lower_limit, **pydss_params
     )
     output_text["Final"] = {
         "Maximum voltage on any bus": bus_voltages_df["Max per unit voltage"].max(),
@@ -524,7 +548,3 @@ def determine_voltage_upgrades(**PYDSS_PARAMS):
     }
     with open(voltage_summary_file, "w") as fp:
         json.dump(output_text, fp, indent=4)
-
-
-if __name__ == "__main__":
-    determine_voltage_upgrades(**PYDSS_PARAMS)

@@ -8,7 +8,7 @@ def correct_line_violations(
     line_loading_df=None,
     line_design_pu=None,
     line_upgrade_options=None,
-    PARALLEL_LINES_LIMIT=None,
+    parallel_lines_limit=None,
     **kwargs,
 ):
     """This function determines line upgrades to correct line violations.
@@ -19,7 +19,7 @@ def correct_line_violations(
     line_loading_df
     line_design_pu
     line_upgrade_options
-    PARALLEL_LINES_LIMIT
+    parallel_lines_limit
 
     Returns
     -------
@@ -112,7 +112,7 @@ def correct_line_violations(
                     parallel_line_commands,
                     upgrades_dict_parallel,
                 ) = identify_parallel_lines(
-                    options=options, row=row, PARALLEL_LINES_LIMIT=PARALLEL_LINES_LIMIT
+                    options=options, row=row, parallel_lines_limit=parallel_lines_limit
                 )
                 # run command for all parallel equipment added, that resolves overloading for one equipment
                 for command_item in parallel_line_commands:
@@ -143,14 +143,14 @@ def correct_line_violations(
     return commands_list, line_upgrades_df
 
 
-def identify_parallel_lines(options=None, row=None, PARALLEL_LINES_LIMIT=None):
+def identify_parallel_lines(options=None, row=None, parallel_lines_limit=None):
     """This function identifies parallel line solutions, when a direct upgrade solution is not available from catalogue
 
     Parameters
     ----------
     options
     row
-    PARALLEL_LINES_LIMIT
+    parallel_lines_limit
 
     Returns
     -------
@@ -171,7 +171,7 @@ def identify_parallel_lines(options=None, row=None, PARALLEL_LINES_LIMIT=None):
         options.loc[options["choose_parallel_metric"].idxmin()]
     ).T
     num_parallel_lines = int(chosen_option["num_parallel"].values[0])
-    if num_parallel_lines > PARALLEL_LINES_LIMIT:
+    if num_parallel_lines > parallel_lines_limit:
         raise Exception(f"Number of parallel lines is greater than limit!")
     new_config_type = chosen_option["line_definition_type"].values[0]
     for line_count in range(0, num_parallel_lines):

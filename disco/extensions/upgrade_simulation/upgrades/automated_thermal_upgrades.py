@@ -1,49 +1,39 @@
 import time
+import logging
 
 import pandas as pd
 
-from .filepath import *
-from .fixed_upgrade_parameters import *
-from .thermal_upgrade_functions import (
-    reload_dss_circuit,
-    get_all_line_info,
-    get_all_transformer_info,
-    determine_available_line_upgrades,
-    determine_available_xfmr_upgrades,
-    get_bus_voltages,
-    convert_summary_dict_to_df,
-    correct_line_violations,
-    correct_xfmr_violations,
-    write_text_file,
+from .fixed_upgrade_parameters import (
+    PARALLEL_LINES_LIMIT,
+    PARALLEL_XFMRS_LIMIT,
+    THERMAL_UPGRADE_ITERATION_THRESHOLD
 )
-from .loggers import setup_logging
-
-setup_logging(
-    "ThermalUpgrades",
-    filename=thermal_upgrades_log_filepath,
-    console_level=log_console_level,
-    file_level=log_file_level,
-)
-# TODO remove-added cause setup_logging isnt working
-logging.basicConfig(
-    filename=voltage_upgrades_log_filepath, filemode="w", level=logging.DEBUG
-)
-# set up logging to console
-console = logging.StreamHandler()
-console.setLevel(logging.INFO)
-# set a format which is simpler for console use
-formatter = logging.Formatter("%(name)-12s: %(levelname)-8s %(message)s")
-console.setFormatter(formatter)
-# add the handler to the root logger
-logging.getLogger("").addHandler(console)
+from .thermal_upgrade_functions import *
 
 logger = logging.getLogger(__name__)
 
 
-def determine_thermal_upgrades(**PYDSS_PARAMS):
+def determine_thermal_upgrades(
+    master_path,
+    enable_pydss_solve,
+    pydss_volt_var_model,
+    thermal_config,
+    line_upgrade_options_file,
+    xfmr_upgrade_options_file,
+    thermal_summary_file,
+    thermal_upgrades_dss_filepath,
+    output_csv_line_upgrades_filepath,
+    output_csv_xfmr_upgrades_filepath,
+    ignore_switch=True,
+    verbose=False
+):
+    pydss_params = {
+        "enable_pydss_solve": enable_pydss_solve,
+        "pydss_volt_var_model": pydss_volt_var_model
+    }
     # start upgrades
-    PYDSS_PARAMS = reload_dss_circuit(
-        dss_file_list=[master_path], commands_list=None, **PYDSS_PARAMS
+    pydss_params = reload_dss_circuit(
+        dss_file_list=[master_path], commands_list=None, **pydss_params
     )
 
     voltage_upper_limit = thermal_config["voltage_upper_limit"]
@@ -71,7 +61,7 @@ def determine_thermal_upgrades(**PYDSS_PARAMS):
         initial_overvoltage_bus_list,
         initial_buses_with_violations,
     ) = get_bus_voltages(
-        upper_limit=voltage_upper_limit, lower_limit=voltage_lower_limit, **PYDSS_PARAMS
+        upper_limit=voltage_upper_limit, lower_limit=voltage_lower_limit, **pydss_params
     )
 
     initial_overloaded_xfmr_list = list(
@@ -132,7 +122,7 @@ def determine_thermal_upgrades(**PYDSS_PARAMS):
     iteration_counter = 0
     # if number of violations is very high,  limit it to a small number
     max_upgrade_iteration = min(
-        thermal_upgrade_iteration_threshold,
+        THERMAL_UPGRADE_ITERATION_THRESHOLD,
         len(initial_overloaded_xfmr_list) + len(initial_overloaded_line_list),
     )
     start = time.time()
@@ -176,7 +166,7 @@ def determine_thermal_upgrades(**PYDSS_PARAMS):
                 line_loading_df=line_loading_df,
                 line_design_pu=thermal_config["line_design_pu"],
                 line_upgrade_options=line_upgrade_options,
-                PARALLEL_LINES_LIMIT=PARALLEL_LINES_LIMIT,
+                parallel_lines_limit=PARALLEL_LINES_LIMIT,
             )
             logger.info("Corrected line violations.")
             commands_list = commands_list + line_commands_list
@@ -255,7 +245,7 @@ def determine_thermal_upgrades(**PYDSS_PARAMS):
     reload_dss_circuit(
         dss_file_list=[master_path, thermal_upgrades_dss_filepath],
         commands_list=None,
-        **PYDSS_PARAMS,
+        **pydss_params,
     )
     xfmr_loading_df = get_all_transformer_info(
         compute_loading=True, upper_limit=thermal_config["xfmr_upper_limit"]
@@ -271,7 +261,7 @@ def determine_thermal_upgrades(**PYDSS_PARAMS):
         overvoltage_bus_list,
         buses_with_violations,
     ) = get_bus_voltages(
-        upper_limit=voltage_upper_limit, lower_limit=voltage_lower_limit, **PYDSS_PARAMS
+        upper_limit=voltage_upper_limit, lower_limit=voltage_lower_limit, **pydss_params
     )
     overloaded_xfmr_list = list(
         xfmr_loading_df.loc[xfmr_loading_df["status"] == "overloaded"]["name"].unique()
