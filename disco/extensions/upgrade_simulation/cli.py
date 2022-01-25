@@ -6,6 +6,7 @@ from PyDSS.controllers import PvControllerModel
 
 from disco.pydss.common import ConfigType
 
+from disco.pydss.common import ConfigType
 from disco.extensions.upgrade_simulation.upgrade_configuration import UpgradeConfiguration
 from disco.extensions.upgrade_simulation.upgrade_inputs import UpgradeInputs
 from disco.extensions.upgrade_simulation.upgrade_simulation import UpgradeSimulation
