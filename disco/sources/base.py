@@ -195,7 +195,7 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
                 copy_load_shape_data_files=copy_load_shape_data_files,
             )
         
-        if self.metadata_directory is not None:
+        if self.metadata_directory is not None and os.path.exists(self.metadata_directory):
             self._copy_files(
                 src_dir=self.metadata_directory,
                 dst_dir=workspace.metadata_directory
