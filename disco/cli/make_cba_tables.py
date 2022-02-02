@@ -198,8 +198,8 @@ def get_capacitor_table(results: PyDssResults, job_info: JobInfo):
     for scenario in data["scenarios"]:
         for capacitor in scenario["capacitors"]:
             row = job_info._asdict()
-            row["capacitor_name"] = capacitor["name"]
-            row["change_count"] = capacitor["change_count"]
+            row["device_name"] = capacitor["name"]
+            row["action_count"] = capacitor["change_count"]
             capacitor_table.append(row)
     return capacitor_table
 
@@ -211,8 +211,8 @@ def get_reg_control_table(results: PyDssResults, job_info: JobInfo):
     for scenario in data["scenarios"]:
         for reg_control in scenario["reg_controls"]:
             row = job_info._asdict()
-            row["reg_control_name"] = reg_control["name"]
-            row["change_count"] = reg_control["change_count"]
+            row["device_name"] = reg_control["name"]
+            row["action_count"] = reg_control["change_count"]
             reg_control_table.append(row)
     return reg_control_table
 
