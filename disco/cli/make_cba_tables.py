@@ -147,10 +147,12 @@ def get_powers_table(results: PyDssResults, job_info: JobInfo):
                         main_df.index = df.index
                     # Exclude neutral phase.
                     cols = [col for col in df.columns if "__N" not in col]
+                    assert len(df.columns) == 1
+                    series = df.iloc[:, 0]
                     if elem_class == "Loads":
-                        data = [x.real for x in df[cols].sum(axis=1)]
+                        data = series.values
                     else:
-                        data = [get_pv_power_value(x.real) for x in df[cols].sum(axis=1)]
+                        data = series.apply(get_pv_power_value).values
                     main_df[column] = data
                 else:
                     # Not all jobs will have commercial and residential.
