@@ -147,10 +147,12 @@ def get_powers_table(results: PyDssResults, job_info: JobInfo):
                         main_df.index = df.index
                     # Exclude neutral phase.
                     cols = [col for col in df.columns if "__N" not in col]
+                    assert len(df.columns) == 1
+                    series = df.iloc[:, 0]
                     if elem_class == "Loads":
-                        data = [x.real for x in df[cols].sum(axis=1)]
+                        data = series.values
                     else:
-                        data = [get_pv_power_value(x.real) for x in df[cols].sum(axis=1)]
+                        data = series.apply(get_pv_power_value).values
                     main_df[column] = data
                 else:
                     # Not all jobs will have commercial and residential.
@@ -168,7 +170,7 @@ def get_powers_table(results: PyDssResults, job_info: JobInfo):
         if main_df.index[1] - main_df.index[0] == REQUIRED_RESOLUTION:
             df = main_df
         else:
-            df = main_df.resample(REQUIRED_RESOLUTION).sum()
+            df = main_df.resample(REQUIRED_RESOLUTION).mean()
 
         for field, val in job_info._asdict().items():
             df[field] = val
@@ -198,8 +200,8 @@ def get_capacitor_table(results: PyDssResults, job_info: JobInfo):
     for scenario in data["scenarios"]:
         for capacitor in scenario["capacitors"]:
             row = job_info._asdict()
-            row["capacitor_name"] = capacitor["name"]
-            row["change_count"] = capacitor["change_count"]
+            row["device_name"] = capacitor["name"]
+            row["action_count"] = capacitor["change_count"]
             capacitor_table.append(row)
     return capacitor_table
 
@@ -211,8 +213,8 @@ def get_reg_control_table(results: PyDssResults, job_info: JobInfo):
     for scenario in data["scenarios"]:
         for reg_control in scenario["reg_controls"]:
             row = job_info._asdict()
-            row["reg_control_name"] = reg_control["name"]
-            row["change_count"] = reg_control["change_count"]
+            row["device_name"] = reg_control["name"]
+            row["action_count"] = reg_control["change_count"]
             reg_control_table.append(row)
     return reg_control_table
 
