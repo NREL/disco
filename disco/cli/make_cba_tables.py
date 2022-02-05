@@ -170,7 +170,7 @@ def get_powers_table(results: PyDssResults, job_info: JobInfo):
         if main_df.index[1] - main_df.index[0] == REQUIRED_RESOLUTION:
             df = main_df
         else:
-            df = main_df.resample(REQUIRED_RESOLUTION).sum()
+            df = main_df.resample(REQUIRED_RESOLUTION).mean()
 
         for field, val in job_info._asdict().items():
             df[field] = val
