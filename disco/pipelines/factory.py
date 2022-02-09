@@ -1,13 +1,18 @@
 from jade.utils.utils import load_data
 from disco.pipelines.base import PipelineTemplate
-from disco.pipelines.creator import SnapshotPipelineCreator, TimeSeriesPipelineCreator
+from disco.pipelines.creator import (
+    SnapshotPipelineCreator,
+    TimeSeriesPipelineCreator,
+    UpgradePipelineCreator
+)
 from disco.enums import SimulationType
 from disco.sources.factory import make_source_model
 
 
 PIPELINE_CREATOR_MAPPING = {
     SimulationType.SNAPSHOT: SnapshotPipelineCreator,
-    SimulationType.TIME_SERIES: TimeSeriesPipelineCreator
+    SimulationType.TIME_SERIES: TimeSeriesPipelineCreator,
+    SimulationType.UPGRADE: UpgradePipelineCreator
 }
 
 

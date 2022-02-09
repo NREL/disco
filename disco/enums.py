@@ -102,6 +102,7 @@ class SimulationType(enum.Enum):
     SNAPSHOT = "snapshot"
     QSTS = "QSTS"
     TIME_SERIES = "time-series"  # This should be duplicate with QSTS.
+    UPGRADE = "upgrade"
 
 
 class AnalysisModelType(enum.Enum):
