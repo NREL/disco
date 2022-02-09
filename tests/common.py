@@ -21,3 +21,8 @@ POSTPROCESS_RESULTS = [
     "thermal_metrics_table.csv",
     "voltage_metrics_table.csv"
 ]
+UPGRADE_COST_RESULTS = [
+    "total_upgrade_costs.csv",
+    "detailed_upgrade_costs.csv",
+    "upgrade_summary.csv"
+]
