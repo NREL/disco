@@ -13,12 +13,17 @@ from disco.enums import AnalysisType
 from disco.pipelines.factory import PipelineCreatorFactory
 from disco.pipelines.utils import get_default_pipeline_template, check_hpc_config
 from disco.pydss.pydss_configuration_base import get_default_reports_file, get_default_exports_file
+from disco.sources.base import DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS
 from disco.sources.factory import make_source_model
 
 
 logger = logging.getLogger(__name__)
 
-SIMULATION_TYPE_CHOICE = [SimulationType.SNAPSHOT.value, SimulationType.TIME_SERIES.value]
+SIMULATION_TYPE_CHOICE = [
+    SimulationType.SNAPSHOT.value,
+    SimulationType.TIME_SERIES.value,
+    SimulationType.UPGRADE.value
+]
 
 
 @click.group()
@@ -85,6 +90,13 @@ def create_pipeline():
     help="Enable hosting capacity computations",
 )
 @click.option(
+    "-u", "--upgrade-analysis",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Enable upgrade cost computations"
+)
+@click.option(
     "-c", "--cost-benefit",
     is_flag=True,
     default=False,
@@ -146,6 +158,7 @@ def template(
     auto_select_time_points_search_duration_days,
     impact_analysis,
     hosting_capacity,
+    upgrade_analysis,
     cost_benefit,
     prescreen,
     template_file,
@@ -196,6 +209,10 @@ def template(
     
         template.update_config_params(config_params, TemplateSection.SIMULATION)
 
+        if reports_filename is None:
+            reports_filename = get_default_reports_file(simulation_type)
+        template.update_reports_params(load_data(reports_filename))
+
     # time-series special cases
     if simulation_type == SimulationType.TIME_SERIES:
         if prescreen:
@@ -212,14 +229,22 @@ def template(
                 config_params["exports_filename"] = exports_filename
                 template.update_config_params(config_params, TemplateSection.SIMULATION)
     
-    if reports_filename is None:
-        reports_filename = get_default_reports_file(simulation_type)
-    template.update_reports_params(load_data(reports_filename))
+        if reports_filename is None:
+            reports_filename = get_default_reports_file(simulation_type)
+        template.update_reports_params(load_data(reports_filename))
+
+    # upgrade special case
+    if simulation_type == SimulationType.UPGRADE:
+        config_params["cost_database"] = DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS["cost_database"]
+        config_params["params_file"] = DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS["params_file"]
+        template.update_config_params(config_params, TemplateSection.SIMULATION)
 
     if impact_analysis:
         template.data["analysis_type"] = AnalysisType.IMPACT_ANALYSIS.value
     elif hosting_capacity:
         template.data["analysis_type"] = AnalysisType.HOSTING_CAPACITY.value
+    elif upgrade_analysis:
+        template.data["analysis_type"] = AnalysisType.UPGRADE_ANALYSIS.value
     elif cost_benefit:
         template.data["analysis_type"] = AnalysisType.COST_BENEFIT.value
     else:
