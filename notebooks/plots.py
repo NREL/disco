@@ -69,9 +69,28 @@ ax.set_xlabel("Penetration level")
 ax.set_ylabel("max_voltage (pu)")
 fig.savefig("max_voltage_base_voltvar.png")
 
+df4 = pd.read_sql_query(f"SELECT * from thermal_metrics Where feeder=='{feeder_example}'", conn)
+
+fig, ax = plt.subplots(figsize=(8,8))
+
+ax.scatter(df4[df4['scenario']=='pf1']['penetration_level'],df4[df4['scenario']=='pf1']["transformer_max_instantaneous_loading_pct"],facecolors='none',edgecolors='C0',label="base_case:pf1",marker='^')
+ax.scatter(df4[df4['scenario']=='control_mode']['penetration_level'],df4[df4['scenario']=='control_mode']["transformer_max_instantaneous_loading_pct"],facecolors='none',edgecolors='C1',label="control_mode:volt-var",marker='v')
+ax.legend()
+ax.set_title(feeder_example)
+ax.set_xlabel("Penetration level")
+ax.set_ylabel("transformer_max_instantaneous_loading_pct")
+fig.savefig("transformer_max_instantaneous_loading_pct.png")
 
 
+fig, ax = plt.subplots(figsize=(8,8))
 
+ax.scatter(df4[df4['scenario']=='pf1']['penetration_level'],df4[df4['scenario']=='pf1']["transformer_num_time_points_with_instantaneous_violations"],facecolors='none',edgecolors='C0',label="base_case:pf1",marker='^')
+ax.scatter(df4[df4['scenario']=='control_mode']['penetration_level'],df4[df4['scenario']=='control_mode']["transformer_num_time_points_with_instantaneous_violations"],facecolors='none',edgecolors='C1',label="control_mode:volt-var",marker='v')
+ax.legend()
+ax.set_title(feeder_example)
+ax.set_xlabel("Penetration level")
+ax.set_ylabel("transformer_num_time_points_with_instantaneous_violations")
+fig.savefig("transformer_num_time_points_with_instantaneous_violations.png")
 
 
 print('End')
