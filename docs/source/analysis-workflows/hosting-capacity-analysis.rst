@@ -101,3 +101,13 @@ post-processing.
 
 The scenarion name could be ``scenario``, ``pf1`` and/or ``control_mode``, depending on your 
 simulation type and/or ``--with-loadshape`` option.
+
+
+**4. Results database**
+
+With this pipeline, the hosting capacity results and report metrics would be ingested into a
+SQLite database named ``results.sqlite`` which could be found in ``output-stage1``. You can use 
+standard SQL to query data, and perform further analysis.
+
+For sqlite query examples, please refer to the Jupyter notebook ``notebooks/db-query.ipynb`` in
+the source code repo.

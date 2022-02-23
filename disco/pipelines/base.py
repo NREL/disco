@@ -20,6 +20,10 @@ class PipelineTemplate:
         self.data = load_data(template_file)
     
     @property
+    def task_name(self):
+        return self.data["task_name"]
+
+    @property
     def inputs(self):
         return self.data["inputs"]
 

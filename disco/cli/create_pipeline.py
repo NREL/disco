@@ -1,12 +1,8 @@
 import logging
-import os
-import shutil
-import stat
 import sys
 
 import click
 
-from jade.loggers import setup_logging
 from jade.models import SingularityParams
 from jade.utils.utils import dump_data, load_data
 
@@ -31,6 +27,12 @@ def create_pipeline():
 
 @click.command()
 @click.argument("inputs")
+@click.option(
+    "-T", "--task-name",
+    type=click.STRING,
+    default="DISCO Task",
+    help="The task name of the simulation/analysis",
+)
 @click.option(
     "-P", "--preconfigured",
     type=click.BOOL,
@@ -127,6 +129,7 @@ def create_pipeline():
 )
 def template(
     inputs,
+    task_name,
     preconfigured,
     simulation_type,
     with_loadshape,
@@ -147,6 +150,7 @@ def template(
         sys.exit(1)
     
     template = get_default_pipeline_template(simulation_type=simulation_type)
+    template.data["task_name"] = task_name
     template.data["inputs"] = inputs
 
     # model transformation
