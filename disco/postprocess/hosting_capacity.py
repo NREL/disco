@@ -186,7 +186,7 @@ def get_hosting_capacity(meta_df, metric_df, query_phrase, metric_class, hc_summ
     fail_df = metric_df.query(f"~({query_phrase})")
     feeders = set(metric_df.feeder)
     cba_samples = set(metric_df['sample'])
-    violation_starting_penetration = ''
+    violation_starting_penetration = 0
     violation_frequency_by_sample = {}
 
     for feeder in feeders:
