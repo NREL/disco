@@ -223,8 +223,8 @@ def get_hosting_capacity(meta_df, metric_df, query_phrase, metric_class, hc_summ
         total_feeder_load = meta_df[meta_df.feeder == feeder][
             "load_capacity_kw"
         ].values[0]
-        max_kW = max_hc * total_feeder_load
-        min_kW = min_hc * total_feeder_load
+        max_kW = max_hc * total_feeder_load / 100
+        min_kW = min_hc * total_feeder_load / 100
 
         hc_summary[feeder][metric_class] = {
             "min_hc_pct": min_hc,
