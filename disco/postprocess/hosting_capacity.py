@@ -200,7 +200,8 @@ def get_hosting_capacity(meta_df, metric_df, query_phrase, metric_class, hc_summ
         fail_penetration_levels = set(temp_fail.penetration_level.values)
         pass_penetration_levels = set(temp_pass.penetration_level.values)
         if len(temp_fail) != 0 and len(temp_pass) == 0:
-            min_hc = min(temp_fail.penetration_level.values)
+            # min_hc = min(temp_fail.penetration_level.values)
+	    min_hc = 0 # This is supposed to be the PV penetration level of the base case if it passed, 0 otherwise
 
         elif len(temp_fail) != 0 and len(temp_pass) != 0:
             temp_min_values = pass_penetration_levels.difference(fail_penetration_levels)
@@ -217,6 +218,7 @@ def get_hosting_capacity(meta_df, metric_df, query_phrase, metric_class, hc_summ
 
         if len(temp_pass) != 0:
             max_hc = max(pass_penetration_levels)
+	    max_hc = 0 # This is supposed to be the PV penetration level of the base case if it passed, 0 otherwise
         else:
             max_hc = min(fail_penetration_levels)
 
