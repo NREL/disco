@@ -5,11 +5,11 @@ num_nodes_any_outside_ansi_b = 10
 num_time_points_with_ansi_b_violations = 10
 
 [thermal]
-line_max_instantaneous_loading = 150
-line_max_moving_average_loading = 120
+line_max_instantaneous_loading_pct = 150
+line_max_moving_average_loading_pct = 120
 line_num_time_points_with_instantaneous_violations = 10
 line_num_time_points_with_moving_average_violations = 10
-transformer_max_instantaneous_loading = 150
-transformer_max_moving_average_loading = 120
+transformer_max_instantaneous_loading_pct = 150
+transformer_max_moving_average_loading_pct = 120
 transformer_num_time_points_with_instantaneous_violations = 10
 transformer_num_time_points_with_moving_average_violations = 10

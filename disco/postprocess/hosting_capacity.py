@@ -12,12 +12,12 @@ import pandas as pd
 METRIC_MAP = {
     "thermal": {
         "submetrics": [
-            "line_max_instantaneous_loading",
-            "line_max_moving_average_loading",
+            "line_max_instantaneous_loading_pct",
+            "line_max_moving_average_loading_pct",
             "line_num_time_points_with_instantaneous_violations",
             "line_num_time_points_with_moving_average_violations",
-            "transformer_max_instantaneous_loading",
-            "transformer_max_moving_average_loading",
+            "transformer_max_instantaneous_loading_pct",
+            "transformer_max_moving_average_loading_pct",
             "transformer_num_time_points_with_instantaneous_violations",
             "transformer_num_time_points_with_moving_average_violations",
         ]
@@ -199,28 +199,26 @@ def get_hosting_capacity(meta_df, metric_df, query_phrase, metric_class, hc_summ
         recommended_cba_sample = max(violation_frequency_by_sample, key=violation_frequency_by_sample.get)
         fail_penetration_levels = set(temp_fail.penetration_level.values)
         pass_penetration_levels = set(temp_pass.penetration_level.values)
-        if len(temp_fail) != 0 and len(temp_pass) == 0:
+        if fail_penetration_levels:
+            violation_starting_penetration = min(fail_penetration_levels)
+            cba_samples = set(temp_fail.loc[temp_fail.penetration_level==violation_starting_penetration, 'sample'])
+        else:
+            violation_starting_penetration = None
+            cba_samples = set()
+        temp_min_values = pass_penetration_levels.difference(fail_penetration_levels)
+        if len(temp_pass) == 0:
             # min_hc = min(temp_fail.penetration_level.values)
             min_hc = 0 # This is supposed to be the PV penetration level of the base case if it passed, 0 otherwise
-
-        elif len(temp_fail) != 0 and len(temp_pass) != 0:
-            temp_min_values = pass_penetration_levels.difference(fail_penetration_levels)
-
-            if temp_min_values:
-                min_hc = max(temp_min_values)
-
-                violation_starting_penetration = min(fail_penetration_levels)
-                cba_samples = set(temp_fail.loc[temp_fail.penetration_level==violation_starting_penetration, 'sample'])
-            else:
-                min_hc = 0
-        else:
+            max_hc = 0 # This is supposed to be the PV penetration level of the base case if it passed, 0 otherwise
+        elif len(temp_fail) == 0:
             min_hc = max(pass_penetration_levels)
-
-        if len(temp_pass) != 0:
             max_hc = max(pass_penetration_levels)
         else:
-            # max_hc = min(fail_penetration_levels)
-            max_hc = 0 # This is supposed to be the PV penetration level of the base case if it passed, 0 otherwise
+            max_hc = max(pass_penetration_levels)
+            if temp_min_values:
+                min_hc = max(temp_min_values)
+            else:
+                min_hc = 0
 
         total_feeder_load = meta_df[meta_df.feeder == feeder][
             "load_capacity_kw"
