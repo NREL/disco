@@ -206,7 +206,7 @@ def get_hosting_capacity(meta_df, metric_df, query_phrase, metric_class, hc_summ
         elif len(temp_fail) != 0 and len(temp_pass) != 0:
             temp_min_values = pass_penetration_levels.difference(fail_penetration_levels)
            
-            if temp_min_list:
+            if temp_min_values:
                 min_hc = max(temp_min_values)
                 
                 violation_starting_penetration = min(fail_penetration_levels)
@@ -217,10 +217,10 @@ def get_hosting_capacity(meta_df, metric_df, query_phrase, metric_class, hc_summ
             min_hc = max(pass_penetration_levels)
 
         if len(temp_pass) != 0:
-            # max_hc = max(pass_penetration_levels)
-	    max_hc = 0 # This is supposed to be the PV penetration level of the base case if it passed, 0 otherwise
+            max_hc = max(pass_penetration_levels)
         else:
-            max_hc = min(fail_penetration_levels)
+            # max_hc = min(fail_penetration_levels)
+            max_hc = 0 # This is supposed to be the PV penetration level of the base case if it passed, 0 otherwise
 
         total_feeder_load = meta_df[meta_df.feeder == feeder][
             "load_capacity_kw"
