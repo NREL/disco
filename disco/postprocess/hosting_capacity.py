@@ -175,12 +175,12 @@ def compute_hc_per_metric_class(
 
 def get_hosting_capacity(meta_df, metric_df, query_phrase, metric_class, hc_summary):
     """Return the hosting capacity summary
-    
+
     violation_starting_penetration: the lowest penetration level at which the analysis revealed a violation
-	candidate_cba_samples: list of all deployments or samples that have violations at the lowest penetration level
-    violation_frequency_by_sample: the ratio between the number of scenarios yielding violations and the total number of scenarios investigated in a given deployment sample 
+    candidate_cba_samples: list of all deployments or samples that have violations at the lowest penetration level
+    violation_frequency_by_sample: the ratio between the number of scenarios yielding violations and the total number of scenarios investigated in a given deployment sample
     recommended_cba_sample: the sample with the highest violation frequency, recommended for further cost benefit analysis or upgrade
-    	
+
     """
     pass_df = metric_df.query(query_phrase)
     fail_df = metric_df.query(f"~({query_phrase})")
@@ -201,14 +201,14 @@ def get_hosting_capacity(meta_df, metric_df, query_phrase, metric_class, hc_summ
         pass_penetration_levels = set(temp_pass.penetration_level.values)
         if len(temp_fail) != 0 and len(temp_pass) == 0:
             # min_hc = min(temp_fail.penetration_level.values)
-	    min_hc = 0 # This is supposed to be the PV penetration level of the base case if it passed, 0 otherwise
+            min_hc = 0 # This is supposed to be the PV penetration level of the base case if it passed, 0 otherwise
 
         elif len(temp_fail) != 0 and len(temp_pass) != 0:
             temp_min_values = pass_penetration_levels.difference(fail_penetration_levels)
-           
+
             if temp_min_values:
                 min_hc = max(temp_min_values)
-                
+
                 violation_starting_penetration = min(fail_penetration_levels)
                 cba_samples = set(temp_fail.loc[temp_fail.penetration_level==violation_starting_penetration, 'sample'])
             else:
