@@ -174,54 +174,69 @@ def compute_hc_per_metric_class(
 
 
 def get_hosting_capacity(meta_df, metric_df, query_phrase, metric_class, hc_summary):
-    """Return the hosting capacity summary"""
+    """Return the hosting capacity summary
+    
+    violation_starting_penetration: the lowest penetration level at which the analysis revealed a violation
+	candidate_cba_samples: list of all deployments or samples that have violations at the lowest penetration level
+    violation_frequency_by_sample: the ratio between the number of scenarios yielding violations and the total number of scenarios investigated in a given deployment sample 
+    recommended_cba_sample: the sample with the highest violation frequency, recommended for further cost benefit analysis or upgrade
+    	
+    """
     pass_df = metric_df.query(query_phrase)
     fail_df = metric_df.query(f"~({query_phrase})")
     feeders = set(metric_df.feeder)
+    cba_samples = set(metric_df['sample'])
+    violation_starting_penetration = 0
+    violation_frequency_by_sample = {}
 
     for feeder in feeders:
         if not feeder in hc_summary.keys():
             hc_summary[feeder] = dict()
         temp_pass = pass_df[pass_df.feeder == feeder]
         temp_fail = fail_df[fail_df.feeder == feeder]
+        temp_df = metric_df[metric_df.feeder == feeder]
+        violation_frequency_by_sample = {d:len(temp_fail.query('sample == @d'))/len(temp_df.query('sample == @d')) for d in temp_df['sample'].unique()}
+        recommended_cba_sample = max(violation_frequency_by_sample, key=violation_frequency_by_sample.get)
+        fail_penetration_levels = set(temp_fail.penetration_level.values)
+        pass_penetration_levels = set(temp_pass.penetration_level.values)
         if len(temp_fail) != 0 and len(temp_pass) == 0:
-            min_hc = min(list(temp_fail.penetration_level.values))
+            # min_hc = min(temp_fail.penetration_level.values)
+	    min_hc = 0 # This is supposed to be the PV penetration level of the base case if it passed, 0 otherwise
 
         elif len(temp_fail) != 0 and len(temp_pass) != 0:
-            temp_min_list = [
-                p
-                for p in list(temp_pass.penetration_level.values)
-                if not p in list(temp_fail.penetration_level.values)
-            ]
+            temp_min_values = pass_penetration_levels.difference(fail_penetration_levels)
+           
             if temp_min_list:
-                min_hc = max(
-                    [
-                        p
-                        for p in list(temp_pass.penetration_level.values)
-                        if not p in list(temp_fail.penetration_level.values)
-                    ]
-                )
+                min_hc = max(temp_min_values)
+                
+                violation_starting_penetration = min(fail_penetration_levels)
+                cba_samples = set(temp_fail.loc[temp_fail.penetration_level==violation_starting_penetration, 'sample'])
             else:
                 min_hc = 0
         else:
-            min_hc = max(list(temp_pass.penetration_level.values))
+            min_hc = max(pass_penetration_levels)
 
         if len(temp_pass) != 0:
-            max_hc = max(list(temp_pass.penetration_level.values))
+            # max_hc = max(pass_penetration_levels)
+	    max_hc = 0 # This is supposed to be the PV penetration level of the base case if it passed, 0 otherwise
         else:
-            max_hc = min(list(temp_fail.penetration_level.values))
+            max_hc = min(fail_penetration_levels)
 
         total_feeder_load = meta_df[meta_df.feeder == feeder][
             "load_capacity_kw"
         ].values[0]
-        max_kW = max_hc * total_feeder_load
-        min_kW = min_hc * total_feeder_load
+        max_kW = max_hc * total_feeder_load / 100
+        min_kW = min_hc * total_feeder_load / 100
 
         hc_summary[feeder][metric_class] = {
             "min_hc_pct": min_hc,
             "max_hc_pct": max_hc,
             "min_hc_kw": round(min_kW, 0),
             "max_hc_kw": round(max_kW, 0),
+            "violation_starting_penetration": violation_starting_penetration,
+            "candidate_cba_samples": list(cba_samples),
+            "violation_frequency_by_sample": violation_frequency_by_sample,
+            "recommended_cba_sample": recommended_cba_sample,
         }
     return hc_summary
 
@@ -270,6 +285,7 @@ def compute_hc(
         hc_overall[feeder] = {}
         df = pd.DataFrame.from_dict(dic, "index")
         for column in df.columns:
-            hc_overall[feeder][column] = min(df[column])
+            if 'hc' in column:
+                hc_overall[feeder][column] = min(df[column])
 
     return hc_summary, hc_overall, query_list
