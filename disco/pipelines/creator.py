@@ -92,7 +92,10 @@ class SnapshotPipelineCreator(PipelineCreatorBase):
 
             # Postprocess to ingest results into sqlite database
             task_name = self.template.data["task_name"]
-            database = os.path.join(inputs, "results.sqlite")
+            if os.path.isabs(self.template.database):
+                database = self.template.database
+            else:
+                database = os.path.join(inputs, self.template.database)
             model_inputs = self.template.inputs
             commands.append(
                 'disco ingest-tables '
@@ -185,7 +188,11 @@ class TimeSeriesPipelineCreator(PipelineCreatorBase):
             
             # Postprocess to ingest results into sqlite database
             task_name = self.template.data["task_name"]
-            database = os.path.join(inputs, "results.sqlite")
+            
+            if os.path.isabs(self.template.database):
+                database = self.template.database
+            else:
+                database = os.path.join(inputs, self.template.database)
             model_inputs = self.template.inputs
             commands.append(
                 'disco ingest-tables '

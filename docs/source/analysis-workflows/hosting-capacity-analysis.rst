@@ -106,8 +106,11 @@ simulation type and/or ``--with-loadshape`` option.
 **4. Results database**
 
 With this pipeline, the hosting capacity results and report metrics would be ingested into a
-SQLite database named ``results.sqlite`` which could be found in ``output-stage1``. You can use 
-standard SQL to query data, and perform further analysis.
+SQLite database named ``results.sqlite`` by default which could be found in ``output-stage1``. 
+You can use standard SQL to query data, and perform further analysis. 
+
+If you want to ingest the results into another database, or an existing database, please specify
+the absolute path of the database.
 
 For sqlite query examples, please refer to the Jupyter notebook ``notebooks/db-query.ipynb`` in
 the source code repo.

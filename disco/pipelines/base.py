@@ -40,6 +40,10 @@ class PipelineTemplate:
         return self.data["analysis_type"]
 
     @property
+    def database(self):
+        return self.data["database"]
+
+    @property
     def reports(self):
         return self.data.get(TemplateSection.REPORTS.value, {})
 

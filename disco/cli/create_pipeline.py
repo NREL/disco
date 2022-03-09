@@ -1,3 +1,4 @@
+from email.policy import default
 import logging
 import sys
 
@@ -127,6 +128,13 @@ def create_pipeline():
     type=click.Path(exists=True),
     help="Path to container",
 )
+@click.option(
+    "-D",
+    "--database",
+    default="results.sqlite",
+    show_default=True,
+    help="The path of SQLite database for result ingestion"
+)
 def template(
     inputs,
     task_name,
@@ -143,6 +151,7 @@ def template(
     reports_filename,
     enable_singularity,
     container,
+    database
 ):
     """Create pipeline template file"""
     if hosting_capacity and impact_analysis:
@@ -152,6 +161,7 @@ def template(
     template = get_default_pipeline_template(simulation_type=simulation_type)
     template.data["task_name"] = task_name
     template.data["inputs"] = inputs
+    template.data["database"] = database
 
     # model transformation
     if preconfigured:
