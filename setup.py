@@ -26,18 +26,18 @@ def read_lines(filename):
 
 
 
-#class PostDevelopCommand(develop):
-#    """Post-installation for development mode."""
-#    def run(self):
-#        develop.run(self)
-#        install_jade_extensions()
-#
-#
-#class PostInstallCommand(install):
-#    """Post-installation for installation mode."""
-#    def run(self):
-#        install.run(self)
-#        install_jade_extensions()
+class PostDevelopCommand(develop):
+    """Post-installation for development mode."""
+    def run(self):
+        develop.run(self)
+        install_jade_extensions()
+
+
+class PostInstallCommand(install):
+    """Post-installation for installation mode."""
+    def run(self):
+        install.run(self)
+        install_jade_extensions()
 
 
 def install_jade_extensions():
@@ -75,6 +75,19 @@ setup(
         ],
     },
     include_package_data=True,
+    package_data={
+        "disco": [
+            "analysis/*.toml",
+            "analysis/*.xlsx",
+            "pipelines/template/*.toml",
+            "extensions/pydss_simulation/*.toml",
+            "extensions/pydss_simulation/trained_lm_time_prediction.sav",
+            "extensions/*.json",
+            "postprocess/config/*.toml",
+            "postprocess/toolbox/query_tool.ipynb",
+            "pydss/config/*.toml",
+        ],
+    },
     license="BSD license",
     zip_safe=False,
     keywords=["disco"],
@@ -91,6 +104,5 @@ setup(
     extras_require={
         "dev": read_lines("dev-requirements.txt"),
     },
-    # Disabled because this doesn't work when installing via pip.
-    #cmdclass={"install": PostInstallCommand, "develop": PostDevelopCommand},
+    cmdclass={"install": PostInstallCommand, "develop": PostDevelopCommand},
 )
