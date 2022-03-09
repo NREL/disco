@@ -79,7 +79,7 @@ def parse_batch_results(output_dir):
     serialize_table(metadata_table, output_path / "metadata_table.csv")
     serialize_table(thermal_metrics_table, output_path / "thermal_metrics_table.csv")
     serialize_table(voltage_metrics_table, output_path / "voltage_metrics_table.csv")
-    if job.model.model_type == "SnapshotImpactAnalysisModel":
+    if jobs and jobs[0].model.model_type == "SnapshotImpactAnalysisModel":
         serialize_table(snapshot_time_points_table, output_path / "snapshot_time_points_table.csv")
 
 
@@ -92,9 +92,9 @@ def parse_job_results(job, output_path):
             name=job.name,
             substation=deployment.substation,
             feeder=deployment.feeder,
-            placement="None",
-            sample="None",
-            penetration_level="None",
+            placement="",
+            sample="",
+            penetration_level="",
         )
     else:
         job_info = JobInfo(
