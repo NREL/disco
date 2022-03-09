@@ -131,9 +131,10 @@ def create_pipeline():
 @click.option(
     "-D",
     "--database",
+    type=click.Path(),
     default="results.sqlite",
     show_default=True,
-    help="The path of SQLite database for result ingestion"
+    help="The path of new or existing SQLite database"
 )
 def template(
     inputs,

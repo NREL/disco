@@ -33,7 +33,7 @@ from disco.storage.core import StoragePipeline
     "-d", "--database",
     type=click.Path(),
     default="disco.sqlite",
-    help="Database path of SQLite on disk."
+    help="The path of new or existing SQLite database"
 )
 @click.option(
     "-v", "--verbose",
