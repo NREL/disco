@@ -6,7 +6,6 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from enum import Enum
 
-from jade.utils.utils import load_data
 from disco.storage.exceptions import IngestionError
 
 TABLE_NAMES = [

@@ -441,18 +441,9 @@ class SnapshotTimePointsParser(ParserBase, TableParserMixin):
         """Parse time points data for snapshot simulation"""
         logger.info("Parsing data - 'snapshot_time_points'...")
         df = pd.read_csv(output.snapshot_time_points_table)
-        df = self._replace_none(df)
         data = df.to_dict(orient="records")
         data = self._set_record_index(data)
         return data
-
-    @staticmethod
-    def _replace_none(df):
-        df.loc[df["max_pv_load_ratio"] == "None", "max_pv_load_ratio"] = None
-        df.loc[df["max_load"] == "None", "max_load"] = None
-        df.loc[df["daytime_min_load"] == "None", "daytime_min_load"] = None
-        df.loc[df["pv_minus_load"] == "None", "pv_minus_load"] = None
-        return df
 
 
 class HostingCapacityParser(ParserBase):
