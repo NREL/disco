@@ -59,7 +59,7 @@ version = version.split()[2].strip('"').strip("'")
 test_requires = ["pytest", ]
 
 setup(
-    name="disco",
+    name="NREL-disco",
     version=version,
     description="DISCO",
     long_description=readme,
