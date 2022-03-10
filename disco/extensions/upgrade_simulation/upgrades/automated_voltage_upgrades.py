@@ -174,7 +174,7 @@ def determine_voltage_upgrades(
                 regcontrol_sweep_df=regcontrol_sweep_df, initial_regcontrols_df=orig_regcontrols_df, exclude_sub_ltc=True,
                 only_sub_ltc=False, **pydss_params)
             # added to commands list only if it is different from original
-            # will this need to be removed if it's different later - Sherin
+            # will this need to be removed if it's different later
             dss_commands_list = dss_commands_list + regcontrol_settings_commands_list + \
                 regcontrols_parameter_command_list
         # Writing out the results before adding new devices
@@ -195,7 +195,7 @@ def determine_voltage_upgrades(
                 len(orig_regcontrols_df.loc[orig_regcontrols_df['at_substation_xfmr_flag'] == True]) > 0)
             # if there is no substation transformer in the network
             if orig_ckt_info['substation_xfmr'] is None:
-                # check add substation transformer and add ltc reg control on it - Sherin
+                # check add substation transformer and add ltc reg control on it
                 add_subxfmr_commands = add_substation_xfmr(**pydss_params)
                 pass_flag, add_subltc_commands = add_new_regcontrol_command(
                     xfmr_info_series=pd.Series(orig_ckt_info['substation_xfmr']),
