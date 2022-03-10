@@ -253,7 +253,7 @@ class DermsScenaioParser(ParserBase):
                 partial(self._parse_job_scenario, derms_info_file=derms_info_file),
                 self.jobs
             )
-        scenarios = list(results)
+            scenarios = list(results)
         return scenarios
     
     def _parse_job_scenario(self, job, derms_info_file):
