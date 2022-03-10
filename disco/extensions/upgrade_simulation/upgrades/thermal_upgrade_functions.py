@@ -55,7 +55,7 @@ def correct_line_violations(
             # edit existing line and change line configuration/ampacity
             if (len(chosen_option) != 0) and \
                     (chosen_option["normamps"] <= oversize_limit * row["required_design_amp"]).any():
-                chosen_option = chosen_option.sort_values("amp_limit_per_phase")
+                chosen_option = chosen_option.sort_values("normamps")
                 chosen_option = chosen_option.iloc[0]  # choose lowest available option
                 new_config_type = chosen_option["line_definition_type"]
                 # edit existing line
