@@ -142,12 +142,14 @@ class UpgradeSimulation:
             thermal_upgrades_dss_filepath=self.get_thermal_upgrades_dss_file(),
             voltage_upgrades_dss_filepath=self.get_voltage_upgrades_dss_file(),
             voltage_summary_file=self.get_voltage_summary_csv_file(),
+            output_csv_voltage_upgrades_filepath = self.get_voltage_upgrades_csv_file(),
             output_folder=self.job_output,
             verbose=verbose
         )
         compute_all_costs(
             output_csv_xfmr_upgrades_filepath=self.get_transformer_upgrades_csv_file(),
             output_csv_line_upgrades_filepath=self.get_line_upgrades_csv_file(),
+            output_csv_voltage_upgrades_filepath=self.get_voltage_upgrades_csv_file(),
             cost_database_filepath=cost_database_filepath,
             thermal_cost_output_filepath=self.get_thermal_upgrade_costs_file(),
             voltage_cost_output_filepath=self.get_voltage_upgrade_costs_file(),
