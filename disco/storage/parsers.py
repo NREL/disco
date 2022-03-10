@@ -324,13 +324,6 @@ class TableParserMixin:
             })
             indexed_data.append(item)
         return indexed_data
-    
-    @staticmethod
-    def _replace_none(df):
-        df.loc[df["placement"] == "None", "placement"] = None
-        df.loc[df["sample"] == "None", "sample"] = None
-        df.loc[df["penetration_level"] == "None", "penetration_level"] = None
-        return df
 
 
 class FeederHeadParser(ParserBase, TableParserMixin):
@@ -351,7 +344,6 @@ class FeederHeadParser(ParserBase, TableParserMixin):
         """Prase feeder head data from output report file"""
         logger.info("Parsing data - 'feeder_head'...")
         df = pd.read_csv(output.feeder_head_table)
-        df = self._replace_none(df)
         data = df.rename(columns=self.field_mappings).to_dict(orient="records")
         data = self._set_record_index(data)
         return data
@@ -367,7 +359,6 @@ class FeederLossesParser(ParserBase, TableParserMixin):
         """Prase feeder losses data from output report file"""
         logger.info("Parsing data - 'feeder_losses'...")
         df = pd.read_csv(output.feeder_losses_table)
-        df = self._replace_none(df)
         data = df.to_dict(orient="records")
         data = self._set_record_index(data)
         return data
@@ -383,7 +374,6 @@ class MetadataParser(ParserBase, TableParserMixin):
         """Prase metadata data from output report file"""
         logger.info("Parsing data - 'metadata'...")
         df = pd.read_csv(output.metadata_table)
-        df = self._replace_none(df)
         data = df.to_dict(orient="records")
         data = self._set_record_index(data)
         return data
@@ -399,7 +389,6 @@ class ThermalMetricsParser(ParserBase, TableParserMixin):
         """Prase thermal metrics data from output report file"""
         logger.info("Parsing data - 'thermal_metrics'...")
         df = pd.read_csv(output.thermal_metrics_table)
-        df = self._replace_none(df)
         data = df.to_dict(orient="records")
         data = self._set_record_index(data)
         return data
@@ -415,7 +404,6 @@ class VoltageMetricsParser(ParserBase, TableParserMixin):
         """Prase voltage metrics data from output report file"""
         logger.info("Parsing data - 'voltage_metrics'...")
         df = pd.read_csv(output.voltage_metrics_table)
-        df = self._replace_none(df)
         data = df.to_dict(orient="records")
         data = self._set_record_index(data)
         return data
