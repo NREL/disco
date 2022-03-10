@@ -1,3 +1,4 @@
+chevron
 click>=8.0
 feather-format
 filelock

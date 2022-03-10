@@ -1,0 +1,398 @@
+CREATE INDEX IF NOT EXISTS tmidx1 ON thermal_metrics(job_id, name);
+CREATE INDEX IF NOT EXISTS vmidx1 ON voltage_metrics(job_id, name);
+CREATE INDEX IF NOT EXISTS midx1 ON metadata(job_id);
+CREATE INDEX IF NOT EXISTS jobidx1 ON job(id);
+
+-- Create a job table with results FROM specific tasks.
+DROP VIEW IF EXISTS jt_all;
+CREATE TEMP VIEW jt_all AS
+	SELECT
+        tm.name
+        ,tm.substation
+        ,tm.feeder
+        ,tm.placement
+        ,tm.sample
+        ,tm.penetration_level
+        {{#thermal}}
+        ,tm.line_max_instantaneous_loading_pct
+        ,tm.line_max_moving_average_loading_pct
+        ,tm.line_num_time_points_with_instantaneous_violations
+        ,tm.line_num_time_points_with_moving_average_violations
+        ,tm.transformer_max_instantaneous_loading_pct
+        ,tm.transformer_max_moving_average_loading_pct
+        ,tm.transformer_num_time_points_with_instantaneous_violations
+        ,tm.transformer_num_time_points_with_moving_average_violations
+        {{/thermal}}
+        {{#voltage}}
+        ,vm.min_voltage
+        ,vm.max_voltage
+        ,vm.num_nodes_any_outside_ansi_b
+        ,vm.num_time_points_with_ansi_b_violations
+        ,vm.node_type
+        {{/voltage}}
+        -- pv_distances are optional in the data. Can be enabled in the future.
+        --,pv_distances.weighted_average_pv_distance AS pv_distance
+		FROM task
+		JOIN job ON job.task_id = task.id
+		JOIN thermal_metrics AS tm ON tm.job_id = job.id
+		JOIN voltage_metrics AS vm ON vm.job_id = job.id AND tm.name = vm.name AND tm.scenario = vm.scenario
+		--JOIN pv_distances ON job.name = pv_distances.job_name
+		WHERE
+            tm.scenario = '{{scenario}}'
+            {{#task_names}}
+            AND {{task_names}}
+            {{/task_names}}
+            {{#task_pattern}}
+            AND task.name LIKE '{{task_pattern}}'
+            {{/task_pattern}}
+            {{^voltage.secondaries}}
+            AND
+            (
+                node_type != 'secondaries'
+            )
+            {{/voltage.secondaries}}
+    ;
+
+-- Create a table of feeders that experienced violations in the base case.
+DROP VIEW IF EXISTS bad_feeders;
+CREATE TEMP VIEW bad_feeders AS
+    SELECT
+        feeder
+        {{#thermal}}
+        ,MAX(line_max_instantaneous_loading_pct) AS line_max_instantaneous_loading_pct
+        ,MAX(line_max_moving_average_loading_pct) AS line_max_moving_average_loading_pct
+        ,MAX(line_num_time_points_with_instantaneous_violations) AS line_num_time_points_with_instantaneous_violations
+        ,MAX(line_num_time_points_with_moving_average_violations) AS line_num_time_points_with_moving_average_violations
+        ,MAX(transformer_max_instantaneous_loading_pct) AS transformer_max_instantaneous_loading_pct
+        ,MAX(transformer_max_moving_average_loading_pct) AS transformer_max_moving_average_loading_pct
+        ,MAX(transformer_num_time_points_with_instantaneous_violations) AS transformer_num_time_points_with_instantaneous_violations
+        ,MAX(transformer_num_time_points_with_moving_average_violations) AS transformer_num_time_points_with_moving_average_violations
+        {{/thermal}}
+        {{#voltage}}
+        ,MIN(min_voltage) AS min_voltage
+        ,MAX(max_voltage) AS max_voltage
+        ,MAX(num_nodes_any_outside_ansi_b) AS num_nodes_any_outside_ansi_b
+        ,MAX(num_time_points_with_ansi_b_violations) AS num_time_points_with_ansi_b_violations
+        {{/voltage}}
+        FROM jt_all
+        WHERE
+        sample is NULL
+        AND
+        (
+            {{#thermal}}
+            (
+                line_max_instantaneous_loading_pct > {{thermal.line_max_instantaneous_loading_pct}}
+                OR line_max_moving_average_loading_pct > {{thermal.line_max_moving_average_loading_pct}}
+                OR line_num_time_points_with_instantaneous_violations > {{thermal.line_num_time_points_with_instantaneous_violations}}
+                OR line_num_time_points_with_moving_average_violations > {{thermal.line_num_time_points_with_moving_average_violations}}
+                OR transformer_max_instantaneous_loading_pct > {{thermal.transformer_max_instantaneous_loading_pct}}
+                OR transformer_max_moving_average_loading_pct > {{thermal.transformer_max_moving_average_loading_pct}}
+                OR transformer_num_time_points_with_instantaneous_violations > {{thermal.transformer_num_time_points_with_instantaneous_violations}}
+                OR transformer_num_time_points_with_moving_average_violations > {{thermal.transformer_num_time_points_with_moving_average_violations}}
+            )
+            {{/thermal}}
+            {{^thermal}}
+            false
+            {{/thermal}}
+            OR
+            {{#voltage}}
+            (
+                min_voltage < {{voltage.min_voltage}}
+                OR max_voltage > {{voltage.max_voltage}}
+                OR num_nodes_any_outside_ansi_b > {{voltage.num_nodes_any_outside_ansi_b}}
+                OR num_time_points_with_ansi_b_violations > {{voltage.num_time_points_with_ansi_b_violations}}
+            )
+            {{/voltage}}
+            {{^voltage}}
+            false
+            {{/voltage}}
+        )
+        GROUP BY feeder
+        ORDER BY feeder;
+
+DROP VIEW IF EXISTS bad_feeders_pct_threshold;
+CREATE TEMP VIEW bad_feeders_pct_threshold AS
+    SELECT
+        feeder
+        {{#thermal}}
+        ,line_max_instantaneous_loading_pct / {{thermal.line_max_instantaneous_loading_pct}} AS line_max_instantaneous_loading_pct_pct
+        ,line_max_moving_average_loading_pct / {{thermal.line_max_moving_average_loading_pct}} AS line_max_moving_average_loading_pct_pct
+        ,line_num_time_points_with_instantaneous_violations / {{thermal.line_num_time_points_with_instantaneous_violations}} AS line_num_time_points_with_instantaneous_violations_pct
+        ,line_num_time_points_with_moving_average_violations / {{thermal.line_num_time_points_with_moving_average_violations}} AS line_num_time_points_with_moving_average_violations_pct
+        ,transformer_max_instantaneous_loading_pct / {{thermal.transformer_max_instantaneous_loading_pct}} AS transformer_max_instantaneous_loading_pct_pct
+        ,transformer_max_moving_average_loading_pct / {{thermal.transformer_max_moving_average_loading_pct}} AS transformer_max_moving_average_loading_pct_pct
+        ,transformer_num_time_points_with_instantaneous_violations / {{thermal.transformer_num_time_points_with_instantaneous_violations}} AS transformer_num_time_points_with_instantaneous_violations_pct
+        ,transformer_num_time_points_with_moving_average_violations / {{thermal.transformer_num_time_points_with_moving_average_violations}} AS transformer_num_time_points_with_moving_average_violations_pct
+        {{/thermal}}
+        {{#voltage}}
+        ,min_voltage
+        ,max_voltage
+        ,num_nodes_any_outside_ansi_b / {{voltage.num_nodes_any_outside_ansi_b}} AS num_nodes_any_outside_ansi_b_pct
+        ,num_time_points_with_ansi_b_violations / {{voltage.num_time_points_with_ansi_b_violations}} AS num_time_points_with_ansi_b_violations_pct
+        {{/voltage}}
+    FROM bad_feeders
+    ORDER BY feeder;
+
+DROP VIEW IF EXISTS bad_feeders_violation_count;
+CREATE TEMP VIEW bad_feeders_violation_count AS
+    SELECT
+        feeder
+        {{#thermal}}
+        ,CASE WHEN line_max_instantaneous_loading_pct_pct > 1.0 THEN 1 ELSE 0 END AS line_max_instantaneous_loading_count
+        ,CASE WHEN line_max_moving_average_loading_pct_pct > 1.0 THEN 1 ELSE 0 END AS line_max_moving_average_loading_count
+        ,CASE WHEN line_num_time_points_with_instantaneous_violations_pct > 1.0 THEN 1 ELSE 0 END AS line_num_time_points_with_instantaneous_violations_count
+        ,CASE WHEN line_num_time_points_with_moving_average_violations_pct > 1.0 THEN 1 ELSE 0 END AS line_num_time_points_with_moving_average_violations_count
+        ,CASE WHEN transformer_max_instantaneous_loading_pct_pct > 1.0 THEN 1 ELSE 0 END AS transformer_max_instantaneous_loading_count
+        ,CASE WHEN transformer_max_moving_average_loading_pct_pct > 1.0 THEN 1 ELSE 0 END AS transformer_max_moving_average_loading_count
+        ,CASE WHEN transformer_num_time_points_with_instantaneous_violations_pct > 1.0 THEN 1 ELSE 0 END AS transformer_num_time_points_with_instantaneous_violations_count
+        ,CASE WHEN transformer_num_time_points_with_moving_average_violations_pct > 1.0 THEN 1 ELSE 0 END AS transformer_num_time_points_with_moving_average_violations_count
+        {{/thermal}}
+        {{#voltage}}
+        ,CASE WHEN min_voltage < {{voltage.min_voltage}} THEN 1 ELSE 0 END AS min_voltage_count
+        ,CASE WHEN max_voltage > {{voltage.max_voltage}} THEN 1 ELSE 0 END AS max_voltage_count
+        ,CASE WHEN num_nodes_any_outside_ansi_b_pct > 1.0 THEN 1 ELSE 0 END AS num_nodes_any_outside_ansi_b_count
+        ,CASE WHEN num_time_points_with_ansi_b_violations_pct > 1.0 THEN 1 ELSE 0 END AS num_time_points_with_ansi_b_violations_count
+        {{/voltage}}
+    FROM bad_feeders_pct_threshold
+    ORDER BY feeder;
+
+DROP VIEW IF EXISTS bad_feeders_violation_count_overall;
+CREATE TEMP VIEW bad_feeders_violation_count_overall AS
+    SELECT
+        {{#thermal}}
+        SUM(line_max_instantaneous_loading_count) AS line_max_instantaneous_loading_count
+        ,SUM(line_max_moving_average_loading_count) AS line_max_moving_average_loading_count
+        ,SUM(line_num_time_points_with_instantaneous_violations_count) AS line_num_time_points_with_instantaneous_violations_count
+        ,SUM(line_num_time_points_with_moving_average_violations_count) AS line_num_time_points_with_moving_average_violations_count
+        ,SUM(transformer_max_instantaneous_loading_count) AS transformer_max_instantaneous_loading_count
+        ,SUM(transformer_max_moving_average_loading_count) AS transformer_max_moving_average_loading_count
+        ,SUM(transformer_num_time_points_with_instantaneous_violations_count) AS transformer_num_time_points_with_instantaneous_violations_count
+        ,SUM(transformer_num_time_points_with_moving_average_violations_count) AS transformer_num_time_points_with_moving_average_violations_count
+        {{/thermal}}
+        {{#voltage}}
+        {{#thermal}},{{/thermal}}
+        SUM(min_voltage_count) as min_voltage_count
+        ,SUM(max_voltage_count) as max_voltage_count
+        ,SUM(num_nodes_any_outside_ansi_b_count) AS num_nodes_any_outside_ansi_b_count
+        ,SUM(num_time_points_with_ansi_b_violations_count) AS num_time_points_with_ansi_b_violations_count
+        {{/voltage}}
+    FROM bad_feeders_violation_count;
+
+DROP VIEW IF EXISTS jt;
+CREATE TEMP VIEW jt AS
+    SELECT * FROM jt_all WHERE feeder NOT IN (SELECT feeder from bad_feeders);
+
+-- Create a metadata table with results FROM specific tasks.
+DROP VIEW IF EXISTS mt;
+CREATE TEMP VIEW mt AS
+	SELECT mt.*
+		FROM task
+		JOIN job ON job.task_id = task.id
+		JOIN metadata AS mt ON mt.job_id = job.id
+		WHERE task.name LIKE '%{{task_pattern}}'
+            AND feeder NOT IN (SELECT feeder from bad_feeders)
+            AND mt.scenario = '{{scenario}}'
+    ;
+
+-- Find the max penetration_level for each feeder.
+DROP VIEW IF EXISTS hc_max;
+CREATE TEMP VIEW hc_max AS
+    SELECT
+        feeder
+        --,pv_distance
+        ,MAX(max_passing_penetration_level) AS max_hc
+    FROM hc_by_sample
+    GROUP BY feeder
+    ;
+
+-- Create a table showing hosting capacity by feeder and sample.
+DROP VIEW IF EXISTS hc_by_sample;
+CREATE TEMP VIEW hc_by_sample AS
+    SELECT
+        feeder
+        ,sample
+        --,pv_distance
+        ,MAX(penetration_level) AS max_passing_penetration_level
+        FROM jt
+        WHERE
+            true
+            {{#thermal}}
+            AND
+            (
+                line_max_instantaneous_loading_pct <= {{thermal.line_max_instantaneous_loading_pct}}
+                AND line_max_moving_average_loading_pct <= {{thermal.line_max_moving_average_loading_pct}}
+                AND line_num_time_points_with_instantaneous_violations <= {{thermal.line_num_time_points_with_instantaneous_violations}}
+                AND line_num_time_points_with_moving_average_violations <= {{thermal.line_num_time_points_with_moving_average_violations}}
+                AND transformer_max_instantaneous_loading_pct <= {{thermal.transformer_max_instantaneous_loading_pct}}
+                AND transformer_max_moving_average_loading_pct <= {{thermal.transformer_max_moving_average_loading_pct}}
+                AND transformer_num_time_points_with_instantaneous_violations <= {{thermal.transformer_num_time_points_with_instantaneous_violations}}
+                AND transformer_num_time_points_with_moving_average_violations <= {{thermal.transformer_num_time_points_with_moving_average_violations}}
+            )
+            {{/thermal}}
+            {{#voltage}}
+            AND
+            (
+                min_voltage >= {{voltage.min_voltage}}
+                AND max_voltage <= {{voltage.max_voltage}}
+                AND num_nodes_any_outside_ansi_b <= {{voltage.num_nodes_any_outside_ansi_b}}
+                AND num_time_points_with_ansi_b_violations <= {{voltage.num_time_points_with_ansi_b_violations}}
+            )
+            {{/voltage}}
+        GROUP BY feeder, sample;
+
+-- Add kw to hc_by_sample.
+DROP VIEW IF EXISTS hc_by_sample_kw;
+CREATE TEMP VIEW hc_by_sample_kw AS
+    SELECT 
+        sq.feeder
+        ,hc_by_sample.sample
+        ,hc_by_sample.max_passing_penetration_level
+        ,hc_by_sample.max_passing_penetration_level * sq.load_capacity_kw / 100 AS max_hc_kw
+        ,sq.load_capacity_kw
+    FROM
+        (
+            -- All samples (and base case) in a feeder have the same load_capacity_kw.
+            SELECT DISTINCT
+                feeder, load_capacity_kw
+            FROM mt
+        ) AS sq
+    JOIN hc_by_sample ON
+        sq.feeder = hc_by_sample.feeder
+    ORDER BY sq.feeder, hc_by_sample.sample;
+
+DROP VIEW IF EXISTS hc_per_level1;
+CREATE TEMP VIEW hc_per_level1 AS
+    SELECT
+        feeder
+        ,sample
+        ,penetration_level
+        FROM jt
+        WHERE
+            true
+            {{#thermal}}
+            AND
+            (
+                line_max_instantaneous_loading_pct <= {{thermal.line_max_instantaneous_loading_pct}}
+                AND line_max_moving_average_loading_pct <= {{thermal.line_max_moving_average_loading_pct}}
+                AND line_num_time_points_with_instantaneous_violations <= {{thermal.line_num_time_points_with_instantaneous_violations}}
+                AND line_num_time_points_with_moving_average_violations <= {{thermal.line_num_time_points_with_moving_average_violations}}
+                AND transformer_max_instantaneous_loading_pct <= {{thermal.transformer_max_instantaneous_loading_pct}}
+                AND transformer_max_moving_average_loading_pct <= {{thermal.transformer_max_moving_average_loading_pct}}
+                AND transformer_num_time_points_with_instantaneous_violations <= {{thermal.transformer_num_time_points_with_instantaneous_violations}}
+                AND transformer_num_time_points_with_moving_average_violations <= {{thermal.transformer_num_time_points_with_moving_average_violations}}
+            )
+            {{/thermal}}
+            {{#voltage}}
+            AND
+            (
+                min_voltage >= {{voltage.min_voltage}}
+                AND max_voltage <= {{voltage.max_voltage}}
+                AND num_nodes_any_outside_ansi_b <= {{voltage.num_nodes_any_outside_ansi_b}}
+                AND num_time_points_with_ansi_b_violations <= {{voltage.num_time_points_with_ansi_b_violations}}
+            )
+            {{/voltage}}
+        ;
+
+DROP VIEW IF EXISTS hc_per_level2;
+CREATE TEMP VIEW hc_per_level2 AS
+    SELECT
+        feeder
+        ,sample
+        ,penetration_level
+        ,1 AS tmp_value
+    FROM hc_per_level1
+    ;
+
+-- Create a table that shows the number of passing samples at each penetration level.
+-- TODO: this doesn't show samples with no passing levels
+DROP VIEW IF EXISTS hc_pp;
+CREATE TEMP VIEW hc_pp AS
+    SELECT
+        feeder
+        ,penetration_level
+        ,SUM(tmp_value) / 10.0 AS passing_probability
+    FROM hc_per_level2
+    WHERE
+        sample IS NOT NULL
+    GROUP BY feeder, penetration_level
+    ;
+
+-- TODO: optimize the following sequence of queries
+
+-- Create a table showing HC metrics for all feeders with at least one passing penetration level.
+DROP VIEW IF EXISTS hc_summary1;
+CREATE TEMP VIEW hc_summary1 AS
+    SELECT
+        sq1.*
+        ,CAST(sq2.min_penetration_level AS FLOAT) AS min_hc
+        ,CAST(hc_max.max_hc AS FLOAT) as max_hc
+    FROM
+        (
+            SELECT
+                feeder
+                ,SUM(passing_probability) * 5 AS expected_hc
+            FROM hc_pp
+            GROUP BY feeder
+        ) AS sq1
+    JOIN hc_max ON sq1.feeder = hc_max.feeder
+    LEFT JOIN (
+        SELECT
+            feeder
+            ,MAX(penetration_level) AS min_penetration_level
+            ,passing_probability
+        FROM hc_pp
+        WHERE passing_probability = 1.0
+        GROUP BY feeder
+    ) AS sq2
+    ON sq1.feeder = sq2.feeder
+    ;
+
+DROP VIEW IF EXISTS hc_summary2;
+CREATE TEMP VIEW hc_summary2 AS
+    SELECT
+        feeder
+        ,expected_hc
+        ,CASE WHEN min_hc IS NULL THEN 0 ELSE min_hc END AS min_hc
+        ,max_hc
+    FROM
+        hc_summary1
+;
+
+-- Join the table with all feeders that passed with their base case.
+DROP VIEW IF EXISTS hc_summary3;
+CREATE TEMP VIEW hc_summary3 AS
+    SELECT
+        distinct(mt.feeder)
+        ,hc.expected_hc
+        ,hc.min_hc
+        ,hc.max_hc
+    FROM
+        mt
+    LEFT JOIN hc_summary2 as hc
+        ON mt.feeder = hc.feeder
+    ;
+
+DROP VIEW IF EXISTS hc_summary4;
+CREATE TEMP VIEW hc_summary4 AS
+    SELECT
+        feeder
+        ,CASE WHEN expected_hc is NULL THEN 0.0 ELSE expected_hc END AS expected_hc
+        ,CASE WHEN min_hc is NULL THEN 0.0 ELSE min_hc END AS min_hc
+        ,CASE WHEN max_hc is NULL THEN 0.0 ELSE max_hc END AS max_hc
+    FROM hc_summary3
+    ;
+
+DROP VIEW IF EXISTS hc_summary;
+CREATE TEMP VIEW hc_summary AS
+    SELECT
+        feeder
+        ,expected_hc
+        ,min_hc
+        ,max_hc
+        ,CASE WHEN (min_hc == max_hc) THEN 0.0 ELSE (
+            (max_hc - expected_hc) / (expected_hc - min_hc)
+        ) END AS disparity_index
+    FROM
+        hc_summary4
+    ORDER BY feeder
+;

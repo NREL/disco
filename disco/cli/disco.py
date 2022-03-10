@@ -1,5 +1,6 @@
 """Main CLI command for disco."""
 
+from disco.cli import summarize_hosting_capacity
 import logging
 
 import click
@@ -13,6 +14,7 @@ from disco.cli.prescreen_pv_penetration_levels import prescreen_pv_penetration_l
 from disco.cli.pv_deployments import pv_deployments
 from disco.cli.create_pipeline import create_pipeline
 from disco.cli.ingest_tables import ingest_tables
+from disco.cli.summarize_hosting_capacity import summarize_hosting_capacity
 
 
 logger = logging.getLogger(__name__)
@@ -32,3 +34,4 @@ cli.add_command(pv_deployments)
 cli.add_command(prescreen_pv_penetration_levels)
 cli.add_command(create_pipeline)
 cli.add_command(ingest_tables)
+cli.add_command(summarize_hosting_capacity)
