@@ -42,11 +42,11 @@ DEFAULT_SUBLTC_SETTINGS = {
 }
 
 # default regulator settings
-default_regcontrol_settings = {}
-default_regcontrol_settings["conn"] = "wye"
-default_regcontrol_settings["delay"] = 15  # in seconds
-default_regcontrol_settings["band"] = 2  # deadband in volts
-default_regcontrol_settings["properties_to_be_defined"] = [
+DEFAULT_REGCONTROL_SETTINGS = {}
+DEFAULT_REGCONTROL_SETTINGS["conn"] = "wye"
+DEFAULT_REGCONTROL_SETTINGS["delay"] = 15  # in seconds
+DEFAULT_REGCONTROL_SETTINGS["band"] = 2  # deadband in volts
+DEFAULT_REGCONTROL_SETTINGS["properties_to_be_defined"] = [
     "winding",
     "ptratio",
     "band",
@@ -55,9 +55,5 @@ default_regcontrol_settings["properties_to_be_defined"] = [
 ]
 
 # max_regs = voltage_config["max_regulators"]
-
-
-# TODO use this
-upgrade_process_type = "thermal_only"  # other option is 'voltage_only', 'thermal+voltage', 'voltage+thermal'
 
 create_topology_plots = False
