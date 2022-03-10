@@ -40,7 +40,7 @@ class InitializationStep(PipelineStep):
         if not self.validate_task(data):
             task_name = data["task_name"]
             logger.error(f"Task '{task_name}' already exists, please try other --task-name.")
-            sys.exit()
+            sys.exit(1)
         return data
 
     def validate_task(self, data):
