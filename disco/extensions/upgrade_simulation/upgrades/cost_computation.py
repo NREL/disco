@@ -58,7 +58,7 @@ def compute_all_costs(
 
     thermal_cost_df = xfmr_cost_df.append(line_cost_df)
 
-    if not voltage_upgrades_df.empty():
+    if not voltage_upgrades_df.empty:
         # compute voltage upgrade costs
         cap_cost_df = compute_capcontrol_cost(voltage_upgrades_df=voltage_upgrades_df,
                                             controls_cost_database=controls_cost_database)

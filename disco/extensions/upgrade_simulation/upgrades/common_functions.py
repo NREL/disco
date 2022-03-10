@@ -717,3 +717,22 @@ def convert_summary_dict_to_df(summary_dict=None):
 
 def filter_dictionary(dict_data=None, wanted_keys=None):
     return {k: dict_data.get(k, None) for k in wanted_keys}
+
+
+def compare_dict(old, new):
+    """function to compare two dictionaries with same format. 
+    Only compares common elements present in both original and new dictionaries
+    
+    """
+    field_list = []
+    change = {}
+    sharedKeys = set(old.keys()).intersection(new.keys())
+    for key in sharedKeys:
+        change_flag = False
+        for sub_field in old[key]:
+            if old[key][sub_field] != new[key][sub_field]:
+                change_flag = True
+                field_list.append(sub_field)
+        if change_flag:
+            change[key] = field_list
+    return change
