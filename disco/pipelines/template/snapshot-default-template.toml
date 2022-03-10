@@ -1,4 +1,4 @@
-task_name = "DISCO Task"
+task_name = "null"
 inputs = "null"
 preconfigured = false
 simulation_type = "snapshot"

@@ -31,7 +31,6 @@ def create_pipeline():
 @click.option(
     "-T", "--task-name",
     type=click.STRING,
-    default="DISCO Task",
     help="The task name of the simulation/analysis",
 )
 @click.option(
