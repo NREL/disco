@@ -8,6 +8,7 @@ from enum import Enum
 
 from disco.storage.exceptions import IngestionError
 
+# NOTE: Important table names, please do not change.
 TABLE_NAMES = [
     "feeder_head_table.csv",
     "feeder_losses_table.csv",
@@ -145,7 +146,7 @@ class PipelineSimulationOutput(OutputBase):
         output: str or pathlib.Path
         """
         for path in output.iterdir():
-            if not str(path.name).startswith("output-stage"):
+            if not path.name.startswith("output-stage"):
                 continue
             report_files = [path / table_name for table_name in self.table_names[:-1]]
             report_exists = [report_file.exists() for report_file in report_files]
@@ -190,7 +191,7 @@ def get_creation_time(dir_or_file):
     
     stat = os.stat(dir_or_file)
     try:
-        return stat.st_birthtime  # For Mac
+        return stat.st_birthtime  # For FreeBSD, including Mac
     except AttributeError:
         # Not easy to get creation time on Linux, use modification time
         return stat.st_mtime
@@ -204,7 +205,7 @@ def is_from_pipeline(output):
     output: str or pathlib.Path
     """
     for path in output.iterdir():
-        if str(path.name).startswith("output-stage"):
+        if path.name.startswith("output-stage"):
             return True
     return False
 
