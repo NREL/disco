@@ -1,9 +1,9 @@
 """CLI to run a scenario."""
 import logging
 
-from dss.v7 import DSS_GR
-from PyDSS import __version__ as pydss_version
+import opendssdirect as dss
 from opendssdirect._version import __version__ as opendssdirect_version
+from PyDSS import __version__ as pydss_version
 from jade.jobs.job_configuration_factory import create_config_from_file
 from disco.extensions.pydss_simulation.pydss_configuration import PyDssConfiguration
 from disco.extensions.pydss_simulation.pydss_simulation import PyDssSimulation
@@ -34,7 +34,7 @@ def run(config_file, name, output, output_format, verbose):
     logger.info("disco version = %s", disco_version)
     logger.info("PyDSS version = %s", pydss_version)
     logger.info("OpenDSSDirect version = %s", opendssdirect_version)
-    logger.info("OpenDSS version = %s", DSS_GR.Version)
+    logger.info("OpenDSS version = %s", dss.Basic.Version())
 
     simulation = PyDssSimulation.create(config.pydss_inputs,
                                         job,

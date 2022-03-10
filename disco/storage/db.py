@@ -1,10 +1,7 @@
-import sqlite3
-
 from sqlalchemy import Column, ForeignKey
 from sqlalchemy import types
 from sqlalchemy.engine import create_engine as _create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker
 
 Base = declarative_base()
 
@@ -20,7 +17,7 @@ class Task(Base):
     jade_version = Column(types.String(length=30), nullable=True, default=None)
     pydss_version = Column(types.String(length=30), nullable=True, default=None)
     opendssdirect_version = Column(types.String(length=30), nullable=True, default=None)
-    opendss_version = Column(types.String(length=30), nullable=True, default=None)
+    opendss_version = Column(types.Text(), nullable=True, default=None)
     notes = Column(types.Text, nullable=True, default=None)
     creation_time = Column(types.DateTime)
 
