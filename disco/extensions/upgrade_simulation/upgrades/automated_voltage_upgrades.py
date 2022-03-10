@@ -24,6 +24,7 @@ def determine_voltage_upgrades(
     thermal_upgrades_dss_filepath,
     voltage_upgrades_dss_filepath,
     voltage_summary_file,
+    output_csv_voltage_upgrades_filepath,
     output_folder,
     ignore_switch=True,
     verbose=False
@@ -299,6 +300,17 @@ def determine_voltage_upgrades(
     write_text_file(string_list=dss_commands_list, text_file_path=voltage_upgrades_dss_filepath)
     reload_dss_circuit(dss_file_list=[master_path, thermal_upgrades_dss_filepath, voltage_upgrades_dss_filepath],
                        commands_list=None, **pydss_params)
+    # reading new objects (after upgrades)
+    new_ckt_info = get_circuit_info()
+    new_xfmrs_df = get_all_transformer_info(compute_loading=False)
+    new_regcontrols_df = get_regcontrol_info(correct_PT_ratio=True, nominal_voltage=voltage_config["nominal_voltage"])
+    new_capacitors_df = get_capacitor_info(correct_PT_ratio=True, nominal_voltage=voltage_config['nominal_voltage'])
+    processed_cap = get_capacitor_upgrades(orig_capacitors_df=orig_capacitors_df, new_capacitors_df=new_capacitors_df)
+    processed_reg = get_regulator_upgrades(orig_regcontrols_df=orig_regcontrols_df, new_regcontrols_df=new_regcontrols_df, 
+                                           orig_xfmrs_df=orig_xfmrs_df, new_ckt_info=new_ckt_info)
+    processed_cap.update(processed_reg)
+    processed_df = pd.DataFrame.from_dict(processed_cap, orient='index')
+    processed_df.to_csv(output_csv_voltage_upgrades_filepath)
     bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
         voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **pydss_params)
     output_text['Final'] = {

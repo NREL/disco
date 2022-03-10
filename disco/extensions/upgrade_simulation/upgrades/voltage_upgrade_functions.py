@@ -1513,3 +1513,140 @@ def correct_node_coordinates(G=None):
         else:  # if there are no parent or child nodes
             continue  # can't correct coordinates cause no parent or child nodes found.
     return G
+
+
+# function to get capacitor upgrades
+def get_capacitor_upgrades(orig_capacitors_df=None, new_capacitors_df=None):
+    if len(orig_capacitors_df) > 0:
+        orig_capcontrols = orig_capacitors_df.set_index('capacitor_name').transpose().to_dict()
+    else:
+        orig_capcontrols = {}
+    if len(new_capacitors_df) > 0:
+        new_capcontrols = new_capacitors_df.set_index('capacitor_name').transpose().to_dict()
+    else:
+        new_capcontrols = {}
+    
+    final_cap_upgrades = {}
+    processed_outputs = {}
+    # STEP 1: compare controllers that exist in both: original and new- and get difference
+    change = compare_dict(orig_capcontrols, new_capcontrols)
+    modified_capacitors = list(change.keys())
+    # STEP 2: account for any new controllers added (which are not there in original)
+    new_addition = list(set(new_capcontrols.keys()) -
+                        (set(orig_capcontrols.keys()) & set(new_capcontrols.keys())))
+    cap_upgrades = [*modified_capacitors, *new_addition]  # combining these two lists to get upgraded capacitors
+    if cap_upgrades:
+        for cap_name in cap_upgrades:
+            final_cap_upgrades["cap_name"] = "Capacitor." + cap_name
+            final_cap_upgrades["ctrl_name"] = new_capcontrols[cap_name]["capcontrol_name"]
+            final_cap_upgrades["cap_kvar"] = new_capcontrols[cap_name]["kvar"]
+            final_cap_upgrades["cap_kv"] = new_capcontrols[cap_name]["kv"]
+            final_cap_upgrades["cap_on"] = new_capcontrols[cap_name]["ONsetting"]
+            final_cap_upgrades["cap_off"] = new_capcontrols[cap_name]["OFFsetting"]
+            final_cap_upgrades["ctrl_type"] = new_capcontrols[cap_name]["capcontrol_type"]
+            final_cap_upgrades["cap_settings"] = True
+            # if there are differences between original and new controllers
+            if cap_name in modified_capacitors:
+                # if control type in original controller is voltage, only settings are changed
+                if orig_capcontrols[cap_name]["capcontrol_type"].lower().startswith("volt"):
+                    final_cap_upgrades["ctrl_added"] = False
+                # if original controller type was current, new controller (voltage type) is said to be added
+                elif orig_capcontrols[cap_name]["capcontrol_type"].lower().startswith("current"):
+                    final_cap_upgrades["ctrl_added"] = True
+            # if there are new controllers
+            elif cap_name in new_addition:
+                final_cap_upgrades["ctrl_added"] = True
+        processed_outputs[final_cap_upgrades["cap_name"]] = {
+            "New controller added": final_cap_upgrades["ctrl_added"],
+            "Controller settings modified": final_cap_upgrades["cap_settings"],
+            "Final Settings": {
+                "capctrl name": final_cap_upgrades["ctrl_name"],
+                "cap kvar": final_cap_upgrades["cap_kvar"],
+                "cap kV": final_cap_upgrades["cap_kv"],
+                "ctrl type": final_cap_upgrades["ctrl_type"],
+                "ON setting (V)": final_cap_upgrades["cap_on"],
+                "OFF setting (V)": final_cap_upgrades["cap_off"]
+            }
+        }
+    return processed_outputs
+
+
+# function to assign settings if regulator upgrades are on substation transformer
+def check_substation_LTC(new_ckt_info=None, xfmr_name=None):
+    if new_ckt_info["substation_xfmr"]["name"].lower() == xfmr_name:
+        subltc_dict = {}        
+        subltc_dict["substation_xfmr"] = True
+        subltc_dict["xfmr_kva"] = new_ckt_info["substation_xfmr"]["kVA"]
+        subltc_dict["xfmr_kv"] = new_ckt_info["substation_xfmr"]["kV"]
+    else:
+        subltc_dict = None
+    return subltc_dict
+
+
+# function to check for regulator upgrades
+def get_regulator_upgrades(orig_regcontrols_df=None, new_regcontrols_df=None, orig_xfmrs_df=None, new_ckt_info=None):
+    if len(orig_regcontrols_df) > 0:
+        orig_reg_controls = orig_regcontrols_df.set_index('name').transpose().to_dict()
+    else:
+        orig_reg_controls = {}
+    if len(new_regcontrols_df) > 0:
+        new_reg_controls = new_regcontrols_df.set_index('name').transpose().to_dict()
+    else:
+        new_reg_controls = {}
+    if len(orig_xfmrs_df) > 0:
+        orig_xfmr_info = orig_xfmrs_df.set_index('name').transpose().to_dict()
+    else:
+        orig_xfmr_info = {}
+    
+    final_reg_upgrades = {}
+    processed_outputs = {}
+    # STEP 1: compare controllers that exist in both: original and new
+    change = compare_dict(orig_reg_controls, new_reg_controls)
+    modified_regulators = list(change.keys())
+    # STEP 2: account for any new controllers added (which are not there in original)
+    new_addition = list(set(new_reg_controls.keys()) -
+                        (set(orig_reg_controls.keys()) & set(new_reg_controls.keys())))
+    reg_upgrades = [*modified_regulators, *new_addition]  # combining these two lists to get upgraded regulators
+    # if there are any upgrades & enabled, only then write to the file
+    if reg_upgrades:
+        for ctrl_name in reg_upgrades:
+            if new_reg_controls[ctrl_name]['enabled'] == True:
+                final_reg_upgrades["reg_settings"] = "changed"  # settings are changed
+                final_reg_upgrades["reg_ctrl_name"] = ctrl_name.lower()
+                final_reg_upgrades["reg_vsp"] = float(new_reg_controls[ctrl_name]["vreg"])
+                final_reg_upgrades["reg_band"] = float(new_reg_controls[ctrl_name]["band"])
+                final_reg_upgrades["xfmr_kva"] = new_reg_controls[ctrl_name]["transformer_kva"]
+                final_reg_upgrades["xfmr_kv"] = new_reg_controls[ctrl_name]["transformer_kv"]
+                final_reg_upgrades["xfmr_name"] = new_reg_controls[ctrl_name]["transformer"]
+                final_reg_upgrades["new_xfmr"] = False  # default = False: new transformer is not added
+                final_reg_upgrades["sub_xfmr"] = False  # default False; (is not substation xfmr)
+                # if regulators are modified (and exist in both original and new)
+                if ctrl_name in modified_regulators:
+                    final_reg_upgrades["reg_added"] = False  # not a new regulator
+                    subltc_dict = check_substation_LTC(new_ckt_info=new_ckt_info, 
+                                                       xfmr_name=final_reg_upgrades["xfmr_name"])  # check if regulator is on substation transformer
+                    if subltc_dict is not None:
+                        final_reg_upgrades.update(subltc_dict)
+                elif ctrl_name in new_addition:
+                    final_reg_upgrades["reg_added"] = True  # is a new regulator
+                    subltc_dict = check_substation_LTC(new_ckt_info=new_ckt_info, 
+                                                       xfmr_name=final_reg_upgrades["xfmr_name"])   # check if regulator is on substation transformer
+                    if subltc_dict is not None:
+                        final_reg_upgrades.update(subltc_dict)
+                    # if regulator transformer is not in the original xfmr list, then a new xfmr
+                    if final_reg_upgrades["xfmr_name"] not in orig_xfmr_info:
+                        final_reg_upgrades["new_xfmr"] = True  # is a new xfmr
+                processed_outputs["Regctrl." + final_reg_upgrades["reg_ctrl_name"]] = {
+                    "New controller added": final_reg_upgrades["reg_added"],
+                    "Controller settings modified": final_reg_upgrades["reg_settings"],
+                    "New transformer added": final_reg_upgrades["new_xfmr"],
+                    "Substation LTC": final_reg_upgrades["sub_xfmr"],
+                    "Final settings": {
+                        "Transformer name": final_reg_upgrades["xfmr_name"],
+                        "Transformer kVA": final_reg_upgrades["xfmr_kva"],
+                        "Transformer kV": final_reg_upgrades["xfmr_kv"],
+                        "Reg ctrl V set point": final_reg_upgrades["reg_vsp"],
+                        "Reg ctrl deadband": final_reg_upgrades["reg_band"]
+                    }
+                    }
+    return processed_outputs
