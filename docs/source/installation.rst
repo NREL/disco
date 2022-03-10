@@ -33,31 +33,7 @@ Optional: Install desired packages.
 
     $ conda install ipython
 
-2. Install JADE.
-
-.. code-block:: bash
-
-    $ pip install NREL-jade
-
-3. Clone PyDSS repo from GitHub and install the master branch.
-
-.. code-block:: bash
-
-    $ cd <path-to-your-local-repos>
-    $ git clone git@github.com:NREL/PyDSS.git
-    $ cd PyDSS
-    $ pip install -e .
-
-Known Windows installation problem: In some cases Shapely will fail to install.
-pip will report an error about ``geos_c.dll``. Install it from conda and then
-retry.
-
-.. code-block:: bash
-
-    $ conda install shapely
-    $ pip install -e .
-
-4. Clone DISCO repo from GitHub and install.
+2. Clone DISCO repo from GitHub and install.
 
 .. code-block:: bash
 
@@ -68,6 +44,16 @@ retry.
 
     # If you will also be developing DISCO code then include dev packages.
     $ pip install -e '.[dev]'
+
+Known Windows installation problem: DISCO requires PyDSS which requires the
+Shapely package. In some cases Shapely will fail to install.
+pip will report an error about ``geos_c.dll``. Install it from conda and then
+retry.
+
+.. code-block:: bash
+
+    $ conda install shapely
+    $ pip install -e .
 
 Now, the Conda environment ``disco`` is ready to use.
 To deactivate it, use commands below:
