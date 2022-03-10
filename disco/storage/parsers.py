@@ -341,7 +341,7 @@ class FeederHeadParser(ParserBase, TableParserMixin):
         self.jobs = jobs
     
     def parse(self, output):
-        """Prase feeder head data from output report file"""
+        """Parse feeder head data from output report file"""
         logger.info("Parsing data - 'feeder_head'...")
         df = pd.read_csv(output.feeder_head_table)
         data = df.rename(columns=self.field_mappings).to_dict(orient="records")
@@ -356,7 +356,7 @@ class FeederLossesParser(ParserBase, TableParserMixin):
         self.jobs = jobs
     
     def parse(self, output):
-        """Prase feeder losses data from output report file"""
+        """Parse feeder losses data from output report file"""
         logger.info("Parsing data - 'feeder_losses'...")
         df = pd.read_csv(output.feeder_losses_table)
         data = df.to_dict(orient="records")
@@ -371,7 +371,7 @@ class MetadataParser(ParserBase, TableParserMixin):
         self.jobs = jobs
     
     def parse(self, output):
-        """Prase metadata data from output report file"""
+        """Parse metadata data from output report file"""
         logger.info("Parsing data - 'metadata'...")
         df = pd.read_csv(output.metadata_table)
         data = df.to_dict(orient="records")
@@ -386,7 +386,7 @@ class ThermalMetricsParser(ParserBase, TableParserMixin):
         self.jobs = jobs
     
     def parse(self, output):
-        """Prase thermal metrics data from output report file"""
+        """Parse thermal metrics data from output report file"""
         logger.info("Parsing data - 'thermal_metrics'...")
         df = pd.read_csv(output.thermal_metrics_table)
         data = df.to_dict(orient="records")
@@ -401,7 +401,7 @@ class VoltageMetricsParser(ParserBase, TableParserMixin):
         self.jobs = jobs
     
     def parse(self, output):
-        """Prase voltage metrics data from output report file"""
+        """Parse voltage metrics data from output report file"""
         logger.info("Parsing data - 'voltage_metrics'...")
         df = pd.read_csv(output.voltage_metrics_table)
         data = df.to_dict(orient="records")
@@ -494,7 +494,7 @@ class OutputParser(ParserBase):
         self.notes = notes
 
     def parse(self, output):
-        """Prase task, jobs, and reports data from output"""
+        """Parse task, jobs, and reports data from output"""
         logger.info("Parsing results from output directory...")
         
         result = {}
