@@ -127,6 +127,9 @@ def determine_thermal_upgrades(
     )
     start = time.time()
     logger.info(
+        f"Simulation start time: {start}"
+    )
+    logger.info(
         f"Limit on number of thermal upgrade iterations: {max_upgrade_iteration}"
     )
     commands_list = []
@@ -292,5 +295,8 @@ def determine_thermal_upgrades(
 
     convert_summary_dict_to_df(output_text).to_csv(thermal_summary_file, index=False)
     end = time.time()
+    logger.info(
+        f"Simulation end time: {end}"
+    )
     line_upgrades_df.to_csv(output_csv_line_upgrades_filepath)
     xfmr_upgrades_df.to_csv(output_csv_xfmr_upgrades_filepath)
