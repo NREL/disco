@@ -8,7 +8,7 @@ from enum import Enum
 
 from disco.storage.exceptions import IngestionError
 
-# NOTE: Important table names, please do not change.
+# NOTE: Important table names, please do not change the order.
 TABLE_NAMES = [
     "feeder_head_table.csv",
     "feeder_losses_table.csv",
