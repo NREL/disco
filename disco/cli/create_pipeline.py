@@ -154,7 +154,6 @@ def template(
     container,
     database
 ):
-    print("task name ======", task_name)
     """Create pipeline template file"""
     if hosting_capacity and impact_analysis:
         print("--impact-analysis and --hosting-capacity cannot both be enabled.")
