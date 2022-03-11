@@ -1,12 +1,9 @@
+from email.policy import default
 import logging
-import os
-import shutil
-import stat
 import sys
 
 import click
 
-from jade.loggers import setup_logging
 from jade.models import SingularityParams
 from jade.utils.utils import dump_data, load_data
 
@@ -31,6 +28,12 @@ def create_pipeline():
 
 @click.command()
 @click.argument("inputs")
+@click.option(
+    "-T", "--task-name",
+    type=click.STRING,
+    required=True,
+    help="The task name of the simulation/analysis",
+)
 @click.option(
     "-P", "--preconfigured",
     type=click.BOOL,
@@ -125,8 +128,17 @@ def create_pipeline():
     type=click.Path(exists=True),
     help="Path to container",
 )
+@click.option(
+    "-D",
+    "--database",
+    type=click.Path(),
+    default="results.sqlite",
+    show_default=True,
+    help="The path of new or existing SQLite database"
+)
 def template(
     inputs,
+    task_name,
     preconfigured,
     simulation_type,
     with_loadshape,
@@ -140,6 +152,7 @@ def template(
     reports_filename,
     enable_singularity,
     container,
+    database
 ):
     """Create pipeline template file"""
     if hosting_capacity and impact_analysis:
@@ -147,7 +160,9 @@ def template(
         sys.exit(1)
     
     template = get_default_pipeline_template(simulation_type=simulation_type)
+    template.data["task_name"] = task_name
     template.data["inputs"] = inputs
+    template.data["database"] = database
 
     # model transformation
     if preconfigured:

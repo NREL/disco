@@ -20,6 +20,10 @@ class PipelineTemplate:
         self.data = load_data(template_file)
     
     @property
+    def task_name(self):
+        return self.data["task_name"]
+
+    @property
     def inputs(self):
         return self.data["inputs"]
 
@@ -34,6 +38,10 @@ class PipelineTemplate:
     @property
     def analysis_type(self):
         return self.data["analysis_type"]
+
+    @property
+    def database(self):
+        return self.data["database"]
 
     @property
     def reports(self):

@@ -80,6 +80,7 @@ techno-economic analysis.
    analysis-workflows
    pipelines
    debugging-issues
+   data-ingestion
    advanced-guide
 
 .. toctree::

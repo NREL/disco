@@ -64,8 +64,11 @@ class SnapshotPipelineCreator(PipelineCreatorBase):
         impact_analysis = self.template.analysis_type == AnalysisType.IMPACT_ANALYSIS.value
         hosting_capacity = self.template.analysis_type == AnalysisType.HOSTING_CAPACITY.value
         if impact_analysis or hosting_capacity:
+            # Postprocess to make summary tables
             inputs = os.path.join("$JADE_PIPELINE_OUTPUT_DIR", f"output-stage{self.stage_num-1}")
             commands.append(f"disco-internal make-summary-tables {inputs}")
+            
+            # Postprocess to compute hosting capacity
             if hosting_capacity:
                 config_params = self.template.get_config_params(TemplateSection.SIMULATION)
                 with_loadshape = config_params["with_loadshape"]
@@ -86,6 +89,22 @@ class SnapshotPipelineCreator(PipelineCreatorBase):
                             commands.append(f"{base_cmd} --scenario={scenario}")
                 else:
                     commands.append(f"{base_cmd} --scenario=scenario")
+
+            # Postprocess to ingest results into sqlite database
+            task_name = self.template.data["task_name"]
+            if os.path.isabs(self.template.database):
+                database = self.template.database
+            else:
+                database = os.path.join(inputs, self.template.database)
+            model_inputs = self.template.inputs
+            commands.append(
+                'disco ingest-tables '
+                f'--task-name "{task_name}" '
+                f'--database {database} '
+                f'--model-inputs {model_inputs} '
+                f'{inputs}'
+            )
+
         return "\n".join(commands)
 
 
@@ -157,16 +176,34 @@ class TimeSeriesPipelineCreator(PipelineCreatorBase):
         return command
 
     def make_postprocess_command(self):
-        command = ""
+        commands = []
         impact_analysis = self.template.analysis_type == AnalysisType.IMPACT_ANALYSIS.value
         hosting_capacity = self.template.analysis_type == AnalysisType.HOSTING_CAPACITY.value
         if impact_analysis or hosting_capacity:
             inputs = os.path.join("$JADE_PIPELINE_OUTPUT_DIR", f"output-stage{self.stage_num-1}")
-            command += f"disco-internal make-summary-tables {inputs}"
+            commands.append(f"disco-internal make-summary-tables {inputs}")
             if hosting_capacity:
                 for scenario in TIME_SERIES_SCENARIOS:
-                    command += f"\ndisco-internal compute-hosting-capacity {inputs} --scenario={scenario}"
+                    commands.append(f"disco-internal compute-hosting-capacity {inputs} --scenario={scenario}")
+            
+            # Postprocess to ingest results into sqlite database
+            task_name = self.template.data["task_name"]
+            
+            if os.path.isabs(self.template.database):
+                database = self.template.database
+            else:
+                database = os.path.join(inputs, self.template.database)
+            model_inputs = self.template.inputs
+            commands.append(
+                'disco ingest-tables '
+                f'--task-name "{task_name}" '
+                f'--database {database} '
+                f'--model-inputs {model_inputs} '
+                f'{inputs}'
+            )
+
         elif self.template.analysis_type == AnalysisType.COST_BENEFIT.value:
             inputs = os.path.join("$JADE_PIPELINE_OUTPUT_DIR", f"output-stage{self.stage_num-1}")
-            command += f"disco-internal make-cba-tables {inputs}"
-        return command
+            commands.append(f"disco-internal make-cba-tables {inputs}")
+        
+        return "\n".join(commands)

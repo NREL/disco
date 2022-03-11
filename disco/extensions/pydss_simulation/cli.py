@@ -1,20 +1,13 @@
 """CLI to run a scenario."""
-
-import importlib
 import logging
-import os
-import sys
 
-import click
-
-from jade.common import CONFIG_FILE, OUTPUT_DIR
-from jade.jobs.job_configuration_factory import create_config_from_file
-from jade.exceptions import InvalidExtension
+import opendssdirect as dss
+from opendssdirect._version import __version__ as opendssdirect_version
 from PyDSS import __version__ as pydss_version
+from jade.jobs.job_configuration_factory import create_config_from_file
 from disco.extensions.pydss_simulation.pydss_configuration import PyDssConfiguration
 from disco.extensions.pydss_simulation.pydss_simulation import PyDssSimulation
 from disco.version import __version__ as disco_version
-
 
 logger = logging.getLogger(__name__)
 DEFAULT_EXTENSION = "jade"
@@ -40,6 +33,8 @@ def run(config_file, name, output, output_format, verbose):
 
     logger.info("disco version = %s", disco_version)
     logger.info("PyDSS version = %s", pydss_version)
+    logger.info("OpenDSSDirect version = %s", opendssdirect_version)
+    logger.info("OpenDSS version = %s", dss.Basic.Version())
 
     simulation = PyDssSimulation.create(config.pydss_inputs,
                                         job,
