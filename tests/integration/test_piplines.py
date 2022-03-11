@@ -98,7 +98,12 @@ def cleanup():
 
 
 def test_source_tree_1_create_snapshot_pipeline_template(smart_ds_substations, cleanup):
-    cmd = f"disco create-pipeline template {smart_ds_substations} -t {TEST_TEMPLATE_FILE} --with-loadshape -d1"
+    cmd = (
+        f"disco create-pipeline template {smart_ds_substations} "
+        "--task-name TestTask "
+        "--with-loadshape -d1 "
+        f"--template-file {TEST_TEMPLATE_FILE} "
+    )
     ret = ret = run_command(cmd)
     assert ret == 0
 
@@ -119,7 +124,12 @@ def test_source_tree_1_create_snapshot_pipeline_template(smart_ds_substations, c
 
 
 def test_source_tree_1_create_snapshot_pipeline_template__impact_analysis(smart_ds_substations, cleanup):
-    cmd = f"disco create-pipeline template {smart_ds_substations} --impact-analysis -t {TEST_TEMPLATE_FILE} --with-loadshape -d1"
+    cmd = (
+        f"disco create-pipeline template {smart_ds_substations} "
+        "--task-name TestTask "
+        "--with-loadshape --impact-analysis -d1 "
+        f"--template-file {TEST_TEMPLATE_FILE}"
+    )
     ret = ret = run_command(cmd)
     assert ret == 0
 
@@ -145,7 +155,12 @@ def test_source_tree_1_create_snapshot_pipeline_template__impact_analysis(smart_
 
 
 def test_source_tree_1_create_snapshot_pipeline_template__prescreen(smart_ds_substations, cleanup):
-    cmd = f"disco create-pipeline template {smart_ds_substations} --prescreen -t {TEST_TEMPLATE_FILE} --with-loadshape -d1"
+    cmd = (
+        f"disco create-pipeline template {smart_ds_substations} "
+        "--task-name TestTask "
+        "--with-loadshape --prescreen -d1 "
+        f"--template-file {TEST_TEMPLATE_FILE}"
+    )
     ret = run_command(cmd)
     assert ret == 0
 
@@ -162,7 +177,9 @@ def test_source_tree_1_create_snapshot_pipeline_template__preconfigured_models(s
 
     cmd = (
         f"disco create-pipeline template {TEST_PRECONFIGURED_MODELS} "
-        f"--preconfigured -t {TEST_TEMPLATE_FILE} --with-loadshape -d1"
+        "--task-name TestTask "
+        "--preconfigured --with-loadshape -d1 "
+        f"--template-file {TEST_TEMPLATE_FILE}"
     )
     ret = run_command(cmd)
     assert ret == 0
@@ -174,7 +191,12 @@ def test_source_tree_1_create_snapshot_pipeline_template__preconfigured_models(s
 
 
 def test_source_tree_1_config_snapshot_pipeline(smart_ds_substations, cleanup):
-    cmd1 = f"disco create-pipeline template {smart_ds_substations} -t {TEST_TEMPLATE_FILE} --with-loadshape -d1"
+    cmd1 = (
+        f"disco create-pipeline template {smart_ds_substations} "
+        "--task-name TestTask "
+        "--with-loadshape -d1 "
+        f"--template-file {TEST_TEMPLATE_FILE}"
+    )
     ret = run_command(cmd1)
     assert ret == 0
     ret = run_command(CONFIG_HPC_COMMAND)
@@ -201,7 +223,9 @@ def test_source_tree_1_config_snapshot_pipeline(smart_ds_substations, cleanup):
 def test_source_tree_1_config_snapshot_pipeline__impact_analysis(smart_ds_substations, cleanup):
     cmd1 = (
         f"disco create-pipeline template {smart_ds_substations} "
-        f"--impact-analysis -t {TEST_TEMPLATE_FILE} --with-loadshape -d1"
+        "--task-name TestTask "
+        "--impact-analysis --with-loadshape -d1 "
+        f"--template-file {TEST_TEMPLATE_FILE}"
     )
     ret = run_command(cmd1)
     assert ret == 0
@@ -231,8 +255,10 @@ def test_source_tree_1_config_snapshot_pipeline__impact_analysis(smart_ds_substa
 
 def test_source_tree_1_create_time_series_pipeline_template(smart_ds_substations, cleanup):
     cmd = (
-        f"disco create-pipeline template {smart_ds_substations} -s time-series "
-        f"-t {TEST_TEMPLATE_FILE}"
+        f"disco create-pipeline template {smart_ds_substations} "
+        "--task-name TestTask "
+        "--simulation-type time-series "
+        f"--template-file {TEST_TEMPLATE_FILE}"
     )
     ret = run_command(cmd)
     assert ret == 0
@@ -255,8 +281,10 @@ def test_source_tree_1_create_time_series_pipeline_template(smart_ds_substations
 
 def test_source_tree_1_create_time_series_pipeline_template__impact_analysis(smart_ds_substations, cleanup):
     cmd = (
-        f"disco create-pipeline template {smart_ds_substations} -s time-series "
-        f"--impact-analysis -t {TEST_TEMPLATE_FILE}"
+        f"disco create-pipeline template {smart_ds_substations} "
+        "--task-name TestTask "
+        "--simulation-type time-series --impact-analysis "
+        f"--template-file {TEST_TEMPLATE_FILE}"
     )
     ret = run_command(cmd)
     assert ret == 0
@@ -284,8 +312,10 @@ def test_source_tree_1_create_time_series_pipeline_template__impact_analysis(sma
 
 def test_source_tree_1_create_time_series_pipeline_template__prescreen(smart_ds_substations, cleanup):
     cmd = (
-        f"disco create-pipeline template {smart_ds_substations} -s time-series "
-        f"--prescreen -t {TEST_TEMPLATE_FILE}"
+        f"disco create-pipeline template {smart_ds_substations} "
+        "--task-name TestTask "
+        "--simulation-type time-series --prescreen "
+        f"--template-file {TEST_TEMPLATE_FILE}"
     )
     ret = run_command(cmd)
     assert ret == 0
@@ -313,8 +343,10 @@ def test_source_tree_1_create_time_series_pipeline_template__prescreen(smart_ds_
 
 def test_source_tree_1_create_time_series_pipeline_template__prescreen__impact_analysis(smart_ds_substations, cleanup):
     cmd = (
-        f"disco create-pipeline template {smart_ds_substations} -s time-series "
-        f"--prescreen --impact-analysis -t {TEST_TEMPLATE_FILE}"
+        f"disco create-pipeline template {smart_ds_substations} "
+        "--task-name TestTask "
+        "--simulation-type  time-series --prescreen --impact-analysis "
+        f"--template-file {TEST_TEMPLATE_FILE}"
     )
     ret = run_command(cmd)
     assert ret == 0
@@ -346,8 +378,10 @@ def test_source_tree_1_create_time_series_pipeline_template__prescreen__impact_a
 
 def test_source_tree_1_config_time_series_pipeline(smart_ds_substations, cleanup):
     cmd1 = (
-        f"disco create-pipeline template {smart_ds_substations} -s time-series "
-        f"-t {TEST_TEMPLATE_FILE}"
+        f"disco create-pipeline template {smart_ds_substations} "
+        "--task-name TestTask "
+        "--simulation-type time-series "
+        f"--template-file {TEST_TEMPLATE_FILE}"
     )
     ret = run_command(cmd1)
     assert ret == 0
@@ -373,8 +407,10 @@ def test_source_tree_1_config_time_series_pipeline(smart_ds_substations, cleanup
 
 def test_source_tree_1_config_time_series_pipeline__singularity(smart_ds_substations, cleanup):
     cmd1 = (
-        f"disco create-pipeline template {smart_ds_substations} -s time-series -p -h "
-        f"-t {TEST_TEMPLATE_FILE} -S -C ."  # It's OK that this is not a container.
+        f"disco create-pipeline template {smart_ds_substations} "
+        "--task-name TestTask "
+        "--simulation-type time-series -p -h "
+        f"--template-file {TEST_TEMPLATE_FILE} -S -C ."  # It's OK that this is not a container.
     )
     ret = run_command(cmd1)
     assert ret == 0
@@ -387,8 +423,10 @@ def test_source_tree_1_config_time_series_pipeline__singularity(smart_ds_substat
 
 def test_source_tree_1_config_time_series_pipeline__prescreen(smart_ds_substations, cleanup):
     cmd1 = (
-        f"disco create-pipeline template {smart_ds_substations} -s time-series "
-        f"--prescreen -t {TEST_TEMPLATE_FILE}"
+        f"disco create-pipeline template {smart_ds_substations} "
+        "--task-name TestTask "
+        "--simulation-type time-series --prescreen "
+        f"--template-file {TEST_TEMPLATE_FILE}"
     )
     ret = run_command(cmd1)
     assert ret == 0
@@ -416,8 +454,10 @@ def test_source_tree_1_config_time_series_pipeline__prescreen(smart_ds_substatio
 
 def test_source_tree_1_config_time_series_pipeline__impact_analysis(smart_ds_substations, cleanup):
     cmd1 = (
-        f"disco create-pipeline template {smart_ds_substations} -s time-series "
-        f"--impact-analysis -t {TEST_TEMPLATE_FILE}"
+        f"disco create-pipeline template {smart_ds_substations} "
+        "--task-name TestTask "
+        "--simulation-type time-series --impact-analysis "
+        f"--template-file {TEST_TEMPLATE_FILE}"
     )
     ret = run_command(cmd1)
     assert ret == 0
@@ -445,8 +485,10 @@ def test_source_tree_1_config_time_series_pipeline__impact_analysis(smart_ds_sub
 
 def test_source_tree_1_config_time_series_pipeline__prescreen__impact_analysis(smart_ds_substations, cleanup):
     cmd1 = (
-        f"disco create-pipeline template {smart_ds_substations} -s time-series "
-        f"--impact-analysis --prescreen -t {TEST_TEMPLATE_FILE}"
+        f"disco create-pipeline template {smart_ds_substations} "
+        "--task-name TestTask "
+        "--simulation-type time-series --impact-analysis --prescreen "
+        f"--template-file {TEST_TEMPLATE_FILE}"
     )
     ret = run_command(cmd1)
     assert ret == 0
@@ -476,7 +518,9 @@ def test_source_tree_1_config_time_series_pipeline__prescreen__impact_analysis(s
 def test_source_tree_1_snapshot_pipeline_submit__hosting_capacity(smart_ds_substations, cleanup):
     cmd1 = (
         f"disco create-pipeline template {smart_ds_substations} "
-        f"--hosting-capacity -t {TEST_TEMPLATE_FILE} --with-loadshape -d1"
+        "--task-name TestTask "
+        f"--hosting-capacity --with-loadshape -d1 "
+        f"--template-file {TEST_TEMPLATE_FILE} "
     )
     ret = run_command(cmd1)
     assert ret == 0
@@ -515,8 +559,10 @@ def test_source_tree_1_snapshot_pipeline_submit__hosting_capacity(smart_ds_subst
 
 def test_source_tree_1_time_series_pipeline_submit__prescreen__impact_analysis(smart_ds_substations, cleanup):
     cmd1 = (
-        f"disco create-pipeline template {smart_ds_substations} -s time-series "
-        f"--impact-analysis --prescreen -t {TEST_TEMPLATE_FILE}"
+        f"disco create-pipeline template {smart_ds_substations} "
+        "--task-name TestTask "
+        "--simulation-type time-series --impact-analysis --prescreen "
+        f"--template-file {TEST_TEMPLATE_FILE}"
     )
     ret = run_command(cmd1)
     assert ret == 0
@@ -549,8 +595,10 @@ def test_source_tree_1_time_series_pipeline_submit__prescreen__impact_analysis(s
 
 def test_source_tree_1_time_series_pipeline_submit__cost_benefit(smart_ds_substations, cleanup):
     cmd1 = (
-        f"disco create-pipeline template {smart_ds_substations} -s time-series "
-        f"--cost-benefit -t {TEST_TEMPLATE_FILE}"
+        f"disco create-pipeline template {smart_ds_substations} "
+        "--task-name TestTask "
+        "--simulation-type time-series --cost-benefit "
+        f"--template-file {TEST_TEMPLATE_FILE}"
     )
     ret = run_command(cmd1)
     assert ret == 0

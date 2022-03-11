@@ -31,6 +31,7 @@ def create_pipeline():
 @click.option(
     "-T", "--task-name",
     type=click.STRING,
+    required=True,
     help="The task name of the simulation/analysis",
 )
 @click.option(
@@ -153,6 +154,7 @@ def template(
     container,
     database
 ):
+    print("task name ======", task_name)
     """Create pipeline template file"""
     if hosting_capacity and impact_analysis:
         print("--impact-analysis and --hosting-capacity cannot both be enabled.")
