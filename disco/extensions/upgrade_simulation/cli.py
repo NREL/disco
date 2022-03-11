@@ -54,14 +54,18 @@ def run(config_file, name, output, output_format, verbose):
         output=output
     )
     try:
-        enable_pydss_solve = config.pydss_inputs[ConfigType.SIMULATION_CONFIG]["default"]["enable_pydss_solve"]
-        controller = config.get_pydss_controller_model(name="volt_var_upgrade")  # TODO: User custom pv controller?
-        pydss_controller_model = PvControllerModel(**controller)
+        # enable_pydss_solve = config.pydss_inputs[ConfigType.SIMULATION_CONFIG]["default"]["enable_pydss_solve"]
+        # controller = config.get_pydss_controller_model(name="volt_var_upgrade")  # TODO: User custom pv controller?
+        upgrade_simulation_params = config.job_global_config["upgrade_simulation_params"]
+        enable_pydss_controller = upgrade_simulation_params["enable_pydss_controller"]
+        pydss_controller_model = PvControllerModel(**upgrade_simulation_params["pydss_controller"])
+
         thermal_config = config.job_global_config["thermal_upgrade_params"]
         voltage_config = config.job_global_config["voltage_upgrade_params"]
         cost_database_filepath = config.job_global_config["upgrade_cost_database"]
+        
         ret = simulation.run(
-            enable_pydss_solve=enable_pydss_solve,
+            enable_pydss_solve=enable_pydss_controller,
             pydss_controller_model=pydss_controller_model,
             thermal_config=thermal_config,
             voltage_config=voltage_config,

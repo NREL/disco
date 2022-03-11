@@ -711,8 +711,9 @@ def get_bus_coordinates():
 
 
 def convert_summary_dict_to_df(summary_dict=None):
-    return pd.DataFrame(summary_dict).unstack().reset_index().rename(columns={'level_0': 'Stage',
-                                                                              'level_1': 'Parameter', 0: 'Value'})
+    df = pd.DataFrame.from_dict(summary_dict, orient='index')
+    df.index.name = "stage"
+    return df
 
 
 def filter_dictionary(dict_data=None, wanted_keys=None):
