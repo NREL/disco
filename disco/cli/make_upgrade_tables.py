@@ -41,17 +41,14 @@ def parse_batch_results(output_dir):
         jobs.append(job)
 
     upgrade_summary_table = []
-    detailed_upgrade_costs_table = []
     total_upgrade_costs_table = []
 
     with ProcessPoolExecutor() as executor:
         for result in executor.map(parse_job_results, jobs, itertools.repeat(output_path)):
             upgrade_summary_table += result[0]
-            detailed_upgrade_costs_table += result[1]
-            total_upgrade_costs_table += result[2]
+            total_upgrade_costs_table += result[1]
 
-    #serialize_table(upgrade_summary_table, output_path / "upgrade_summary.csv")
-    #serialize_table(detailed_upgrade_costs_table, output_path / "detailed_upgrade_costs.csv")
+    serialize_table(upgrade_summary_table, output_path / "upgrade_summary.csv")
     serialize_table(total_upgrade_costs_table, output_path / "total_upgrade_costs.csv")
 
 
@@ -66,20 +63,18 @@ def parse_job_results(job, output_path):
         sample=deployment.project_data["sample"],
         penetration_level=deployment.project_data["penetration_level"],
     )
-    # upgrade_summary_table = get_upgrade_summary_table(job_path, job_info)
-    # detailed_upgrade_costs_table = get_detailed_upgrade_costs_table(job_path, job_info)
+    upgrade_summary_table = get_upgrade_summary_table(job_path, job_info)
     total_upgrade_costs_table = get_total_upgrade_costs_table(job_path, job_info)
     
     return (
-        [], # upgrade_summary_table,
-        [], # detailed_upgrade_costs_table,
+        upgrade_summary_table,
         total_upgrade_costs_table
     )
 
 
 def get_upgrade_summary_table(job_path, job_info):
 
-    def _get_upgrade_summary(category, upgrade_summary_file):
+    def _get_upgrade_summary(upgrade_type, upgrade_summary_file):
         if not upgrade_summary_file.exists():
             return []
         
@@ -94,51 +89,19 @@ def get_upgrade_summary_table(job_path, job_info):
         records = df.to_dict("records")
         for record in records:
             record.update(job_info._asdict())
-            record.update({"category": category})
+            record.update({"upgrade_type": upgrade_type})
             summary_result.append(record)
         return summary_result
 
     upgrade_summary = []
 
-    thermal_upgrade_summary_file = job_path / "ThermalUpgrade" / "thermal_summary.csv"
+    thermal_upgrade_summary_file = job_path / "ThermalUpgrades" / "thermal_summary.csv"
     upgrade_summary.extend(_get_upgrade_summary("thermal", thermal_upgrade_summary_file))
 
-    voltage_upgrade_summary_file = job_path / "VoltageUpgrade" / "voltage_summary.csv"
+    voltage_upgrade_summary_file = job_path / "VoltageUpgrades" / "voltage_summary.csv"
     upgrade_summary.extend(_get_upgrade_summary("voltage", voltage_upgrade_summary_file))
 
     return upgrade_summary
-
-
-def get_detailed_upgrade_costs_table(job_path, job_info):
-
-    def _get_upgrade_costs(category, upgrade_costs_file):
-        if not upgrade_costs_file.exists():
-            return []
-        
-        try:
-            df = pd.read_csv(upgrade_costs_file)
-        except pd.errors.EmptyDataError as e:
-            logger.error("Failed to parse detailed upgrade costs file - '%s'", upgrade_costs_file)
-            logger.exception(e)
-            return []
-        
-        upgrade_costs = []
-        records = df.to_dict("records")
-        for record in records:
-            record.update(job_info._asdict())
-            record.update({"category": category})
-            upgrade_costs.append(record)
-        return upgrade_costs
-
-    detailed_upgrade_costs = []
-
-    thermal_upgrade_costs_file = job_path / "UpgradeCosts" / "thermal_upgrade_costs.csv"
-    detailed_upgrade_costs.extend(_get_upgrade_costs("thermal", thermal_upgrade_costs_file))
-    
-    voltage_upgrade_costs_file = job_path / "UpgradeCosts" / "voltage_upgrade_costs.csv"
-    detailed_upgrade_costs.extend(_get_upgrade_costs("voltage", voltage_upgrade_costs_file))
-
-    return detailed_upgrade_costs
 
 
 def get_total_upgrade_costs_table(job_path, job_info):
