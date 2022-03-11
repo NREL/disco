@@ -249,4 +249,3 @@ class UpgradePipelineCreator(PipelineCreatorBase):
         inputs = os.path.join("$JADE_PIPELINE_OUTPUT_DIR", f"output-stage{self.stage_num-1}")
         command = f"disco-internal make-upgrade-tables {inputs}"
         return command
->>>>>>> Add result aggregation with pipeline
