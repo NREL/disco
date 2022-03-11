@@ -28,13 +28,6 @@ from disco.sources.base import DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS
     help="Upgrade parameters file."
 )
 @click.option(
-    "--enable-pydss-solve/--no-enable-pydss-solve",
-    is_flag=True,
-    default=True,
-    show_default=True,
-    help="Enable PyDSS solve"
-)
-@click.option(
     "-c", "--config-file",
     type=click.Path(),
     default=CONFIG_FILE,
@@ -51,7 +44,6 @@ def upgrade(
     inputs,
     cost_database,
     params_file,
-    enable_pydss_solve,
     config_file,
     verbose=False
 ):
@@ -64,8 +56,7 @@ def upgrade(
     job_global_config["upgrade_cost_database"] = cost_database
     config = UpgradeConfiguration.auto_config(
         inputs=inputs,
-        job_global_config=job_global_config,
-        enable_pydss_solve=enable_pydss_solve
+        job_global_config=job_global_config
     )
     config.dump(filename=config_file)
     print(f"Created {config_file} for upgrade cost analysis.")
