@@ -233,8 +233,10 @@ class PyDssScenarioParser(ParserBase):
                 ]
                 scenarios.extend(job_scenarios)
             return scenarios
-
-        return []
+        
+        raise ValueError(
+            f"The simulation_type '{simulation_type}' for storage is not supported currently."
+        )
 
 
 class DermsScenaioParser(ParserBase):
