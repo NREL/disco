@@ -53,7 +53,7 @@ a. Source Model Inputs
 
 .. code-block:: bash
 
-    $ disco create-pipeline template tests/data/smart-ds/substations -s snapshot --hosting-capacity -t pipeline-template.toml
+    $ disco create-pipeline template tests/data/smart-ds/substations --task-name TestTask -s snapshot --hosting-capacity -t pipeline-template.toml
 
 b. Preconfigured Model Inputs
 
@@ -67,7 +67,7 @@ Then, use ``--preconfigured`` flag to indicate the input models ``snapshot-feede
 
 .. code-block:: bash
 
-    $ disco create-pipeline template snapshot-feeder-models --preconfigured -s snapshot --hosting-capacity -t pipeline-template.toml
+    $ disco create-pipeline template snapshot-feeder-models  --task-name TestTask --preconfigured -s snapshot --hosting-capacity -t pipeline-template.toml
 
 The commands above create a pipeline template file named ``pipeline-template.toml``.
 
@@ -171,13 +171,13 @@ allocated HPC hours.
 
 .. code-block:: bash
 
-    $ disco create-pipeline template tests/data/smart-ds/substations -s time-series --hosting-capacity -t pipeline-template.toml
+    $ disco create-pipeline template tests/data/smart-ds/substations  --task-name TestTask -s time-series --hosting-capacity -t pipeline-template.toml
 
 If you need to prescreen PV penetration levels, use the flag ``--prescreen`` to create the template.
 
 .. code-block:: bash
 
-    $ disco create-pipeline template tests/data/smart-ds/substations -s time-series --prescreen --hosting-capacity -t pipeline-template.toml
+    $ disco create-pipeline template tests/data/smart-ds/substations  --task-name TestTask -s time-series --prescreen --hosting-capacity -t pipeline-template.toml
 
 This step create the ``pipeline-template.toml`` file.
 
