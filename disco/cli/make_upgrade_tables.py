@@ -88,9 +88,10 @@ def get_upgrade_summary_table(job_path, job_info):
         summary_result = []
         records = df.to_dict("records")
         for record in records:
-            record.update(job_info._asdict())
-            record.update({"upgrade_type": upgrade_type})
-            summary_result.append(record)
+            data = job_info._asdict()
+            data.update({"upgrade_type": upgrade_type})
+            data.update(record)
+            summary_result.append(data)
         return summary_result
 
     upgrade_summary = []
