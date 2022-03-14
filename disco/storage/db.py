@@ -2,6 +2,7 @@ from sqlalchemy import Column, ForeignKey
 from sqlalchemy import types
 from sqlalchemy.engine import create_engine as _create_engine
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
 
 Base = declarative_base()
 
@@ -32,6 +33,7 @@ class Job(Base):
     status = Column(types.String(length=20), nullable=True)
     exec_time_s = Column(types.Float, nullable=True)
     completion_time = Column(types.DateTime)
+    task = relationship("Task", primaryjoin="Job.task_id == Task.id")
 
 
 class Scenario(Base):
@@ -42,6 +44,7 @@ class Scenario(Base):
     name = Column(types.String(length=30))
     start_time = Column(types.DateTime, nullable=True)
     end_time = Column(types.DateTime, nullable=True)
+    job = relationship("Job", primaryjoin="Scenario.job_id == Job.id")
 
 
 class SnapshotTimePoints(Base):
@@ -52,6 +55,7 @@ class SnapshotTimePoints(Base):
     max_load = Column(types.DateTime)
     daytime_min_load = Column(types.DateTime)
     pv_minus_load = Column(types.DateTime)
+    job = relationship("Job", primaryjoin="SnapshotTimePoints.job_id == Job.id")
 
 
 class Report(Base):
@@ -62,6 +66,7 @@ class Report(Base):
     file_path = Column(types.Text())
     file_size = Column(types.Integer)
     creation_time = Column(types.DateTime)
+    task = relationship("Task", primaryjoin="Report.task_id == Task.id")
 
 
 class FeederHead(Base):
@@ -81,6 +86,8 @@ class FeederHead(Base):
     load_kw = Column(types.Float)
     load_kvar = Column(types.Float)
     reverse_power_flow = Column(types.Boolean)
+    job = relationship("Job", primaryjoin="FeederHead.job_id == Job.id")
+    report = relationship("Report", primaryjoin="FeederHead.report_id == Report.id")
 
 
 class FeederLosses(Base):
@@ -99,6 +106,8 @@ class FeederLosses(Base):
     line_losses_kwh = Column(types.Float)
     transformer_losses_kwh = Column(types.Float)
     total_load_demand_kwh = Column(types.Float)
+    job = relationship("Job", primaryjoin="FeederLosses.job_id == Job.id")
+    report = relationship("Report", primaryjoin="FeederLosses.report_id == Report.id")
 
 
 class Metadata(Base):
@@ -116,6 +125,8 @@ class Metadata(Base):
     pct_pv_to_load_ratio = Column(types.Float)
     pv_capacity_kw = Column(types.Float)
     load_capacity_kw = Column(types.Float)
+    job = relationship("Job", primaryjoin="Metadata.job_id == Job.id")
+    report = relationship("Report", primaryjoin="Metadata.report_id == Report.id")
 
 
 class VoltageMetrics(Base):
@@ -140,6 +151,8 @@ class VoltageMetrics(Base):
     num_nodes_any_outside_ansi_a_always_inside_ansi_b = Column(types.Integer)
     min_voltage = Column(types.Float)
     max_voltage = Column(types.Float)
+    job = relationship("Job", primaryjoin="VoltageMetrics.job_id == Job.id")
+    report = relationship("Report", primaryjoin="VoltageMetrics.report_id == Report.id")
 
 
 class ThermalMetrics(Base):
@@ -168,6 +181,8 @@ class ThermalMetrics(Base):
     transformer_num_time_points_with_moving_average_violations = Column(types.Integer)
     transformer_instantaneous_threshold = Column(types.Integer)
     transformer_moving_average_threshold = Column(types.Integer)
+    job = relationship("Job", primaryjoin="ThermalMetrics.job_id == Job.id")
+    report = relationship("Report", primaryjoin="ThermalMetrics.report_id == Report.id")
 
 
 class HostingCapacity(Base):
@@ -183,6 +198,19 @@ class HostingCapacity(Base):
     max_hc_pct = Column(types.Float)
     min_hc_kw = Column(types.Float)
     max_hc_kw = Column(types.Float)
+    task = relationship("Task", primaryjoin="HostingCapacity.task_id == Task.id")
+
+
+class PvDistances(Base):
+    __tablename__ = "pv_distances"
+    job_name = Column(types.String(length=256), primary_key=True)
+    substation = Column(types.String(length=256))
+    feeder = Column(types.String(length=256))
+    placement = Column(types.String(length=256), nullable=True)
+    sample = Column(types.Integer, nullable=True)
+    penetration_level = Column(types.Integer, nullable=True)
+    weighted_average_pv_distance = Column(types.Float)
+    option = Column(types.String(length=128))
 
 
 def create_engine(database):

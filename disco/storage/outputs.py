@@ -92,6 +92,10 @@ class OutputBase(ABC):
     def hosting_capacity_results(self):
         return self.output.glob("hosting_capacity_*.json")
 
+    @property
+    def pv_distances(self):
+        return self.output / "weighted_average_pv_distances.csv"
+
     def __str__(self):
         """Return string representation of the output instance"""
         return str(self.output)
