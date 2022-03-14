@@ -91,12 +91,12 @@ def collect_weighted_average_pv_distance(filename: Path, option):
     try:
         reply = dss.utils.run_command(f"compile {filename}")
         if reply != "":
-            print(f"Failed to compile OpenDSS model {filename}: {reply}", file=sys.stderr)
+            logger.error("Failed to compile OpenDSS model %s: %s", filename, reply)
             sys.exit(1)
 
         load_info = get_load_info()
         avg = compute_weighted_average_pv_distance(load_info, option=option)
-        print(f"Computed weighted average PV distance {avg} for {filename}")
+        logger.info("Computed weighted average PV distance %s for %s", avg, filename)
     finally:
         os.chdir(orig)
     return avg
