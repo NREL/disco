@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from functools import partial
+from pathlib import Path
 
 import pandas as pd
 from dateutil.parser import parse
@@ -488,6 +489,20 @@ class HostingCapacityParser(ParserBase):
         return data
 
 
+class PvDistancesParser(ParserBase, TableParserMixin):
+
+    def parse(self, model_inputs):
+        """Parse PV distances data from output report file"""
+        logger.info("Parsing data - 'pv_distances'...")
+        path = Path(model_inputs) / "weighted_average_pv_distances.csv"
+        if path.exists():
+            df = pd.read_csv(path)
+            data = df.to_dict(orient="records")
+        else:
+            data = {}
+        return data
+
+
 class OutputParser(ParserBase):
 
     def __init__(self, task_name, model_inputs=None, notes=None):
@@ -560,6 +575,9 @@ class OutputParser(ParserBase):
             output=output
         )
         result["hosting_capacity"] = hosting_capacity
+        pv_distances = self.parse_pv_distances(self.model_inputs)
+        if pv_distances:
+            result["pv_distances"] = self.parse_pv_distances(self.model_inputs)
         
         return result
 
@@ -625,3 +643,6 @@ class OutputParser(ParserBase):
         parser = HostingCapacityParser(task=task)
         hosting_capacity = parser.parse(output=output)
         return hosting_capacity
+
+    def parse_pv_distances(self, model_inputs):
+        return PvDistancesParser().parse(model_inputs)
