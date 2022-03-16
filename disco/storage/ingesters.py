@@ -16,7 +16,8 @@ from disco.storage.db import (
     ThermalMetrics,
     VoltageMetrics,
     SnapshotTimePoints,
-    HostingCapacity
+    HostingCapacity,
+    PvDistances,
 )
 from disco.storage.exceptions import IngestionError
 
@@ -124,7 +125,10 @@ class TableIngesterMixin:
         columns = self.data_class.__table__.columns.keys()
         data = [tuple([item[column] for column in columns]) for item in objects]
         self._perform_ingestion(columns=columns, data=data)
-        indexes = {self._generate_identifier(item): item["id"] for item in objects}
+        if "id" in objects[0]:
+            indexes = {self._generate_identifier(item): item["id"] for item in objects}
+        else:
+            indexes = []
         return indexes
 
     @staticmethod
@@ -207,6 +211,10 @@ class HostingCapacityIngester(IngesterBase):
         indexes = {self._generate_identifier(item): item["id"] for item in hc_results}
         return indexes
 
+class PvDistancesIngester(TableIngesterMixin, IngesterBase):
+
+    data_class = PvDistances
+
 
 class OutputIngester(IngesterBase):
     """Class used for ingesting all parsed results into SQLite database"""
@@ -227,6 +235,10 @@ class OutputIngester(IngesterBase):
             res = self._ingest_snapshot_time_points(data["snapshot_time_points"])
             indexes["snapshot_time_points"] = res
         indexes["hosting_capacity"] = self._ingest_hosting_capacity(data["hosting_capacity"])
+        if "pv_distances" in data:
+            indexes["pv_distances"] = self._ingest_pv_distances(data["pv_distances"])
+        else:
+            logger.warning("Weighted-average PV distances are not present.")
         return indexes
 
     def _ingest_task(self, task):
@@ -348,6 +360,17 @@ class OutputIngester(IngesterBase):
         """
         ingester = HostingCapacityIngester(self.database)
         indexes = ingester.ingest(hosting_capacity)
+        return indexes
+
+    def _ingest_pv_distances(self, pv_distances):
+        """Ingest PV distances via PvDistancesIngester
+
+        Parameters
+        ----------
+        pv_distances: list[dict]
+        """
+        ingester = PvDistancesIngester(self.database)
+        indexes = ingester.ingest(pv_distances)
         return indexes
 
 
