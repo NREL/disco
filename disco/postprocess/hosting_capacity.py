@@ -286,7 +286,7 @@ def compute_hc(
         for column in df.columns:
             if 'hc' in column:
                 hc_overall[feeder][column] = min(df[column])
-            th_sample = dic['thermal']['recommended_cba_sample']
+        th_sample = dic['thermal']['recommended_cba_sample']
         th_samples = dic['thermal']['candidate_cba_samples']
         v_sample = dic['voltage']['recommended_cba_sample']
         v_samples = dic['voltage']['candidate_cba_samples']
