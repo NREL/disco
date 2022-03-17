@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import List, Optional, Set
+from typing import Any, List, Optional, Set
 
 from pydantic import BaseModel, Field, root_validator
 
@@ -99,7 +99,7 @@ class VoltageUpgradeParamsModel(UpgradeParamsBaseModel):
         description="Nominal voltage",
         default=1.0,
     )
-    tps_to_test: List = Field(
+    tps_to_test: List[Any] = Field(
         title="tps_to_test",
         description="TPS to test",
         default=[],
