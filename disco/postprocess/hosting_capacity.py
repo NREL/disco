@@ -7,8 +7,9 @@ Created on Thu May 27 01:28:38 2021
 
 import os
 import pandas as pd
+import numpy as np
 
-
+PENETRATION_STEP = 5
 METRIC_MAP = {
     "thermal": {
         "submetrics": [
@@ -285,5 +286,37 @@ def compute_hc(
         for column in df.columns:
             if 'hc' in column:
                 hc_overall[feeder][column] = min(df[column])
+            th_sample = dic['thermal']['recommended_cba_sample']
+        th_samples = dic['thermal']['candidate_cba_samples']
+        v_sample = dic['voltage']['recommended_cba_sample']
+        v_samples = dic['voltage']['candidate_cba_samples']
+        cba_rec_pen = list(np.arange(
+		    hc_overall[feeder]['min_hc_pct']+ PENETRATION_STEP, 
+            hc_overall[feeder]['max_hc_pct'] + PENETRATION_STEP, 
+            PENETRATION_STEP)
+			)
+        if th_sample in v_samples:
+            hc_overall[feeder]['cba_recommendation'] = [
+			    {'sample':th_sample, 'penetrations':cba_rec_pen}
+			    ]
+        elif v_sample in th_samples:
+            hc_overall[feeder]['cba_recommendation'] = [
+			    {'sample':v_sample, 'penetrations':cba_rec_pen}
+			    ]
+        else:
+            v_cba_rec_pen = list(np.arange(
+			    dic['voltage']['min_hc_pct']+ PENETRATION_STEP, 
+                dic['voltage']['max_hc_pct'] + PENETRATION_STEP, 
+                PENETRATION_STEP)
+			    )
+            th_cba_rec_pen = list(np.arange(
+			    dic['thermal']['min_hc_pct']+ PENETRATION_STEP, 
+                dic['thermal']['max_hc_pct'] + PENETRATION_STEP, 
+                PENETRATION_STEP)
+				)
+            hc_overall[feeder]['cba_recommendation'] = [
+                {'sample':v_sample, 'penetrations':v_cba_rec_pen},
+                {'sample':th_sample, 'penetrations':th_cba_rec_pen}
+                ]					
 
     return hc_summary, hc_overall, query_list
