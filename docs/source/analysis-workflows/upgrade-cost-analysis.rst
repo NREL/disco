@@ -19,6 +19,13 @@ Prepare the model with PV deployments by using DISCO model transformation.
 
     $ disco transform-model tests/data/smart-ds/substations upgrade -o upgrade-models
 
+If you wish to exclude the load profile from ``Loads.dss`` model, then run this command
+
+.. code-block:: bash
+
+    $ disco transform-model tests/data/smart-ds/substations upgrade --exclude-load-profile -o upgrade-models
+
+Upgrade cost simulation runs faster with model which does not include the load profiles.
 
 **2. Create Config**
 
