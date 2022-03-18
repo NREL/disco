@@ -191,7 +191,7 @@ def summarize_hosting_capacity(
         f_query.write(query)
         f_query.flush()
 
-        out_file = output_directory / "hc_query.sql"
+        out_file = output_directory / "query.sql"
         shutil.copyfile(f_query.name, out_file)
 
         with NamedTemporaryFile(mode="w") as f_sqlite3_cmd:
