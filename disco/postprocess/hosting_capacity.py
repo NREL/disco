@@ -149,15 +149,19 @@ def compute_hc_per_metric_class(
 
     """
     metric_table = f"{metric_class}_metrics_table.csv"
-    metric_df = pd.read_csv(os.path.join(result_path, metric_table))
+    metric_df = pd.read_csv(
+        os.path.join(result_path, metric_table),
+        dtype={"sample": np.float64, "penetration_level": np.float64, "placement": str},
+    )
+    metric_df = metric_df.dropna(axis="index", subset=["sample", "penetration_level"])
     metric_df = metric_df[metric_df.scenario == scenario]
-    meta_df = pd.read_csv(os.path.join(result_path, "metadata_table.csv"))
+    meta_df = pd.read_csv(
+        os.path.join(result_path, "metadata_table.csv"),
+        dtype={"sample": np.float64, "penetration_level": np.float64, "placement": str},
+    )
+    meta_df = meta_df.dropna(axis="index", subset=["sample", "penetration_level"])
 
     metric_df, meta_df = synthesize(metric_df, meta_df, metric_class)
-
-    if set(metric_df.feeder) == {'None'} or set(meta_df.feeder) == {'None'}:
-        meta_df.feeder = meta_df.substation
-        metric_df.feeder = metric_df.substation
 
     if metric_class == "voltage" and len(node_types) == 1:
         metric_df = metric_df[metric_df.node_types == node_types[0]]
@@ -165,7 +169,6 @@ def compute_hc_per_metric_class(
     queries = build_queries(metric_df.columns, thresholds, metric_class, on=on)
     query_phrase = " & ".join(queries)
 
-    metric_df = metric_df.mask(metric_df.eq("None")).dropna()
     metric_df.penetration_level = metric_df.penetration_level.astype("float")
     if query_phrase:
         hc_summary = get_hosting_capacity(
