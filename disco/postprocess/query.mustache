@@ -22,6 +22,7 @@ CREATE TEMP VIEW jt_all AS
         ,tm.transformer_max_moving_average_loading_pct
         ,tm.transformer_num_time_points_with_instantaneous_violations
         ,tm.transformer_num_time_points_with_moving_average_violations
+        ,tm.transformer_instantaneous_threshold
         {{/thermal}}
         {{#voltage}}
         ,vm.min_voltage
@@ -85,10 +86,18 @@ CREATE TEMP VIEW bad_feeders AS
                 OR line_max_moving_average_loading_pct > {{thermal.line_max_moving_average_loading_pct}}
                 OR line_num_time_points_with_instantaneous_violations > {{thermal.line_num_time_points_with_instantaneous_violations}}
                 OR line_num_time_points_with_moving_average_violations > {{thermal.line_num_time_points_with_moving_average_violations}}
-                OR transformer_max_instantaneous_loading_pct > {{thermal.transformer_max_instantaneous_loading_pct}}
-                OR transformer_max_moving_average_loading_pct > {{thermal.transformer_max_moving_average_loading_pct}}
-                OR transformer_num_time_points_with_instantaneous_violations > {{thermal.transformer_num_time_points_with_instantaneous_violations}}
-                OR transformer_num_time_points_with_moving_average_violations > {{thermal.transformer_num_time_points_with_moving_average_violations}}
+                OR
+                (
+                    -- This condition is true when the feeder does not have any transformers.
+                    transformer_instantaneous_threshold IS NOT NULL
+                    AND
+                    (
+                        transformer_max_instantaneous_loading_pct > {{thermal.transformer_max_instantaneous_loading_pct}}
+                        OR transformer_max_moving_average_loading_pct > {{thermal.transformer_max_moving_average_loading_pct}}
+                        OR transformer_num_time_points_with_instantaneous_violations > {{thermal.transformer_num_time_points_with_instantaneous_violations}}
+                        OR transformer_num_time_points_with_moving_average_violations > {{thermal.transformer_num_time_points_with_moving_average_violations}}
+                    )
+                )
             )
             {{/thermal}}
             {{^thermal}}
@@ -223,10 +232,17 @@ CREATE TEMP VIEW hc_by_sample AS
                 AND line_max_moving_average_loading_pct <= {{thermal.line_max_moving_average_loading_pct}}
                 AND line_num_time_points_with_instantaneous_violations <= {{thermal.line_num_time_points_with_instantaneous_violations}}
                 AND line_num_time_points_with_moving_average_violations <= {{thermal.line_num_time_points_with_moving_average_violations}}
-                AND transformer_max_instantaneous_loading_pct <= {{thermal.transformer_max_instantaneous_loading_pct}}
-                AND transformer_max_moving_average_loading_pct <= {{thermal.transformer_max_moving_average_loading_pct}}
-                AND transformer_num_time_points_with_instantaneous_violations <= {{thermal.transformer_num_time_points_with_instantaneous_violations}}
-                AND transformer_num_time_points_with_moving_average_violations <= {{thermal.transformer_num_time_points_with_moving_average_violations}}
+                AND
+                (
+                    transformer_instantaneous_threshold IS NULL
+                    OR
+                    (
+                        transformer_max_instantaneous_loading_pct <= {{thermal.transformer_max_instantaneous_loading_pct}}
+                        AND transformer_max_moving_average_loading_pct <= {{thermal.transformer_max_moving_average_loading_pct}}
+                        AND transformer_num_time_points_with_instantaneous_violations <= {{thermal.transformer_num_time_points_with_instantaneous_violations}}
+                        AND transformer_num_time_points_with_moving_average_violations <= {{thermal.transformer_num_time_points_with_moving_average_violations}}
+                    )
+                )
             )
             {{/thermal}}
             {{#voltage}}
@@ -276,10 +292,17 @@ CREATE TEMP VIEW hc_per_level1 AS
                 AND line_max_moving_average_loading_pct <= {{thermal.line_max_moving_average_loading_pct}}
                 AND line_num_time_points_with_instantaneous_violations <= {{thermal.line_num_time_points_with_instantaneous_violations}}
                 AND line_num_time_points_with_moving_average_violations <= {{thermal.line_num_time_points_with_moving_average_violations}}
-                AND transformer_max_instantaneous_loading_pct <= {{thermal.transformer_max_instantaneous_loading_pct}}
-                AND transformer_max_moving_average_loading_pct <= {{thermal.transformer_max_moving_average_loading_pct}}
-                AND transformer_num_time_points_with_instantaneous_violations <= {{thermal.transformer_num_time_points_with_instantaneous_violations}}
-                AND transformer_num_time_points_with_moving_average_violations <= {{thermal.transformer_num_time_points_with_moving_average_violations}}
+                AND
+                (
+                    transformer_instantaneous_threshold IS NULL
+                    OR
+                    (
+                        transformer_max_instantaneous_loading_pct <= {{thermal.transformer_max_instantaneous_loading_pct}}
+                        AND transformer_max_moving_average_loading_pct <= {{thermal.transformer_max_moving_average_loading_pct}}
+                        AND transformer_num_time_points_with_instantaneous_violations <= {{thermal.transformer_num_time_points_with_instantaneous_violations}}
+                        AND transformer_num_time_points_with_moving_average_violations <= {{thermal.transformer_num_time_points_with_moving_average_violations}}
+                    )
+                )
             )
             {{/thermal}}
             {{#voltage}}
