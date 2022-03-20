@@ -167,6 +167,12 @@ def compute_hc_per_metric_class(
         metric_df = metric_df[metric_df.node_types == node_types[0]]
 
     queries = build_queries(metric_df.columns, thresholds, metric_class, on=on)
+
+    if metric_class == "thermal":
+        if (metric_df.transformer_instantaneous_threshold.isna().any() or 
+            metric_df.transformer_instantaneous_threshold.isnull().any()):
+            queries = [q for q in queries if 'transformer' not in q]
+
     query_phrase = " & ".join(queries)
 
     metric_df.penetration_level = metric_df.penetration_level.astype("float")
