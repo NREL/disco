@@ -167,12 +167,6 @@ def compute_hc_per_metric_class(
         metric_df = metric_df[metric_df.node_types == node_types[0]]
 
     queries = build_queries(metric_df.columns, thresholds, metric_class, on=on)
-
-    if metric_class == "thermal":
-        if (metric_df.transformer_instantaneous_threshold.isna().any() or 
-            metric_df.transformer_instantaneous_threshold.isnull().any()):
-            queries = [q for q in queries if 'transformer' not in q]
-
     query_phrase = " & ".join(queries)
 
     metric_df.penetration_level = metric_df.penetration_level.astype("float")
@@ -180,6 +174,19 @@ def compute_hc_per_metric_class(
         hc_summary = get_hosting_capacity(
             meta_df, metric_df, query_phrase, metric_class, hc_summary
         )
+
+    if metric_class == "thermal":
+        breakpoint()
+        if (metric_df.transformer_instantaneous_threshold.isna().any() or 
+            metric_df.transformer_instantaneous_threshold.isnull().any()):
+            queries = [q for q in queries if 'transformer' not in q]
+            noxfmr_metric_df = metric_df.loc[metric_df.transformer_instantaneous_threshold.isna(), :]
+            noxfmr_query_phrase = " & ".join(queries)
+            if noxfmr_query_phrase:
+                hc_summary = get_hosting_capacity(
+                    meta_df, noxfmr_metric_df, noxfmr_query_phrase, metric_class, hc_summary
+                )
+    
     return hc_summary, query_phrase
 
 
