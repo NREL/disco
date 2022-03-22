@@ -176,7 +176,6 @@ def compute_hc_per_metric_class(
         )
 
     if metric_class == "thermal":
-        breakpoint()
         if (metric_df.transformer_instantaneous_threshold.isna().any() or 
             metric_df.transformer_instantaneous_threshold.isnull().any()):
             queries = [q for q in queries if 'transformer' not in q]
