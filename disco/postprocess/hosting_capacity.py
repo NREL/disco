@@ -198,19 +198,16 @@ def get_hosting_capacity(meta_df, metric_df, query_phrase, metric_class, hc_summ
     recommended_cba_sample: the sample with the highest violation frequency, recommended for further cost benefit analysis or upgrade
 
     """
-    pass_df = metric_df.query(query_phrase)
-    fail_df = metric_df.query(f"~({query_phrase})")
-    feeders = set(metric_df.feeder)
+    
     cba_samples = set(metric_df['sample'])
     violation_starting_penetration = 0
     violation_frequency_by_sample = {}
 
-    for feeder in feeders:
+    for feeder, temp_df in metric_df.groupby(by="feeder"):
         if not feeder in hc_summary.keys():
             hc_summary[feeder] = dict()
-        temp_pass = pass_df[pass_df.feeder == feeder]
-        temp_fail = fail_df[fail_df.feeder == feeder]
-        temp_df = metric_df[metric_df.feeder == feeder]
+        temp_pass = temp_df.query(query_phrase)
+        temp_fail = temp_df.query(f"~({query_phrase})")
         violation_frequency_by_sample = {d:len(temp_fail.query('sample == @d'))/len(temp_df.query('sample == @d')) for d in temp_df['sample'].unique()}
         recommended_cba_sample = max(violation_frequency_by_sample, key=violation_frequency_by_sample.get)
         fail_penetration_levels = set(temp_fail.penetration_level.values)
