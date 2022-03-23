@@ -16,7 +16,11 @@ Run the command below, and it could help us to ingest the results into a databas
 
 .. code-block:: bash
 
+<<<<<<< HEAD
     $ disco ingest-tables --task-name "Snapshot Task" --model-inputs /data/input-models/ --database=test.sqlite /data/snapshot-output/
+=======
+    $ disco ingest-tables --task-name "SFO P1U Snapshot" --model-inputs /data/input-models/ --database=test.sqlite /data/snapshot-output/
+>>>>>>> origin/main
 
 It will create a database named ``test.sqlite`` with data tables like below,
 
@@ -42,8 +46,17 @@ otherwise, it would prevent the data ingestion, as the task for each ingestion i
 
 .. code-block: bash
 
+<<<<<<< HEAD
     $ disco ingest-tables --task-name "Time-series Task" --model-inputs /data/input-models/ --database=test.sqlite /data/time-series-output/
 
+=======
+    $ disco ingest-tables --task-name "SFO P1U Time-series" --model-inputs /data/input-models/ --database=test.sqlite /data/time-series-output/
+
+.. note::
+
+    Task names need to be unique. It's recommended to create a naming convention of task names 
+    for better managing the simulation and analysis results, for example, ``<geography> <simulation_type>``.
+>>>>>>> origin/main
 
 Run Database Queries
 ====================

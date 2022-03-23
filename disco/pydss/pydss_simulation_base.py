@@ -171,6 +171,7 @@ class PyDssSimulationBase(JobExecutionInterface, abc.ABC):
             scenarios,
             options=dss_args,
             master_dss_file=dss_args["project"]["dss_file"],
+            force=True,  # This allows us to resubmit failed/missing jobs.
         )
         # TODO: this needs a better way of handling pf1
         self._apply_pydss_controllers(

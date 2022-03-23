@@ -7,17 +7,18 @@ Created on Thu May 27 01:28:38 2021
 
 import os
 import pandas as pd
+import numpy as np
 
-
+PENETRATION_STEP = 5
 METRIC_MAP = {
     "thermal": {
         "submetrics": [
-            "line_max_instantaneous_loading",
-            "line_max_moving_average_loading",
+            "line_max_instantaneous_loading_pct",
+            "line_max_moving_average_loading_pct",
             "line_num_time_points_with_instantaneous_violations",
             "line_num_time_points_with_moving_average_violations",
-            "transformer_max_instantaneous_loading",
-            "transformer_max_moving_average_loading",
+            "transformer_max_instantaneous_loading_pct",
+            "transformer_max_moving_average_loading_pct",
             "transformer_num_time_points_with_instantaneous_violations",
             "transformer_num_time_points_with_moving_average_violations",
         ]
@@ -148,15 +149,19 @@ def compute_hc_per_metric_class(
 
     """
     metric_table = f"{metric_class}_metrics_table.csv"
-    metric_df = pd.read_csv(os.path.join(result_path, metric_table))
+    metric_df = pd.read_csv(
+        os.path.join(result_path, metric_table),
+        dtype={"sample": np.float64, "penetration_level": np.float64, "placement": str},
+    )
+    metric_df = metric_df.dropna(axis="index", subset=["sample", "penetration_level"])
     metric_df = metric_df[metric_df.scenario == scenario]
-    meta_df = pd.read_csv(os.path.join(result_path, "metadata_table.csv"))
+    meta_df = pd.read_csv(
+        os.path.join(result_path, "metadata_table.csv"),
+        dtype={"sample": np.float64, "penetration_level": np.float64, "placement": str},
+    )
+    meta_df = meta_df.dropna(axis="index", subset=["sample", "penetration_level"])
 
     metric_df, meta_df = synthesize(metric_df, meta_df, metric_class)
-
-    if set(metric_df.feeder) == {'None'} or set(meta_df.feeder) == {'None'}:
-        meta_df.feeder = meta_df.substation
-        metric_df.feeder = metric_df.substation
 
     if metric_class == "voltage" and len(node_types) == 1:
         metric_df = metric_df[metric_df.node_types == node_types[0]]
@@ -164,7 +169,6 @@ def compute_hc_per_metric_class(
     queries = build_queries(metric_df.columns, thresholds, metric_class, on=on)
     query_phrase = " & ".join(queries)
 
-    metric_df = metric_df.mask(metric_df.eq("None")).dropna()
     metric_df.penetration_level = metric_df.penetration_level.astype("float")
     if query_phrase:
         hc_summary = get_hosting_capacity(
@@ -174,54 +178,67 @@ def compute_hc_per_metric_class(
 
 
 def get_hosting_capacity(meta_df, metric_df, query_phrase, metric_class, hc_summary):
-    """Return the hosting capacity summary"""
+    """Return the hosting capacity summary
+
+    violation_starting_penetration: the lowest penetration level at which the analysis revealed a violation
+    candidate_cba_samples: list of all deployments or samples that have violations at the lowest penetration level
+    violation_frequency_by_sample: the ratio between the number of scenarios yielding violations and the total number of scenarios investigated in a given deployment sample
+    recommended_cba_sample: the sample with the highest violation frequency, recommended for further cost benefit analysis or upgrade
+
+    """
     pass_df = metric_df.query(query_phrase)
     fail_df = metric_df.query(f"~({query_phrase})")
     feeders = set(metric_df.feeder)
+    cba_samples = set(metric_df['sample'])
+    violation_starting_penetration = 0
+    violation_frequency_by_sample = {}
 
     for feeder in feeders:
         if not feeder in hc_summary.keys():
             hc_summary[feeder] = dict()
         temp_pass = pass_df[pass_df.feeder == feeder]
         temp_fail = fail_df[fail_df.feeder == feeder]
-        if len(temp_fail) != 0 and len(temp_pass) == 0:
-            min_hc = min(list(temp_fail.penetration_level.values))
-
-        elif len(temp_fail) != 0 and len(temp_pass) != 0:
-            temp_min_list = [
-                p
-                for p in list(temp_pass.penetration_level.values)
-                if not p in list(temp_fail.penetration_level.values)
-            ]
-            if temp_min_list:
-                min_hc = max(
-                    [
-                        p
-                        for p in list(temp_pass.penetration_level.values)
-                        if not p in list(temp_fail.penetration_level.values)
-                    ]
-                )
+        temp_df = metric_df[metric_df.feeder == feeder]
+        violation_frequency_by_sample = {d:len(temp_fail.query('sample == @d'))/len(temp_df.query('sample == @d')) for d in temp_df['sample'].unique()}
+        recommended_cba_sample = max(violation_frequency_by_sample, key=violation_frequency_by_sample.get)
+        fail_penetration_levels = set(temp_fail.penetration_level.values)
+        pass_penetration_levels = set(temp_pass.penetration_level.values)
+        if fail_penetration_levels:
+            violation_starting_penetration = min(fail_penetration_levels)
+            cba_samples = set(temp_fail.loc[temp_fail.penetration_level==violation_starting_penetration, 'sample'])
+        else:
+            violation_starting_penetration = None
+            cba_samples = set()
+        temp_min_values = pass_penetration_levels.difference(fail_penetration_levels)
+        if len(temp_pass) == 0:
+            # min_hc = min(temp_fail.penetration_level.values)
+            min_hc = 0 # This is supposed to be the PV penetration level of the base case if it passed, 0 otherwise
+            max_hc = 0 # This is supposed to be the PV penetration level of the base case if it passed, 0 otherwise
+        elif len(temp_fail) == 0:
+            min_hc = max(pass_penetration_levels)
+            max_hc = max(pass_penetration_levels)
+        else:
+            max_hc = max(pass_penetration_levels)
+            if temp_min_values:
+                min_hc = max(temp_min_values)
             else:
                 min_hc = 0
-        else:
-            min_hc = max(list(temp_pass.penetration_level.values))
-
-        if len(temp_pass) != 0:
-            max_hc = max(list(temp_pass.penetration_level.values))
-        else:
-            max_hc = min(list(temp_fail.penetration_level.values))
 
         total_feeder_load = meta_df[meta_df.feeder == feeder][
             "load_capacity_kw"
         ].values[0]
-        max_kW = max_hc * total_feeder_load
-        min_kW = min_hc * total_feeder_load
+        max_kW = max_hc * total_feeder_load / 100
+        min_kW = min_hc * total_feeder_load / 100
 
         hc_summary[feeder][metric_class] = {
             "min_hc_pct": min_hc,
             "max_hc_pct": max_hc,
             "min_hc_kw": round(min_kW, 0),
             "max_hc_kw": round(max_kW, 0),
+            "violation_starting_penetration": violation_starting_penetration,
+            "candidate_cba_samples": list(cba_samples),
+            "violation_frequency_by_sample": violation_frequency_by_sample,
+            "recommended_cba_sample": recommended_cba_sample,
         }
     return hc_summary
 
@@ -270,6 +287,39 @@ def compute_hc(
         hc_overall[feeder] = {}
         df = pd.DataFrame.from_dict(dic, "index")
         for column in df.columns:
-            hc_overall[feeder][column] = min(df[column])
+            if 'hc' in column:
+                hc_overall[feeder][column] = min(df[column])
+        th_sample = dic['thermal']['recommended_cba_sample']
+        th_samples = dic['thermal']['candidate_cba_samples']
+        v_sample = dic['voltage']['recommended_cba_sample']
+        v_samples = dic['voltage']['candidate_cba_samples']
+        cba_rec_pen = list(np.arange(
+		    hc_overall[feeder]['min_hc_pct'] + PENETRATION_STEP, 
+            hc_overall[feeder]['max_hc_pct'] + PENETRATION_STEP, 
+            PENETRATION_STEP)
+		)
+        if th_sample in v_samples:
+            hc_overall[feeder]['cba_recommendation'] = [
+			    {'sample': th_sample, 'penetrations': cba_rec_pen}
+			]
+        elif v_sample in th_samples:
+            hc_overall[feeder]['cba_recommendation'] = [
+			    {'sample':v_sample, 'penetrations':cba_rec_pen}
+			]
+        else:
+            v_cba_rec_pen = list(np.arange(
+			    dic['voltage']['min_hc_pct'] + PENETRATION_STEP, 
+                dic['voltage']['max_hc_pct'] + PENETRATION_STEP, 
+                PENETRATION_STEP
+            ))
+            th_cba_rec_pen = list(np.arange(
+			    dic['thermal']['min_hc_pct'] + PENETRATION_STEP, 
+                dic['thermal']['max_hc_pct'] + PENETRATION_STEP, 
+                PENETRATION_STEP
+            ))
+            hc_overall[feeder]['cba_recommendation'] = [
+                {'sample': v_sample, 'penetrations': v_cba_rec_pen},
+                {'sample': th_sample, 'penetrations': th_cba_rec_pen}
+            ]
 
     return hc_summary, hc_overall, query_list

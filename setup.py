@@ -59,7 +59,7 @@ version = version.split()[2].strip('"').strip("'")
 test_requires = ["pytest", ]
 
 setup(
-    name="disco",
+    name="NREL-disco",
     version=version,
     description="DISCO",
     long_description=readme,
@@ -75,6 +75,19 @@ setup(
         ],
     },
     include_package_data=True,
+    package_data={
+        "disco": [
+            "analysis/*.toml",
+            "analysis/*.xlsx",
+            "pipelines/template/*.toml",
+            "extensions/pydss_simulation/*.toml",
+            "extensions/pydss_simulation/trained_lm_time_prediction.sav",
+            "extensions/*.json",
+            "postprocess/config/*.toml",
+            "postprocess/toolbox/query_tool.ipynb",
+            "pydss/config/*.toml",
+        ],
+    },
     license="BSD license",
     zip_safe=False,
     keywords=["disco"],

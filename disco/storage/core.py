@@ -39,8 +39,13 @@ class InitializationStep(PipelineStep):
         logger.info("Initializing data pipeline.")
         if not self.validate_task(data):
             task_name = data["task_name"]
+<<<<<<< HEAD
             logger.error(f"Task '{task_name}' already exists, please try other --task-name.")
             sys.exit()
+=======
+            logger.error(f"Task '{task_name}' already exists, please try another --task-name.")
+            sys.exit(1)
+>>>>>>> origin/main
         return data
 
     def validate_task(self, data):

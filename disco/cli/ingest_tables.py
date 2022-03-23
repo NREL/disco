@@ -3,8 +3,13 @@ import os
 
 import click
 
+<<<<<<< HEAD
 from jade.common import OUTPUT_DIR
 from jade.loggers import setup_logging
+=======
+from jade.loggers import setup_logging
+from disco.pipelines.utils import ensure_jade_pipeline_output_dir
+>>>>>>> origin/main
 from disco.storage.db import create_database
 from disco.storage.core import StoragePipeline
 
@@ -33,7 +38,11 @@ from disco.storage.core import StoragePipeline
     "-d", "--database",
     type=click.Path(),
     default="disco.sqlite",
+<<<<<<< HEAD
     help="Database path of SQLite on disk."
+=======
+    help="The path of new or existing SQLite database"
+>>>>>>> origin/main
 )
 @click.option(
     "-v", "--verbose",
@@ -52,6 +61,12 @@ def ingest_tables(
     """Ingest DISCO simulation/analysis reports into SQLite database"""
     level = logging.DEBUG if verbose else logging.INFO
     logger = setup_logging(__name__, None, console_level=level)
+<<<<<<< HEAD
+=======
+
+    output = ensure_jade_pipeline_output_dir(output)
+    database = ensure_jade_pipeline_output_dir(database)
+>>>>>>> origin/main
     
     db_created = False
     if not os.path.exists(database):

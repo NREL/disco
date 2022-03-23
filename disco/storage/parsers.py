@@ -1,13 +1,19 @@
+<<<<<<< HEAD
 import json
 import logging
 import os
 import pathlib
 import uuid
 import zipfile
+=======
+import logging
+import uuid
+>>>>>>> origin/main
 from abc import ABC, abstractmethod
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from functools import partial
+<<<<<<< HEAD
 
 import pandas as pd
 from sqlalchemy import inspect
@@ -23,6 +29,18 @@ from PyDSS.pydss_project import PyDssProject
 from disco.enums import SimulationType
 from disco.pydss.common import SNAPSHOT_SCENARIO, TIME_SERIES_SCENARIOS, SCENARIO_NAME_DELIMITER
 from disco.storage.db import Task, Job, Report
+=======
+from pathlib import Path
+
+import pandas as pd
+from dateutil.parser import parse
+
+from jade.utils.utils import load_data
+from opendssdirect._version import __version__ as __opendssdirect_version__
+from PyDSS import __version__ as __pydss_version__
+from PyDSS.common import SnapshotTimePointSelectionMode
+from disco.pydss.common import SNAPSHOT_SCENARIO, TIME_SERIES_SCENARIOS, SCENARIO_NAME_DELIMITER
+>>>>>>> origin/main
 from disco.storage.outputs import get_simulation_output, get_creation_time, OutputType
 from disco.version import __version__ as __disco_version__
 
@@ -243,8 +261,15 @@ class PyDssScenarioParser(ParserBase):
                 ]
                 scenarios.extend(job_scenarios)
             return scenarios
+<<<<<<< HEAD
 
         return []
+=======
+        
+        raise ValueError(
+            f"The simulation_type '{simulation_type}' for storage is not supported currently."
+        )
+>>>>>>> origin/main
 
 
 class DermsScenaioParser(ParserBase):
@@ -263,7 +288,11 @@ class DermsScenaioParser(ParserBase):
                 partial(self._parse_job_scenario, derms_info_file=derms_info_file),
                 self.jobs
             )
+<<<<<<< HEAD
         scenarios = list(results)
+=======
+            scenarios = list(results)
+>>>>>>> origin/main
         return scenarios
     
     def _parse_job_scenario(self, job, derms_info_file):
@@ -334,6 +363,7 @@ class TableParserMixin:
             })
             indexed_data.append(item)
         return indexed_data
+<<<<<<< HEAD
     
     @staticmethod
     def _replace_none(df):
@@ -341,6 +371,8 @@ class TableParserMixin:
         df.loc[df["sample"] == "None", "sample"] = None
         df.loc[df["penetration_level"] == "None", "penetration_level"] = None
         return df
+=======
+>>>>>>> origin/main
 
 
 class FeederHeadParser(ParserBase, TableParserMixin):
@@ -358,10 +390,16 @@ class FeederHeadParser(ParserBase, TableParserMixin):
         self.jobs = jobs
     
     def parse(self, output):
+<<<<<<< HEAD
         """Prase feeder head data from output report file"""
         logger.info("Parsing data - 'feeder_head'...")
         df = pd.read_csv(output.feeder_head_table)
         df = self._replace_none(df)
+=======
+        """Parse feeder head data from output report file"""
+        logger.info("Parsing data - 'feeder_head'...")
+        df = pd.read_csv(output.feeder_head_table)
+>>>>>>> origin/main
         data = df.rename(columns=self.field_mappings).to_dict(orient="records")
         data = self._set_record_index(data)
         return data
@@ -374,10 +412,16 @@ class FeederLossesParser(ParserBase, TableParserMixin):
         self.jobs = jobs
     
     def parse(self, output):
+<<<<<<< HEAD
         """Prase feeder losses data from output report file"""
         logger.info("Parsing data - 'feeder_losses'...")
         df = pd.read_csv(output.feeder_losses_table)
         df = self._replace_none(df)
+=======
+        """Parse feeder losses data from output report file"""
+        logger.info("Parsing data - 'feeder_losses'...")
+        df = pd.read_csv(output.feeder_losses_table)
+>>>>>>> origin/main
         data = df.to_dict(orient="records")
         data = self._set_record_index(data)
         return data
@@ -390,10 +434,16 @@ class MetadataParser(ParserBase, TableParserMixin):
         self.jobs = jobs
     
     def parse(self, output):
+<<<<<<< HEAD
         """Prase metadata data from output report file"""
         logger.info("Parsing data - 'metadata'...")
         df = pd.read_csv(output.metadata_table)
         df = self._replace_none(df)
+=======
+        """Parse metadata data from output report file"""
+        logger.info("Parsing data - 'metadata'...")
+        df = pd.read_csv(output.metadata_table)
+>>>>>>> origin/main
         data = df.to_dict(orient="records")
         data = self._set_record_index(data)
         return data
@@ -406,10 +456,16 @@ class ThermalMetricsParser(ParserBase, TableParserMixin):
         self.jobs = jobs
     
     def parse(self, output):
+<<<<<<< HEAD
         """Prase thermal metrics data from output report file"""
         logger.info("Parsing data - 'thermal_metrics'...")
         df = pd.read_csv(output.thermal_metrics_table)
         df = self._replace_none(df)
+=======
+        """Parse thermal metrics data from output report file"""
+        logger.info("Parsing data - 'thermal_metrics'...")
+        df = pd.read_csv(output.thermal_metrics_table)
+>>>>>>> origin/main
         data = df.to_dict(orient="records")
         data = self._set_record_index(data)
         return data
@@ -422,10 +478,16 @@ class VoltageMetricsParser(ParserBase, TableParserMixin):
         self.jobs = jobs
     
     def parse(self, output):
+<<<<<<< HEAD
         """Prase voltage metrics data from output report file"""
         logger.info("Parsing data - 'voltage_metrics'...")
         df = pd.read_csv(output.voltage_metrics_table)
         df = self._replace_none(df)
+=======
+        """Parse voltage metrics data from output report file"""
+        logger.info("Parsing data - 'voltage_metrics'...")
+        df = pd.read_csv(output.voltage_metrics_table)
+>>>>>>> origin/main
         data = df.to_dict(orient="records")
         data = self._set_record_index(data)
         return data
@@ -441,11 +503,15 @@ class SnapshotTimePointsParser(ParserBase, TableParserMixin):
         """Parse time points data for snapshot simulation"""
         logger.info("Parsing data - 'snapshot_time_points'...")
         df = pd.read_csv(output.snapshot_time_points_table)
+<<<<<<< HEAD
         df = self._replace_none(df)
+=======
+>>>>>>> origin/main
         data = df.to_dict(orient="records")
         data = self._set_record_index(data)
         return data
 
+<<<<<<< HEAD
     @staticmethod
     def _replace_none(df):
         df.loc[df["max_pv_load_ratio"] == "None", "max_pv_load_ratio"] = None
@@ -454,6 +520,8 @@ class SnapshotTimePointsParser(ParserBase, TableParserMixin):
         df.loc[df["pv_minus_load"] == "None", "pv_minus_load"] = None
         return df
 
+=======
+>>>>>>> origin/main
 
 class HostingCapacityParser(ParserBase):
 
@@ -517,6 +585,23 @@ class HostingCapacityParser(ParserBase):
         return data
 
 
+<<<<<<< HEAD
+=======
+class PvDistancesParser(ParserBase, TableParserMixin):
+
+    def parse(self, model_inputs):
+        """Parse PV distances data from output report file"""
+        logger.info("Parsing data - 'pv_distances'...")
+        path = Path(model_inputs) / "weighted_average_pv_distances.csv"
+        if path.exists():
+            df = pd.read_csv(path)
+            data = df.to_dict(orient="records")
+        else:
+            data = {}
+        return data
+
+
+>>>>>>> origin/main
 class OutputParser(ParserBase):
 
     def __init__(self, task_name, model_inputs=None, notes=None):
@@ -525,7 +610,11 @@ class OutputParser(ParserBase):
         self.notes = notes
 
     def parse(self, output):
+<<<<<<< HEAD
         """Prase task, jobs, and reports data from output"""
+=======
+        """Parse task, jobs, and reports data from output"""
+>>>>>>> origin/main
         logger.info("Parsing results from output directory...")
         
         result = {}
@@ -589,6 +678,12 @@ class OutputParser(ParserBase):
             output=output
         )
         result["hosting_capacity"] = hosting_capacity
+<<<<<<< HEAD
+=======
+        pv_distances = self.parse_pv_distances(self.model_inputs)
+        if pv_distances:
+            result["pv_distances"] = self.parse_pv_distances(self.model_inputs)
+>>>>>>> origin/main
         
         return result
 
@@ -654,3 +749,9 @@ class OutputParser(ParserBase):
         parser = HostingCapacityParser(task=task)
         hosting_capacity = parser.parse(output=output)
         return hosting_capacity
+<<<<<<< HEAD
+=======
+
+    def parse_pv_distances(self, model_inputs):
+        return PvDistancesParser().parse(model_inputs)
+>>>>>>> origin/main

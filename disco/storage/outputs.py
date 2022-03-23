@@ -6,9 +6,15 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from enum import Enum
 
+<<<<<<< HEAD
 from jade.utils.utils import load_data
 from disco.storage.exceptions import IngestionError
 
+=======
+from disco.storage.exceptions import IngestionError
+
+# NOTE: Important table names, please do not change the order.
+>>>>>>> origin/main
 TABLE_NAMES = [
     "feeder_head_table.csv",
     "feeder_losses_table.csv",
@@ -92,6 +98,13 @@ class OutputBase(ABC):
     def hosting_capacity_results(self):
         return self.output.glob("hosting_capacity_*.json")
 
+<<<<<<< HEAD
+=======
+    @property
+    def pv_distances(self):
+        return self.output / "weighted_average_pv_distances.csv"
+
+>>>>>>> origin/main
     def __str__(self):
         """Return string representation of the output instance"""
         return str(self.output)
@@ -146,7 +159,11 @@ class PipelineSimulationOutput(OutputBase):
         output: str or pathlib.Path
         """
         for path in output.iterdir():
+<<<<<<< HEAD
             if not str(path.name).startswith("output-stage"):
+=======
+            if not path.name.startswith("output-stage"):
+>>>>>>> origin/main
                 continue
             report_files = [path / table_name for table_name in self.table_names[:-1]]
             report_exists = [report_file.exists() for report_file in report_files]
@@ -191,7 +208,11 @@ def get_creation_time(dir_or_file):
     
     stat = os.stat(dir_or_file)
     try:
+<<<<<<< HEAD
         return stat.st_birthtime  # For Mac
+=======
+        return stat.st_birthtime  # For FreeBSD, including Mac
+>>>>>>> origin/main
     except AttributeError:
         # Not easy to get creation time on Linux, use modification time
         return stat.st_mtime
@@ -205,7 +226,11 @@ def is_from_pipeline(output):
     output: str or pathlib.Path
     """
     for path in output.iterdir():
+<<<<<<< HEAD
         if str(path.name).startswith("output-stage"):
+=======
+        if path.name.startswith("output-stage"):
+>>>>>>> origin/main
             return True
     return False
 
