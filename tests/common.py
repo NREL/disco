@@ -23,6 +23,5 @@ POSTPROCESS_RESULTS = [
 ]
 UPGRADE_COST_RESULTS = [
     "total_upgrade_costs.csv",
-    "detailed_upgrade_costs.csv",
     "upgrade_summary.csv"
 ]
