@@ -19,6 +19,7 @@ Please refer to the following links and check the simulation types in detail.
   :maxdepth: 1
 
   advanced-guide/analysis-deployment
+  advanced-guide/upgrade-cost-analysis-generic-models.rst
 
 If you need to create your own extension, the 
 `JADE documentation <https://nrel.github.io/jade/advanced_usage.html>`_
