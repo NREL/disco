@@ -5,6 +5,9 @@ line_design_pu = 0.75
 xfmr_design_pu = 0.75
 voltage_upper_limit = 1.05
 voltage_lower_limit = 0.95
+parallel_xfmrs_limit = 4
+parallel_lines_limit = 4
+upgrade_iteration_threshold = 5
 
 [voltage_upgrade_params]
 initial_upper_limit = 1.05
@@ -21,6 +24,8 @@ reg_v_delta = 0.5
 max_regulators = 4
 place_new_regulators = false
 use_ltc_placement = false
+capacitor_action_flag = true
+existing_regulator_sweep_action = true
 
 [upgrade_simulation_params]
 enable_pydss_controller = true

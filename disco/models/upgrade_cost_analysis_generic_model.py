@@ -57,6 +57,22 @@ class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
         description="Voltage lower limit",
         default=0.95,
     )
+    parallel_xfmrs_limit: int = Field(
+        title="parallel_xfmrs_limit",
+        description="Parallel transformer limit",
+        default=4
+    )
+    parallel_lines_limit: int = Field(
+        title="parallel_lines_limit",
+        description="Parallel lines limit",
+        default=4
+    )
+    upgrade_iteration_threshold: int = Field(
+        title="upgrade_iteration_threshold",
+        description="Upgrade iteration threshold",
+        default=5
+    )
+
 
 # TODO DT: document error codes
 # document opendss errors specifically
@@ -133,6 +149,16 @@ class VoltageUpgradeParamsModel(UpgradeParamsBaseModel):
         title="use_ltc_placement",
         description="Use LTC placement",
         default=False,
+    )
+    capacitor_action_flag: bool = Field(
+        title="capacitor_action_flag",
+        description="Capacitor action flag",
+        default=True
+    )
+    existing_regulator_sweep_action: bool = Field(
+        title="existing_regulator_sweep_action",
+        description="Existing regulator sweep action",
+        default=True
     )
 
 

@@ -3,11 +3,6 @@ import logging
 
 import pandas as pd
 
-from .fixed_upgrade_parameters import (
-    PARALLEL_LINES_LIMIT,
-    PARALLEL_XFMRS_LIMIT,
-    THERMAL_UPGRADE_ITERATION_THRESHOLD
-)
 from .thermal_upgrade_functions import *
 
 logger = logging.getLogger(__name__)
@@ -109,7 +104,7 @@ def determine_thermal_upgrades(
     iteration_counter = 0
     # if number of violations is very high,  limit it to a small number
     max_upgrade_iteration = min(
-        THERMAL_UPGRADE_ITERATION_THRESHOLD,
+        thermal_config["upgrade_iteration_threshold"],
         len(initial_overloaded_xfmr_list) + len(initial_overloaded_line_list),
     )
     start = time.time()
@@ -156,7 +151,7 @@ def determine_thermal_upgrades(
                 line_loading_df=line_loading_df,
                 line_design_pu=thermal_config["line_design_pu"],
                 line_upgrade_options=line_upgrade_options,
-                parallel_lines_limit=PARALLEL_LINES_LIMIT,
+                parallel_lines_limit=thermal_config["parallel_lines_limit"],
             )
             logger.info("Corrected line violations.")
             commands_list = commands_list + line_commands_list
@@ -193,7 +188,7 @@ def determine_thermal_upgrades(
                 xfmr_loading_df=xfmr_loading_df,
                 xfmr_design_pu=thermal_config["xfmr_design_pu"],
                 xfmr_upgrade_options=xfmr_upgrade_options,
-                parallel_xfmrs_limit=PARALLEL_XFMRS_LIMIT
+                parallel_xfmrs_limit=thermal_config["parallel_xfmrs_limit"]
             )
 
             logger.info("Corrected xfmr violations.")

@@ -4,10 +4,8 @@ import os
 import time
 
 from .fixed_upgrade_parameters import (
-    CAPACITOR_ACTION_FLAG,
     DEFAULT_CAPACITOR_SETTINGS,
     DEFAULT_SUBLTC_SETTINGS,
-    EXISTING_REGULATOR_SWEEP_ACTION,
     DEFAULT_REGCONTROL_SETTINGS
 )
 from .voltage_upgrade_functions import *
@@ -127,7 +125,7 @@ def determine_voltage_upgrades(
         start_time = time.time()
         logger.info(f"Simulation Start time: {start_time}")
         # start with capacitors
-        if CAPACITOR_ACTION_FLAG and len(orig_capacitors_df) > 0:
+        if voltage_config["capacitor_action_flag"] and len(orig_capacitors_df) > 0:
             logger.info("Capacitors are present in the network. Perform capacitor bank control modifications.")
             # correct cap control parameters: change to voltage controlled, correct PT ratio. Add cap control if not present
             capcontrol_parameter_commands_list = correct_capacitor_parameters(
@@ -160,7 +158,7 @@ def determine_voltage_upgrades(
         # next: existing regulators
         # Do a settings sweep of existing reg control devices (other than sub LTC) after correcting their other
         #  parameters such as ratios etc
-        if EXISTING_REGULATOR_SWEEP_ACTION and (len(orig_regcontrols_df) > 0) and (len(buses_with_violations) > 0):
+        if voltage_config["existing_regulator_sweep_action"] and (len(orig_regcontrols_df) > 0) and (len(buses_with_violations) > 0):
             # first correct regcontrol parameters (ptratio) including substation LTC, if present
             regcontrols_parameter_command_list = correct_regcontrol_parameters(orig_regcontrols_df=orig_regcontrols_df,
                                                                                **pydss_params)
