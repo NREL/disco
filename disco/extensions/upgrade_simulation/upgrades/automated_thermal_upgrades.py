@@ -47,14 +47,6 @@ def determine_thermal_upgrades(
     line_upgrade_options.to_csv(line_upgrade_options_file)
     xfmr_upgrade_options.to_csv(xfmr_upgrade_options_file)
 
-    initial_xfmr_loading_df = get_all_transformer_info(
-        compute_loading=True, upper_limit=thermal_config["xfmr_upper_limit"]
-    )
-    initial_line_loading_df = get_all_line_info(
-        compute_loading=True,
-        upper_limit=thermal_config["line_upper_limit"],
-        ignore_switch=ignore_switch,
-    )
     (
         initial_bus_voltages_df,
         initial_undervoltage_bus_list,
@@ -64,6 +56,14 @@ def determine_thermal_upgrades(
         upper_limit=voltage_upper_limit, lower_limit=voltage_lower_limit, **pydss_params
     )
 
+    initial_xfmr_loading_df = get_all_transformer_info(
+        compute_loading=True, upper_limit=thermal_config["xfmr_upper_limit"]
+    )
+    initial_line_loading_df = get_all_line_info(
+        compute_loading=True,
+        upper_limit=thermal_config["line_upper_limit"],
+        ignore_switch=ignore_switch,
+    )
     initial_overloaded_xfmr_list = list(
         initial_xfmr_loading_df.loc[initial_xfmr_loading_df["status"] == "overloaded"][
             "name"
@@ -92,9 +92,8 @@ def determine_thermal_upgrades(
         'xfmr_upper_limit': thermal_config['xfmr_upper_limit']
     }
 
-
     convert_summary_dict_to_df(output_text).to_csv(thermal_summary_file, index=True)
-
+    
     if len(initial_overloaded_xfmr_list) > 0 or len(initial_overloaded_line_list) > 0:
         upgrade_status = (
             "Thermal Upgrades were needed"  # status - whether upgrades done or not
@@ -173,15 +172,15 @@ def determine_thermal_upgrades(
         )
         logger.info("Determined xfmr loadings.")
         logger.info(f"Number of xfmr violations: {len(overloaded_xfmr_list)}")
-
-        xfmr_loading_df = get_all_transformer_info(
-            compute_loading=True, upper_limit=thermal_config["xfmr_upper_limit"]
-        )
-        overloaded_xfmr_list = list(
-            xfmr_loading_df.loc[xfmr_loading_df["status"] == "overloaded"][
-                "name"
-            ].unique()
-        )
+        
+        # xfmr_loading_df = get_all_transformer_info(
+        #     compute_loading=True, upper_limit=thermal_config["xfmr_upper_limit"]
+        # )
+        # overloaded_xfmr_list = list(
+        #     xfmr_loading_df.loc[xfmr_loading_df["status"] == "overloaded"][
+        #         "name"
+        #     ].unique()
+        # )
         if len(overloaded_xfmr_list) > prev_num_xfmr_violations:
             logger.info("Write upgrades till this step in debug_upgrades.dss")
             # self.write_dat_file(output_path=os.path.join(self.config["Outputs"], "debug_upgrades.dss"))
@@ -194,7 +193,7 @@ def determine_thermal_upgrades(
                 xfmr_loading_df=xfmr_loading_df,
                 xfmr_design_pu=thermal_config["xfmr_design_pu"],
                 xfmr_upgrade_options=xfmr_upgrade_options,
-                PARALLEL_XFMRS_LIMIT=PARALLEL_XFMRS_LIMIT,
+                parallel_xfmrs_limit=PARALLEL_XFMRS_LIMIT
             )
 
             logger.info("Corrected xfmr violations.")
