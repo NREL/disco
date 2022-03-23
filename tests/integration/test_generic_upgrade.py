@@ -24,8 +24,7 @@ def test_generic_upgrade_jade_workflow(cleanup):
             submit_cmd = f"{SUBMIT_JOBS} {CONFIG_FILE} --output={OUTPUT}"
 
             assert run_command(submit_cmd) == 0
-            # TODO: upgrades code is currently broken
-            # verify_results(OUTPUT, 4)
+            verify_results(OUTPUT, 4)
     finally:
         test_upgrade_file.unlink()
 
@@ -35,10 +34,9 @@ def test_generic_upgrade_standalone_workflow(cleanup):
     try:
         if Path(OUTPUT).exists():
             shutil.rmtree(OUTPUT)
-        run_cmd = f"disco upgrade-cost-analysis run {test_upgrade_file}"
+        run_cmd = f"disco upgrade-cost-analysis run {test_upgrade_file} -o {OUTPUT}"
         ret = run_command(run_cmd)
-        # assert ret == 0
-        # TODO: upgrades code is currently broken
+        assert ret == 0
     finally:
         test_upgrade_file.unlink()
 
