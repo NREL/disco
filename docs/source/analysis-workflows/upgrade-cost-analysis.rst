@@ -11,7 +11,7 @@ according commands, and check details about command options.
 DISCO Steps
 -----------
 
-**1. Tranform Model**
+**1. Transform Model**
 
 Prepare the model with PV deployments by using DISCO model transformation.
 
