@@ -80,9 +80,8 @@ def get_upgrade_summary_table(job_path, job_info):
         
         try:
             df = pd.read_csv(upgrade_summary_file)
-        except pd.errors.EmptyDataError as e:
-            logger.error("Failed to parse upgrade summary file - '%s'", upgrade_summary_file)
-            logger.exception(e)
+        except pd.errors.EmptyDataError:
+            logger.exception("Failed to parse upgrade summary file - '%s'", upgrade_summary_file)
             return []
         
         summary_result = []
@@ -112,9 +111,8 @@ def get_total_upgrade_costs_table(job_path, job_info):
     
     try:
         df = pd.read_csv(total_upgrade_costs_file)
-    except pd.errors.EmptyDataError as e:
-        logger.error("Failed to parse total upgrade costs file - '%s'", total_upgrade_costs_file)
-        logger.exception(e)
+    except pd.errors.EmptyDataError:
+        logger.exception("Failed to parse total upgrade costs file - '%s'", total_upgrade_costs_file)
         return []
     
     total_upgrade_costs = []
