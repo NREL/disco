@@ -2,6 +2,8 @@ import os
 import ast
 import math
 import logging
+import pathlib
+
 import numpy as np
 import pandas as pd
 import opendssdirect as dss
@@ -75,7 +77,7 @@ def run_selective_master_dss(master_filepath=None, **kwargs):
     """
     run_dir = os.getcwd()
     dss.run_command("Clear")
-    logger.info("-->Redirecting master file:")
+    # logger.info("-->Redirecting master file:")
     # dss.run_command(f"Redirect {master_filepath}")
 
     # do this instead of redirect master to ignore some lines (e.g., that solve for the whole year)
@@ -173,11 +175,7 @@ def write_text_file(string_list=None, text_file_path=None):
     -------
 
     """
-    textfile = open(text_file_path, "w")
-    for element in string_list:
-        textfile.write(element + "\n")
-    textfile.close()
-    return
+    pathlib.Path(text_file_path).writelines(string_list)
 
 
 def create_dataframe_from_nested_dict(user_dict=None, index_names=None):

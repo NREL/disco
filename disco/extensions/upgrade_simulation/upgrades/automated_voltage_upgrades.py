@@ -290,9 +290,6 @@ def determine_voltage_upgrades(
                 regcontrol_sweep_df=regcontrol_sweep_df, initial_regcontrols_df=orig_regcontrols_df, **pydss_params)
             dss_commands_list = dss_commands_list + regcontrol_settings_commands_list
 
-        # logger.info(f"Checking objective function to determine best possible upgrades.\n "
-        #             f"At stages: 1) Before addition of new devices. 2) With Substation LTC.")
-        # final_settings_commands = compare_objective_function()
         dss_commands_list = dss_commands_list
 
     write_text_file(string_list=dss_commands_list, text_file_path=voltage_upgrades_dss_filepath)
