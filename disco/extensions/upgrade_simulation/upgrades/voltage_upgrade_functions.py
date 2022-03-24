@@ -74,7 +74,7 @@ def correct_capacitor_parameters(default_capacitor_settings=None, orig_capacitor
     capcontrol_present_df = orig_capacitors_df.loc[orig_capacitors_df['capcontrol_present'] == 'capcontrol']
     for index, row in capcontrol_present_df.iterrows():
         # if it is already voltage controlled, modify PT ratio if new is different after re-computation
-        if (row["capcontrol_type"].lower() == "voltage") and (round(row['ptratio'], 2) != round(row['old_ptratio'], 2)):
+        if (row["capcontrol_type"].lower() == "voltage") and (round(row['PTratio'], 2) != round(row['old_PTratio'], 2)):
             orig_string = ' !original, corrected PTratio only'
             command_string = f"Edit CapControl.{row['capcontrol_name']} PTRatio={row['PTratio']}" + orig_string
             dss.run_command(command_string)
