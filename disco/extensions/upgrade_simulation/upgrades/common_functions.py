@@ -175,7 +175,7 @@ def write_text_file(string_list=None, text_file_path=None):
     -------
 
     """
-    pathlib.Path(text_file_path).write_text("\n".joint(string_list))
+    pathlib.Path(text_file_path).write_text("\n".join(string_list))
 
 
 def create_dataframe_from_nested_dict(user_dict=None, index_names=None):
