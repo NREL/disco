@@ -211,8 +211,10 @@ def choose_best_capacitor_sweep_setting(capacitor_sweep_df=None, initial_capacit
     else:
         # apply same best setting to all capacitors
         capacitors_df = initial_capacitors_df.copy()
-        capacitors_df['ONsetting'] = min_severity_setting['ONsetting']
-        capacitors_df['OFFsetting'] = min_severity_setting['OFFsetting']
+        # capacitors_df['ONsetting'] = min_severity_setting['ONsetting']
+        capacitors_df['ONsetting'] = min_severity_setting['cap_on_setting']
+        # capacitors_df['OFFsetting'] = min_severity_setting['OFFsetting']
+        capacitors_df['OFFsetting'] = min_severity_setting['cap_off_setting']
     properties_list = ["ONsetting", "OFFsetting"]  # list of properties to be edited in commands
     capacitor_settings_commands_list = create_capcontrol_settings_commands(properties_list=properties_list,
                                                                            capacitors_df=capacitors_df,
