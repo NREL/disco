@@ -12,6 +12,8 @@ def test_order_by_penetration(cleanup):
         transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations {option} -F -o {MODELS_DIR}"
         assert run_command(transform_cmd) == 0
         cmd = f"disco config {option} {MODELS_DIR} --order-by-penetration -c {CONFIG_FILE}"
+        if option == "snapshot":
+            cmd += " --with-loadshape"
         ret = run_command(cmd)
         assert ret == 0
         config = create_config_from_file(CONFIG_FILE)
@@ -30,6 +32,8 @@ def test_order_by_penetration(cleanup):
                 assert penetration_level > blocking_pen
 
         cmd = f"disco config {option} {MODELS_DIR} --no-order-by-penetration -c {CONFIG_FILE}"
+        if option == "snapshot":
+            cmd += " --with-loadshape"
         ret = run_command(cmd)
         assert ret == 0
         config = create_config_from_file(CONFIG_FILE)
