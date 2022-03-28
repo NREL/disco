@@ -135,7 +135,7 @@ class PyDssSimulation(PyDssSimulationBase):
             if len(val_pair) == 2:
                 if val_pair[0].lower() == "pmpp":
                     pmpp = float(val_pair[1])
-                elif val_pair[0].lower() == "%Pmpp":
+                elif val_pair[0].lower() == "%pmpp":
                     old_pct_pmpp = float(val_pair[1])
                     pct_pmpp_index = i
                 elif val_pair[0].lower() == "kva":
