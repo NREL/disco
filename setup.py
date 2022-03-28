@@ -18,7 +18,6 @@ def read_lines(filename):
     return Path(filename).read_text().splitlines()
 
 
-
 class PostDevelopCommand(develop):
     """Post-installation for development mode."""
     def run(self):
@@ -86,7 +85,8 @@ setup(
             "pipelines/template/*.toml",
             "extensions/pydss_simulation/*.toml",
             "extensions/pydss_simulation/trained_lm_time_prediction.sav",
-            "extensions/upgrade_simulation/upgrades/Generic_DISCO_cost_database_v2.xlsx",
+            "extensions/upgrade_simulation/upgrades/*.xlsx",
+            "extensions/upgrade_simulation/upgrades/*.toml",
             "extensions/*.json",
             "postprocess/config/*.toml",
             "postprocess/toolbox/query_tool.ipynb",
