@@ -79,7 +79,7 @@ def test_recalculate_kva(cleanup):
     assert simulation._model.deployment.kva_to_kw_rating == 1.0
     irradiance_scaling_factor = 100
 
-    # pctPmpp = irradiance_scaling_factor/DC-AC ratio
+    # %Pmpp = irradiance_scaling_factor/DC-AC ratio
     # kVA = (Pmpp/DC-AC ratio)*(kVA_to_kW rating)
 
     for add_pct_pmpp in (True, False):
@@ -96,21 +96,21 @@ def test_recalculate_kva(cleanup):
             f"Pmpp={pmpp} conn=wye irradiance=1 yearly=test"
 
         if add_pct_pmpp:
-            expected += f" pctPmpp={pct_pmpp}"
+            expected += f" %Pmpp={pct_pmpp}"
 
         actual = simulation._recalculate_kva(line)
 
         assert actual == expected + "\n"
 
-        # Add pctPmpp as an existing bad value and ensure it gets fixed.
+        # Add %Pmpp as an existing bad value and ensure it gets fixed.
         line = "New PVSystem.pv_123456 bus1=123456_xfmr.1.2 phases=2 " \
             "kV=0.20784609690826525 kVA=59.884252706260604 " \
-            f"Pmpp={pmpp} pctPmpp=99999 conn=wye irradiance=1 " \
+            f"Pmpp={pmpp} %Pmpp=99999 conn=wye irradiance=1 " \
             "yearly=test"
 
         expected = "New PVSystem.pv_123456 bus1=123456_xfmr.1.2 " \
             f"phases=2 kV=0.20784609690826525 kVA={kva} " \
-            f"Pmpp={pmpp} pctPmpp={pct_pmpp} conn=wye irradiance=1 " \
+            f"Pmpp={pmpp} %Pmpp={pct_pmpp} conn=wye irradiance=1 " \
             "yearly=test"
 
         actual = simulation._recalculate_kva(line)

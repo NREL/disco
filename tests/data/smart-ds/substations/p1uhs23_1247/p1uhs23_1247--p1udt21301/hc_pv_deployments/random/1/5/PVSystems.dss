@@ -1,7 +1,7 @@
 // PV Scenario for 125.77116204387836 kW total size, Scenario type random, Sample 1 and penetration 5% (PV to load ratio) 
 ! =====================PV SCENARIO FILE==============================
-New PVSystem.small_p1ulv41131_1_2_pv phases=1 bus1=p1ulv41131.1.2 kv=0.2402 irradiance=1 Pmpp=20.882 pctPmpp=100 kVA=20.882 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1563529_30.18_-97.49_2019
-New PVSystem.small_p1ulv10092_1_2_pv phases=1 bus1=p1ulv10092.1.2 kv=0.2402 irradiance=1 Pmpp=23.059 pctPmpp=100 kVA=23.059 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1571313_30.20_-97.39_2019
-New PVSystem.small_p1ulv12585_1_2_pv phases=1 bus1=p1ulv12585.1.2 kv=0.2402 irradiance=1 Pmpp=19.138 pctPmpp=100 kVA=19.138 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1535431_30.28_-97.83_2019
-New PVSystem.small_p1ulv4428_1_2_pv phases=1 bus1=p1ulv4428.1.2 kv=0.2402 irradiance=1 Pmpp=21.944 pctPmpp=100 kVA=21.944 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1553723_30.30_-97.61_2019
-New PVSystem.small_p1ulv51773_1_2_pv phases=1 bus1=p1ulv51773.1.2 kv=0.2402 irradiance=1 Pmpp=40.749 pctPmpp=100 kVA=40.749 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1560321_30.34_-97.53_2019
+New PVSystem.small_p1ulv41131_1_2_pv phases=1 bus1=p1ulv41131.1.2 kv=0.2402 irradiance=1 Pmpp=20.882 %Pmpp=100 kVA=20.882 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1563529_30.18_-97.49_2019
+New PVSystem.small_p1ulv10092_1_2_pv phases=1 bus1=p1ulv10092.1.2 kv=0.2402 irradiance=1 Pmpp=23.059 %Pmpp=100 kVA=23.059 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1571313_30.20_-97.39_2019
+New PVSystem.small_p1ulv12585_1_2_pv phases=1 bus1=p1ulv12585.1.2 kv=0.2402 irradiance=1 Pmpp=19.138 %Pmpp=100 kVA=19.138 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1535431_30.28_-97.83_2019
+New PVSystem.small_p1ulv4428_1_2_pv phases=1 bus1=p1ulv4428.1.2 kv=0.2402 irradiance=1 Pmpp=21.944 %Pmpp=100 kVA=21.944 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1553723_30.30_-97.61_2019
+New PVSystem.small_p1ulv51773_1_2_pv phases=1 bus1=p1ulv51773.1.2 kv=0.2402 irradiance=1 Pmpp=40.749 %Pmpp=100 kVA=40.749 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1560321_30.34_-97.53_2019
