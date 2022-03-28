@@ -6,12 +6,14 @@ import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from disco.analysis import GENERIC_COST_DATABASE
-from disco.enums import AnalysisModelType, SimulationType, SimulationHierarchy
+from disco.enums import SimulationType, SimulationHierarchy
 from disco.exceptions import AnalysisConfigurationException
 from disco.models.base import OpenDssDeploymentModel
 from disco.utils.dss_utils import comment_out_leading_strings
-
+from disco.extensions.upgrade_simulation.upgrades.common_functions import (
+    get_default_upgrade_params_file,
+    get_default_upgrade_cost_database,
+)
 
 FORMAT_FILENAME = "format.toml"
 TYPE_KEY = "type"
@@ -35,10 +37,8 @@ DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS = {
 
 DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS = {
     "output_dir": "upgrade-models",
-    "cost_database": GENERIC_COST_DATABASE,
-    "params_file": "upgrade-params.toml",
-    "sequential_upgrade": False,
-    "nearest_redirect": False,
+    "cost_database": get_default_upgrade_cost_database(),
+    "params_file": get_default_upgrade_params_file(),
     "start_time": "2020-01-01T00:00:00",
     "end_time": "2020-01-08T00:00:00",
     "simulation_type": SimulationType.SNAPSHOT.value,
@@ -287,7 +287,15 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
             )
         )
 
-    def create_deployment(self, name, outdir, hierarchy, pv_profile=None, copy_load_shape_data_files=False):
+    def create_deployment(
+        self,
+        name,
+        outdir,
+        hierarchy,
+        pv_profile=None,
+        copy_load_shape_data_files=False,
+        exclude_load_profile=False
+    ):
         """Create the deployment.
 
         Parameters
@@ -300,6 +308,8 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
         pv_profile : str
             Optional load shape profile name to apply to all PVSystems
         copy_load_shape_data_files : bool
+        exclude_load_profile : bool
+            Exclude load profile from loads DSS model.
 
         Returns
         -------
@@ -309,6 +319,10 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
         workspace = OpenDssFeederWorkspace(outdir)
         if not os.path.exists(workspace.master_file):
             self._create_common_files(workspace, copy_load_shape_data_files, hierarchy)
+        
+        if exclude_load_profile:
+            self._exclude_load_profile(workspace)
+
         deployment_file = self._create_deployment_file(
             name, workspace, hierarchy, pv_profile=pv_profile
         )
@@ -472,6 +486,39 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
             for line in f_in:
                 line = re.sub(BaseOpenDssModel.REGEX_LOAD_SHAPE_DATA_FILE, replace_func, line)
                 print(line, end="")
+    
+    @staticmethod
+    def _exclude_load_profile(workspace):
+        """Exclude load profile from loads model"""
+        loads = os.path.basename(workspace.loads_file)
+        loads_in_master = False
+        with open(workspace.master_file, "r") as f:
+            for line in f.readlines():
+                if line.strip().startswith("!"):
+                    continue
+                if loads in line:
+                    loads_in_master = True
+                    break
+        
+        if not loads_in_master:
+            return
+        
+        regex = re.compile("yearly=\w+")
+        new_lines = []
+        with open(workspace.loads_file, "r") as f:
+            for line in f.readlines():
+                if not line.strip():
+                    continue
+                matched = regex.search(line)
+                if not matched:
+                    new_lines.append(line)
+                    continue
+                value = matched.group(0)
+                new_line = " ".join(line.split(value)).strip()
+                new_lines.append(new_line + "\n")
+
+        with open(workspace.loads_file, "w") as f:
+            f.writelines(new_lines)
 
 
 class OpenDssSubstationWorkspace:
@@ -550,3 +597,7 @@ class OpenDssFeederWorkspace:
     @property
     def metadata_directory(self):
         return os.path.join(self.feeder_directory, "Metadata")
+
+    @property
+    def loads_file(self):
+        return os.path.join(self.opendss_directory, "Loads.dss")

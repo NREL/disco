@@ -8,11 +8,10 @@ from pathlib import Path
 from setuptools import setup, find_packages
 from setuptools.command.develop import develop
 from setuptools.command.install import install
-from subprocess import check_call
-import shlex
 import sys
 
 try:
+    from jade.extensions.registry import Registry
     from jade.utils.subprocess_manager import run_command
 except ImportError:
     print("jade must be installed prior to installing disco")
@@ -41,6 +40,9 @@ class PostInstallCommand(install):
 
 
 def install_jade_extensions():
+    registry_filename = Path.home() / Registry._REGISTRY_FILENAME
+    if os.path.exists(registry_filename):
+        os.remove(registry_filename)
     ext = os.path.join(here, "disco", "extensions", "jade_extensions.json")
     run_command(f"jade extensions register {ext}")
     run_command("jade extensions add-logger disco")

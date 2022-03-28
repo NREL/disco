@@ -11,7 +11,6 @@ to run simulations on top of OpenDSS.The supported simulations in DISCO currentl
 include:
 
   * DISCO PV Deployment Simulation via ``pydss_simulation`` extension.
-  * Automated Upgrade Simulation via ``automated_upgrade_simulation``
 
 
 Please refer to the following links and check the simulation types in detail.
@@ -20,7 +19,7 @@ Please refer to the following links and check the simulation types in detail.
   :maxdepth: 1
 
   advanced-guide/analysis-deployment
-  advanced-guide/automated-upgrade-simulation
+  advanced-guide/upgrade-cost-analysis-generic-models.rst
 
 If you need to create your own extension, the 
 `JADE documentation <https://nrel.github.io/jade/advanced_usage.html>`_

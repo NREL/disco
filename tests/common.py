@@ -13,7 +13,6 @@ POST_PROCESS_OUTPUT_FILE = "post-process.toml"
 PRESCREEN_JOBS = "disco prescreen-pv-penetration-levels"
 SUBMIT_JOBS = "jade submit-jobs --local"
 TRANSFORM_MODEL = "disco transform-model"
-UPGRADE_PARAMS = "test-upgrade-params.toml"
 TRANSFORM_MODEL_LOG = "transform_model.log"
 POSTPROCESS_RESULTS = [
     "feeder_head_table.csv",
@@ -21,4 +20,8 @@ POSTPROCESS_RESULTS = [
     "metadata_table.csv",
     "thermal_metrics_table.csv",
     "voltage_metrics_table.csv"
+]
+UPGRADE_COST_RESULTS = [
+    "total_upgrade_costs.csv",
+    "upgrade_summary.csv"
 ]

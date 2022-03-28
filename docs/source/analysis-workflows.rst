@@ -12,7 +12,6 @@ The supported analysis in post-process include:
 * Snapshot Impact Analysis
 * Snapshot Hosting Capacity Analysis (based on snapshot impact analysis results)
 * Time Series Impact Analysis
-* Upgrade Cost Analysis
 
 The following sections show the analysis workflow for each in detail.
 

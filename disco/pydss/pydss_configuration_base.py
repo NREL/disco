@@ -114,8 +114,6 @@ def get_default_reports_file(simulation_type: SimulationType):
         filename = "time_series_reports.toml"
     elif simulation_type == SimulationType.SNAPSHOT:
         filename = "snapshot_reports.toml"
-    elif simulation_type == SimulationType.UPGRADE:
-        raise InvalidParameter("reports with upgrade simulations is not supported")
     else:
         assert False, simulation_type
 

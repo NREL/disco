@@ -1366,7 +1366,7 @@ class PVDataManager(PVDataStorage):
         logger.info("Feeder Redirect LoadShapes.dss enabled in master files, total %s", len(feeder_paths))
     
     def restore_feeder_data(self) -> None:
-        """After PV deployments, we need to restore feeder data tranformed during PV deployments
+        """After PV deployments, we need to restore feeder data transformed during PV deployments
             1) rename transformed Loads.dss to PV_Loads.dss;
             2) uncomment on LoadShapes.dss redirect in master file.
         """

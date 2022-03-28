@@ -207,3 +207,87 @@ class TimeSeriesPipelineCreator(PipelineCreatorBase):
             commands.append(f"disco-internal make-cba-tables {inputs}")
         
         return "\n".join(commands)
+
+
+class UpgradePipelineCreator(PipelineCreatorBase):
+    """Upgrade pipeline creator class"""
+
+    def create_pipeline(self, config_file):
+        stages = [self.make_simulation_stage()]
+        if self.template.contains_postprocess():
+            stages.append(self.make_postprocess_stage())
+        
+        config = PipelineConfig(stages=stages, stage_num=1)
+        with open(config_file, "w") as f:
+            f.write(config.json(indent=2))
+        logger.info("Created pipeline config file - %s", config_file)
+    
+    def make_model_transform_command(self):
+        options = self.template.get_transform_options(TemplateSection.MODEL)
+        command = f"disco transform-model {self.template.inputs} upgrade {options}"
+        logger.info("Make command - '%s'", command)
+        return command
+    
+    def make_prescreen_create_command(self):
+        pass
+
+    def make_prescreen_filter_command(self):
+        pass
+
+    def make_disco_config_command(self, section):
+        if self.template.preconfigured:
+            model_inputs = self.template.inputs
+        else:
+            model_inputs = self.template.get_model_transform_output()
+        
+        options = self.template.get_config_options(section)
+        command = f"disco config upgrade {model_inputs} {options}"
+        logger.info("Make command - '%s'", command)
+        return command
+
+    def make_postprocess_command(self):
+        inputs = os.path.join("$JADE_PIPELINE_OUTPUT_DIR", f"output-stage{self.stage_num-1}")
+        command = f"disco-internal make-upgrade-tables {inputs}"
+        return command
+
+
+class UpgradePipelineCreator(PipelineCreatorBase):
+    """Upgrade pipeline creator class"""
+
+    def create_pipeline(self, config_file):
+        stages = [self.make_simulation_stage()]
+        if self.template.contains_postprocess():
+            stages.append(self.make_postprocess_stage())
+        
+        config = PipelineConfig(stages=stages, stage_num=1)
+        with open(config_file, "w") as f:
+            f.write(config.json(indent=2))
+        logger.info("Created pipeline config file - %s", config_file)
+    
+    def make_model_transform_command(self):
+        options = self.template.get_transform_options(TemplateSection.MODEL)
+        command = f"disco transform-model {self.template.inputs} upgrade {options}"
+        logger.info("Make command - '%s'", command)
+        return command
+    
+    def make_prescreen_create_command(self):
+        pass
+
+    def make_prescreen_filter_command(self):
+        pass
+
+    def make_disco_config_command(self, section):
+        if self.template.preconfigured:
+            model_inputs = self.template.inputs
+        else:
+            model_inputs = self.template.get_model_transform_output()
+        
+        options = self.template.get_config_options(section)
+        command = f"disco config upgrade {model_inputs} {options}"
+        logger.info("Make command - '%s'", command)
+        return command
+
+    def make_postprocess_command(self):
+        inputs = os.path.join("$JADE_PIPELINE_OUTPUT_DIR", f"output-stage{self.stage_num-1}")
+        command = f"disco-internal make-upgrade-tables {inputs}"
+        return command

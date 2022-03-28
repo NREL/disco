@@ -41,7 +41,7 @@ to create the template.
 
 .. code-block:: bash
 
-    $ disco create-pipeline template --simulation-type=snapshot --hosting-capacity --preconfigured snapshot-models
+    $ disco create-pipeline template --task-name SnapshotTask --simulation-type=snapshot --hosting-capacity --preconfigured snapshot-models
 
 
 .. note::

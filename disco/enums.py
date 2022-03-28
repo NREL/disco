@@ -119,6 +119,7 @@ class AnalysisType(enum.Enum):
     IMPACT_ANALYSIS = "impact-analysis"
     HOSTING_CAPACITY = "hosting-capacity"
     COST_BENEFIT = "cost-benefit"
+    UPGRADE_ANALYSIS = "upgrade-analysis"
     NONE = "none"
 
 

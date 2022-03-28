@@ -80,9 +80,7 @@ def list_model_classes():
         list of model classes
 
     """
-    # TODO: do this dynamically, accounting for abstract types.
     return [
         SnapshotImpactAnalysisModel,
-        TimeSeriesAnalysisModel,
-        UpgradeCostAnalysisModel,
+        TimeSeriesAnalysisModel
     ]

@@ -1,0 +1,57 @@
+[thermal_upgrade_params]
+xfmr_upper_limit = 1.25
+line_upper_limit = 1.25
+line_design_pu = 0.75
+xfmr_design_pu = 0.75
+voltage_upper_limit = 1.05
+voltage_lower_limit = 0.95
+parallel_xfmrs_limit = 4
+parallel_lines_limit = 4
+upgrade_iteration_threshold = 5
+
+[voltage_upgrade_params]
+initial_upper_limit = 1.05
+initial_lower_limit = 0.95
+final_upper_limit = 1.05
+final_lower_limit = 0.95
+target_v = 1
+nominal_voltage = 120
+nominal_pu_voltage = 1
+tps_to_test = []
+capacitor_sweep_voltage_gap = 1
+reg_control_bands = [1, 2]
+reg_v_delta = 0.5
+max_regulators = 4
+place_new_regulators = false
+use_ltc_placement = false
+capacitor_action_flag = true
+existing_regulator_sweep_action = true
+
+[upgrade_simulation_params]
+enable_pydss_controller = true
+
+[upgrade_simulation_params.pydss_controller]
+Control1 = "VVar"
+Control2 = "None"
+Control3 = "None"
+pf = 1
+pfMin = 0.8
+pfMax = 1
+Pmin = 0
+Pmax = 1
+uMin = 0.9399999999999999
+uDbMin = 0.97
+uDbMax = 1.03
+uMax = 1.06
+QlimPU = 0.44
+PFlim = 0.9
+enable_pf_limit = false
+uMinC = 1.06
+uMaxC = 1.1
+PminVW = 10
+VWtype = "Rated Power"
+percent_p_cutin = 10
+percent_p_cutout = 10
+Efficiency = 100
+Priority = "Var"
+DampCoef = 0.8
