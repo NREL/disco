@@ -19,7 +19,7 @@ from tests.common import *
 def test_pydss_simulation(cleanup):
     num_jobs = 18
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations snapshot -F -o {MODELS_DIR}"
-    config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} -c {CONFIG_FILE}"
+    config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} -c {CONFIG_FILE} --no-with-loadshape"
     submit_cmd = f"{SUBMIT_JOBS} {CONFIG_FILE} --output={OUTPUT} -p 1"
 
     assert run_command(transform_cmd) == 0
