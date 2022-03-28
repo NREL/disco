@@ -1376,14 +1376,7 @@ def add_graph_bus_nodes(G=None, bus_coordinates_df=None):
 def get_graph_edges_dataframe(attr_fields=None):
     """This function adds lines and transformers as edges to the graph
     All lines, switches, reclosers etc are modeled as lines, so calling lines takes care of all of them.
-   Transformers are also added as edges since they form the edge between primary and secondary nodes
-
-    Parameters
-    ----------
-    G
-
-    Returns
-    -------
+    Transformers are also added as edges since they form the edge between primary and secondary nodes
 
     """
     length_conversion_to_metre = {
