@@ -10,19 +10,12 @@ from setuptools.command.develop import develop
 from setuptools.command.install import install
 import sys
 
-try:
-    from jade.extensions.registry import Registry
-    from jade.utils.subprocess_manager import run_command
-except ImportError:
-    print("jade must be installed prior to installing disco")
-    sys.exit(1)
 
 logger = logging.getLogger(__name__)
 
 
 def read_lines(filename):
     return Path(filename).read_text().splitlines()
-
 
 
 class PostDevelopCommand(develop):
@@ -40,6 +33,10 @@ class PostInstallCommand(install):
 
 
 def install_jade_extensions():
+    # These won't be available until after jade gets installed by pip.
+    from jade.extensions.registry import Registry
+    from jade.utils.subprocess_manager import run_command
+
     registry_filename = Path.home() / Registry._REGISTRY_FILENAME
     if os.path.exists(registry_filename):
         os.remove(registry_filename)
@@ -54,9 +51,13 @@ with open("README.md", encoding="utf-8") as f:
     readme = f.read()
 
 with open(os.path.join(here, "disco", "version.py"), encoding="utf-8") as f:
-    version = f.read()
+    lines = f.read().split("\n")
+    if len(lines) != 2:
+        print("Invalid format in version.py", file=sys.stderr)
+        sys.exit(1)
 
-version = version.split()[2].strip('"').strip("'")
+
+version = lines[0].split()[2].strip('"').strip("'")
 
 test_requires = ["pytest", ]
 
@@ -84,6 +85,8 @@ setup(
             "pipelines/template/*.toml",
             "extensions/pydss_simulation/*.toml",
             "extensions/pydss_simulation/trained_lm_time_prediction.sav",
+            "extensions/upgrade_simulation/upgrades/*.xlsx",
+            "extensions/upgrade_simulation/upgrades/*.toml",
             "extensions/*.json",
             "postprocess/config/*.toml",
             "postprocess/toolbox/query_tool.ipynb",

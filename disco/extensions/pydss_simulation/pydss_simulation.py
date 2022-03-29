@@ -135,7 +135,7 @@ class PyDssSimulation(PyDssSimulationBase):
             if len(val_pair) == 2:
                 if val_pair[0].lower() == "pmpp":
                     pmpp = float(val_pair[1])
-                elif val_pair[0].lower() == "pctpmpp":
+                elif val_pair[0].lower() == "%pmpp":
                     old_pct_pmpp = float(val_pair[1])
                     pct_pmpp_index = i
                 elif val_pair[0].lower() == "kva":
@@ -162,7 +162,7 @@ class PyDssSimulation(PyDssSimulationBase):
 
         if old_pct_pmpp is not None or self._add_pct_pmpp:
             pct_pmpp = self._irradiance_scaling_factor / dc_ac_ratio
-            token = f"pctPmpp={pct_pmpp}"
+            token = f"%Pmpp={pct_pmpp}"
             if pct_pmpp_index is None:
                 values.append(token)
                 logger.debug("Added pct_pmpp = %s", pct_pmpp)

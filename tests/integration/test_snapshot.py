@@ -26,10 +26,9 @@ DISCO_PATH = disco.__path__[0]
 
 
 def test_snapshot_basic(cleanup):
-    base = os.path.join(DISCO_PATH, "extensions", "pydss_simulation")
     config_file = CONFIG_FILE
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations snapshot -c -F -o {MODELS_DIR}"
-    config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} -c {CONFIG_FILE}"
+    config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} -c {CONFIG_FILE} --no-with-loadshape"
     submit_cmd = f"{SUBMIT_JOBS} {config_file} -o {OUTPUT}"
 
     assert run_command(transform_cmd) == 0
@@ -51,7 +50,6 @@ def test_snapshot_basic(cleanup):
 
 
 def test_snapshot_basic_with_loadshape_no_pf1(cleanup):
-    base = os.path.join(DISCO_PATH, "extensions", "pydss_simulation")
     config_file = CONFIG_FILE
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations snapshot -F -o {MODELS_DIR}"
     config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} --with-loadshape --no-pf1 -c {CONFIG_FILE} -d1"
@@ -84,7 +82,6 @@ def test_snapshot_basic_with_loadshape_no_pf1(cleanup):
 
 def test_snapshot_impact_analysis(cleanup):
     """For each job, gather outputs and generate desired output CSV files."""
-    base = os.path.join(DISCO_PATH, "extensions", "pydss_simulation")
     config_file = CONFIG_FILE
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations snapshot -F -o {MODELS_DIR}"
     config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} -c {CONFIG_FILE} --with-loadshape -d1"
@@ -112,7 +109,6 @@ def test_snapshot_impact_analysis(cleanup):
 
 def test_snapshot_hosting_capacity(cleanup):
     """For each job, gather outputs and generate desired output CSV files."""
-    base = os.path.join(DISCO_PATH, "extensions", "pydss_simulation")
     config_file = CONFIG_FILE
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations snapshot -F -o {MODELS_DIR}"
     config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} -c {CONFIG_FILE} --with-loadshape -d1"

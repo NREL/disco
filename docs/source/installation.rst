@@ -20,12 +20,10 @@ third-party libraries.
 
 .. code-block:: bash
 
-    $ conda create -n disco python=3.7
+    $ conda create -n disco python=3.9
     $ conda activate disco
     # Run this command if your git version is lower than 2.19.
     $ conda install git">=2.19"
-
-.. warning:: Python 3.7 is required. Newer versions won't work.
 
 Optional: Install desired packages.
 

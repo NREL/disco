@@ -668,7 +668,7 @@ class PVScenarioGeneratorBase(abc.ABC):
         new_pv_string = (
             f"New PVSystem.{pv_name} phases={ph} "
             f"bus1={bus} kv={kv} irradiance=1 "
-            f"Pmpp={pv_size} pctPmpp=100 kVA={pv_size} "
+            f"Pmpp={pv_size} %Pmpp=100 kVA={pv_size} "
             f"conn=wye %cutin=0.1 %cutout=0.1 "
             f"Vmaxpu=1.2\n"
         )
