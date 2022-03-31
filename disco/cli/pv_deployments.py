@@ -303,6 +303,9 @@ def source_tree_1(
     if action == "create-pv":
         logger.info("Set integer %s as initial random seed for PV deployments.", random_seed)
     
+    if action == "create-configs":
+        logger.info("Set integer %s as initial random seed for PV configs.", random_seed)
+    
     config = {
         "placement": placement,
         "category": category,

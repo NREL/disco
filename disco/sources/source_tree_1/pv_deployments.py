@@ -882,19 +882,24 @@ class PVScenarioGeneratorBase(abc.ABC):
     
     def attach_profile(self, pv_systems_file: str, pv_profiles: dict) -> None:
         """Attach PV profile to each system with 'yearly=<pv-profile>' in PVSystems.dss"""
-        regex = re.compile(r"new pvsystem\.([^\s]+)")
+        regex1 = re.compile("yearly=\w+")
+        regex2 = re.compile(r"new pvsystem\.([^\s]+)")
         
         updated_data = []
         with open(pv_systems_file, "r") as fr:
             for line in fr.readlines():
                 lowered_line = line.lower()
-                if "new pvsystem" not in lowered_line or "yearly" in lowered_line:
+                if "new pvsystem" not in lowered_line:
                     updated_data.append(line)
                     continue
                 
-                match = regex.search(lowered_line)
-                assert match, line
-                pv_name = match.group(0).split(".")[1]
+                match1 = regex1.search(line)
+                if match1:
+                    line = " ".join(line.split(match1.group(0))).strip()
+                
+                match2 = regex2.search(lowered_line)
+                assert match2, line
+                pv_name = match2.group(0).split(".")[1]
                 pv_profile = pv_profiles.get(pv_name, None)
                 if not pv_profile:
                     raise Exception(f"No PV profile founded for {pv_name} - [{line}]]")
