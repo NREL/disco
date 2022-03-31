@@ -503,7 +503,7 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
         if not loads_in_master:
             return
         
-        regex = re.compile("yearly=\w+")
+        regex = re.compile("yearly=[\w\.\-_]+")
         new_lines = []
         with open(workspace.loads_file, "r") as f:
             for line in f.readlines():

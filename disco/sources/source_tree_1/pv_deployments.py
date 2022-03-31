@@ -882,7 +882,7 @@ class PVScenarioGeneratorBase(abc.ABC):
     
     def attach_profile(self, pv_systems_file: str, pv_profiles: dict) -> None:
         """Attach PV profile to each system with 'yearly=<pv-profile>' in PVSystems.dss"""
-        regex1 = re.compile("yearly=\w+")
+        regex1 = re.compile("yearly=[\w\.\-_]+")
         regex2 = re.compile(r"new pvsystem\.([^\s]+)")
         
         updated_data = []
