@@ -1,5 +1,4 @@
 [volt_var_1]
-Category = "Legacy"
 Control1 = "VVar"
 Control2 = "None"
 Control3 = "None"
@@ -8,7 +7,7 @@ pfMin = 0.8
 pfMax = 1
 Pmin = 0
 Pmax = 1
-uMin = 0.92
+uMin = 0.93
 uDbMin = 0.967
 uDbMax = 1.033
 uMax = 1.07
