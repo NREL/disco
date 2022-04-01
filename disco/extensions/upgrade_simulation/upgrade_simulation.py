@@ -121,6 +121,7 @@ class UpgradeSimulation:
         verbose=False
     ):
         determine_thermal_upgrades(
+            # TODO pass job name
             master_path=self.model.deployment.deployment_file,
             enable_pydss_solve=enable_pydss_solve,
             thermal_config=thermal_config,
@@ -134,6 +135,7 @@ class UpgradeSimulation:
             verbose=verbose
         )
         determine_voltage_upgrades(
+            # TODO pass job name
             master_path=self.model.deployment.deployment_file,
             enable_pydss_solve=enable_pydss_solve,
             pydss_volt_var_model=pydss_controller_model,
