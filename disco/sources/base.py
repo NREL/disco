@@ -404,7 +404,8 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
                 fw.write("\nSolve\n")
             return str(deployment_file)
 
-        regex = re.compile(r"new pvsystem\.([^\s]+)")
+        regex1 = re.compile("yearly=[\w\.\-_]+")
+        regex2 = re.compile(r"new pvsystem\.([^\s]+)")
         with open(deployment_file, "w") as fw, fileinput.input(self.pv_locations) as fr:
             if hierarchy == SimulationHierarchy.FEEDER:
                 fw.write(f"Redirect {rel_path}\n\n")
@@ -412,10 +413,9 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
                 
                 # Exclude load profiles for upgrades to reduce simulation time.
                 if strip_load_shape_profiles:
-                    regex = re.compile("yearly=[\w\.\-_]+")
-                    matched = regex.search(line)
-                    if matched:
-                        value = matched.group(0)
+                    match = regex1.search(line)
+                    if match:
+                        value = match.group(0)
                         line = " ".join(line.split(value)).strip() + "\n"
                 
                 elif pv_profile is not None:
@@ -424,7 +424,7 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
                         if isinstance(pv_profile, str):
                             profile = pv_profile
                         else:
-                            match = regex.search(lowered)
+                            match = regex2.search(lowered)
                             assert match, lowered
                             pv_system = match.group(1)
                             if pv_system not in pv_profile:
@@ -506,7 +506,7 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
                 if lowered.startswith("!"):
                     new_lines.append(line)
                     continue
-                elif "loadshapes.dss" in lowered or "pvshapes" in lowered:
+                elif "redirect loadshapes.dss" in lowered or "redirect pvshapes" in lowered:
                     new_lines.append("!" + line)
                 else:
                     new_lines.append(line)
