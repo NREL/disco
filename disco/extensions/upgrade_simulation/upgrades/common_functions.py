@@ -328,9 +328,7 @@ def get_all_line_info(compute_loading=True, upper_limit=1.5, ignore_switch=True)
     all_df = all_df.loc[all_df["enabled"] == True]
     all_df["phases"] = all_df["phases"].astype(int)
     all_df[["normamps", "length"]] = all_df[["normamps", "length"]].astype(float)
-    all_df["line_definition_type"] = "line_definition"
-    all_df.loc[all_df["linecode"] != "", "line_definition_type"] = "linecode"
-    all_df.loc[all_df["geometry"] != "", "line_definition_type"] = "geometry"
+    all_df = add_info_line_definition_type(all_df)
     # define empty new columns
     all_df["kV"] = np.nan
     all_df["h"] = np.nan
@@ -352,22 +350,9 @@ def get_all_line_info(compute_loading=True, upper_limit=1.5, ignore_switch=True)
         # Distinguish between overhead and underground cables
         # currently there is no way to distinguish directy using opendssdirect/pydss etc.
         # It is done here using property 'height' parameter and if string present in name
-        if row["line_definition_type"] == "geometry":
-            dss.Circuit.SetActiveClass("linegeometry")
-            dss.ActiveClass.Name(row["geometry"])
-            h = float(dss.Properties.Value("h"))
-            all_df.at[index, "h"] = h
-            if h >= 0:
-                all_df.at[index, "line_placement"] = "overhead"
-            elif h < 0:
-                all_df.at[index, "line_placement"] = "underground"
-        else:
-            if ("oh" in row["geometry"].lower()) or ("oh" in row["linecode"].lower()):
-                all_df.at[index, "line_placement"] = "overhead"
-            elif ("ug" in row["geometry"].lower()) or ("ug" in row["linecode"].lower()):
-                all_df.at[index, "line_placement"] = "underground"
-            else:
-                all_df.at[index, "line_placement"] = None
+        placement_dict = determine_line_placement(row)
+        for key in placement_dict.keys():
+            all_df.at[index, key] = placement_dict[key] 
         # if line loading is to be computed
         if compute_loading:
             dss.Circuit.SetActiveElement("Line.{}".format(row["name"]))
@@ -637,6 +622,47 @@ def get_bus_voltages(voltage_upper_limit=1.05, voltage_lower_limit=0.95, raise_e
     return all_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations
 
 
+def add_info_line_definition_type(all_df):
+    all_df["line_definition_type"] = "line_definition"
+    all_df.loc[all_df["linecode"] != "", "line_definition_type"] = "linecode"
+    all_df.loc[all_df["geometry"] != "", "line_definition_type"] = "geometry"
+    return all_df
+
+
+def determine_line_placement(line_series):
+    """ Distinguish between overhead and underground cables
+        currently there is no way to distinguish directy using opendssdirect/pydss etc.
+        It is done here using property 'height' parameter and if string present in name
+
+    Parameters
+    ----------
+    line_series
+
+    Returns
+    -------
+    dict
+    """
+    info_dict = {}
+    info_dict["line_placement"] = None
+    if line_series["line_definition_type"] == "geometry":
+            dss.Circuit.SetActiveClass("linegeometry")
+            dss.ActiveClass.Name(line_series["geometry"])
+            h = float(dss.Properties.Value("h"))
+            info_dict["h"] = 0
+            if h >= 0:
+                info_dict["line_placement"] = "overhead"
+            elif h < 0:
+                info_dict["line_placement"] = "underground"
+    else:
+        if ("oh" in line_series["geometry"].lower()) or ("oh" in line_series["linecode"].lower()):
+            info_dict["line_placement"] = "overhead"
+        elif ("ug" in line_series["geometry"].lower()) or ("ug" in line_series["linecode"].lower()):
+            info_dict["line_placement"] = "underground"
+        else:
+            info_dict["line_placement"] = None
+    return info_dict
+
+
 def determine_available_line_upgrades(line_loading_df):
     property_list = ['line_definition_type', 'linecode', 'phases', 'kV', 'Switch',
                      'normamps', 'r1', 'x1', 'r0', 'x0', 'C1', 'C0',
@@ -644,6 +670,13 @@ def determine_available_line_upgrades(line_loading_df):
                      # 'wires', 'EarthModel', 'cncables', 'tscables', 'B1', 'B0', 'emergamps',
                      # 'faultrate', 'pctperm', 'repair', 'basefreq', 'enabled', 'like',
                      'h', 'line_placement']
+    if 'line_definition_type' not in line_loading_df.columns:  # add line_definition_type if not present
+        line_loading_df = add_info_line_definition_type(line_loading_df)
+    if 'line_placement' not in line_loading_df.columns:
+        for index, row in line_loading_df.iterrows():  # add line_placement and h if not present
+            info_dict = determine_line_placement(row)
+            for key in info_dict.keys():
+                line_loading_df.at[index, key] = info_dict[key] 
     line_upgrade_options = line_loading_df[property_list + ['geometry']]
     # remove duplicate line upgrade options (that might have a different name, but same parameters)
     line_upgrade_options = line_upgrade_options.loc[line_upgrade_options.astype(str).drop_duplicates(
@@ -663,6 +696,9 @@ def determine_available_xfmr_upgrades(xfmr_loading_df):
                      'XfmrCode', 'XRConst', 'X12', 'X13', 'X23', 'LeadLag',
                      'Core', 'RdcOhms', 'normamps', 'emergamps', 'faultrate', 'pctperm',
                      'basefreq', 'amp_limit_per_phase']
+    # TODO 
+    # if 'amp_limit_per_phase' not in xfmr_loading_df.columns:
+        
     xfmr_upgrade_options = xfmr_loading_df[property_list]
     xfmr_upgrade_options = xfmr_upgrade_options.loc[xfmr_upgrade_options.astype(str).drop_duplicates().index]
     xfmr_upgrade_options.reset_index(drop=True, inplace=True)

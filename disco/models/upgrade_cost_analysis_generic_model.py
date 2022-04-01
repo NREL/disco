@@ -72,6 +72,16 @@ class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
         description="Upgrade iteration threshold",
         default=5
     )
+    read_external_catalog: bool = Field(
+    title="read_external_catalog",
+    description="Flag to determine whether external catalog is to be used",
+    default=False
+    )
+    external_catalog: str = Field(
+    title="external_catalog",
+    description="Location to external upgrades technical catalog json file",
+    default=None
+    )
 
 
 # TODO DT: document error codes
@@ -277,6 +287,14 @@ class UpgradeResultModel(UpgradeParamsBaseModel):
     stage: str = Field(
         title="stage",
         description="Stage: initial or final",
+    )
+    thermal_violations_present: bool = Field(
+        title="thermal_violations_present",
+        description="Flag indicating whether thermal violations are present",
+    )
+    voltage_violations_present: bool = Field(
+    title="voltage_violations_present",
+    description="Flag indicating whether voltage violations are present",
     )
     upgrade_type: str = Field(
         title="upgrade_type",

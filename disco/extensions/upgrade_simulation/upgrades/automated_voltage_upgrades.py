@@ -9,6 +9,7 @@ from .fixed_upgrade_parameters import (
     DEFAULT_REGCONTROL_SETTINGS
 )
 from .voltage_upgrade_functions import *
+from disco.models.upgrade_cost_analysis_generic_model import UpgradeResultModel
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +53,7 @@ def determine_voltage_upgrades(
         raise Exception(
             f"AutomatedThermalUpgrade did not produce thermal upgrades dss file"
         )
+    
     pydss_params = {
         "enable_pydss_solve": enable_pydss_solve,
         "pydss_volt_var_model": pydss_volt_var_model
@@ -89,25 +91,33 @@ def determine_voltage_upgrades(
     initial_overloaded_line_list = list(initial_line_loading_df.loc[initial_line_loading_df['status'] ==
                                                                     'overloaded']['name'].unique())
 
-    output_text = {}
-    output_text['Initial'] = {
-        'max_voltage_on_any_bus': initial_bus_voltages_df['Max per unit voltage'].max(),
-        'min_voltage_on_any_bus': initial_bus_voltages_df['Min per unit voltage'].min(),
-        'num_of_buses_with_voltage_violations': len(initial_undervoltage_bus_list) + len(initial_overvoltage_bus_list),
-        'num_of_overvoltage_violations_buses_above_voltage_upper_limit': len(initial_overvoltage_bus_list),
-        'voltage_upper_limit': voltage_upper_limit,
-        'num_of_undervoltage_violations_buses_below_voltage_lower_limit': len(initial_undervoltage_bus_list),
-        'voltage_lower_limit': voltage_lower_limit,
-        'max_line_loading': initial_line_loading_df['max_per_unit_loading'].max(),
-        'max_xfmr_loading': initial_xfmr_loading_df['max_per_unit_loading'].max(),
-        'num_of_lines_with_violations_above_line_upper_limit': len(initial_overloaded_line_list),
-        'line_upper_limit': thermal_config['line_upper_limit'],
-        'num_of_xfmrs_with_violations_above_xfmr_upper_limit': len(initial_overloaded_xfmr_list),
-        'xfmr_upper_limit': thermal_config['xfmr_upper_limit']
-    }
-
-    convert_summary_dict_to_df(output_text).to_csv(voltage_summary_file, index=True)
-
+    initial_results = UpgradeResultModel(
+        name = "", 
+        scenario = "",
+        stage = "Initial",
+        upgrade_type = "Voltage",
+        thermal_violations_present = (len(initial_overloaded_xfmr_list) + len(initial_overloaded_line_list)) > 0,
+        voltage_violations_present = (len(initial_undervoltage_bus_list) + len(initial_overvoltage_bus_list)) > 0,
+        max_voltage_on_any_bus = initial_bus_voltages_df['Max per unit voltage'].max(),
+        min_voltage_on_any_bus = initial_bus_voltages_df['Min per unit voltage'].min(),
+        num_of_buses_with_voltage_violations = len(initial_undervoltage_bus_list) + len(initial_overvoltage_bus_list),
+        num_of_overvoltage_violations_buses_above_voltage_upper_limit = len(initial_overvoltage_bus_list),
+        voltage_upper_limit = voltage_upper_limit,
+        num_of_undervoltage_violations_buses_below_voltage_lower_limit = len(initial_undervoltage_bus_list),
+        voltage_lower_limit = voltage_lower_limit,
+        max_line_loading = initial_line_loading_df['max_per_unit_loading'].max(),
+        max_xfmr_loading = initial_xfmr_loading_df['max_per_unit_loading'].max(),
+        num_of_lines_with_violations_above_line_upper_limit = len(initial_overloaded_line_list),
+        line_upper_limit = thermal_config['line_upper_limit'],
+        num_of_xfmrs_with_violations_above_xfmr_upper_limit = len(initial_overloaded_xfmr_list),
+        xfmr_upper_limit = thermal_config['xfmr_upper_limit'] 
+    )
+    temp_results = dict(initial_results)
+    # TODO check is this okay to remove keys here.
+    temp_results.pop("name")
+    temp_results.pop("scenario")
+    output_results = [temp_results]
+    pd.DataFrame.from_dict(output_results).to_csv(voltage_summary_file, index=False)
     # if there are no buses with violations based on initial check, don't get into upgrade process
     # directly go to end of file
     if len(initial_buses_with_violations) <= 0:
@@ -314,19 +324,36 @@ def determine_voltage_upgrades(
     overloaded_xfmr_list = list(xfmr_loading_df.loc[xfmr_loading_df['status'] == 'overloaded']['name'].unique())
     overloaded_line_list = list(line_loading_df.loc[line_loading_df['status'] == 'overloaded']['name'].unique())
 
-    output_text['Final'] = {
-        'max_voltage_on_any_bus': bus_voltages_df['Max per unit voltage'].max(),
-        'min_voltage_on_any_bus': bus_voltages_df['Min per unit voltage'].min(),
-        'num_of_buses_with_voltage_violations': len(undervoltage_bus_list) + len(overvoltage_bus_list),
-        'num_of_overvoltage_violations_buses_above_voltage_upper_limit': len(overvoltage_bus_list),
-        'voltage_upper_limit': voltage_upper_limit,
-        'num_of_undervoltage_violations_buses_below_voltage_lower_limit': len(undervoltage_bus_list),
-        'voltage_lower_limit': voltage_lower_limit,
-        'max_line_loading': line_loading_df['max_per_unit_loading'].max(),
-        'max_xfmr_loading': xfmr_loading_df['max_per_unit_loading'].max(),
-        'num_of_lines_with_violations_above_line_upper_limit': len(overloaded_line_list),
-        'line_upper_limit': thermal_config['line_upper_limit'],
-        'num_of_xfmrs_with_violations_above_xfmr_upper_limit': len(overloaded_xfmr_list),
-        'xfmr_upper_limit': thermal_config['xfmr_upper_limit']
-    }
-    convert_summary_dict_to_df(output_text).to_csv(voltage_summary_file, index=True)
+    final_results = UpgradeResultModel(
+        name = "", 
+        scenario = "",
+        stage = "Final",
+        upgrade_type = "Voltage",
+        thermal_violations_present = (len(overloaded_xfmr_list) + len(overloaded_line_list)) > 0,
+        voltage_violations_present = (len(undervoltage_bus_list) + len(overvoltage_bus_list)) > 0,
+        max_voltage_on_any_bus = bus_voltages_df['Max per unit voltage'].max(),
+        min_voltage_on_any_bus = bus_voltages_df['Min per unit voltage'].min(),
+        num_of_buses_with_voltage_violations = len(undervoltage_bus_list) + len(overvoltage_bus_list),
+        num_of_overvoltage_violations_buses_above_voltage_upper_limit = len(overvoltage_bus_list),
+        voltage_upper_limit = voltage_upper_limit,
+        num_of_undervoltage_violations_buses_below_voltage_lower_limit = len(undervoltage_bus_list),
+        voltage_lower_limit = voltage_lower_limit,
+        max_line_loading = line_loading_df['max_per_unit_loading'].max(),
+        max_xfmr_loading = xfmr_loading_df['max_per_unit_loading'].max(),
+        num_of_lines_with_violations_above_line_upper_limit = len(overloaded_line_list),
+        line_upper_limit = thermal_config['line_upper_limit'],
+        num_of_xfmrs_with_violations_above_xfmr_upper_limit = len(overloaded_xfmr_list),
+        xfmr_upper_limit = thermal_config['xfmr_upper_limit']
+    )
+    temp_results = dict(final_results)
+    # TODO check is this okay to remove keys here. (can make this a function to use)
+    temp_results.pop("name")
+    temp_results.pop("scenario")
+    output_results.append(temp_results)
+    pd.DataFrame.from_dict(output_results).to_csv(voltage_summary_file, index=False)
+    
+    end = time.time()
+    logger.info(
+        f"Simulation end time: {end}"
+    )
+    

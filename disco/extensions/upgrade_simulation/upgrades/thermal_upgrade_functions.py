@@ -34,23 +34,21 @@ def correct_line_violations(
     overloaded_loading_df = line_loading_df.loc[
         line_loading_df["status"] == "overloaded"]
     overloaded_loading_df["required_design_amp"] = overloaded_loading_df["max_amp_loading"] / line_design_pu
-    property_list = [
-        "Switch",
-        "kV",
-        "phases",
-        "line_placement",
-    ]  # list of properties based on which upgrade is chosen
-    line_upgrade_options.set_index(property_list, inplace=True)
-    overloaded_loading_df.set_index(property_list, inplace=True)
+    deciding_property_list = ["Switch", "kV", "phases", "line_placement",]  # list of properties based on which upgrade is chosen
+    line_upgrade_options.set_index(deciding_property_list, inplace=True)
+    overloaded_loading_df.set_index(deciding_property_list, inplace=True)
     oversize_limit = 2  # limit to determine if chosen upgrade option is too oversized
     if len(overloaded_loading_df) > 0:  # if overloading exists
         # iterate over each overloaded line to find a solution
         for index, row in overloaded_loading_df.iterrows():
             logger.debug(row["name"])
             options = line_upgrade_options.loc[index]
+            if isinstance(options, pd.Series):  # if only one option is present, it is returned as series
+                options = pd.DataFrame([options])  # convert to required DataFrame format
+                options = options.rename_axis(deciding_property_list)  # assign names to the index
             options = options.reset_index().sort_values("normamps")
             chosen_option = options.loc[options["normamps"] >= row["required_design_amp"]].sort_values("normamps")
-            # TODO: SWITCH - EXPLORE IF WE CAN HAVE OPTIONS: PARALLEL, REPLACE,
+            # TODO: TOGGLE FLAG - EXPLORE IF WE CAN HAVE OPTIONS FOR: PARALLEL, REPLACE,
             # if one chosen option exists and is not very oversized (which is determined by acceptable oversize limit)
             # edit existing line and change line configuration/ampacity
             if (len(chosen_option) != 0) and \
@@ -243,6 +241,9 @@ def correct_xfmr_violations(xfmr_loading_df=None, xfmr_design_pu=None, xfmr_upgr
         # iterate over each overloaded line to find a solution
         for index, row in overloaded_loading_df.iterrows():
             options = xfmr_upgrade_options.loc[index]
+            if isinstance(options, pd.Series):  # if only one option is present, it is returned as series
+                options = pd.DataFrame([options])  # convert to required DataFrame format
+                options = options.rename_axis(deciding_property_list)  # assign names to the index
             options = options.reset_index().sort_values("amp_limit_per_phase")
             chosen_option = options.loc[options["amp_limit_per_phase"] >=
                                         row["required_design_amp"]].sort_values("amp_limit_per_phase")
@@ -254,6 +255,10 @@ def correct_xfmr_violations(xfmr_loading_df=None, xfmr_design_pu=None, xfmr_upgr
                 chosen_option = chosen_option.iloc[0]  # choose lowest available option
                 chosen_option["conns"] = convert_list_string_to_list(chosen_option["conns"])
                 chosen_option["kVs"] = convert_list_string_to_list(chosen_option["kVs"])
+                if isinstance(chosen_option["%Rs"], str):
+                    chosen_option["%Rs"] = convert_list_string_to_list(chosen_option["%Rs"])
+                if isinstance(chosen_option["kVAs"], str):
+                    chosen_option["kVAs"] = convert_list_string_to_list(chosen_option["kVAs"])
                 # edit existing transformer
                 command_string = define_xfmr_object(xfmr_name=row["name"], xfmr_info_series=chosen_option,
                                                     action_type="Edit")
@@ -328,6 +333,10 @@ def identify_parallel_xfmrs(options=None, row=None, parallel_xfmrs_limit=None):
     num_parallel_xfmrs = int(chosen_option["num_parallel"])
     chosen_option["conns"] = convert_list_string_to_list(chosen_option["conns"])
     chosen_option["kVs"] = convert_list_string_to_list(chosen_option["kVs"])
+    if isinstance(chosen_option["%Rs"], str):
+                    chosen_option["%Rs"] = convert_list_string_to_list(chosen_option["%Rs"])
+    if isinstance(chosen_option["kVAs"], str):
+        chosen_option["kVAs"] = convert_list_string_to_list(chosen_option["kVAs"])
     for xfmr_count in range(0, num_parallel_xfmrs):
         curr_time = str(time.time())
         # the timestamp is added to line name to ensure it is unique

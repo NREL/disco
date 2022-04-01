@@ -8,6 +8,8 @@ voltage_lower_limit = 0.95
 parallel_xfmrs_limit = 4
 parallel_lines_limit = 4
 upgrade_iteration_threshold = 5
+read_external_catalog = false
+external_catalog = None
 
 [voltage_upgrade_params]
 initial_upper_limit = 1.05
