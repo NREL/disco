@@ -1,13 +1,19 @@
 import logging
+import os
 
 import click
 from jade.common import CONFIG_FILE
 from jade.loggers import setup_logging
 from jade.utils.utils import load_data
 
+from disco.extensions.upgrade_simulation.upgrades.common_functions import (
+    get_default_upgrade_params_file,
+    get_default_upgrade_cost_database
+)
 from disco.extensions.upgrade_simulation.upgrade_inputs import UpgradeInputs
 from disco.extensions.upgrade_simulation.upgrade_configuration import UpgradeConfiguration
-from disco.sources.base import DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS
+
+logger = logging.getLogger(__name__)
 
 
 @click.command()
@@ -15,7 +21,7 @@ from disco.sources.base import DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS
 @click.option(
     "-d", "--cost-database",
     type=click.Path(exists=True),
-    default=DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS["cost_database"],
+    default=get_default_upgrade_cost_database(),
     show_default=True,
     help="The unit cost database spreadsheet."
 )
@@ -23,7 +29,7 @@ from disco.sources.base import DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS
     "-p", "--params-file",
     type=click.Path(),
     required=False,
-    default=DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS["params_file"],
+    default="upgrade-parameters.toml",
     show_default=True,
     help="Upgrade parameters file."
 )
@@ -50,6 +56,10 @@ def upgrade(
     """Create JADE configuration for upgrade simulations"""
     level = logging.DEBUG if verbose else logging.INFO
     setup_logging(__name__, None, console_level=level)
+
+    if not os.path.exists(params_file):
+        logger.info("Applied default upgrade parameters, %s", params_file)
+        params_file = get_default_upgrade_params_file(params_file)
 
     inputs = UpgradeInputs(inputs)
     job_global_config = load_data(params_file)
