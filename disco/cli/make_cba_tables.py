@@ -183,11 +183,12 @@ def get_powers_table(results: PyDssResults, job_info: JobInfo):
 
 def get_pv_power_value(val):
     if val > 0.0:
-        if val < 0.001:  # 1 Watt
+        if val < 0.005:  # 5 Watts
             val = 0.0
         else:
-            logger.warning("Unexpected PVSystem power value: %s", val)
-            val *= -1
+            msg = f"Unexpected PVSystem power value: {val}"
+            logger.error(msg)
+            raise Exception(msg)
     else:
         val *= -1
     return val
