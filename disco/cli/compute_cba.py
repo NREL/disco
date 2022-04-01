@@ -109,7 +109,7 @@ def run(powers_file: Path, costs_file: Path, output_file: Path, skipna: bool):
 @click.option(
     "--skipna/--no-skipna",
     is_flag=True,
-    default=True,
+    default=False,
     show_default=True,
     help="Skip null values when summing costs.",
 )
