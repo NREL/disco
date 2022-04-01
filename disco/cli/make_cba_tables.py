@@ -183,7 +183,7 @@ def get_powers_table(results: PyDssResults, job_info: JobInfo):
 
 def get_pv_power_value(val):
     if val > 0.0:
-        if val < 0.0001:  # 1 Watt
+        if val < 0.001:  # 1 Watt
             val = 0.0
         else:
             logger.warning("Unexpected PVSystem power value: %s", val)
@@ -268,6 +268,7 @@ def serialize_table(table, filename):
 def make_cba_tables(output_dir, verbose):
     """Make cost benefit analysis summary tables for all jobs in a batch."""
     level = logging.DEBUG if verbose else logging.INFO
-    setup_logging(__name__, None, console_level=level)
-    output_dir = ensure_jade_pipeline_output_dir(output_dir)
+    output_dir = Path(ensure_jade_pipeline_output_dir(output_dir))
+    log_file = output_dir / "make_cba_tables.log"
+    setup_logging(__name__, log_file, file_level=level, console_level=level)
     parse_batch_results(output_dir)
