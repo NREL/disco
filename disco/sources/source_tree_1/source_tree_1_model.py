@@ -107,12 +107,12 @@ COMMON_OPTIONS = (
         show_default=True,
     ),
     click.option(
-        "-E",
-        "--exclude-load-profile",
+        "-x",
+        "--strip-load-shape-profiles",
         is_flag=True,
         default=False,
         show_default=True,
-        help="Exclude load profile from loads DSS model"
+        help="Strip load shape profiles from DSS models"
     ),
     click.option(
         "-P",
@@ -166,7 +166,7 @@ def snapshot(
     penetration_levels,
     master_file,
     copy_load_shape_data_files,
-    exclude_load_profile,
+    strip_load_shape_profiles,
     pv_deployments_dirname,
     force,
     start,
@@ -196,7 +196,7 @@ def snapshot(
         penetration_levels=penetration_levels,
         master_file=master_file,
         copy_load_shape_data_files=copy_load_shape_data_files,
-        exclude_load_profile=exclude_load_profile,
+        strip_load_shape_profiles=strip_load_shape_profiles,
         pv_deployments_dirname=pv_deployments_dirname
     )
     print(f"Transformed data from {input_path} to {output} for Snapshot Analysis.")
@@ -244,7 +244,7 @@ def time_series(
     penetration_levels,
     master_file,
     copy_load_shape_data_files,
-    exclude_load_profile,
+    strip_load_shape_profiles,
     pv_deployments_dirname,
     force,
     start,
@@ -276,7 +276,7 @@ def time_series(
         master_file=master_file,
         hierarchy=hierarchy,
         copy_load_shape_data_files=copy_load_shape_data_files,
-        exclude_load_profile=exclude_load_profile,
+        strip_load_shape_profiles=strip_load_shape_profiles,
         pv_deployments_dirname=pv_deployments_dirname
     )
     print(
@@ -311,7 +311,7 @@ def upgrade(
     penetration_levels,
     master_file,
     copy_load_shape_data_files,
-    exclude_load_profile,
+    strip_load_shape_profiles,
     pv_deployments_dirname,
     force,
     start,
@@ -343,7 +343,7 @@ def upgrade(
         penetration_levels=penetration_levels,
         master_file=master_file,
         copy_load_shape_data_files=copy_load_shape_data_files,
-        exclude_load_profile=exclude_load_profile,
+        strip_load_shape_profiles=strip_load_shape_profiles,
         pv_deployments_dirname=pv_deployments_dirname
     )
     print(f"Transformed data from {input_path} to {output} for UpgradeCostAnalysis.")
@@ -467,7 +467,7 @@ class SourceTree1Model(BaseOpenDssModel):
         penetration_levels=("all",),
         master_file="Master.dss",
         copy_load_shape_data_files=False,
-        exclude_load_profile=False,
+        strip_load_shape_profiles=False,
         pv_deployments_dirname=DEFAULT_PV_DEPLOYMENTS_DIRNAME
     ):
         inputs = SourceTree1ModelInputs(input_path, pv_deployments_dirname)
@@ -500,7 +500,7 @@ class SourceTree1Model(BaseOpenDssModel):
             penetration_levels,
             master_file,
             copy_load_shape_data_files,
-            exclude_load_profile
+            strip_load_shape_profiles
         )
 
     @classmethod
@@ -518,7 +518,7 @@ class SourceTree1Model(BaseOpenDssModel):
         penetration_levels,
         master_file,
         copy_load_shape_data_files,
-        exclude_load_profile
+        strip_load_shape_profiles
     ):
         config = []
         base_cases = set()
@@ -605,7 +605,7 @@ class SourceTree1Model(BaseOpenDssModel):
                             pv_profile=pv_profiles,
                             hierarchy=SimulationHierarchy.FEEDER,
                             copy_load_shape_data_files=copy_load_shape_data_files,
-                            exclude_load_profile=exclude_load_profile
+                            strip_load_shape_profiles=strip_load_shape_profiles
                         )
                         out_deployment.project_data["placement"] = placement
                         out_deployment.project_data["sample"] = sample
@@ -641,7 +641,7 @@ class SourceTree1Model(BaseOpenDssModel):
             penetration_levels,
             master_file,
             copy_load_shape_data_files,
-            exclude_load_profile
+            strip_load_shape_profiles
     ):
         config = []
         deployment_files_by_key = defaultdict(list)
@@ -728,7 +728,7 @@ class SourceTree1Model(BaseOpenDssModel):
                             pv_profile=pv_profiles,
                             hierarchy=SimulationHierarchy.SUBSTATION,
                             copy_load_shape_data_files=copy_load_shape_data_files,
-                            exclude_load_profile=exclude_load_profile
+                            strip_load_shape_profiles=strip_load_shape_profiles
                         )
                         out_deployment.project_data["placement"] = placement
                         out_deployment.project_data["sample"] = sample

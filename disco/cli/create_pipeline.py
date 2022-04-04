@@ -8,12 +8,15 @@ from jade.models import SingularityParams
 from jade.utils.utils import dump_data, load_data
 
 from disco.enums import SimulationType
-from disco.pipelines.base import TemplateSection, TemplateParams, PipelineTemplate
+from disco.pipelines.base import TemplateSection, TemplateParams
 from disco.enums import AnalysisType
+from disco.extensions.upgrade_simulation.upgrades.common_functions import (
+    get_default_upgrade_params_file,
+    get_default_upgrade_cost_database
+)
 from disco.pipelines.factory import PipelineCreatorFactory
 from disco.pipelines.utils import get_default_pipeline_template, check_hpc_config
 from disco.pydss.pydss_configuration_base import get_default_reports_file, get_default_exports_file
-from disco.sources.base import DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS
 from disco.sources.factory import make_source_model
 
 
@@ -235,8 +238,8 @@ def template(
 
     # upgrade special case
     if simulation_type == SimulationType.UPGRADE:
-        config_params["cost_database"] = DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS["cost_database"]
-        config_params["params_file"] = DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS["params_file"]
+        config_params["cost_database"] = get_default_upgrade_cost_database()
+        config_params["params_file"] = get_default_upgrade_params_file()
         template.update_config_params(config_params, TemplateSection.SIMULATION)
 
     if impact_analysis:

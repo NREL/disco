@@ -199,7 +199,7 @@ class PipelineCreatorBase(ABC):
         return os.path.join(".", "pipeline-postprocess-command.txt")
     
     @abstractmethod
-    def create_pipeline(self, pipline_config_file):
+    def create_pipeline(self, pipeline_config_file):
         """Create pipeline config file"""
     
     @abstractmethod
