@@ -103,6 +103,7 @@ def correct_line_violations(
              "original_equipment_name"]).reset_index()
     else:  # if there is no overloading
         logger.info("This case has no line violations")
+    line_upgrade_options.reset_index(inplace=True)
     circuit_solve_and_check(raise_exception=True, **kwargs)  # this is added as a final check for convergence
     return commands_list, line_upgrades_df
 

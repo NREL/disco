@@ -23,7 +23,7 @@ def determine_voltage_upgrades(
     thermal_upgrades_dss_filepath,
     voltage_upgrades_dss_filepath,
     voltage_summary_file,
-    output_csv_voltage_upgrades_filepath,
+    output_json_voltage_upgrades_filepath,
     output_folder,
     ignore_switch=True,
     verbose=False
@@ -91,9 +91,10 @@ def determine_voltage_upgrades(
     initial_overloaded_line_list = list(initial_line_loading_df.loc[initial_line_loading_df['status'] ==
                                                                     'overloaded']['name'].unique())
 
+    scenario = get_scenario_name(enable_pydss_solve, pydss_volt_var_model)
     initial_results = UpgradeResultModel(
         name = "", 
-        scenario = "",
+        scenario = scenario,
         stage = "Initial",
         upgrade_type = "Voltage",
         thermal_violations_present = (len(initial_overloaded_xfmr_list) + len(initial_overloaded_line_list)) > 0,
@@ -115,9 +116,8 @@ def determine_voltage_upgrades(
     temp_results = dict(initial_results)
     # TODO check is this okay to remove keys here.
     temp_results.pop("name")
-    temp_results.pop("scenario")
     output_results = [temp_results]
-    pd.DataFrame.from_dict(output_results).to_csv(voltage_summary_file, index=False)
+    write_to_json(output_results, voltage_summary_file)
     # if there are no buses with violations based on initial check, don't get into upgrade process
     # directly go to end of file
     if len(initial_buses_with_violations) <= 0:
@@ -315,7 +315,13 @@ def determine_voltage_upgrades(
                                            orig_xfmrs_df=orig_xfmrs_df, new_ckt_info=new_ckt_info)
     processed_cap.update(processed_reg)
     processed_df = pd.DataFrame.from_dict(processed_cap, orient='index')
-    processed_df.to_csv(output_csv_voltage_upgrades_filepath)
+    processed_df.index.name = 'temp'
+    processed_df.reset_index(inplace=True)
+    processed_df[['name', 'equipment_type']] = ""
+    processed_df[['equipment_type', 'name']] = processed_df['temp'].str.split('.', expand=True)
+    processed_df = processed_df.set_index(['equipment_type', 'name']).reset_index()
+    del processed_df["temp"]
+    write_to_json(processed_df.to_dict('records'), output_json_voltage_upgrades_filepath)
     bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
         voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **pydss_params)
     
@@ -326,7 +332,7 @@ def determine_voltage_upgrades(
 
     final_results = UpgradeResultModel(
         name = "", 
-        scenario = "",
+        scenario = scenario,
         stage = "Final",
         upgrade_type = "Voltage",
         thermal_violations_present = (len(overloaded_xfmr_list) + len(overloaded_line_list)) > 0,
@@ -348,10 +354,8 @@ def determine_voltage_upgrades(
     temp_results = dict(final_results)
     # TODO check is this okay to remove keys here. (can make this a function to use)
     temp_results.pop("name")
-    temp_results.pop("scenario")
     output_results.append(temp_results)
-    pd.DataFrame.from_dict(output_results).to_csv(voltage_summary_file, index=False)
-    
+    write_to_json(output_results, voltage_summary_file)
     end = time.time()
     logger.info(
         f"Simulation end time: {end}"

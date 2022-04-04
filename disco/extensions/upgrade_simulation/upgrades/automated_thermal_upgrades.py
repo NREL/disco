@@ -18,8 +18,9 @@ def determine_thermal_upgrades(
     xfmr_upgrade_options_file,
     thermal_summary_file,
     thermal_upgrades_dss_filepath,
-    output_csv_line_upgrades_filepath,
-    output_csv_xfmr_upgrades_filepath,
+    output_json_line_upgrades_filepath,
+    output_json_xfmr_upgrades_filepath,
+    feeder_stats_json_file,
     ignore_switch=True,
     verbose=False
 ):
@@ -48,9 +49,12 @@ def determine_thermal_upgrades(
     else:
         line_upgrade_options = determine_available_line_upgrades(orig_lines_df)
         xfmr_upgrade_options = determine_available_xfmr_upgrades(orig_xfmrs_df)
-        line_upgrade_options.to_csv(line_upgrade_options_file)
-        xfmr_upgrade_options.to_csv(xfmr_upgrade_options_file)
+        write_to_json(line_upgrade_options.to_dict('records'), line_upgrade_options_file)
+        write_to_json(xfmr_upgrade_options.to_dict('records'), xfmr_upgrade_options_file)
 
+    # save feeder stat
+    breakpoint()  # TODO
+    write_to_json(get_feeder_stats(dss), feeder_stats_json_file)
     (
         initial_bus_voltages_df,
         initial_undervoltage_bus_list,
@@ -78,10 +82,10 @@ def determine_thermal_upgrades(
             "name"
         ].unique()
     )
-    breakpoint()
+    scenario = get_scenario_name(enable_pydss_solve, pydss_volt_var_model)
     initial_results = UpgradeResultModel(
         name="",
-        scenario="",
+        scenario=scenario,
         stage="Initial",
         upgrade_type="Thermal",
         # upgrade_status = upgrade_status,
@@ -102,12 +106,11 @@ def determine_thermal_upgrades(
         xfmr_upper_limit=thermal_config['xfmr_upper_limit']
     )
     temp_results = dict(initial_results)
-    # TODO check is this okay to remove keys here.
-    temp_results.pop("name")
-    temp_results.pop("scenario")
+    # TODO 
+    temp_results.pop("name")  # TODO check can we pass job name into here.
     output_results = [temp_results]
-    pd.DataFrame.from_dict(output_results).to_csv(thermal_summary_file, index=False)
-
+    write_to_json(output_results, thermal_summary_file)
+    
     if len(initial_overloaded_xfmr_list) > 0 or len(initial_overloaded_line_list) > 0:
         upgrade_status = "Thermal Upgrades Required"  # status - whether upgrades done or not
     else:
@@ -261,7 +264,7 @@ def determine_thermal_upgrades(
 
     final_results = UpgradeResultModel(
         name="",
-        scenario="",
+        scenario=scenario,
         stage="Final",
         upgrade_type="Thermal",
         thermal_violations_present=(len(overloaded_xfmr_list) + len(overloaded_line_list)) > 0,
@@ -281,15 +284,11 @@ def determine_thermal_upgrades(
         xfmr_upper_limit=thermal_config['xfmr_upper_limit'],
     )
     temp_results = dict(final_results)
-    # TODO check is this okay to remove keys here.
-    # TODO add scenario based on pydss controller
+    # TODO
     temp_results.pop("name")
-    temp_results.pop("scenario")
     output_results.append(temp_results)
-    pd.DataFrame.from_dict(output_results).to_csv(thermal_summary_file, index=False)
+    write_to_json(output_results, thermal_summary_file)
     end = time.time()
-    logger.info(
-        f"Simulation end time: {end}"
-    )
-    line_upgrades_df.to_csv(output_csv_line_upgrades_filepath)
-    xfmr_upgrades_df.to_csv(output_csv_xfmr_upgrades_filepath)
+    logger.info(f"Simulation end time: {end}")
+    write_to_json(line_upgrades_df.to_dict('records'), output_json_line_upgrades_filepath)
+    write_to_json(xfmr_upgrades_df.to_dict('records'), output_json_xfmr_upgrades_filepath)

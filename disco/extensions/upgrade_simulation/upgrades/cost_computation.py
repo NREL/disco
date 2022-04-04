@@ -1,17 +1,16 @@
-
 import logging
-
 import pandas as pd
 
-from disco.extensions.upgrade_simulation.upgrades.common_functions import convert_list_string_to_list
+from disco.extensions.upgrade_simulation.upgrades.common_functions import convert_list_string_to_list, read_json_as_dict
+from .common_functions import write_to_json
 
 logger = logging.getLogger(__name__)
 
 
 def compute_all_costs(
-    output_csv_xfmr_upgrades_filepath,
-    output_csv_line_upgrades_filepath,
-    output_csv_voltage_upgrades_filepath,
+    output_json_xfmr_upgrades_filepath,
+    output_json_line_upgrades_filepath,
+    output_json_voltage_upgrades_filepath,
     cost_database_filepath,
     thermal_cost_output_filepath,
     voltage_cost_output_filepath,
@@ -19,9 +18,9 @@ def compute_all_costs(
 ):
     # upgrades files
     # TODO add except statement for FileNotFoundError
-    xfmr_upgrades_df = pd.read_csv(output_csv_xfmr_upgrades_filepath)
-    line_upgrades_df = pd.read_csv(output_csv_line_upgrades_filepath)
-    voltage_upgrades_df = pd.read_csv(output_csv_voltage_upgrades_filepath)
+    xfmr_upgrades_df = pd.DataFrame(read_json_as_dict(output_json_xfmr_upgrades_filepath))
+    line_upgrades_df = pd.DataFrame(read_json_as_dict(output_json_line_upgrades_filepath))
+    voltage_upgrades_df = pd.DataFrame(read_json_as_dict(output_json_voltage_upgrades_filepath))
 
     # unit cost database files
     xfmr_cost_database = pd.read_excel(cost_database_filepath, "transformers")
@@ -32,7 +31,7 @@ def compute_all_costs(
     )
     misc_database = pd.read_excel(cost_database_filepath, "misc")
 
-    output_columns = ["type", "count", "total_cost_usd", "comment"]
+    output_columns = ["type", "count", "total_cost_usd", "comment", "equipment_parameters"]
 
     # reformat data
     if not xfmr_upgrades_df.empty:
@@ -72,10 +71,11 @@ def compute_all_costs(
 
     total_cost_df = get_total_costs(thermal_cost_df, voltage_cost_df)
 
-    # save files
-    thermal_cost_df.to_csv(thermal_cost_output_filepath, index=False)
-    voltage_cost_df.to_csv(voltage_cost_output_filepath, index=False)
-    total_cost_df.to_csv(total_cost_output_filepath, index=False)
+    breakpoint()
+    # save output files
+    write_to_json(thermal_cost_df.to_dict('records'), thermal_cost_output_filepath)
+    write_to_json(voltage_cost_df.to_dict('records'), voltage_cost_output_filepath)
+    write_to_json(total_cost_df.to_dict('records'), total_cost_output_filepath)
 
 
 def compute_transformer_costs(xfmr_upgrades_df=None, xfmr_cost_database=None, **kwargs):
@@ -106,12 +106,10 @@ def compute_transformer_costs(xfmr_upgrades_df=None, xfmr_cost_database=None, **
     output_count_field = "count"
     deciding_columns = ["rated_kVA", "phases", "primary_kV", "secondary_kV", "primary_connection_type",
                         "secondary_connection_type", "num_windings"]
-    output_columns_list = ["type", output_count_field, output_cost_field, "comment"]
-    # output_columns_list = output_columns_list + deciding_columns
+    output_columns_list = ["type", output_count_field, output_cost_field, "comment", "equipment_parameters"]
     backup_deciding_property = kwargs.get("backup_deciding_property", "rated_kVA")
     misc_database = kwargs.get("misc_database", None)
     # choose which properties are to be saved
-    properties_list = list(set(output_columns_list) - {"type"})
     upgrade_type_list = ["upgrade", "new (parallel)"]
     added_xfmr_df = xfmr_upgrades_df.loc[(xfmr_upgrades_df["Upgrade_Type"].isin(upgrade_type_list)) & (xfmr_upgrades_df["Action"] == "add")]
     computed_cost = []
@@ -124,6 +122,9 @@ def compute_transformer_costs(xfmr_upgrades_df=None, xfmr_cost_database=None, **
                                            (xfmr_cost_database["secondary_connection_type"] == row["secondary_connection_type"]) &
                                            (xfmr_cost_database["num_windings"] == row["num_windings"])
                                            ]["cost"]
+        params_dict = dict(row[['final_equipment_name'] + deciding_columns])
+        row["equipment_parameters"] = params_dict
+        row["type"] = "Transformer"
         if len(unit_cost) > 0:  # if there are more than one rows, the first one is chosen in random
             unit_cost = unit_cost.values[0]
             row[output_cost_field] = unit_cost
@@ -160,10 +161,8 @@ def compute_transformer_costs(xfmr_upgrades_df=None, xfmr_cost_database=None, **
                 row[output_cost_field] += misc_database.loc[misc_database["Description"]
                                                             == field_name]["total_cost"].values[0]
 
-        computed_cost.append(row[properties_list])
+        computed_cost.append(row[output_columns_list])
     xfmr_cost_df = pd.DataFrame(computed_cost)
-    xfmr_cost_df["type"] = "Transformer"
-    xfmr_cost_df = xfmr_cost_df[output_columns_list]
     return xfmr_cost_df
 
 
@@ -180,8 +179,6 @@ def reformat_xfmr_files(xfmr_upgrades_df=None, xfmr_cost_database=None):
 
     """
     xfmr_upgrades_df.rename(columns={"kVA": "rated_kVA", "windings": "num_windings"}, inplace=True)
-    xfmr_upgrades_df["conns"] = xfmr_upgrades_df["conns"].apply(lambda x: convert_list_string_to_list(x))
-    xfmr_upgrades_df["kVs"] = xfmr_upgrades_df["kVs"].apply(lambda x: convert_list_string_to_list(x))
     xfmr_upgrades_df["rated_kVA"] = xfmr_upgrades_df["rated_kVA"].astype(float)
     xfmr_upgrades_df["num_windings"] = xfmr_upgrades_df["num_windings"].astype(int)
     xfmr_upgrades_df["phases"] = xfmr_upgrades_df["phases"].astype(int)
@@ -227,10 +224,7 @@ def compute_line_costs(line_upgrades_df=None, line_cost_database=None, **kwargs)
     output_cost_field = "total_cost_usd"
     output_count_field = "count"
     deciding_columns = ["phases", "voltage_kV", "ampere_rating", "line_placement", "Description"]
-
-    output_columns_list = ["type", output_count_field, output_cost_field, "comment"]
-    # output_columns_list = output_columns_list + deciding_columns
-
+    output_columns_list = ["type", output_count_field, output_cost_field, "comment", "equipment_parameters"]
     backup_deciding_property = kwargs.get("backup_deciding_property", "ampere_rating")
     # Dictionary used to convert between different length units and meters, which are used for all the calculations.
     # OpenDSS can output results in any of these lengths.
@@ -244,7 +238,7 @@ def compute_line_costs(line_upgrades_df=None, line_cost_database=None, **kwargs)
         "m": 1,
     }
     # choose which properties are to be saved
-    properties_list = list(set(output_columns_list) - {"type"})
+    # output_properties_list = list(set(output_columns_list) - {"type"})
     upgrade_type_list = ["upgrade", "new (parallel)"]
     added_line_df = line_upgrades_df.loc[(line_upgrades_df["Upgrade_Type"].isin(upgrade_type_list)) & (line_upgrades_df["Action"] == "add")]
     computed_cost = []
@@ -265,6 +259,9 @@ def compute_line_costs(line_upgrades_df=None, line_cost_database=None, **kwargs)
                                            ]["cost_per_m"]
         # convert line length to metres
         line_length_m = row["length"] * length_conversion_to_metre[row["units"]]
+        params_dict = dict(row[['final_equipment_name'] + deciding_columns])
+        row["equipment_parameters"] = params_dict
+        row["type"] = "Line"
         if len(unit_cost) > 0:  # if there are more than one rows, the first one is chosen in random
             unit_cost = unit_cost.values[0]
             row[output_cost_field] = unit_cost * line_length_m
@@ -281,10 +278,8 @@ def compute_line_costs(line_upgrades_df=None, line_cost_database=None, **kwargs)
             logger.info(comment_string)
             row["comment"] = comment_string
             row[output_count_field] = 1
-        computed_cost.append(row[properties_list])
+        computed_cost.append(row[output_columns_list])
     line_cost_df = pd.DataFrame(computed_cost)
-    line_cost_df["type"] = "Line"
-    line_cost_df = line_cost_df[output_columns_list]
     return line_cost_df
 
 
@@ -435,6 +430,8 @@ def compute_voltage_regcontrol_cost(voltage_upgrades_df=None, controls_cost_data
 
 def get_total_costs(thermal_cost_df=None, voltage_cost_df=None):
     total_cost_df = thermal_cost_df.append(voltage_cost_df)
+    total_cost_df = total_cost_df.groupby('type').sum()
+    total_cost_df.reset_index(inplace=True)
     return total_cost_df
 
 

@@ -1,6 +1,7 @@
 import os
 import ast
 import math
+import json
 import logging
 import pathlib
 
@@ -233,9 +234,68 @@ def get_dictionary_of_duplicates(df, subset=None, index_field=None):
     return mapping_dict
 
 
-# to get metadata: source bus, feeder hear info, substation xfmr information
+def write_to_json(json_file, filename):
+    with open(filename, 'w') as fout:
+        json.dump(json_file, fout, indent=4)
+    return 
+
+
+def read_json_as_dict(filename):
+    with open(filename) as json_file:
+        data = json.load(json_file)
+    return data
+
+
+def get_scenario_name(enable_pydss_solve, pydss_volt_var_model):
+    """This function determines the controller scenario 
+
+    Parameters
+    ----------
+    enable_pydss_solve : bool
+    pydss_volt_var_model 
+
+    Returns
+    -------
+    str
+    """
+    if enable_pydss_solve:
+        scenario = pydss_volt_var_model.control1
+    else:
+        scenario = "no_control"
+    return scenario
+
+
+def get_feeder_stats(dss):
+    """This function gives metadata stats for a feeder 
+
+    Parameters
+    ----------
+    dss
+
+    Returns
+    -------
+    dict
+    """
+    ckt_info_dict = get_circuit_info()
+    data_dict = {
+    "num_buses": {len(dss.Circuit.AllBusNames())},
+    "num_nodes": {len(dss.Circuit.AllNodeNames())},
+    "num_loads": {len(dss.Loads.AllNames())},
+    "num_lines": {len(dss.Lines.AllNames())},
+    "num_transformers": {len(dss.Transformers.AllNames())},
+    "num_pv_systems": {len(dss.PVsystems.AllNames())},
+    "num_capacitors": {len(dss.Capacitors.AllNames())},
+    "num_regulators": {len(dss.RegControls.AllNames())},
+    # "total_loading": dss.utils,
+    # "total_pv_generation": dss.utils,
+    }
+    ckt_info_dict.update(data_dict)
+    return ckt_info_dict
+
+
+
 def get_circuit_info():
-    """This collects circuit information
+    """This collects circuit information: source bus, feeder head info, substation xfmr information
 
     Returns
     -------
