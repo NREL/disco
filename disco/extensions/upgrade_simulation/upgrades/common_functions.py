@@ -276,18 +276,22 @@ def get_feeder_stats(dss):
     -------
     dict
     """
+    load_df = dss.utils.loads_to_dataframe()
+    pv_df = dss.utils.pvsystems_to_dataframe()
     ckt_info_dict = get_circuit_info()
     data_dict = {
-    "num_buses": {len(dss.Circuit.AllBusNames())},
-    "num_nodes": {len(dss.Circuit.AllNodeNames())},
-    "num_loads": {len(dss.Loads.AllNames())},
-    "num_lines": {len(dss.Lines.AllNames())},
-    "num_transformers": {len(dss.Transformers.AllNames())},
-    "num_pv_systems": {len(dss.PVsystems.AllNames())},
-    "num_capacitors": {len(dss.Capacitors.AllNames())},
-    "num_regulators": {len(dss.RegControls.AllNames())},
-    # "total_loading": dss.utils,
-    # "total_pv_generation": dss.utils,
+    "num_buses": len(dss.Circuit.AllBusNames()),
+    "num_nodes": len(dss.Circuit.AllNodeNames()),
+    "num_loads": len(dss.Loads.AllNames()),
+    "num_lines": len(dss.Lines.AllNames()),
+    "num_transformers": len(dss.Transformers.AllNames()),
+    "num_pv_systems": len(dss.PVsystems.AllNames()),
+    "num_capacitors": len(dss.Capacitors.AllNames()),
+    "num_regulators": len(dss.RegControls.AllNames()),
+    'total_load(kVABase)':  load_df['kVABase'].sum(),
+    'total_load(kW)': load_df['kW'].sum(),
+    'total_PV(kW)': pv_df['kW'].sum(),
+    'total_PV(kVARated)': pv_df['kVARated'].sum(),
     }
     ckt_info_dict.update(data_dict)
     return ckt_info_dict
@@ -323,6 +327,64 @@ def get_circuit_info():
         # this checks if the voltage kVs are the same for the substation transformer
         data_dict["substation_xfmr"]["is_autotransformer_flag"] = len(set(data_dict["substation_xfmr"]["kVs"])) <= 1
     return data_dict
+
+
+def create_opendss_definition(config_definition_dict, action_type="New", property_list=None):
+    """This function creates an opendss element definition for any generic equipment
+
+    Returns
+    -------
+    str
+    """
+    command_string = f"{action_type} {config_definition_dict['equipment_type']}.{config_definition_dict['name']}"
+    logger.debug(f"New {config_definition_dict['equipment_type']}.{config_definition_dict['name']} being defined")
+    # these properties contain data (refer OpenDSS manual for more information on these parameters)
+    if property_list is None:
+        property_list = list(set(config_definition_dict.keys()) - {"name", "equipment_type"})
+    empty_field_values = ["----", "nan", "NaN", "None", None, np.nan]
+    for property_name in property_list:
+        if isinstance(config_definition_dict[property_name], float):
+            if np.isnan(config_definition_dict[property_name]):
+                continue
+        if config_definition_dict[property_name] in empty_field_values:
+            continue
+        # if the value is not empty and is not nan, only then add it into the command string
+        temp_s = f" {property_name}={config_definition_dict[property_name]}"
+        command_string = command_string + temp_s
+    return command_string
+
+
+def ensure_line_config_exists(chosen_option, new_config_type, external_upgrades_technical_catalog): 
+    """This function check if a line config exists in the network. 
+    If it doesn't exist, it checks the external catalog (if available) and returns a new dss definition string.
+    
+    Returns
+    -------
+    str
+    """
+    existing_config_dict = {"linecode": get_line_code(), "geometry": get_line_geometry()}
+    new_config_name = chosen_option[new_config_type].lower()
+    # if linecode or linegeometry is not present in existing network definitions
+    if not existing_config_dict[new_config_type]["name"].str.lower().isin([new_config_name]).any():  
+        # add definition for linecode or linegeometry
+        if external_upgrades_technical_catalog is None:
+            raise Exception(f"External upgrades technical catalog not available to determine line config type")
+        external_config_df = pd.DataFrame(external_upgrades_technical_catalog[new_config_type])
+        if external_config_df["name"].str.lower().isin([new_config_name]).any():
+            config_definition_df = external_config_df.loc[external_config_df["name"] == new_config_name]
+            config_definition_dict = dict(config_definition_df.iloc[0])
+            # check format of certain fields
+            matrix_fields = [s for s in config_definition_dict.keys() if 'matrix' in s]
+            for field in matrix_fields:
+                config_definition_dict[field] = config_definition_dict[field].replace("'","")
+                config_definition_dict[field] = config_definition_dict[field].replace("[","(")
+                config_definition_dict[field] = config_definition_dict[field].replace("]",")")
+            command_string = create_opendss_definition(config_definition_dict=config_definition_dict)
+        else:
+            raise Exception(f"{new_config_type} definition for {new_config_name} not found in external upgrades catalog.")
+    else:
+        command_string = None   
+    return command_string
 
 
 def get_all_transformer_info(compute_loading=True, upper_limit=1.5):
@@ -444,6 +506,7 @@ def get_all_line_info(compute_loading=True, upper_limit=1.5, ignore_switch=True)
             else:
                 all_df.at[index, "status"] = "normal"
     all_df = all_df.reset_index(drop=True).set_index('name')
+    all_df["kV"] = all_df["kV"].round(5)
     # if switch is to be ignored
     if ignore_switch:
         all_df = all_df.loc[all_df['Switch'] == False]
@@ -759,6 +822,7 @@ def determine_available_line_upgrades(line_loading_df):
     line_upgrade_options.reset_index(drop=True, inplace=True)
     line_upgrade_options = line_upgrade_options.reset_index().rename(columns={'index': 'name'})
     line_upgrade_options['name'] = 'line_' + line_upgrade_options['name'].astype(str)
+    line_upgrade_options["kV"] = line_upgrade_options["kV"].round(5)
     return line_upgrade_options
 
 

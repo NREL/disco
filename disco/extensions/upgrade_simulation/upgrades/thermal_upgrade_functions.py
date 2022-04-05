@@ -55,16 +55,22 @@ def correct_line_violations(
                     (chosen_option["normamps"] <= oversize_limit * row["required_design_amp"]).any():
                 chosen_option = chosen_option.sort_values("normamps")
                 chosen_option = chosen_option.iloc[0]  # choose lowest available option
-                new_config_type = chosen_option["line_definition_type"]
+                new_config_type = chosen_option["line_definition_type"]     
+                new_config_name = chosen_option[new_config_type].lower()
+                temp_commands_list = []
                 # edit existing line
                 if (new_config_type == "geometry") or (new_config_type == "linecode"):
-                    command_string = f"Edit Line.{row['name']} {new_config_type}={chosen_option[new_config_type]}"
-                    commands_list.append(command_string)
+                    external_upgrades_technical_catalog = kwargs.get("external_upgrades_technical_catalog", None)
+                    command_string = ensure_line_config_exists(chosen_option, new_config_type, external_upgrades_technical_catalog)
+                    if command_string is not None:  # if new line config definition had to be added
+                        temp_commands_list.append(command_string)                                                    
+                    command_string = f"Edit Line.{row['name']} {new_config_type}={new_config_name}"
+                    temp_commands_list.append(command_string)
                 # if line geometry and line code is not available
                 else:
                     # TODO can add more parameters in command (like done for transformer)
                     command_string = f"Edit Line.{row['name']} normamps={chosen_option['normamps']}"
-                    commands_list.append(command_string)
+                    temp_commands_list.append(command_string)
                 # create dictionary of original equipment
                 upgrades_dict[row["name"]] = {}
                 upgrades_dict[row["name"]]["original_equipment"] = row.to_dict()
@@ -81,14 +87,18 @@ def correct_line_violations(
                                                                     # "Parameter_Type": "new_equipment",
                                                                     "Action": "add", "name": row["name"]})
 
-                check_dss_run_command(command_string)  # run command for upgraded equipment
-                circuit_solve_and_check(raise_exception=True, **kwargs)
-
+                # run command for upgraded equipment, that resolves overloading for one equipment
+                for command_item in temp_commands_list:
+                    check_dss_run_command(command_item)
+                    circuit_solve_and_check(raise_exception=True, **kwargs)
+                commands_list = commands_list + temp_commands_list
             # if higher upgrade is not available or chosen line upgrade rating is much higher than required,
             # dont oversize. Instead, place lines in parallel
             else:
+                external_upgrades_technical_catalog = kwargs.get("external_upgrades_technical_catalog", None)
                 parallel_line_commands, upgrades_dict_parallel = identify_parallel_lines(options=options, row=row,
-                                                                                         parallel_lines_limit=parallel_lines_limit)
+                                                                                         parallel_lines_limit=parallel_lines_limit, 
+                                                                                         external_upgrades_technical_catalog=external_upgrades_technical_catalog)
                 # run command for all parallel equipment added, that resolves overloading for one equipment
                 for command_item in parallel_line_commands:
                     check_dss_run_command(command_item)
@@ -108,7 +118,7 @@ def correct_line_violations(
     return commands_list, line_upgrades_df
 
 
-def identify_parallel_lines(options=None, row=None, parallel_lines_limit=None):
+def identify_parallel_lines(options=None, row=None, parallel_lines_limit=None, **kwargs):
     """This function identifies parallel line solutions, when a direct upgrade solution is not available from catalogue
 
     Parameters
@@ -147,6 +157,10 @@ def identify_parallel_lines(options=None, row=None, parallel_lines_limit=None):
                                                                      # "Parameter_Type": "new_equipment",
                                                                      "Action": "add"})
         if (new_config_type == "geometry") or (new_config_type == "linecode"):
+            external_upgrades_technical_catalog = kwargs.get("external_upgrades_technical_catalog", None)
+            command_string = ensure_line_config_exists(chosen_option, new_config_type, external_upgrades_technical_catalog)
+            if command_string is not None:  # if new line config definition had to be added
+                commands_list.append(command_string)   
             s = f"New Line.{new_name} bus1={row['bus1']} bus2={row['bus2']} length={row['length']} " \
                 f"units={row['units']} {new_config_type}={row[new_config_type]} " \
                 f"phases={chosen_option['phases'].values[0]} enabled=True"

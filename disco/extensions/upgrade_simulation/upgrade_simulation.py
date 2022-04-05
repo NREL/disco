@@ -1,15 +1,18 @@
 import os
 
 from jade.common import OUTPUT_DIR
+from jade.utils.timing_utils import TimerStatsCollector, track_timing
 
 from .upgrades.automated_thermal_upgrades import determine_thermal_upgrades
 from .upgrades.automated_voltage_upgrades import determine_voltage_upgrades
 from .upgrades.cost_computation import compute_all_costs
 
+TIMER_STATS = TimerStatsCollector()
 
 class UpgradeSimulation:
     
     def __init__(self, job, job_global_config, output=OUTPUT_DIR):
+        TIMER_STATS.clear()
         self.job = job
         self.job_global_config = job_global_config
         self.output = output
@@ -123,9 +126,9 @@ class UpgradeSimulation:
         voltage_config,
         cost_database_filepath,
         verbose=False
-    ):
+    ):  
         determine_thermal_upgrades(
-            # TODO pass job name
+            job_name = self.job.name,
             master_path=self.model.deployment.deployment_file,
             enable_pydss_solve=enable_pydss_solve,
             thermal_config=thermal_config,
@@ -140,7 +143,7 @@ class UpgradeSimulation:
             verbose=verbose
         )
         determine_voltage_upgrades(
-            # TODO pass job name
+            job_name = self.job.name,
             master_path=self.model.deployment.deployment_file,
             enable_pydss_solve=enable_pydss_solve,
             pydss_volt_var_model=pydss_controller_model,
@@ -150,6 +153,7 @@ class UpgradeSimulation:
             voltage_upgrades_dss_filepath=self.get_voltage_upgrades_dss_file(),
             voltage_summary_file=self.get_voltage_summary_json_file(),
             output_json_voltage_upgrades_filepath = self.get_voltage_upgrades_json_file(),
+            feeder_stats_json_file = self.get_feeder_stats_json_file(),
             output_folder=self.job_output,
             verbose=verbose
         )
@@ -162,3 +166,4 @@ class UpgradeSimulation:
             voltage_cost_output_filepath=self.get_voltage_upgrade_costs_file(),
             total_cost_output_filepath=self.get_total_upgrade_costs_file()
         )
+    TIMER_STATS.log_stats(clear=True)

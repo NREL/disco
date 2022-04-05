@@ -3,6 +3,8 @@ import logging
 import os
 import time
 
+from jade.utils.timing_utils import track_timing, Timer
+
 from .fixed_upgrade_parameters import (
     DEFAULT_CAPACITOR_SETTINGS,
     DEFAULT_SUBLTC_SETTINGS,
@@ -10,11 +12,14 @@ from .fixed_upgrade_parameters import (
 )
 from .voltage_upgrade_functions import *
 from disco.models.upgrade_cost_analysis_generic_model import UpgradeResultModel
+# from disco.extensions.upgrade_simulation import TIMER_STATS
 
 logger = logging.getLogger(__name__)
 
 
+# @track_timing(TIMER_STATS)
 def determine_voltage_upgrades(
+    job_name,
     master_path,
     enable_pydss_solve,
     pydss_volt_var_model,
@@ -24,6 +29,7 @@ def determine_voltage_upgrades(
     voltage_upgrades_dss_filepath,
     voltage_summary_file,
     output_json_voltage_upgrades_filepath,
+    feeder_stats_json_file,
     output_folder,
     ignore_switch=True,
     verbose=False
@@ -93,7 +99,7 @@ def determine_voltage_upgrades(
 
     scenario = get_scenario_name(enable_pydss_solve, pydss_volt_var_model)
     initial_results = UpgradeResultModel(
-        name = "", 
+        name = job_name, 
         scenario = scenario,
         stage = "Initial",
         upgrade_type = "Voltage",
@@ -114,8 +120,6 @@ def determine_voltage_upgrades(
         xfmr_upper_limit = thermal_config['xfmr_upper_limit'] 
     )
     temp_results = dict(initial_results)
-    # TODO check is this okay to remove keys here.
-    temp_results.pop("name")
     output_results = [temp_results]
     write_to_json(output_results, voltage_summary_file)
     # if there are no buses with violations based on initial check, don't get into upgrade process
@@ -329,9 +333,14 @@ def determine_voltage_upgrades(
     line_loading_df = get_all_line_info(compute_loading=True, upper_limit=thermal_config['line_upper_limit'], ignore_switch=ignore_switch)
     overloaded_xfmr_list = list(xfmr_loading_df.loc[xfmr_loading_df['status'] == 'overloaded']['name'].unique())
     overloaded_line_list = list(line_loading_df.loc[line_loading_df['status'] == 'overloaded']['name'].unique())
-
+    if os.path.exists(feeder_stats_json_file):
+        feeder_stats = read_json_as_dict(feeder_stats_json_file)
+    else:
+        feeder_stats = {}
+    feeder_stats["after_upgrades"] = get_feeder_stats(dss)
+    write_to_json(feeder_stats, feeder_stats_json_file)
     final_results = UpgradeResultModel(
-        name = "", 
+        name = job_name, 
         scenario = scenario,
         stage = "Final",
         upgrade_type = "Voltage",
@@ -352,8 +361,6 @@ def determine_voltage_upgrades(
         xfmr_upper_limit = thermal_config['xfmr_upper_limit']
     )
     temp_results = dict(final_results)
-    # TODO check is this okay to remove keys here. (can make this a function to use)
-    temp_results.pop("name")
     output_results.append(temp_results)
     write_to_json(output_results, voltage_summary_file)
     end = time.time()

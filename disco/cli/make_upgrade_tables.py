@@ -82,8 +82,7 @@ def get_upgrade_summary_table(job_path, job_info):
         try:
             with open(upgrade_summary_file) as json_file:
                 data = json.load(json_file)
-            breakpoint()
-            df = pd.DataFrame(data, orient='records')
+            df = pd.DataFrame(data)
         except pd.errors.EmptyDataError:
             logger.exception("Failed to parse upgrade summary file - '%s'", upgrade_summary_file)
             return []
@@ -116,8 +115,7 @@ def get_total_upgrade_costs_table(job_path, job_info):
     try:
         with open(total_upgrade_costs_file) as json_file:
             data = json.load(json_file)
-        breakpoint()
-        df = pd.DataFrame(data, orient='records')
+        df = pd.DataFrame(data)
     except pd.errors.EmptyDataError:
         logger.exception("Failed to parse total upgrade costs file - '%s'", total_upgrade_costs_file)
         return []

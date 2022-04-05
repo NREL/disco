@@ -382,13 +382,6 @@ class EquipmentTypeUpgradeCostsModel(UpgradeParamsBaseModel):
         description="Total cost in US dollars",
         units="dollars",
     )
-    # TODO: The comment field may be split into multiple fields.
-    comment: str = Field(
-        title="comment",
-        description="If the exact unit cost is not available for an equipment, unit cost for "
-            "the closest rated equipement will be considered for the upgrade cost computation. "
-            "This field will document which unit cost was considered.",
-    )
 
 
 class UpgradeSummaryResultsModel(UpgradeParamsBaseModel):

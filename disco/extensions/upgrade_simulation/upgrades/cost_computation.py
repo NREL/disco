@@ -1,12 +1,16 @@
 import logging
 import pandas as pd
 
+from jade.utils.timing_utils import track_timing, Timer
+
 from disco.extensions.upgrade_simulation.upgrades.common_functions import convert_list_string_to_list, read_json_as_dict
+# from disco.extensions.upgrade_simulation import TIMER_STATS
 from .common_functions import write_to_json
 
 logger = logging.getLogger(__name__)
 
 
+# @track_timing(TIMER_STATS)
 def compute_all_costs(
     output_json_xfmr_upgrades_filepath,
     output_json_line_upgrades_filepath,
@@ -71,7 +75,7 @@ def compute_all_costs(
 
     total_cost_df = get_total_costs(thermal_cost_df, voltage_cost_df)
 
-    breakpoint()
+    # breakpoint()
     # save output files
     write_to_json(thermal_cost_df.to_dict('records'), thermal_cost_output_filepath)
     write_to_json(voltage_cost_df.to_dict('records'), voltage_cost_output_filepath)
@@ -139,7 +143,7 @@ def compute_transformer_costs(xfmr_upgrades_df=None, xfmr_cost_database=None, **
             comment_string = f"Transformer {row['final_equipment_name']}: Exact cost not available. " \
                              f"Unit cost for transformer with these parameters used " \
                              f"(based on closest {backup_deciding_property}:  {dict(closest)}"
-            logger.info(comment_string)
+            logger.debug(comment_string)
             row["comment"] = comment_string
         # add transformer fixed costs, if given in database. (depending on upgrade type)
         if (misc_database is not None) and (not misc_database.empty):
@@ -275,7 +279,7 @@ def compute_line_costs(line_upgrades_df=None, line_cost_database=None, **kwargs)
             comment_string = f"Line {row['final_equipment_name']}: Exact cost not available. " \
                              f"Unit cost for line with these parameters used " \
                              f"(based on closest {backup_deciding_property}: {dict(closest)}"
-            logger.info(comment_string)
+            logger.debug(comment_string)
             row["comment"] = comment_string
             row[output_count_field] = 1
         computed_cost.append(row[output_columns_list])
