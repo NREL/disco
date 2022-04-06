@@ -1,18 +1,17 @@
 import os
 
 from jade.common import OUTPUT_DIR
-from jade.utils.timing_utils import TimerStatsCollector, track_timing
+from disco import timer_stats_collector
 
 from .upgrades.automated_thermal_upgrades import determine_thermal_upgrades
 from .upgrades.automated_voltage_upgrades import determine_voltage_upgrades
 from .upgrades.cost_computation import compute_all_costs
 
-TIMER_STATS = TimerStatsCollector()
 
 class UpgradeSimulation:
     
     def __init__(self, job, job_global_config, output=OUTPUT_DIR):
-        TIMER_STATS.clear()
+        timer_stats_collector.clear()
         self.job = job
         self.job_global_config = job_global_config
         self.output = output
@@ -166,4 +165,4 @@ class UpgradeSimulation:
             voltage_cost_output_filepath=self.get_voltage_upgrade_costs_file(),
             total_cost_output_filepath=self.get_total_upgrade_costs_file()
         )
-    TIMER_STATS.log_stats(clear=True)
+        timer_stats_collector.log_stats(clear=True)

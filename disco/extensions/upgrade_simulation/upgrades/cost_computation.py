@@ -4,13 +4,13 @@ import pandas as pd
 from jade.utils.timing_utils import track_timing, Timer
 
 from disco.extensions.upgrade_simulation.upgrades.common_functions import convert_list_string_to_list, read_json_as_dict
-# from disco.extensions.upgrade_simulation import TIMER_STATS
+from disco import timer_stats_collector
 from .common_functions import write_to_json
 
 logger = logging.getLogger(__name__)
 
 
-# @track_timing(TIMER_STATS)
+@track_timing(timer_stats_collector)
 def compute_all_costs(
     output_json_xfmr_upgrades_filepath,
     output_json_line_upgrades_filepath,

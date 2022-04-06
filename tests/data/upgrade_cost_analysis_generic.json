@@ -1,9 +1,9 @@
 {
   "thermal_upgrade_params": {
-    "xfmr_upper_limit": 1.25,
+    "transformer_upper_limit": 1.25,
     "line_upper_limit": 1.25,
     "line_design_pu": 0.75,
-    "xfmr_design_pu": 0.75,
+    "transformer_design_pu": 0.75,
     "voltage_upper_limit": 1.05,
     "voltage_lower_limit": 0.95
   },

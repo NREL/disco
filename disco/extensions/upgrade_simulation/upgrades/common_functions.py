@@ -63,6 +63,7 @@ def reload_dss_circuit(dss_file_list=None, commands_list=None, **kwargs):
     for dss_file in dss_file_list:
         logger.info(f"Redirecting {dss_file}.")
         check_dss_run_command(f"Redirect {dss_file}")
+    check_dss_run_command("CalcVoltageBases")
     if commands_list is not None:
         logger.info(f"Running {len(commands_list)} dss commands")
         for command_string in commands_list:
@@ -276,8 +277,20 @@ def get_feeder_stats(dss):
     -------
     dict
     """
+    load_kw = 0
+    load_kVABase = 0
+    pv_kw = 0
+    pv_kVARated = 0
+    
     load_df = dss.utils.loads_to_dataframe()
+    if len(load_df) > 0:
+        load_kw = load_df['kW'].sum()
+        load_kVABase = load_df['kVABase'].sum()
     pv_df = dss.utils.pvsystems_to_dataframe()
+    if len(pv_df) > 0:
+        pv_kw = pv_df['kW'].sum()
+        pv_kVARated = pv_df['kVARated'].sum()
+        
     ckt_info_dict = get_circuit_info()
     data_dict = {
     "num_buses": len(dss.Circuit.AllBusNames()),
@@ -288,10 +301,10 @@ def get_feeder_stats(dss):
     "num_pv_systems": len(dss.PVsystems.AllNames()),
     "num_capacitors": len(dss.Capacitors.AllNames()),
     "num_regulators": len(dss.RegControls.AllNames()),
-    'total_load(kVABase)':  load_df['kVABase'].sum(),
-    'total_load(kW)': load_df['kW'].sum(),
-    'total_PV(kW)': pv_df['kW'].sum(),
-    'total_PV(kVARated)': pv_df['kVARated'].sum(),
+    'total_load(kVABase)': load_kVABase,
+    'total_load(kW)': load_kw,
+    'total_PV(kW)': pv_kw,
+    'total_PV(kVARated)': pv_kVARated,
     }
     ckt_info_dict.update(data_dict)
     return ckt_info_dict
@@ -317,7 +330,7 @@ def get_circuit_info():
         data_dict["feeder_head_basekv"] = round(data_dict["feeder_head_basekv"] * math.sqrt(3), 1)
     data_dict["substation_xfmr"] = None
 
-    all_xfmr_df = get_all_transformer_info(compute_loading=False)
+    all_xfmr_df = get_thermal_equipment_info(compute_loading=False, equipment_type="transformer")
     all_xfmr_df["substation_xfmr_flag"] = all_xfmr_df.apply(lambda x: int(
         data_dict["source_bus"].lower() in x['bus_names_only']), axis=1)
     if len(all_xfmr_df.loc[all_xfmr_df["substation_xfmr_flag"] == True]) > 0:
@@ -387,7 +400,97 @@ def ensure_line_config_exists(chosen_option, new_config_type, external_upgrades_
     return command_string
 
 
-def get_all_transformer_info(compute_loading=True, upper_limit=1.5):
+def get_present_loading_condition():
+    """ Get present loading condition for all loads
+    
+    Returns
+    -------
+    DataFrame
+    """
+    load_dict = {}
+    dss.Circuit.SetActiveClass("Load")
+    flag = dss.ActiveClass.First()
+
+    while flag > 0:
+        # Get the name of the load
+        load_dict[dss.CktElement.Name()] = {
+                                            'Num_phases': float(dss.Properties.Value("phases")),
+                                            'kV': float(dss.Properties.Value("kV")),
+                                            'kVA': float(dss.Properties.Value("kVA")),
+                                            'kW': float(dss.Properties.Value("kW")),
+                                            'pf': dss.Properties.Value("pf"),
+                                            'Bus1': dss.Properties.Value("bus1"),
+                                            'Powers': dss.CktElement.Powers(),
+                                            'NetPower': sum(dss.CktElement.Powers()[::2]),
+                                            }
+        # Move on to the next Load...
+        flag = dss.ActiveClass.Next()
+    load_df = pd.DataFrame.from_dict(load_dict, "index")
+    return load_df
+
+
+def get_present_storage_condition():
+    """ Get present operating condition for all storage
+    
+    Returns
+    -------
+    DataFrame
+    """
+    storage_dict = {}
+    dss.Circuit.SetActiveClass('Storage')
+    flag = dss.ActiveClass.First()
+    while flag > 0:
+        # Get the name of the load
+        storage_dict[dss.CktElement.Name()] = {
+            'Num_phases': float(dss.Properties.Value("phases")),
+            'kV': float(dss.Properties.Value("kV")),
+            'kVA': float(dss.Properties.Value("kVA")),
+            'kW': float(dss.Properties.Value("kW")),
+            'pf': dss.Properties.Value("pf"),
+            'Bus1': dss.Properties.Value("bus1"),
+            'Powers': dss.CktElement.Powers(),
+            'NetPower': sum(dss.CktElement.Powers()[::2]),
+        }
+        # Move on to the next ...
+        flag = dss.ActiveClass.Next()
+    storage_df = pd.DataFrame.from_dict(storage_dict, "index")
+    return storage_df
+
+
+def get_present_pvgeneration():
+    """ Get present generation for all pv systems
+    
+    Returns
+    -------
+    DataFrame
+    """
+    pv_dict = {}
+    dss.Circuit.SetActiveClass("PVSystem")
+    flag = dss.ActiveClass.First()
+    while flag:
+        pv_dict[dss.CktElement.Name()] = {
+                                            'Num_phases': float(dss.Properties.Value("phases")),
+                                            'kV': float(dss.Properties.Value("kV")),
+                                            'kVA': float(dss.Properties.Value("kVA")),
+                                            'kvar': float(dss.Properties.Value("kvar")),
+                                            'Irradiance': float(dss.Properties.Value("Irradiance")),
+                                            'connection': dss.Properties.Value("conn"),
+                                            'Pmpp': float(dss.Properties.Value("Pmpp")),
+                                            'Powers': dss.CktElement.Powers(),
+                                            'NetPower': sum(dss.CktElement.Powers()[::2]),
+                                            # 'Pmpp*PMult': Pmpp * multiplier - to get max real power possible # TODO
+                                            'pf': dss.Properties.Value("pf"),
+                                            'Bus1': dss.Properties.Value("bus1"),
+                                            'Voltages': dss.CktElement.Voltages(),
+                                            'VoltagesMagAng': dss.CktElement.VoltagesMagAng(),
+                                            'VoltagesMag': float(dss.CktElement.VoltagesMagAng()[0]),
+                                            }
+        flag = dss.ActiveClass.Next() > 0
+    pv_df = pd.DataFrame.from_dict(pv_dict, "index")
+    return pv_df
+
+
+def get_all_transformer_info_instance(compute_loading=True, upper_limit=1.5):
     """This collects transformer information
 
     Returns
@@ -449,7 +552,48 @@ def get_all_transformer_info(compute_loading=True, upper_limit=1.5):
     return all_df.reset_index()
 
 
-def get_all_line_info(compute_loading=True, upper_limit=1.5, ignore_switch=True):
+def add_info_line_definition_type(all_df):
+    all_df["line_definition_type"] = "line_definition"
+    all_df.loc[all_df["linecode"] != "", "line_definition_type"] = "linecode"
+    all_df.loc[all_df["geometry"] != "", "line_definition_type"] = "geometry"
+    return all_df
+
+
+def determine_line_placement(line_series):
+    """ Distinguish between overhead and underground cables
+        currently there is no way to distinguish directy using opendssdirect/pydss etc.
+        It is done here using property 'height' parameter and if string present in name
+
+    Parameters
+    ----------
+    line_series
+
+    Returns
+    -------
+    dict
+    """
+    info_dict = {}
+    info_dict["line_placement"] = None
+    if line_series["line_definition_type"] == "geometry":
+            dss.Circuit.SetActiveClass("linegeometry")
+            dss.ActiveClass.Name(line_series["geometry"])
+            h = float(dss.Properties.Value("h"))
+            info_dict["h"] = 0
+            if h >= 0:
+                info_dict["line_placement"] = "overhead"
+            elif h < 0:
+                info_dict["line_placement"] = "underground"
+    else:
+        if ("oh" in line_series["geometry"].lower()) or ("oh" in line_series["linecode"].lower()):
+            info_dict["line_placement"] = "overhead"
+        elif ("ug" in line_series["geometry"].lower()) or ("ug" in line_series["linecode"].lower()):
+            info_dict["line_placement"] = "underground"
+        else:
+            info_dict["line_placement"] = None
+    return info_dict
+
+
+def get_all_line_info_instance(compute_loading=True, upper_limit=1.5, ignore_switch=True):
     """This collects line information
 
     Returns
@@ -513,6 +657,72 @@ def get_all_line_info(compute_loading=True, upper_limit=1.5, ignore_switch=True)
     return all_df.reset_index()
 
 
+def compare_multiple_dataframes(comparison_dict, deciding_column_name, comparison_type="max"):
+            """This function compares all dataframes in a given dictionary based on a deciding column name
+
+            Returns
+            -------
+            Dataframe
+            """
+            summary_df = pd.DataFrame()
+            for df_name in comparison_dict.keys():
+                summary_df[df_name] = comparison_dict[df_name][deciding_column_name]
+            if comparison_type == "max":
+                label_df = summary_df.idxmax(axis=1)  # find dataframe name that has max 
+            elif comparison_type == "min":
+                label_df = summary_df.idxmax(axis=1)  # find dataframe name that has max 
+            else:
+                raise Exception(f"Unknown comparison type {comparison_type} passed.")
+            final_list = []
+            for index, label in label_df.iteritems():  # index is element name
+                temp_dict = dict(comparison_dict[label].loc[index])
+                temp_dict.update({"name": index})
+                final_list.append(temp_dict)
+            final_df = pd.DataFrame(final_list)
+            return final_df
+        
+
+def get_thermal_equipment_info(compute_loading, equipment_type, upper_limit=None, ignore_switch=False, timepoint_multipliers=None, multiplier_type='uniform', **kwargs):
+    """This function determines the thermal equipment loading (line, transformer), based on timepoint multiplier
+
+    Returns
+    -------
+    DataFrame
+    """
+     # if there are no multipliers, run on rated load i.e. multiplier=1. 0
+     # if compute_loading is false, then just run once (no need to check multipliers)
+    if (timepoint_multipliers is None) or (not compute_loading) or (multiplier_type == "original"): 
+        if compute_loading and multiplier_type != "original":
+            apply_uniform_timepoint_multipliers(multiplier_name=1, field="with_pv", **kwargs)
+        if equipment_type == "line":
+            loading_df = get_all_line_info_instance(compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch)
+        elif equipment_type == "transformer":
+            loading_df = get_all_transformer_info_instance(compute_loading=compute_loading, upper_limit=upper_limit)
+        return loading_df
+    if multiplier_type == 'uniform':
+        comparison_dict = {}
+        for pv_field in timepoint_multipliers["load_multipliers"].keys():
+            logger.debug(pv_field)
+            for multiplier_name in timepoint_multipliers["load_multipliers"][pv_field]:
+                logger.debug(multiplier_name)
+                # this changes the dss network load and pv
+                apply_uniform_timepoint_multipliers(multiplier_name=multiplier_name, field=pv_field, **kwargs)
+                if equipment_type.lower() == "line":
+                    deciding_column_name = "max_per_unit_loading"
+                    loading_df = get_all_line_info_instance(compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch)
+                elif equipment_type.lower() == "transformer":
+                    deciding_column_name = "max_per_unit_loading"
+                    loading_df = get_all_transformer_info_instance(compute_loading=compute_loading, upper_limit=upper_limit)
+                loading_df.set_index("name", inplace=True)
+                comparison_dict[pv_field+"_"+str(multiplier_name)] = loading_df
+        # compare all dataframe, and create one that contains all worst loading conditions (across all multiplier conditions)
+        loading_df = compare_multiple_dataframes(comparison_dict, deciding_column_name, comparison_type="max")
+    else:
+        raise Exception(f"Undefined multiplier_type {multiplier_type} passed.")    
+    return loading_df
+    
+
+
 def get_regcontrol_info(correct_PT_ratio=False, nominal_voltage=None):
     """This collects regulator control information
 
@@ -560,7 +770,6 @@ def get_regcontrol_info(correct_PT_ratio=False, nominal_voltage=None):
     return all_df.reset_index()
 
 
-# function to get capacitor information
 def get_capacitor_info(nominal_voltage=None, correct_PT_ratio=False):
     """
     This collects capacitor information
@@ -605,7 +814,6 @@ def get_capacitor_info(nominal_voltage=None, correct_PT_ratio=False):
     return all_df.reset_index()
 
 
-# function to get capacitor control information
 def get_cap_control_info():
     """This collects capacitor control information
 
@@ -760,47 +968,6 @@ def get_bus_voltages(voltage_upper_limit=1.05, voltage_lower_limit=0.95, raise_e
     return all_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations
 
 
-def add_info_line_definition_type(all_df):
-    all_df["line_definition_type"] = "line_definition"
-    all_df.loc[all_df["linecode"] != "", "line_definition_type"] = "linecode"
-    all_df.loc[all_df["geometry"] != "", "line_definition_type"] = "geometry"
-    return all_df
-
-
-def determine_line_placement(line_series):
-    """ Distinguish between overhead and underground cables
-        currently there is no way to distinguish directy using opendssdirect/pydss etc.
-        It is done here using property 'height' parameter and if string present in name
-
-    Parameters
-    ----------
-    line_series
-
-    Returns
-    -------
-    dict
-    """
-    info_dict = {}
-    info_dict["line_placement"] = None
-    if line_series["line_definition_type"] == "geometry":
-            dss.Circuit.SetActiveClass("linegeometry")
-            dss.ActiveClass.Name(line_series["geometry"])
-            h = float(dss.Properties.Value("h"))
-            info_dict["h"] = 0
-            if h >= 0:
-                info_dict["line_placement"] = "overhead"
-            elif h < 0:
-                info_dict["line_placement"] = "underground"
-    else:
-        if ("oh" in line_series["geometry"].lower()) or ("oh" in line_series["linecode"].lower()):
-            info_dict["line_placement"] = "overhead"
-        elif ("ug" in line_series["geometry"].lower()) or ("ug" in line_series["linecode"].lower()):
-            info_dict["line_placement"] = "underground"
-        else:
-            info_dict["line_placement"] = None
-    return info_dict
-
-
 def determine_available_line_upgrades(line_loading_df):
     property_list = ['line_definition_type', 'linecode', 'phases', 'kV', 'Switch',
                      'normamps', 'r1', 'x1', 'r0', 'x0', 'C1', 'C0',
@@ -910,3 +1077,102 @@ def compare_dict(old, new):
         if change_flag:
             change[key] = field_list
     return change
+
+
+def create_timepoint_multipliers_dict(timepoint_multipliers):
+    """Creates a dictionary with new load rating, for every property and multiplier.
+    Currently, it only does this for loads. But can be modified to accommodate other elements like PV as well.
+    In raw_dict, value can be accessed as follows:
+    value = raw_dict[property_name][object_name][multiplier_name]
+    
+    In reformatted_dict (which is returned from this function), value can be accessed as follows:
+    value = raw_dict[object_name][property_name][multiplier_name]
+    This value will need to be assigned to the object and run.
+    This hasnt been used yet.
+    
+    Returns
+    -------
+    dict
+    """
+    field = "load_multipliers"
+    if field == "load_multipliers":
+        property_list = ["kW"]
+        object_name = "Load"
+        multiplier_list = []
+        # get combined list of multipliers
+        for key, value in timepoint_multipliers[field].items():
+            multiplier_list = multiplier_list + value
+        df = dss.utils.class_to_dataframe(object_name)
+        df.reset_index(inplace=True)
+        df['name'] = df['index'].str.split(".", expand=True)[1]
+        name_list = list(df['name'].values)
+        del df["index"]
+        df.set_index('name', inplace=True)
+        raw_dict = {}
+        for property in property_list:
+            logger.debug(property)
+            df[property] = df[property].astype(float)
+            new_df = pd.DataFrame(index=name_list, columns=multiplier_list)
+            new_df.index.name = 'name'
+            for multiplier in multiplier_list:
+                logger.debug(multiplier)
+                new_df[multiplier] = df[property] * multiplier
+            raw_dict[property] = new_df.T.to_dict()
+        # reformat dictionary to create desired format
+        reformatted_dict = {}
+        for name in name_list:
+            reformatted_dict[name] = {}
+            for property in property_list:
+                reformatted_dict[name][property] = raw_dict[property][name]
+    return reformatted_dict
+
+
+def apply_timepoint_multipliers_dict(reformatted_dict, multiplier_name, property_list=None, **kwargs):
+    """This uses a dictionary with the format of output received from create_timepoint_multipliers_dict
+    Currently, it only does works loads. But can be modified to accommodate other elements like PV as well.
+
+    In input dict: value can be accessed as follows:
+    value = raw_dict[object_name][property_name][multiplier_name]
+    In this function, value will be assigned to corresponding property and run.
+    This hasnt been used yet.
+    
+    Returns
+    -------
+    dict
+    """
+    field = "load_multipliers"
+    name_list = list(reformatted_dict.keys())
+    if property_list is None:
+        property_list = list(reformatted_dict[name_list[0]].keys())
+    if field == "load_multipliers":
+        for name in name_list:
+            dss.Loads.Name(name)
+            for property in property_list:
+                value = reformatted_dict[name][property][multiplier_name]
+                if property == "kW":
+                     dss.Loads.kW(value)
+                else:
+                    raise Exception(f"Property {property} not defined in multipliers dict")
+        circuit_solve_and_check(raise_exception=True, **kwargs)
+    return reformatted_dict
+
+
+def apply_uniform_timepoint_multipliers(multiplier_name, field, **kwargs):
+    """This function applies a uniform mulitplier to all elements. 
+    Currently, the multiplier only does works on loads. But can be modified to accommodate other elements like PV as well.
+    It has two options, 1) all pv is enabled. 2) all pv is disabled.
+    
+    Returns
+    -------
+    bool
+    """
+    if field == "with_pv":
+        check_dss_run_command("BatchEdit PVSystem..* Enabled=True")
+    elif field == "without_pv":    
+        check_dss_run_command("BatchEdit PVSystem..* Enabled=False")
+    else:
+        raise Exception(f"Unknown parameter {field} passed in uniform timepoint multiplier dict."
+                        f"Acceptable values are 'with_pv', 'without_pv'")
+    check_dss_run_command(f"set LoadMult = {multiplier_name}")
+    circuit_solve_and_check(raise_exception=True, **kwargs)
+    return True

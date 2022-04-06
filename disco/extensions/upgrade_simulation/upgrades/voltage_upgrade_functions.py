@@ -94,7 +94,7 @@ def correct_capacitor_parameters(default_capacitor_settings=None, orig_capacitor
         capacitors_commands_list.append(command_string)
 
     # if there are capacitors without cap control, add a voltage-controlled cap control
-    lines_df = get_all_line_info(compute_loading=False)
+    lines_df = get_thermal_equipment_info(compute_loading=False, equipment_type="line")
     lines_df['bus1_extract'] = lines_df['bus1'].str.split(".").str[0]
     no_capcontrol_present_df = orig_capacitors_df.loc[orig_capacitors_df['capcontrol_present'] != 'capcontrol']
     for index, row in no_capcontrol_present_df.iterrows():
@@ -601,7 +601,7 @@ def add_new_node_and_xfmr(node=None, circuit_source=None, sub_xfmr_conn_type=Non
     if node == circuit_source.lower():
         substation_node_flag = True
     # Find line to which this node is connected to
-    all_lines_df = get_all_line_info()
+    all_lines_df = get_thermal_equipment_info(compute_loading=False, equipment_type="line")
     all_lines_df["bus1_name"] = all_lines_df["bus1"].str.split(".", expand=True)[0].str.lower()
     all_lines_df["bus2_name"] = all_lines_df["bus2"].str.split(".", expand=True)[0].str.lower()
 
@@ -705,7 +705,7 @@ def disable_new_xfmr_and_edit_line(transformer_name_to_disable=None, line_name_t
     commands_list = []
     # for regulators, added transformer is always placed after the line (i.e. after 'to' node of line)
     # i.e. for this transformer: primary bus: newly created node, secondary bus: existing node
-    all_xfmr_df = get_all_transformer_info()
+    all_xfmr_df = get_thermal_equipment_info(compute_loading=False, equipment_type="transformer")
     all_xfmr_df['name'] = all_xfmr_df['name'].str.lower()
     chosen_xfmr = all_xfmr_df.loc[all_xfmr_df['name'] == transformer_name_to_disable.lower()]
     if len(chosen_xfmr) == 0:
@@ -748,7 +748,7 @@ def add_new_regcontrol_at_node(node=None, default_regcontrol_settings=None, nomi
     -------
 
     """
-    all_xfmr_df = get_all_transformer_info()
+    all_xfmr_df = get_thermal_equipment_info(compute_loading=False, equipment_type="transformer")
     temp_df = all_xfmr_df['bus_names_only'].apply(pd.Series)
     all_xfmr_df["primary_bus"] = temp_df[0].str.lower()
     all_xfmr_df["secondary_bus"] = temp_df[1].str.lower()
@@ -838,7 +838,7 @@ def test_new_regulator_placement_on_common_nodes(voltage_upper_limit=None, volta
         # do not add a new reg control to source bus as it already has a LTC
         if node == circuit_source.lower():
             continue
-        all_xfmr_df = get_all_transformer_info()
+        all_xfmr_df = get_thermal_equipment_info(compute_loading=False, equipment_type="transformer")
         temp_df = all_xfmr_df['bus_names_only'].apply(pd.Series)
         all_xfmr_df["primary_bus"] = temp_df[0].str.lower()
         all_xfmr_df["secondary_bus"] = temp_df[1].str.lower()
@@ -1016,7 +1016,7 @@ def generate_edges(G=None):
     }
 
     # prepare lines dataframe
-    all_lines_df = get_all_line_info()
+    all_lines_df = get_thermal_equipment_info(compute_loading=False, equipment_type="line")
     all_lines_df['bus1'] = all_lines_df['bus1'].str.split('.', expand=True)[0].str.lower()
     all_lines_df['bus2'] = all_lines_df['bus2'].str.split('.', expand=True)[0].str.lower()
     all_lines_df.apply(lambda x: x.length * length_conversion_to_metre[x.units])
@@ -1025,7 +1025,7 @@ def generate_edges(G=None):
     # convert length to metres
 
     all_lines_df['units']
-    all_xfmrs_df = get_all_transformer_info()
+    all_xfmrs_df = get_thermal_equipment_info(compute_loading=False, equipment_type="transformer")
 
     dss.Lines.First()
     while True:
@@ -1391,7 +1391,7 @@ def get_graph_edges_dataframe(attr_fields=None):
     chosen_fields = ['bus1', 'bus2'] + attr_fields
 
     # prepare lines dataframe
-    all_lines_df = get_all_line_info()
+    all_lines_df = get_thermal_equipment_info(compute_loading=False, equipment_type="line")
     all_lines_df['bus1'] = all_lines_df['bus1'].str.split('.', expand=True)[0].str.lower()
     all_lines_df['bus2'] = all_lines_df['bus2'].str.split('.', expand=True)[0].str.lower()
     # convert length to metres
@@ -1399,7 +1399,7 @@ def get_graph_edges_dataframe(attr_fields=None):
     all_lines_df['equipment_type'] = 'line'
 
     # prepare transformer dataframe
-    all_xfmrs_df = get_all_transformer_info()
+    all_xfmrs_df = get_thermal_equipment_info(compute_loading=False, equipment_type="transformer")
     all_xfmrs_df['length'] = 0.0
     all_xfmrs_df['bus1'] = all_xfmrs_df['bus_names_only'].str[0].str.lower()
     all_xfmrs_df['bus2'] = all_xfmrs_df['bus_names_only'].str[-1].str.lower()
