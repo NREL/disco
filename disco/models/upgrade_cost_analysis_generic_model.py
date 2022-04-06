@@ -89,57 +89,37 @@ class VoltageUpgradeParamsModel(UpgradeParamsBaseModel):
 
     initial_upper_limit: float = Field(
         title="initial_upper_limit",
-        description="Initial upper limit",
-        default=1.05,
+        description="Initial upper limit in per unit (example: 1.05)",
     )
     initial_lower_limit: float = Field(
         title="initial_lower_limit",
-        description="Initial lower limit",
-        default=0.95,
+        description="Initial lower limit in per unit (example: 0.95)",
     )
     final_upper_limit: float = Field(
         title="final_upper_limit",
-        description="Final upper limit",
-        default=1.05,
+        description="Final upper limit in per unit (example: 1.05)",
     )
     final_lower_limit: float = Field(
         title="final_lower_limit",
-        description="Final lower limit",
-        default=0.95,
-    )
-    target_v: float = Field(
-        title="target_v",
-        description="Target voltage",
-        default=1.0,
+        description="Final lower limit in per unit (example: 0.95)",
     )
     nominal_voltage: float = Field(
         title="nominal_voltage",
-        description="Nominal voltage",
-        default=120.0,
-    )
-    nominal_pu_voltage: float = Field(
-        title="nominal_voltage",
-        description="Nominal voltage",
-        default=1.0,
-    )
-    tps_to_test: List[Any] = Field(
-        title="tps_to_test",
-        description="TPS to test",
-        default=[],
+        description="Nominal voltage (volts) (example: 120)",
     )
     capacitor_sweep_voltage_gap: float = Field(
         title="capacitor_sweep_voltage_gap",
-        description="Capacitor swee voltage gap",
+        description="Capacitor sweep voltage gap (example: 1)",
         default=1.0,
     )
     reg_control_bands: List[int] = Field(
         title="reg_control_bands",
-        description="Regulator control bands",
+        description="Regulator control bands (example: [1, 2])",
         default=[1, 2],
     )
     reg_v_delta: float = Field(
         title="reg_v_delta",
-        description="Regulator voltage delta",
+        description="Regulator voltage delta (example: 0.5)",
         default=0.5,
     )
     max_regulators: int = Field(
