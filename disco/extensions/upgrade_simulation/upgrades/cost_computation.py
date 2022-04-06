@@ -75,7 +75,6 @@ def compute_all_costs(
 
     total_cost_df = get_total_costs(thermal_cost_df, voltage_cost_df)
 
-    # breakpoint()
     # save output files
     write_to_json(thermal_cost_df.to_dict('records'), thermal_cost_output_filepath)
     write_to_json(voltage_cost_df.to_dict('records'), voltage_cost_output_filepath)
@@ -242,7 +241,6 @@ def compute_line_costs(line_upgrades_df=None, line_cost_database=None, **kwargs)
         "m": 1,
     }
     # choose which properties are to be saved
-    # output_properties_list = list(set(output_columns_list) - {"type"})
     upgrade_type_list = ["upgrade", "new (parallel)"]
     added_line_df = line_upgrades_df.loc[(line_upgrades_df["Upgrade_Type"].isin(upgrade_type_list)) & (line_upgrades_df["Action"] == "add")]
     computed_cost = []

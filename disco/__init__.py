@@ -1,4 +1,4 @@
-"""Jade package"""
+"""DISCO package"""
 
 import logging
 from jade.utils.timing_utils import TimerStatsCollector

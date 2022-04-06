@@ -29,63 +29,55 @@ class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
 
     transformer_upper_limit: float = Field(
         title="transformer_upper_limit",
-        description="Transformer upper limit",
-        default=1.25,
+        description="Transformer upper limit in per unit (example: 1.25)",
     )
     line_upper_limit: float = Field(
         title="line_upper_limit",
-        description="Line upper limit",
-        default=1.25,
+        description="Line upper limit in per unit (example: 1.25)",
     )
     line_design_pu: float = Field(
         title="line_design_pu",
-        description="Line design P.U.",
-        default=0.75,
+        description="Line design in per unit (example: 0.75)",
     )
     transformer_design_pu: float = Field(
         title="transformer_design_pu",
-        description="Transformer design P.U.",
-        default=0.75,
+        description="Transformer design in per unit (example: 0.75)",
     )
     voltage_upper_limit: float = Field(
         title="voltage_upper_limit",
-        description="Voltage upper limit",
-        default=1.05,
+        description="Voltage upper limit in per unit (example: 1.05)",
     )
     voltage_lower_limit: float = Field(
         title="voltage_lower_limit",
-        description="Voltage lower limit",
-        default=0.95,
+        description="Voltage lower limit in per unit (example: 0.95)",
     )
-    parallel_xfmrs_limit: int = Field(
+    parallel_xfmrs_limit: Optional[int] = Field(
         title="parallel_xfmrs_limit",
         description="Parallel transformer limit",
         default=4
     )
-    parallel_lines_limit: int = Field(
+    parallel_lines_limit: Optional[int] = Field(
         title="parallel_lines_limit",
         description="Parallel lines limit",
         default=4
     )
-    upgrade_iteration_threshold: int = Field(
+    upgrade_iteration_threshold: Optional[int] = Field(
         title="upgrade_iteration_threshold",
         description="Upgrade iteration threshold",
         default=5
     )
-    timepoint_multipliers: dict = Field(
+    timepoint_multipliers: Optional[dict] = Field(
         title="timepoint_multipliers",
-        description="timepoint_multipliers_dict",
+        description="Dictionary to provide timepoint multipliers",
         default=None
     )
     read_external_catalog: bool = Field(
         title="read_external_catalog",
-        description="Flag to determine whether external catalog is to be used",
-        default=False
+        description="Flag to determine whether external catalog is to be used (example: False)",
     )
     external_catalog: str = Field(
         title="external_catalog",
         description="Location to external upgrades technical catalog json file",
-        default=None
     )
 
 

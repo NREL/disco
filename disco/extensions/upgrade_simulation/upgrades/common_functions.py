@@ -581,7 +581,7 @@ def determine_line_placement(line_series):
             info_dict["h"] = 0
             if h >= 0:
                 info_dict["line_placement"] = "overhead"
-            elif h < 0:
+            else:
                 info_dict["line_placement"] = "underground"
     else:
         if ("oh" in line_series["geometry"].lower()) or ("oh" in line_series["linecode"].lower()):
@@ -670,7 +670,7 @@ def compare_multiple_dataframes(comparison_dict, deciding_column_name, compariso
             if comparison_type == "max":
                 label_df = summary_df.idxmax(axis=1)  # find dataframe name that has max 
             elif comparison_type == "min":
-                label_df = summary_df.idxmax(axis=1)  # find dataframe name that has max 
+                label_df = summary_df.idxmax(axis=1)  # find dataframe name that has min 
             else:
                 raise Exception(f"Unknown comparison type {comparison_type} passed.")
             final_list = []
@@ -1094,40 +1094,43 @@ def create_timepoint_multipliers_dict(timepoint_multipliers):
     -------
     dict
     """
-    field = "load_multipliers"
-    if field == "load_multipliers":
-        property_list = ["kW"]
-        object_name = "Load"
-        multiplier_list = []
-        # get combined list of multipliers
-        for key, value in timepoint_multipliers[field].items():
-            multiplier_list = multiplier_list + value
-        df = dss.utils.class_to_dataframe(object_name)
-        df.reset_index(inplace=True)
-        df['name'] = df['index'].str.split(".", expand=True)[1]
-        name_list = list(df['name'].values)
-        del df["index"]
-        df.set_index('name', inplace=True)
-        raw_dict = {}
-        for property in property_list:
-            logger.debug(property)
-            df[property] = df[property].astype(float)
-            new_df = pd.DataFrame(index=name_list, columns=multiplier_list)
-            new_df.index.name = 'name'
-            for multiplier in multiplier_list:
-                logger.debug(multiplier)
-                new_df[multiplier] = df[property] * multiplier
-            raw_dict[property] = new_df.T.to_dict()
-        # reformat dictionary to create desired format
-        reformatted_dict = {}
-        for name in name_list:
-            reformatted_dict[name] = {}
+    for field in timepoint_multipliers.keys():
+        if field == "load_multipliers":
+            property_list = ["kW"]
+            object_name = "Load"
+            multiplier_list = []
+            # get combined list of multipliers
+            for key, value in timepoint_multipliers[field].items():
+                multiplier_list = multiplier_list + value
+            df = dss.utils.class_to_dataframe(object_name)
+            df.reset_index(inplace=True)
+            df['name'] = df['index'].str.split(".", expand=True)[1]
+            name_list = list(df['name'].values)
+            del df["index"]
+            df.set_index('name', inplace=True)
+            raw_dict = {}
             for property in property_list:
-                reformatted_dict[name][property] = raw_dict[property][name]
+                logger.debug(property)
+                df[property] = df[property].astype(float)
+                new_df = pd.DataFrame(index=name_list, columns=multiplier_list)
+                new_df.index.name = 'name'
+                for multiplier in multiplier_list:
+                    logger.debug(multiplier)
+                    new_df[multiplier] = df[property] * multiplier
+                raw_dict[property] = new_df.T.to_dict()
+            # reformat dictionary to create desired format
+            reformatted_dict = {}
+            for name in name_list:
+                reformatted_dict[name] = {}
+                for property in property_list:
+                    reformatted_dict[name][property] = raw_dict[property][name]
+        else:
+            raise Exception(f"Timepoint multiplier has Unsupported key: {field}. Presently, key 'load_multipliers' is supported.")
     return reformatted_dict
 
 
-def apply_timepoint_multipliers_dict(reformatted_dict, multiplier_name, property_list=None, **kwargs):
+def apply_timepoint_multipliers_dict(reformatted_dict, multiplier_name, property_list=None, field="load_multipliers",
+                                     **kwargs):
     """This uses a dictionary with the format of output received from create_timepoint_multipliers_dict
     Currently, it only does works loads. But can be modified to accommodate other elements like PV as well.
 
@@ -1140,7 +1143,6 @@ def apply_timepoint_multipliers_dict(reformatted_dict, multiplier_name, property
     -------
     dict
     """
-    field = "load_multipliers"
     name_list = list(reformatted_dict.keys())
     if property_list is None:
         property_list = list(reformatted_dict[name_list[0]].keys())
@@ -1154,6 +1156,8 @@ def apply_timepoint_multipliers_dict(reformatted_dict, multiplier_name, property
                 else:
                     raise Exception(f"Property {property} not defined in multipliers dict")
         circuit_solve_and_check(raise_exception=True, **kwargs)
+    else:
+        raise Exception(f"Unsupported key in dictionary. Presently, load_multipliers is supported.")
     return reformatted_dict
 
 

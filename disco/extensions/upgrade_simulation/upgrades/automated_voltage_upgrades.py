@@ -136,7 +136,6 @@ def determine_voltage_upgrades(
         # change voltage checking thresholds. determine violations based on final limits
         voltage_upper_limit = voltage_config["final_upper_limit"]
         voltage_lower_limit = voltage_config["final_lower_limit"]
-
         upgrade_status = 'Voltage Upgrades were needed'  # status - whether voltage upgrades done or not
         logger.info("Voltage Upgrades Required.")
         # start with capacitors
@@ -149,7 +148,7 @@ def determine_voltage_upgrades(
             dss_commands_list = dss_commands_list + capcontrol_parameter_commands_list
             bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
                 voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
-
+            
             if len(buses_with_violations) > 0:
                 # get capacitors dataframe before any settings changes are made
                 nosetting_changes_capacitors_df = get_capacitor_info(correct_PT_ratio=False)
