@@ -124,8 +124,7 @@ def test_snapshot_hosting_capacity(cleanup):
     assert not config.list_user_data_keys()
 
     # Ensure that control_mode scenarios have PV controllers defined and pf1 scenarios do not.
-    job = jobs[-1]
-    assert not job.model.is_base_case
+    job = find_non_base_case_job(jobs)
     results = PyDssResults(Path(OUTPUT) / JOBS_OUTPUT_DIR / job.name / "pydss_project")
     for scenario in results.scenarios:
         controller_file = f"Scenarios/{scenario.name}/pyControllerList/PvController.toml"

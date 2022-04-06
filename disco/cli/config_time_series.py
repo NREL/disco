@@ -118,7 +118,7 @@ def _callback_is_enabled(_, __, value):
     default=False,
     is_flag=True,
     show_default=True,
-    help="Don't run convergence algorithm or collect data during nighttime hours."
+    help="Don't run controls or collect data during nighttime hours."
 )
 @click.option(
     "--order-by-penetration/--no-order-by-penetration",

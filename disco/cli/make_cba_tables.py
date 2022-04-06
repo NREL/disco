@@ -90,9 +90,9 @@ def parse_job_results(job, output_path):
             name=job.name,
             substation=deployment.substation,
             feeder=deployment.feeder,
-            placement="None",
-            sample="None",
-            penetration_level="None",
+            placement="",
+            sample="",
+            penetration_level="",
         )
     else:
         job_info = JobInfo(
