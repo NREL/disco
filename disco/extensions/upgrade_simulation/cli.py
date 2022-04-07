@@ -2,14 +2,13 @@ import logging
 import os
 
 from jade.jobs.job_configuration_factory import create_config_from_file
+from jade.utils.utils import load_data
 from PyDSS.controllers import PvControllerModel
 
-from disco.pydss.common import ConfigType
-
-from disco.pydss.common import ConfigType
 from disco.extensions.upgrade_simulation.upgrade_configuration import UpgradeConfiguration
 from disco.extensions.upgrade_simulation.upgrade_inputs import UpgradeInputs
 from disco.extensions.upgrade_simulation.upgrade_simulation import UpgradeSimulation
+from disco.pydss.pydss_configuration_base import DEFAULT_CONTROLLER_CONFIG_FILE
 from disco.version import __version__ as disco_version
 
 logger = logging.getLogger(__name__)
@@ -56,7 +55,10 @@ def run(config_file, name, output, output_format, verbose):
     try:
         upgrade_simulation_params = config.job_global_config["upgrade_simulation_params"]
         enable_pydss_controller = upgrade_simulation_params["enable_pydss_controller"]
-        pydss_controller_model = PvControllerModel(**upgrade_simulation_params["pydss_controller"])
+        pv_controllers = load_data(DEFAULT_CONTROLLER_CONFIG_FILE)
+        pydss_controller_model = PvControllerModel(
+            **pv_controllers[upgrade_simulation_params("pydss_controller_name")]
+        )
 
         thermal_config = config.job_global_config["thermal_upgrade_params"]
         voltage_config = config.job_global_config["voltage_upgrade_params"]
