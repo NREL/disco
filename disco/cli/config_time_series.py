@@ -137,6 +137,12 @@ def _callback_is_enabled(_, __, value):
     help="Store per-element data in thermal and voltage metrics.",
 )
 @click.option(
+    "-v",
+    "--volt-var-curve",
+    default=None,
+    help="Update the PyDSS volt-var curve name. If not set, use the pre-configured curve.",
+)
+@click.option(
     "--verbose",
     is_flag=True,
     default=False,
@@ -158,6 +164,7 @@ def time_series(
     order_by_penetration=True,
     skip_night=False,
     store_per_element_data=False,
+    volt_var_curve=None,
     verbose=False,
 ):
     """Create JADE configuration for time series simulations."""
@@ -194,6 +201,9 @@ def time_series(
         order_by_penetration=order_by_penetration,
         estimated_run_minutes=estimated_run_minutes,
     )
+
+    if volt_var_curve is not None:
+        config.update_volt_var_curve(volt_var_curve)
 
     if calc_estimated_run_minutes:
         generate_estimate_run_minutes(config)

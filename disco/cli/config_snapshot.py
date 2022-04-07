@@ -104,6 +104,12 @@ logger = logging.getLogger(__name__)
     help="Strip whitespace in file.",
 )
 @click.option(
+    "-v",
+    "--volt-var-curve",
+    default=None,
+    help="Update the PyDSS volt-var curve name. If not set, use the pre-configured curve.",
+)
+@click.option(
     "--verbose",
     is_flag=True,
     default=False,
@@ -122,6 +128,7 @@ def snapshot(
     shuffle,
     store_per_element_data,
     strip_whitespace,
+    volt_var_curve,
     verbose=False,
 ):
     """Create JADE configuration for snapshot simulations."""
@@ -173,6 +180,10 @@ def snapshot(
         order_by_penetration=order_by_penetration,
         estimated_exec_secs_per_job=ESTIMATED_EXEC_SECS_PER_JOB,
     )
+
+    if volt_var_curve is not None:
+        config.update_volt_var_curve(volt_var_curve)
+
     # We can't currently predict how long each job will take. If we did, we could set
     # estimated_run_minutes for each job.
     # Shuffle the jobs randomly so that we have a better chance of getting batches with similar

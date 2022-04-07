@@ -111,7 +111,8 @@ def test_snapshot_hosting_capacity(cleanup):
     """For each job, gather outputs and generate desired output CSV files."""
     config_file = CONFIG_FILE
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations snapshot -F -o {MODELS_DIR}"
-    config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} -c {CONFIG_FILE} --with-loadshape -d1"
+    config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} -c {CONFIG_FILE} --with-loadshape -d1 " \
+        "-v volt_var_ieee_1547_2018_catB"
     submit_cmd = f"{SUBMIT_JOBS} {config_file} -o {OUTPUT} -p1"
 
     assert run_command(transform_cmd) == 0
@@ -125,6 +126,7 @@ def test_snapshot_hosting_capacity(cleanup):
 
     # Ensure that control_mode scenarios have PV controllers defined and pf1 scenarios do not.
     job = find_non_base_case_job(jobs)
+    assert job.model.deployment.pydss_controllers.name == "volt_var_ieee_1547_2018_catB"
     results = PyDssResults(Path(OUTPUT) / JOBS_OUTPUT_DIR / job.name / "pydss_project")
     for scenario in results.scenarios:
         controller_file = f"Scenarios/{scenario.name}/pyControllerList/PvController.toml"
