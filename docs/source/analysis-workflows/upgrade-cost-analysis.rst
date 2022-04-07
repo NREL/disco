@@ -43,7 +43,7 @@ provided to control the upgrade simulations, the optional parameters include the
 .. code-block::
 
     [thermal_upgrade_params]
-    parallel_xfmrs_limit = 4
+    parallel_transformer_limit = 4
     parallel_lines_limit = 4
     upgrade_iteration_threshold = 5
     timepoint_multipliers = {}
