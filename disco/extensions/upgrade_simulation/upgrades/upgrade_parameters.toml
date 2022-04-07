@@ -17,4 +17,4 @@ nominal_voltage = 120
 
 [upgrade_simulation_params]
 enable_pydss_controller = true
-pydss_controller_name = volt_var_disco
+pydss_controller_name = "volt_var_disco"
