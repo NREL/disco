@@ -25,7 +25,7 @@ Efficiency = 100
 Priority = "Var"
 DampCoef = 0.8
 
-[volt_var_upgrade]
+[volt_var_ieee_1547_2018_catB]
 Control1 = "VVar"
 Control2 = "None"
 Control3 = "None"
@@ -34,14 +34,14 @@ pfMin = 0.8
 pfMax = 1
 Pmin = 0
 Pmax = 1
-uMin = 0.9399999999999999
-uDbMin = 0.97
-uDbMax = 1.03
-uMax = 1.06
+uMin = 0.92
+uDbMin = 0.98
+uDbMax = 1.02
+uMax = 1.08
 QlimPU = 0.44
 PFlim = 0.9
 enable_pf_limit = false
-uMinC = 1.06
+uMinC = 1.08
 uMaxC = 1.1
 PminVW = 10
 VWtype = "Rated Power"

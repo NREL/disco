@@ -226,7 +226,7 @@ class EpriModel(BaseOpenDssModel):
     def pydss_controllers(self):
         return PyDSSControllerModel(
             controller_type=ControllerType.PV_CONTROLLER,
-            name="volt-var",
+            name="volt_var_ieee_1547_2018_catB",
         )
 
     @staticmethod

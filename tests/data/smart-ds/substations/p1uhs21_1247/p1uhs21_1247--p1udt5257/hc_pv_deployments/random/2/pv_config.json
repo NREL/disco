@@ -4,7 +4,7 @@
       "name": "small_p1ulv53232_1_2_pv",
       "pydss_controller": {
         "controller_type": "PvController",
-        "name": "volt-var"
+        "name": "volt_var_ieee_1547_2018_catB"
       },
       "pv_profile": "1571313_30.20_-97.39_2019",
       "customer_type": "residential"
@@ -13,7 +13,7 @@
       "name": "small_p1ulv57596_1_2_3_pv",
       "pydss_controller": {
         "controller_type": "PvController",
-        "name": "volt-var"
+        "name": "volt_var_ieee_1547_2018_catB"
       },
       "pv_profile": "1537094_30.28_-97.81_2019",
       "customer_type": "commercial"

@@ -103,7 +103,7 @@ def test_time_series_impact_analysis(cleanup):
 def test_time_series_hosting_capacity(cleanup):
     num_jobs = 18
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations time-series -c -F -o {MODELS_DIR}"
-    config_cmd = f"{CONFIG_JOBS} time-series {MODELS_DIR} -c {CONFIG_FILE}"
+    config_cmd = f"{CONFIG_JOBS} time-series {MODELS_DIR} -c {CONFIG_FILE} -v volt_var_ieee_1547_2018_catB"
     submit_cmd = f"{SUBMIT_JOBS} {CONFIG_FILE} --output={OUTPUT} -p 1"
 
     assert run_command(transform_cmd) == 0
@@ -124,6 +124,7 @@ def test_time_series_hosting_capacity(cleanup):
     # Ensure that control_mode scenarios have PV controllers defined and pf1 scenarios do not.
     job = config.get_job(result.name)
     assert not job.model.is_base_case
+    assert job.model.deployment.pydss_controllers.name == "volt_var_ieee_1547_2018_catB"
     for scenario in pydss_results.scenarios:
         controller_file = f"Scenarios/{scenario.name}/pyControllerList/PvController.toml"
         if "pf1" in scenario.name:
