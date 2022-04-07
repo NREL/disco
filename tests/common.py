@@ -23,3 +23,12 @@ POSTPROCESS_RESULTS = [
 ]
 TOTAL_UPGRADE_COSTS = "total_upgrade_costs.csv"
 UPGRADE_SUMMARY = "upgrade_summary.csv"
+
+
+def find_non_base_case_job(jobs):
+    """Return a job that is not a base case."""
+    for job in jobs:
+        if job.model.base_case is not None:
+            assert not job.model.is_base_case
+            return job
+    raise Exception("Did not find a non-base-case job")

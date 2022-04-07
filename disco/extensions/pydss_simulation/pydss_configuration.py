@@ -7,6 +7,8 @@ from jade.exceptions import InvalidParameter
 from jade.extensions.generic_command.generic_command_parameters import GenericCommandParameters
 from jade.utils.utils import load_data
 
+from PyDSS.common import ControllerType
+
 from disco.distribution.deployment_parameters import DeploymentParameters
 from disco.enums import SimulationHierarchy, SimulationType
 from disco.exceptions import PyDssJobException
@@ -238,3 +240,20 @@ class PyDssConfiguration(PyDssConfigurationBase):
         """
         # TODO: callers should just call this.
         return self.get_job(job_name)
+
+    def update_volt_var_curve(self, volt_var_curve: str):
+        """Update the volt-var curve for all jobs configured with PV controls."""
+        count = 0
+        for job in self.iter_pydss_simulation_jobs(exclude_base_case=True):
+            pydss_controllers = job.model.deployment.pydss_controllers
+            if pydss_controllers is not None:
+                if isinstance(pydss_controllers, list):
+                    for controller in pydss_controllers:
+                        if controller.controller_type == ControllerType.PV_CONTROLLER:
+                            controller.name = volt_var_curve
+                            count += 1
+                elif pydss_controllers.controller_type == ControllerType.PV_CONTROLLER:
+                    pydss_controllers.name = volt_var_curve
+                    count += 1
+
+        logger.info("Updated %s jobs with volt-var curve %s", count, volt_var_curve)

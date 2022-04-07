@@ -821,7 +821,7 @@ class PVScenarioGeneratorBase(abc.ABC):
             if pv_name in pv_systems:
                 continue
             if float(pv_value) > limit:
-                control_name = "volt-var"
+                control_name = "volt_var_ieee_1547_2018_catB"
             else:
                 control_name = "pf1"
             pv_profile = random.choice(shape_list)

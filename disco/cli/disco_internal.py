@@ -13,6 +13,7 @@ from disco.cli.make_summary_tables import make_summary_tables
 from disco.cli.make_upgrade_tables import make_upgrade_tables
 from disco.cli.compute_hosting_capacity import compute_hosting_capacity
 from disco.cli.cba_post_process import cba_post_process
+from disco.cli.compute_cba import compute_cba
 
 
 logger = logging.getLogger(__name__)
@@ -32,3 +33,4 @@ cli.add_command(make_summary_tables)
 cli.add_command(make_upgrade_tables)
 cli.add_command(compute_hosting_capacity)
 cli.add_command(cba_post_process)
+cli.add_command(compute_cba)
