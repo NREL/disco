@@ -35,7 +35,7 @@ With the transformed model, create the `config.json` file with submittable jobs.
 
     $ disco config upgrade upgrade-models
 
-Here, DISCO would default upgrade parameters if this option ``--params-filel`` is not specified,
+Here, DISCO would default upgrade parameters if this option ``--params-file`` is not specified,
 where these parameters are all required. You could customize the parameter values based on project
 requirements. Except for the required ones, there are also optional parameters which could be
 provided to control the upgrade simulations, the optional parameters include the followings,
