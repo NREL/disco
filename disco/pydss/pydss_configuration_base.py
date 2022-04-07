@@ -29,11 +29,6 @@ DEFAULT_CONTROLLER_CONFIGS = [
     },
     {
         "controller_type": ControllerType.PV_CONTROLLER.value,
-        "name": "volt_var_disco",
-        "filename": DEFAULT_CONTROLLER_CONFIG_FILE
-    },
-    {
-        "controller_type": ControllerType.PV_CONTROLLER.value,
         "name": "volt_var_ieee_1547_2018_catB",
         "filename": DEFAULT_CONTROLLER_CONFIG_FILE
     },
