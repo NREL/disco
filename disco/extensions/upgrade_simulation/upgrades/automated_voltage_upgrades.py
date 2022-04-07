@@ -328,7 +328,8 @@ def determine_voltage_upgrades(
     processed_df.index.name = 'temp'
     processed_df.reset_index(inplace=True)
     processed_df[['name', 'equipment_type']] = ""
-    processed_df[['equipment_type', 'name']] = processed_df['temp'].str.split('.', expand=True)
+    if not processed_df.empty:  # if there are voltage upgrades
+        processed_df[['equipment_type', 'name']] = processed_df['temp'].str.split('.', expand=True)
     processed_df = processed_df.set_index(['equipment_type', 'name']).reset_index()
     del processed_df["temp"]
     write_to_json(processed_df.to_dict('records'), output_json_voltage_upgrades_filepath)
