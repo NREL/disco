@@ -54,8 +54,6 @@ def run(config_file, name, output, output_format, verbose):
         output=output
     )
     try:
-        # enable_pydss_solve = config.pydss_inputs[ConfigType.SIMULATION_CONFIG]["default"]["enable_pydss_solve"]
-        # controller = config.get_pydss_controller_model(name="volt_var_upgrade")  # TODO: User custom pv controller?
         upgrade_simulation_params = config.job_global_config["upgrade_simulation_params"]
         enable_pydss_controller = upgrade_simulation_params["enable_pydss_controller"]
         pydss_controller_model = PvControllerModel(**upgrade_simulation_params["pydss_controller"])

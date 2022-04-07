@@ -8,8 +8,12 @@ from jade.utils.utils import load_data
 from PyDSS.controllers import PvControllerModel
 from disco.models.base import BaseAnalysisModel
 
+from disco.extensions.upgrade_simulation.upgrade_configuration import DEFAULT_UPGRADE_PARAMS_FILE
 
 logger = logging.getLogger(__name__)
+DEFAULT_UPGRADE_PARAMS = load_data(DEFAULT_UPGRADE_PARAMS_FILE)
+DEFAULT_THERMAL_UPGRADE_PARAMS = DEFAULT_UPGRADE_PARAMS["thermal_upgrade_params"]
+DEFAULT_VOLTAGE_UPGRADE_PARAMS = DEFAULT_UPGRADE_PARAMS["voltage_upgrade_params"]
 
 
 class UpgradeParamsBaseModel(BaseModel):
@@ -27,6 +31,7 @@ class UpgradeParamsBaseModel(BaseModel):
 class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
     """Thermal Upgrade Parameters for all jobs in a simulation"""
 
+    # Required fields
     transformer_upper_limit: float = Field(
         title="transformer_upper_limit",
         description="Transformer upper limit in per unit (example: 1.25)",
@@ -51,8 +56,18 @@ class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
         title="voltage_lower_limit",
         description="Voltage lower limit in per unit (example: 0.95)",
     )
-    parallel_xfmrs_limit: Optional[int] = Field(
-        title="parallel_xfmrs_limit",
+    read_external_catalog: bool = Field(
+        title="read_external_catalog",
+        description="Flag to determine whether external catalog is to be used (example: False)",
+    )
+    external_catalog: str = Field(
+        title="external_catalog",
+        description="Location to external upgrades technical catalog json file",
+    )
+
+    # Optional fields
+    parallel_transformer_limit: Optional[int] = Field(
+        title="parallel_transformer_limit",
         description="Parallel transformer limit",
         default=4
     )
@@ -71,14 +86,6 @@ class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
         description="Dictionary to provide timepoint multipliers",
         default=None
     )
-    read_external_catalog: bool = Field(
-        title="read_external_catalog",
-        description="Flag to determine whether external catalog is to be used (example: False)",
-    )
-    external_catalog: str = Field(
-        title="external_catalog",
-        description="Location to external upgrades technical catalog json file",
-    )
 
 
 # TODO DT: document error codes
@@ -87,6 +94,7 @@ class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
 class VoltageUpgradeParamsModel(UpgradeParamsBaseModel):
     """Voltage Upgrade Parameters for all jobs in a simulation"""
 
+    # Required fields
     initial_upper_limit: float = Field(
         title="initial_upper_limit",
         description="Initial upper limit in per unit (example: 1.05)",
@@ -107,6 +115,8 @@ class VoltageUpgradeParamsModel(UpgradeParamsBaseModel):
         title="nominal_voltage",
         description="Nominal voltage (volts) (example: 120)",
     )
+
+    # Optional fields
     capacitor_sweep_voltage_gap: float = Field(
         title="capacitor_sweep_voltage_gap",
         description="Capacitor sweep voltage gap (example: 1)",
@@ -200,8 +210,12 @@ class UpgradeCostAnalysisSimulationModel(BaseModel):
         extra = "forbid"
         use_enum_values = False
 
-    thermal_upgrade_params: ThermalUpgradeParamsModel = Field(default=ThermalUpgradeParamsModel())
-    voltage_upgrade_params: VoltageUpgradeParamsModel = Field(default=VoltageUpgradeParamsModel())
+    thermal_upgrade_params: ThermalUpgradeParamsModel = Field(
+        default=ThermalUpgradeParamsModel(**DEFAULT_THERMAL_UPGRADE_PARAMS)
+    )
+    voltage_upgrade_params: VoltageUpgradeParamsModel = Field(
+        default=VoltageUpgradeParamsModel(**DEFAULT_VOLTAGE_UPGRADE_PARAMS)
+    )
     upgrade_cost_database: str = Field(
         title="upgrade_cost_database",
         description="Database containing costs for each equipment type",

@@ -9,38 +9,9 @@ import numpy as np
 import pandas as pd
 import opendssdirect as dss
 
-from jade.utils.utils import load_data, dump_data
-from PyDSS.controllers import PvControllerModel
-from disco.models.upgrade_cost_analysis_generic_model import (
-    ThermalUpgradeParamsModel, VoltageUpgradeParamsModel
-)
-from disco.pydss.pydss_configuration_base import DEFAULT_CONTROLLER_CONFIG_FILE
-
 from .pydss_parameters import *
 
 logger = logging.getLogger(__name__)
-
-
-def get_default_upgrade_cost_database():
-    return os.path.join(
-        os.path.dirname(__file__),
-        "Generic_DISCO_cost_database_v2.xlsx"
-    )
-
-
-def get_default_upgrade_params_file(filename="upgrade-parameters.toml"):
-    pv_controller = load_data(DEFAULT_CONTROLLER_CONFIG_FILE)["volt_var_upgrade"]
-    params = {
-        "thermal_upgrade_params": ThermalUpgradeParamsModel().dict(),
-        "voltage_upgrade_params": VoltageUpgradeParamsModel().dict(),
-        "upgrade_simulation_params": {
-            "enable_pydss_controller": True,
-            "pydss_controller": PvControllerModel(**pv_controller).dict()
-        }
-    }
-    filename = os.path.abspath(filename)
-    dump_data(params, filename)
-    return filename
 
 
 def reload_dss_circuit(dss_file_list=None, commands_list=None, **kwargs):

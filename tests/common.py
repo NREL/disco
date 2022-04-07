@@ -21,6 +21,5 @@ POSTPROCESS_RESULTS = [
     "thermal_metrics_table.csv",
     "voltage_metrics_table.csv"
 ]
-UPGRADE_PARAMETERS = "test_upgrade_parameters.toml"
 TOTAL_UPGRADE_COSTS = "total_upgrade_costs.csv"
 UPGRADE_SUMMARY = "upgrade_summary.csv"
