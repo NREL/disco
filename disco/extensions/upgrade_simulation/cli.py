@@ -57,7 +57,7 @@ def run(config_file, name, output, output_format, verbose):
         enable_pydss_controller = upgrade_simulation_params["enable_pydss_controller"]
         pv_controllers = load_data(DEFAULT_CONTROLLER_CONFIG_FILE)
         pydss_controller_model = PvControllerModel(
-            **pv_controllers[upgrade_simulation_params("pydss_controller_name")]
+            **pv_controllers[upgrade_simulation_params["pydss_controller_name"]]
         )
 
         thermal_config = config.job_global_config["thermal_upgrade_params"]
