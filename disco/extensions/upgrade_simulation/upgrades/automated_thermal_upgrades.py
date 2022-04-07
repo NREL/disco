@@ -159,7 +159,7 @@ def determine_thermal_upgrades(
                 xfmr_loading_df=xfmr_loading_df,
                 xfmr_design_pu=thermal_config["transformer_design_pu"],
                 xfmr_upgrade_options=xfmr_upgrade_options,
-                parallel_xfmrs_limit=thermal_config["parallel_xfmrs_limit"])
+                parallel_transformer_limit=thermal_config["parallel_transformer_limit"])
             logger.info(f"Iteration_{iteration_counter}: Corrected xfmr violations.")
             commands_list = commands_list + xfmr_commands_list
             xfmr_upgrades_df = xfmr_upgrades_df.append(temp_xfmr_upgrades_df)
