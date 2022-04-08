@@ -4,6 +4,7 @@ import logging
 import pandas as pd
 
 from jade.utils.timing_utils import track_timing, Timer
+from jade.utils.utils import load_data, dump_data
 
 from .thermal_upgrade_functions import *
 from disco.models.upgrade_cost_analysis_generic_model import UpgradeResultModel
@@ -43,7 +44,7 @@ def determine_thermal_upgrades(
     voltage_upper_limit = thermal_config["voltage_upper_limit"]
     voltage_lower_limit = thermal_config["voltage_lower_limit"]
     feeder_stats = {"before_upgrades": get_feeder_stats(dss)}  # save feeder stats
-    write_to_json(feeder_stats, feeder_stats_json_file)
+    dump_data(feeder_stats, feeder_stats_json_file, indent=4)
     if thermal_config["read_external_catalog"]:
         with open(thermal_config["external_catalog"]) as json_file:
             external_upgrades_technical_catalog = json.load(json_file)
@@ -58,8 +59,8 @@ def determine_thermal_upgrades(
         orig_xfmrs_df = get_thermal_equipment_info(compute_loading=False, equipment_type="transformer")
         line_upgrade_options = determine_available_line_upgrades(orig_lines_df)
         xfmr_upgrade_options = determine_available_xfmr_upgrades(orig_xfmrs_df)
-        write_to_json(line_upgrade_options.to_dict('records'), line_upgrade_options_file)
-        write_to_json(xfmr_upgrade_options.to_dict('records'), xfmr_upgrade_options_file)
+        dump_data(line_upgrade_options.to_dict('records'), line_upgrade_options_file, indent=4)
+        dump_data(xfmr_upgrade_options.to_dict('records'), xfmr_upgrade_options_file, indent=4)
 
     (
         initial_bus_voltages_df,
@@ -111,7 +112,7 @@ def determine_thermal_upgrades(
     )
     temp_results = dict(initial_results)
     output_results = [temp_results]
-    write_to_json(output_results, thermal_summary_file)
+    dump_data(output_results, thermal_summary_file, indent=4)
     
     # Mitigate thermal violations
     iteration_counter = 0
@@ -214,8 +215,8 @@ def determine_thermal_upgrades(
     overloaded_xfmr_list = list(xfmr_loading_df.loc[xfmr_loading_df["status"] == "overloaded"]["name"].unique())
     overloaded_line_list = list(line_loading_df.loc[line_loading_df["status"] == "overloaded"]["name"].unique())
 
-    write_to_json(line_upgrades_df.to_dict('records'), output_json_line_upgrades_filepath)
-    write_to_json(xfmr_upgrades_df.to_dict('records'), output_json_xfmr_upgrades_filepath)
+    dump_data(line_upgrades_df.to_dict('records'), output_json_line_upgrades_filepath, indent=4)
+    dump_data(xfmr_upgrades_df.to_dict('records'), output_json_xfmr_upgrades_filepath, indent=4)
     end_time = time.time()
     logger.info(f"Simulation end time: {end_time}")
     simulation_time = end_time - start_time
@@ -244,4 +245,4 @@ def determine_thermal_upgrades(
     )
     temp_results = dict(final_results)
     output_results.append(temp_results)
-    write_to_json(output_results, thermal_summary_file)
+    dump_data(output_results, thermal_summary_file, indent=4)

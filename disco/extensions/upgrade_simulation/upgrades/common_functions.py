@@ -10,10 +10,13 @@ import pandas as pd
 import opendssdirect as dss
 
 from .pydss_parameters import *
+from jade.utils.timing_utils import track_timing, Timer
+from disco import timer_stats_collector
 
 logger = logging.getLogger(__name__)
 
 
+@track_timing(timer_stats_collector)
 def reload_dss_circuit(dss_file_list=None, commands_list=None, **kwargs):
     """This function clears the circuit and loads dss files and commands.
     Also solves the circuit and checks for convergence errors
@@ -86,6 +89,7 @@ def run_selective_master_dss(master_filepath=None, **kwargs):
     return
 
 
+@track_timing(timer_stats_collector)
 def circuit_solve_and_check(raise_exception=False, **kwargs):
     """This function solves the circuit (both OpenDSS and PyDSS-if enabled)
     and can raise exception if convergence error occurs
@@ -134,21 +138,6 @@ def dss_run_command_list(command_list):
     for command_string in command_list:
         check_dss_run_command(command_string)
     return
-
-
-def convert_list_string_to_list(user_string):
-    """This function converts a string representation of a list to a type: list of elements
-
-    Parameters
-    ----------
-    user_string
-
-    Returns
-    -------
-    list
-    """
-    user_list = ast.literal_eval(user_string)
-    return user_list
 
 
 def write_text_file(string_list=None, text_file_path=None):
@@ -206,18 +195,6 @@ def get_dictionary_of_duplicates(df, subset=None, index_field=None):
     return mapping_dict
 
 
-def write_to_json(json_file, filename):
-    with open(filename, 'w') as fout:
-        json.dump(json_file, fout, indent=4)
-    return 
-
-
-def read_json_as_dict(filename):
-    with open(filename) as json_file:
-        data = json.load(json_file)
-    return data
-
-
 def get_scenario_name(enable_pydss_solve, pydss_volt_var_model):
     """This function determines the controller scenario 
 
@@ -231,9 +208,10 @@ def get_scenario_name(enable_pydss_solve, pydss_volt_var_model):
     str
     """
     if enable_pydss_solve:
-        scenario = pydss_volt_var_model.control1
+        # scenario = pydss_volt_var_model.control1  # TODO can read in name instead
+        scenario = "control_mode"
     else:
-        scenario = "no_control"
+        scenario = "pf1"
     return scenario
 
 
@@ -264,14 +242,14 @@ def get_feeder_stats(dss):
         
     ckt_info_dict = get_circuit_info()
     data_dict = {
-    "num_buses": len(dss.Circuit.AllBusNames()),
-    "num_nodes": len(dss.Circuit.AllNodeNames()),
-    "num_loads": len(dss.Loads.AllNames()),
-    "num_lines": len(dss.Lines.AllNames()),
-    "num_transformers": len(dss.Transformers.AllNames()),
-    "num_pv_systems": len(dss.PVsystems.AllNames()),
-    "num_capacitors": len(dss.Capacitors.AllNames()),
-    "num_regulators": len(dss.RegControls.AllNames()),
+    "num_buses": dss.Circuit.NumBuses(),
+    "num_nodes": dss.Circuit.NumNodes(),
+    "num_loads": dss.Loads.Count(),
+    "num_lines": dss.Lines.Count(),
+    "num_transformers": dss.Transformers.Count(),
+    "num_pv_systems": dss.PVsystems.Count(),
+    "num_capacitors": dss.Capacitors.Count(),
+    "num_regulators": dss.RegControls.Count(),
     'total_load(kVABase)': load_kVABase,
     'total_load(kW)': load_kw,
     'total_PV(kW)': pv_kw,
@@ -307,7 +285,7 @@ def get_circuit_info():
     if len(all_xfmr_df.loc[all_xfmr_df["substation_xfmr_flag"] == True]) > 0:
         data_dict["substation_xfmr"] = all_xfmr_df.loc[all_xfmr_df["substation_xfmr_flag"] ==
                                                        True].to_dict(orient='records')[0]
-        data_dict["substation_xfmr"]["kVs"] = convert_list_string_to_list(data_dict["substation_xfmr"]["kVs"])
+        data_dict["substation_xfmr"]["kVs"] = ast.literal_eval(data_dict["substation_xfmr"]["kVs"])
         # this checks if the voltage kVs are the same for the substation transformer
         data_dict["substation_xfmr"]["is_autotransformer_flag"] = len(set(data_dict["substation_xfmr"]["kVs"])) <= 1
     return data_dict
@@ -449,7 +427,6 @@ def get_present_pvgeneration():
                                             'Pmpp': float(dss.Properties.Value("Pmpp")),
                                             'Powers': dss.CktElement.Powers(),
                                             'NetPower': sum(dss.CktElement.Powers()[::2]),
-                                            # 'Pmpp*PMult': Pmpp * multiplier - to get max real power possible # TODO
                                             'pf': dss.Properties.Value("pf"),
                                             'Bus1': dss.Properties.Value("bus1"),
                                             'Voltages': dss.CktElement.Voltages(),
@@ -653,6 +630,7 @@ def compare_multiple_dataframes(comparison_dict, deciding_column_name, compariso
             return final_df
         
 
+@track_timing(timer_stats_collector)
 def get_thermal_equipment_info(compute_loading, equipment_type, upper_limit=None, ignore_switch=False, timepoint_multipliers=None, multiplier_type='uniform', **kwargs):
     """This function determines the thermal equipment loading (line, transformer), based on timepoint multiplier
 
@@ -675,7 +653,7 @@ def get_thermal_equipment_info(compute_loading, equipment_type, upper_limit=None
         for pv_field in timepoint_multipliers["load_multipliers"].keys():
             logger.debug(pv_field)
             for multiplier_name in timepoint_multipliers["load_multipliers"][pv_field]:
-                logger.debug(multiplier_name)
+                logger.debug("Multipler name: %s", multiplier_name)
                 # this changes the dss network load and pv
                 apply_uniform_timepoint_multipliers(multiplier_name=multiplier_name, field=pv_field, **kwargs)
                 if equipment_type.lower() == "line":
@@ -894,6 +872,7 @@ def check_dss_run_command(command_string):
         raise Exception(f"DSS run_command failed with message: {result}. \nCommand: {command_string}")
 
 
+@track_timing(timer_stats_collector)
 def get_bus_voltages(voltage_upper_limit=1.05, voltage_lower_limit=0.95, raise_exception=True, **kwargs):
     """This computes per unit voltages for all buses in network
 
@@ -965,6 +944,9 @@ def determine_available_line_upgrades(line_loading_df):
 
 
 def determine_available_xfmr_upgrades(xfmr_loading_df):
+    """This function creates a dataframe of available transformer upgrades by dropping duplicates from transformer dataframe passed.
+    Input dataframe will need to contain "amp_limit_per_phase" column. So if external catalog is supplied, ensure it contains that column.
+    """
     property_list = ['phases', 'windings', 'wdg', 'conn', 'kV', 'kVA',
                      'tap', '%R', 'Rneut', 'Xneut', 'conns', 'kVs', 'kVAs', 'taps', 'XHL', 'XHT',
                      'XLT', 'Xscarray', 'thermal', 'n', 'm', 'flrise', 'hsrise', '%loadloss',
@@ -973,9 +955,8 @@ def determine_available_xfmr_upgrades(xfmr_loading_df):
                      'XfmrCode', 'XRConst', 'X12', 'X13', 'X23', 'LeadLag',
                      'Core', 'RdcOhms', 'normamps', 'emergamps', 'faultrate', 'pctperm',
                      'basefreq', 'amp_limit_per_phase']
-    # TODO 
+    # TODO: can add capability to add "amp_limit_per_phase" column if not present in input dataframe.
     # if 'amp_limit_per_phase' not in xfmr_loading_df.columns:
-        
     xfmr_upgrade_options = xfmr_loading_df[property_list]
     xfmr_upgrade_options = xfmr_upgrade_options.loc[xfmr_upgrade_options.astype(str).drop_duplicates().index]
     xfmr_upgrade_options.reset_index(drop=True, inplace=True)
@@ -1100,6 +1081,7 @@ def create_timepoint_multipliers_dict(timepoint_multipliers):
     return reformatted_dict
 
 
+@track_timing(timer_stats_collector)
 def apply_timepoint_multipliers_dict(reformatted_dict, multiplier_name, property_list=None, field="load_multipliers",
                                      **kwargs):
     """This uses a dictionary with the format of output received from create_timepoint_multipliers_dict
@@ -1118,12 +1100,16 @@ def apply_timepoint_multipliers_dict(reformatted_dict, multiplier_name, property
     if property_list is None:
         property_list = list(reformatted_dict[name_list[0]].keys())
     if field == "load_multipliers":
-        for name in name_list:
-            dss.Loads.Name(name)
+        flag = dss.Loads.First()
+        while flag > 0:
+            flag = dss.Loads.Next()
+            name = dss.Loads.Name()
+            if name not in name_list:  # if load name is not present in dictionary keys, continue
+                continue
             for property in property_list:
                 value = reformatted_dict[name][property][multiplier_name]
                 if property == "kW":
-                     dss.Loads.kW(value)
+                    dss.Loads.kW(value)
                 else:
                     raise Exception(f"Property {property} not defined in multipliers dict")
         circuit_solve_and_check(raise_exception=True, **kwargs)

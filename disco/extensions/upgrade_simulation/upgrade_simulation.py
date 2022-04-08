@@ -11,7 +11,6 @@ from .upgrades.cost_computation import compute_all_costs
 class UpgradeSimulation:
     
     def __init__(self, job, job_global_config, output=OUTPUT_DIR):
-        timer_stats_collector.clear()
         self.job = job
         self.job_global_config = job_global_config
         self.output = output

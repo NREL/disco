@@ -1,9 +1,12 @@
 import time
 from .common_functions import *
+from disco import timer_stats_collector
+from jade.utils.timing_utils import track_timing, Timer
+
 
 logger = logging.getLogger(__name__)
 
-
+@track_timing(timer_stats_collector)
 def correct_line_violations(
     line_loading_df=None,
     line_design_pu=None,
@@ -121,6 +124,7 @@ def correct_line_violations(
     return commands_list, line_upgrades_df
 
 
+@track_timing(timer_stats_collector)
 def identify_parallel_lines(options=None, row=None, parallel_lines_limit=None, **kwargs):
     """This function identifies parallel line solutions, when a direct upgrade solution is not available from catalogue
 
@@ -229,6 +233,7 @@ def define_xfmr_object(xfmr_name='', xfmr_info_series=None, action_type=None, bu
     return command_string
 
 
+@track_timing(timer_stats_collector)
 def correct_xfmr_violations(xfmr_loading_df=None, xfmr_design_pu=None, xfmr_upgrade_options=None,
                             parallel_transformer_limit=None, **kwargs):
     """This function determines transformer upgrades to correct transformer violations.
@@ -276,12 +281,12 @@ def correct_xfmr_violations(xfmr_loading_df=None, xfmr_design_pu=None, xfmr_upgr
                     (chosen_option["amp_limit_per_phase"] <= oversize_limit * row["required_design_amp"]).any():
                 chosen_option = chosen_option.sort_values("amp_limit_per_phase")
                 chosen_option = chosen_option.iloc[0]  # choose lowest available option
-                chosen_option["conns"] = convert_list_string_to_list(chosen_option["conns"])
-                chosen_option["kVs"] = convert_list_string_to_list(chosen_option["kVs"])
+                chosen_option["conns"] = ast.literal_eval(chosen_option["conns"])
+                chosen_option["kVs"] = ast.literal_eval(chosen_option["kVs"])
                 if isinstance(chosen_option["%Rs"], str):
-                    chosen_option["%Rs"] = convert_list_string_to_list(chosen_option["%Rs"])
+                    chosen_option["%Rs"] = ast.literal_eval(chosen_option["%Rs"])
                 if isinstance(chosen_option["kVAs"], str):
-                    chosen_option["kVAs"] = convert_list_string_to_list(chosen_option["kVAs"])
+                    chosen_option["kVAs"] = ast.literal_eval(chosen_option["kVAs"])
                 # edit existing transformer
                 command_string = define_xfmr_object(xfmr_name=row["name"], xfmr_info_series=chosen_option,
                                                     action_type="Edit")
@@ -328,6 +333,7 @@ def correct_xfmr_violations(xfmr_loading_df=None, xfmr_design_pu=None, xfmr_upgr
     return commands_list, xfmr_upgrades_df
 
 
+@track_timing(timer_stats_collector)
 def identify_parallel_xfmrs(options=None, row=None, parallel_transformer_limit=None):
     """This function identifies parallel transformer solutions, when a direct upgrade solution is not available from catalogue
 
@@ -355,12 +361,12 @@ def identify_parallel_xfmrs(options=None, row=None, parallel_transformer_limit=N
     # choose option that has the least value of this metric- since that represents the per unit oversizing
     chosen_option = options.loc[options["choose_parallel_metric"].idxmin()]
     num_parallel_xfmrs = int(chosen_option["num_parallel"])
-    chosen_option["conns"] = convert_list_string_to_list(chosen_option["conns"])
-    chosen_option["kVs"] = convert_list_string_to_list(chosen_option["kVs"])
+    chosen_option["conns"] = ast.literal_eval(chosen_option["conns"])
+    chosen_option["kVs"] = ast.literal_eval(chosen_option["kVs"])
     if isinstance(chosen_option["%Rs"], str):
-                    chosen_option["%Rs"] = convert_list_string_to_list(chosen_option["%Rs"])
+                    chosen_option["%Rs"] = ast.literal_eval(chosen_option["%Rs"])
     if isinstance(chosen_option["kVAs"], str):
-        chosen_option["kVAs"] = convert_list_string_to_list(chosen_option["kVAs"])
+        chosen_option["kVAs"] = ast.literal_eval(chosen_option["kVAs"])
     for xfmr_count in range(0, num_parallel_xfmrs):
         curr_time = str(time.time())
         # the timestamp is added to line name to ensure it is unique

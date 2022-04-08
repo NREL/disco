@@ -7,6 +7,8 @@ from sklearn.cluster import AgglomerativeClustering
 
 from .common_functions import *
 from .thermal_upgrade_functions import define_xfmr_object
+from disco import timer_stats_collector
+from jade.utils.timing_utils import track_timing, Timer
 
 logger = logging.getLogger(__name__)
 
@@ -116,11 +118,12 @@ def correct_capacitor_parameters(default_capacitor_settings=None, orig_capacitor
     return capacitors_commands_list
 
 
-# This function increases differences between cap ON and OFF voltages in user defined increments,
-#  default 1 volt, until upper and lower bounds are reached.
+@track_timing(timer_stats_collector)
 def sweep_capacitor_settings(voltage_config=None, initial_capacitors_df=None, default_capacitor_settings=None, voltage_upper_limit=None,
                              voltage_lower_limit=None, **kwargs):
-    """This function sweeps through capacitor settings and returns dataframe of severity metrics for all the sweeps of capacitor controls with best settings
+    """This function sweeps through capacitor settings and returns dataframe of severity metrics for all the sweeps of capacitor controls with best settings.
+       This function increases differences between cap ON and OFF voltages in user defined increments,
+       default 1 volt, until upper and lower bounds are reached.
 
     Parameters
     ----------
@@ -202,7 +205,7 @@ def choose_best_capacitor_sweep_setting(capacitor_sweep_df=None, initial_capacit
     deciding_field = 'deviation_severity'
     min_severity_setting = capacitor_sweep_df.loc[capacitor_sweep_df[deciding_field].idxmin()]
     setting_type = ''
-    # if min severity is greater than or same as that of original setting,
+    # if min severity is greater than or same as severity of original setting,
     # then just assign original setting as min_severity_setting
     if min_severity_setting[deciding_field] >= original_setting[deciding_field]:
         capacitors_df = initial_capacitors_df.copy()  # here best_setting is initial settings
@@ -211,9 +214,7 @@ def choose_best_capacitor_sweep_setting(capacitor_sweep_df=None, initial_capacit
     else:
         # apply same best setting to all capacitors
         capacitors_df = initial_capacitors_df.copy()
-        # capacitors_df['ONsetting'] = min_severity_setting['ONsetting']
         capacitors_df['ONsetting'] = min_severity_setting['cap_on_setting']
-        # capacitors_df['OFFsetting'] = min_severity_setting['OFFsetting']
         capacitors_df['OFFsetting'] = min_severity_setting['cap_off_setting']
     properties_list = ["ONsetting", "OFFsetting"]  # list of properties to be edited in commands
     capacitor_settings_commands_list = create_capcontrol_settings_commands(properties_list=properties_list,
@@ -302,6 +303,7 @@ def correct_regcontrol_parameters(orig_regcontrols_df=None, **kwargs):
     return regcontrols_commands_list
 
 
+@track_timing(timer_stats_collector)
 def sweep_regcontrol_settings(voltage_config=None, initial_regcontrols_df=None, voltage_upper_limit=None, voltage_lower_limit=None,
                               exclude_sub_ltc=True, only_sub_ltc=False, **kwargs):
     """This function increases differences vreg in user defined increments, until upper and lower bounds are reached.
@@ -467,9 +469,9 @@ def add_new_regcontrol_command(xfmr_info_series=None, default_regcontrol_setting
     # If the winding is Wye, the line-to-neutral voltage is used to compute PTratio.
     # Else, the line-to-line voltage is used.
     if type(xfmr_info_series['kVs']) == str:
-        xfmr_info_series['kVs'] = convert_list_string_to_list(xfmr_info_series['kVs'])
+        xfmr_info_series['kVs'] = ast.literal_eval(xfmr_info_series['kVs'])
     if xfmr_info_series['conns'] == str:
-        xfmr_info_series['conns'] = convert_list_string_to_list(xfmr_info_series['conns'])
+        xfmr_info_series['conns'] = ast.literal_eval(xfmr_info_series['conns'])
     sec_conn = xfmr_info_series['conns'][-1]
     if sec_conn.lower() == 'wye':
         sec_voltage = xfmr_info_series['kVs'][-1] / (math.sqrt(3))
@@ -1190,6 +1192,7 @@ def cluster_and_place_regulator(G=None, square_distance_df=None, buses_with_viol
     return cluster_group_info_dict
 
 
+@track_timing(timer_stats_collector)
 def determine_new_regulator_location(max_regs=2, circuit_source=None, buses_with_violations=None,
                                      voltage_upper_limit=None, voltage_lower_limit=None, create_plot=False, voltage_config=None,
                                      default_regcontrol_settings=None, **kwargs):

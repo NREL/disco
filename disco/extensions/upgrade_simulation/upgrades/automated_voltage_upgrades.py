@@ -4,6 +4,7 @@ import os
 import time
 
 from jade.utils.timing_utils import track_timing, Timer
+from jade.utils.utils import load_data, dump_data
 
 from .fixed_upgrade_parameters import (
     DEFAULT_CAPACITOR_SETTINGS,
@@ -125,7 +126,7 @@ def determine_voltage_upgrades(
     )
     temp_results = dict(initial_results)
     output_results = [temp_results]
-    write_to_json(output_results, voltage_summary_file)
+    dump_data(output_results, voltage_summary_file, indent=4)
     # if there are no buses with violations based on initial check, don't get into upgrade process
     # directly go to end of file
     if len(initial_buses_with_violations) <= 0:
@@ -310,11 +311,11 @@ def determine_voltage_upgrades(
     reload_dss_circuit(dss_file_list=[master_path, thermal_upgrades_dss_filepath, voltage_upgrades_dss_filepath],
                        commands_list=None, **simulation_params)
     if os.path.exists(feeder_stats_json_file):
-        feeder_stats = read_json_as_dict(feeder_stats_json_file)
+        feeder_stats = load_data(feeder_stats_json_file)
     else:
         feeder_stats = {}
     feeder_stats["after_upgrades"] = get_feeder_stats(dss)
-    write_to_json(feeder_stats, feeder_stats_json_file)
+    dump_data(feeder_stats, feeder_stats_json_file, indent=4)
     # reading new objects (after upgrades)
     new_ckt_info = get_circuit_info()
     new_xfmrs_df = get_thermal_equipment_info(compute_loading=False, equipment_type="transformer")
@@ -332,7 +333,7 @@ def determine_voltage_upgrades(
         processed_df[['equipment_type', 'name']] = processed_df['temp'].str.split('.', expand=True)
     processed_df = processed_df.set_index(['equipment_type', 'name']).reset_index()
     del processed_df["temp"]
-    write_to_json(processed_df.to_dict('records'), output_json_voltage_upgrades_filepath)
+    dump_data(processed_df.to_dict('records'), output_json_voltage_upgrades_filepath, indent=4)
     bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
         voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
     
@@ -372,5 +373,5 @@ def determine_voltage_upgrades(
     )
     temp_results = dict(final_results)
     output_results.append(temp_results)
-    write_to_json(output_results, voltage_summary_file)
+    dump_data(output_results, voltage_summary_file, indent=4)
     

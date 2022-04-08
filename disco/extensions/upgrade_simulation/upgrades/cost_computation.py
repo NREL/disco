@@ -2,10 +2,9 @@ import logging
 import pandas as pd
 
 from jade.utils.timing_utils import track_timing, Timer
+from jade.utils.utils import load_data, dump_data
 
-from disco.extensions.upgrade_simulation.upgrades.common_functions import convert_list_string_to_list, read_json_as_dict
 from disco import timer_stats_collector
-from .common_functions import write_to_json
 
 logger = logging.getLogger(__name__)
 
@@ -22,9 +21,9 @@ def compute_all_costs(
 ):
     # upgrades files
     # TODO add except statement for FileNotFoundError
-    xfmr_upgrades_df = pd.DataFrame(read_json_as_dict(output_json_xfmr_upgrades_filepath))
-    line_upgrades_df = pd.DataFrame(read_json_as_dict(output_json_line_upgrades_filepath))
-    voltage_upgrades_df = pd.DataFrame(read_json_as_dict(output_json_voltage_upgrades_filepath))
+    xfmr_upgrades_df = pd.DataFrame(load_data(output_json_xfmr_upgrades_filepath))
+    line_upgrades_df = pd.DataFrame(load_data(output_json_line_upgrades_filepath))
+    voltage_upgrades_df = pd.DataFrame(load_data(output_json_voltage_upgrades_filepath))
 
     # unit cost database files
     xfmr_cost_database = pd.read_excel(cost_database_filepath, "transformers")
@@ -76,9 +75,9 @@ def compute_all_costs(
     total_cost_df = get_total_costs(thermal_cost_df, voltage_cost_df)
 
     # save output files
-    write_to_json(thermal_cost_df.to_dict('records'), thermal_cost_output_filepath)
-    write_to_json(voltage_cost_df.to_dict('records'), voltage_cost_output_filepath)
-    write_to_json(total_cost_df.to_dict('records'), total_cost_output_filepath)
+    dump_data(thermal_cost_df.to_dict('records'), thermal_cost_output_filepath, indent=4)
+    dump_data(voltage_cost_df.to_dict('records'), voltage_cost_output_filepath, indent=4)
+    dump_data(total_cost_df.to_dict('records'), total_cost_output_filepath, indent=4)
 
 
 def compute_transformer_costs(xfmr_upgrades_df=None, xfmr_cost_database=None, **kwargs):
