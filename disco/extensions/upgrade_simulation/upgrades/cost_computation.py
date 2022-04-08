@@ -49,7 +49,7 @@ def compute_all_costs(
             misc_database=misc_database,
         )
     else:
-        xfmr_cost_df = pd.DataFrame(columns=output_columns)
+        xfmr_cost_df = pd.DataFrame(columns=output_columns).astype({"count": int, "total_cost_usd": float})
 
     if not line_upgrades_df.empty:
         line_upgrades_df, line_cost_database = reformat_line_files(
@@ -59,7 +59,7 @@ def compute_all_costs(
             line_upgrades_df=line_upgrades_df, line_cost_database=line_cost_database
         )
     else:
-        line_cost_df = pd.DataFrame(columns=output_columns)
+        line_cost_df = pd.DataFrame(columns=output_columns).astype({"count": int, "total_cost_usd": float})
 
     thermal_cost_df = xfmr_cost_df.append(line_cost_df)
 
@@ -71,7 +71,7 @@ def compute_all_costs(
                                                     controls_cost_database=controls_cost_database)
         voltage_cost_df = cap_cost_df.append(reg_cost_df)
     else:
-        voltage_cost_df = pd.DataFrame(columns=output_columns)
+        voltage_cost_df = pd.DataFrame(columns=output_columns).astype({"count": int, "total_cost_usd": float})
 
     total_cost_df = get_total_costs(thermal_cost_df, voltage_cost_df)
 

@@ -1,36 +1,26 @@
-import copy
 import logging
 import os
 
-from PyDSS.common import ControllerType
 from jade.utils.utils import load_data
 
-import disco
 from disco.pydss.common import ConfigType
 from disco.extensions.upgrade_simulation.upgrade_inputs import UpgradeInputs
 from disco.pydss.pydss_configuration_base import PyDssConfigurationBase
 
-
 logger = logging.getLogger(__name__)
 
 
-DEFAULT_CONTROLLER_CONFIG_FILE = os.path.join(
-    os.path.dirname(getattr(disco, "__path__")[0]), "disco", "pydss",
-    "config", "pv_controllers.toml"
+DEFAULT_UPGRADE_COST_DB_FILE = os.path.join(
+    os.path.dirname(__file__),
+    "upgrades",
+    "Generic_DISCO_cost_database_v2.xlsx"
 )
 
-DEFAULT_PYDSS_CONFIG = {
-    ConfigType.SIMULATION_CONFIG: {
-        "default": {"enable_pydss_solve": True}
-    },
-    ConfigType.CONTROLLER_CONFIG: [
-        {
-            "controller_type": ControllerType.PV_CONTROLLER.value,
-            "name": "volt_var_upgrade",
-            "filename": DEFAULT_CONTROLLER_CONFIG_FILE
-        }
-    ]
-}
+DEFAULT_UPGRADE_PARAMS_FILE = os.path.join(
+    os.path.dirname(__file__),
+    "upgrades",
+    "upgrade_parameters.toml"
+)
 
 
 class UpgradeConfiguration(PyDssConfigurationBase):
@@ -66,9 +56,8 @@ class UpgradeConfiguration(PyDssConfigurationBase):
         dict
 
         """
-        config_types = [ConfigType.SIMULATION_CONFIG, ConfigType.CONTROLLER_CONFIG]
-        config = {k: copy.deepcopy(DEFAULT_PYDSS_CONFIG[k]) for k in config_types}
-        return config
+        # this method not in use, simply return an empty dict.
+        return {}
 
     def enable_pydss_solve(self, value: bool):
         self._pydss_inputs[ConfigType.SIMULATION_CONFIG]["default"]["enable_pydss_solve"] = value

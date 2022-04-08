@@ -1,17 +1,20 @@
 import logging
-import os
 
 import click
 from jade.common import CONFIG_FILE
 from jade.loggers import setup_logging
 from jade.utils.utils import load_data
 
-from disco.extensions.upgrade_simulation.upgrades.common_functions import (
-    get_default_upgrade_params_file,
-    get_default_upgrade_cost_database
-)
 from disco.extensions.upgrade_simulation.upgrade_inputs import UpgradeInputs
-from disco.extensions.upgrade_simulation.upgrade_configuration import UpgradeConfiguration
+from disco.extensions.upgrade_simulation.upgrade_configuration import (
+    UpgradeConfiguration,
+    DEFAULT_UPGRADE_COST_DB_FILE,
+    DEFAULT_UPGRADE_PARAMS_FILE
+)
+from disco.models.upgrade_cost_analysis_generic_model import (
+    ThermalUpgradeParamsModel,
+    VoltageUpgradeParamsModel
+)
 
 logger = logging.getLogger(__name__)
 
@@ -21,15 +24,15 @@ logger = logging.getLogger(__name__)
 @click.option(
     "-d", "--cost-database",
     type=click.Path(exists=True),
-    default=get_default_upgrade_cost_database(),
+    default=DEFAULT_UPGRADE_COST_DB_FILE,
     show_default=True,
     help="The unit cost database spreadsheet."
 )
 @click.option(
     "-p", "--params-file",
-    type=click.Path(),
+    type=click.Path(exists=True),
     required=False,
-    default="upgrade-parameters.toml",
+    default=DEFAULT_UPGRADE_PARAMS_FILE,
     show_default=True,
     help="Upgrade parameters file."
 )
@@ -57,13 +60,19 @@ def upgrade(
     level = logging.DEBUG if verbose else logging.INFO
     setup_logging(__name__, None, console_level=level)
 
-    if not os.path.exists(params_file):
-        logger.info("Applied default upgrade parameters, %s", params_file)
-        params_file = get_default_upgrade_params_file(params_file)
+    params = load_data(params_file)
+    thermal_upgrade_params = ThermalUpgradeParamsModel(**params["thermal_upgrade_params"]).dict()
+    voltage_upgrade_params = VoltageUpgradeParamsModel(**params["voltage_upgrade_params"]).dict()
+    upgrade_simulation_params = params["upgrade_simulation_params"]
+
+    job_global_config = {
+        "upgrade_cost_database": cost_database,
+        "thermal_upgrade_params": thermal_upgrade_params,
+        "voltage_upgrade_params": voltage_upgrade_params,
+        "upgrade_simulation_params": upgrade_simulation_params
+    }
 
     inputs = UpgradeInputs(inputs)
-    job_global_config = load_data(params_file)
-    job_global_config["upgrade_cost_database"] = cost_database
     config = UpgradeConfiguration.auto_config(
         inputs=inputs,
         job_global_config=job_global_config
