@@ -35,6 +35,31 @@ With the transformed model, create the `config.json` file with submittable jobs.
 
     $ disco config upgrade upgrade-models
 
+Here, DISCO would default upgrade parameters if this option ``--params-file`` is not specified,
+where these parameters are all required. You could customize the parameter values based on project
+requirements. Except for the required ones, there are also optional parameters which could be
+provided to control the upgrade simulations, the optional parameters include the followings,
+
+.. code-block::
+
+    [thermal_upgrade_params]
+    parallel_transformer_limit = 4
+    parallel_lines_limit = 4
+    upgrade_iteration_threshold = 5
+    timepoint_multipliers = {}
+
+    [voltage_upgrade_params]
+    capacitor_sweep_voltage_gap = 1.0
+    reg_control_bands = [1, 2]
+    reg_v_delta = 0.5
+    max_regulators = 4
+    place_new_regulators = false
+    use_ltc_placement = false
+    timepoint_multipliers = {}
+    capacitor_action_flag = true
+    existing_regulator_sweep_action = true
+
+
 **3. Submit Jobs**
 
 Submit jobs by using JADE and conduct upgrade cost analysis within each job. Here, we assume

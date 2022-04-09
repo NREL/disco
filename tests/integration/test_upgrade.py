@@ -9,7 +9,7 @@ from tests.common import *
 
 def test_upgrade(cleanup):
     transform_cmd = f"{TRANSFORM_MODEL}  tests/data/smart-ds/substations upgrade -x -F -o {MODELS_DIR}"
-    config_cmd = f"{CONFIG_JOBS} upgrade {MODELS_DIR} -p {UPGRADE_PARAMETERS} -c {CONFIG_FILE}"
+    config_cmd = f"{CONFIG_JOBS} upgrade {MODELS_DIR} -c {CONFIG_FILE}"
     submit_cmd = f"{SUBMIT_JOBS} {CONFIG_FILE} --output={OUTPUT}"
 
     # Run simulation

@@ -8,8 +8,12 @@ from jade.utils.utils import load_data
 from PyDSS.controllers import PvControllerModel
 from disco.models.base import BaseAnalysisModel
 
+from disco.extensions.upgrade_simulation.upgrade_configuration import DEFAULT_UPGRADE_PARAMS_FILE
 
 logger = logging.getLogger(__name__)
+DEFAULT_UPGRADE_PARAMS = load_data(DEFAULT_UPGRADE_PARAMS_FILE)
+DEFAULT_THERMAL_UPGRADE_PARAMS = DEFAULT_UPGRADE_PARAMS["thermal_upgrade_params"]
+DEFAULT_VOLTAGE_UPGRADE_PARAMS = DEFAULT_UPGRADE_PARAMS["voltage_upgrade_params"]
 
 
 class UpgradeParamsBaseModel(BaseModel):
@@ -27,50 +31,60 @@ class UpgradeParamsBaseModel(BaseModel):
 class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
     """Thermal Upgrade Parameters for all jobs in a simulation"""
 
-    xfmr_upper_limit: float = Field(
-        title="xfmr_upper_limit",
-        description="Transformer upper limit",
-        default=1.25,
+    # Required fields
+    transformer_upper_limit: float = Field(
+        title="transformer_upper_limit",
+        description="Transformer upper limit in per unit (example: 1.25)",
     )
     line_upper_limit: float = Field(
         title="line_upper_limit",
-        description="Line upper limit",
-        default=1.25,
+        description="Line upper limit in per unit (example: 1.25)",
     )
     line_design_pu: float = Field(
         title="line_design_pu",
-        description="Line design P.U.",
-        default=0.75,
+        description="Line design in per unit (example: 0.75)",
     )
-    xfmr_design_pu: float = Field(
-        title="xfmr_design_pu",
-        description="Transformer design P.U.",
-        default=0.75,
+    transformer_design_pu: float = Field(
+        title="transformer_design_pu",
+        description="Transformer design in per unit (example: 0.75)",
     )
     voltage_upper_limit: float = Field(
         title="voltage_upper_limit",
-        description="Voltage upper limit",
-        default=1.05,
+        description="Voltage upper limit in per unit (example: 1.05)",
     )
     voltage_lower_limit: float = Field(
         title="voltage_lower_limit",
-        description="Voltage lower limit",
-        default=0.95,
+        description="Voltage lower limit in per unit (example: 0.95)",
     )
-    parallel_xfmrs_limit: int = Field(
-        title="parallel_xfmrs_limit",
+    read_external_catalog: bool = Field(
+        title="read_external_catalog",
+        description="Flag to determine whether external catalog is to be used (example: False)",
+    )
+    external_catalog: str = Field(
+        title="external_catalog",
+        description="Location to external upgrades technical catalog json file",
+    )
+
+    # Optional fields
+    parallel_transformer_limit: Optional[int] = Field(
+        title="parallel_transformer_limit",
         description="Parallel transformer limit",
         default=4
     )
-    parallel_lines_limit: int = Field(
+    parallel_lines_limit: Optional[int] = Field(
         title="parallel_lines_limit",
         description="Parallel lines limit",
         default=4
     )
-    upgrade_iteration_threshold: int = Field(
+    upgrade_iteration_threshold: Optional[int] = Field(
         title="upgrade_iteration_threshold",
         description="Upgrade iteration threshold",
         default=5
+    )
+    timepoint_multipliers: Optional[dict] = Field(
+        title="timepoint_multipliers",
+        description="Dictionary to provide timepoint multipliers",
+        default=None
     )
 
 
@@ -80,59 +94,42 @@ class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
 class VoltageUpgradeParamsModel(UpgradeParamsBaseModel):
     """Voltage Upgrade Parameters for all jobs in a simulation"""
 
+    # Required fields
     initial_upper_limit: float = Field(
         title="initial_upper_limit",
-        description="Initial upper limit",
-        default=1.05,
+        description="Initial upper limit in per unit (example: 1.05)",
     )
     initial_lower_limit: float = Field(
         title="initial_lower_limit",
-        description="Initial lower limit",
-        default=0.95,
+        description="Initial lower limit in per unit (example: 0.95)",
     )
     final_upper_limit: float = Field(
         title="final_upper_limit",
-        description="Final upper limit",
-        default=1.05,
+        description="Final upper limit in per unit (example: 1.05)",
     )
     final_lower_limit: float = Field(
         title="final_lower_limit",
-        description="Final lower limit",
-        default=0.95,
-    )
-    target_v: float = Field(
-        title="target_v",
-        description="Target voltage",
-        default=1.0,
+        description="Final lower limit in per unit (example: 0.95)",
     )
     nominal_voltage: float = Field(
         title="nominal_voltage",
-        description="Nominal voltage",
-        default=120.0,
+        description="Nominal voltage (volts) (example: 120)",
     )
-    nominal_pu_voltage: float = Field(
-        title="nominal_voltage",
-        description="Nominal voltage",
-        default=1.0,
-    )
-    tps_to_test: List[Any] = Field(
-        title="tps_to_test",
-        description="TPS to test",
-        default=[],
-    )
+
+    # Optional fields
     capacitor_sweep_voltage_gap: float = Field(
         title="capacitor_sweep_voltage_gap",
-        description="Capacitor swee voltage gap",
+        description="Capacitor sweep voltage gap (example: 1)",
         default=1.0,
     )
     reg_control_bands: List[int] = Field(
         title="reg_control_bands",
-        description="Regulator control bands",
+        description="Regulator control bands (example: [1, 2])",
         default=[1, 2],
     )
     reg_v_delta: float = Field(
         title="reg_v_delta",
-        description="Regulator voltage delta",
+        description="Regulator voltage delta (example: 0.5)",
         default=0.5,
     )
     max_regulators: int = Field(
@@ -149,6 +146,11 @@ class VoltageUpgradeParamsModel(UpgradeParamsBaseModel):
         title="use_ltc_placement",
         description="Use LTC placement",
         default=False,
+    )
+    timepoint_multipliers: dict = Field(
+        title="timepoint_multipliers",
+        description="Dictionary containing timepoint multipliers. Format: {'load_multipliers': {'with_pv': [1.2, 1], 'without_pv': [0.3]}}",
+        default=None
     )
     capacitor_action_flag: bool = Field(
         title="capacitor_action_flag",
@@ -208,8 +210,12 @@ class UpgradeCostAnalysisSimulationModel(BaseModel):
         extra = "forbid"
         use_enum_values = False
 
-    thermal_upgrade_params: ThermalUpgradeParamsModel = Field(default=ThermalUpgradeParamsModel())
-    voltage_upgrade_params: VoltageUpgradeParamsModel = Field(default=VoltageUpgradeParamsModel())
+    thermal_upgrade_params: ThermalUpgradeParamsModel = Field(
+        default=ThermalUpgradeParamsModel(**DEFAULT_THERMAL_UPGRADE_PARAMS)
+    )
+    voltage_upgrade_params: VoltageUpgradeParamsModel = Field(
+        default=VoltageUpgradeParamsModel(**DEFAULT_VOLTAGE_UPGRADE_PARAMS)
+    )
     upgrade_cost_database: str = Field(
         title="upgrade_cost_database",
         description="Database containing costs for each equipment type",
@@ -282,22 +288,34 @@ class UpgradeResultModel(UpgradeParamsBaseModel):
         title="upgrade_type",
         description="Type of upgrade: thermal or voltage",
     )
-    max_voltage_on_any_bus: float = Field(
-        title="max_voltage_on_any_bus",
+    simulation_time_s: float = Field(
+        title="simulation_time_s",
+        description="Simulation time to perform upgrades (seconds)",
+    )
+    thermal_violations_present: bool = Field(
+        title="thermal_violations_present",
+        description="Flag indicating whether thermal violations are present",
+    )
+    voltage_violations_present: bool = Field(
+        title="voltage_violations_present",
+        description="Flag indicating whether voltage violations are present",
+    )
+    max_bus_voltage: float = Field(
+        title="max_bus_voltage",
         description="Max voltage recorded on any bus",
         units="pu",
     )
-    min_voltage_on_any_bus: float = Field(
-        title="min_voltage_on_any_bus",
+    min_bus_voltage: float = Field(
+        title="min_bus_voltage",
         description="Max voltage recorded on any bus",
         units="pu",
     )
-    num_of_buses_with_voltage_violations: int = Field(
-        title="num_of_buses_with_voltage_violations",
+    num_of_voltage_violation_buses: int = Field(
+        title="num_of_voltage_violation_buses",
         description="Number of buses with voltage violations",
     )
-    num_of_overvoltage_violations_buses_above_voltage_upper_limit: int = Field(
-        title="num_of_overvoltage_violations_buses_above_voltage_upper_limit",
+    num_of_overvoltage_violation_buses: int = Field(
+        title="num_of_overvoltage_violation_buses",
         description="Number of violations with buses above voltage_upper_limit",
     )
     voltage_upper_limit: float = Field(
@@ -305,8 +323,8 @@ class UpgradeResultModel(UpgradeParamsBaseModel):
         description="Voltage upper limit",
         units="pu",
     )
-    num_of_undervoltage_violations_buses_below_voltage_lower_limit: int = Field(
-        title="num_of_undervoltage_violations_buses_below_voltage_lower_limit",
+    num_of_undervoltage_violation_buses: int = Field(
+        title="num_of_undervoltage_violation_buses",
         description="Number of violations with buses below voltage_lower_limit",
     )
     voltage_lower_limit: float = Field(
@@ -319,27 +337,27 @@ class UpgradeResultModel(UpgradeParamsBaseModel):
         description="Maximum line loading",
         units="pu",
     )
-    max_xfmr_loading: float = Field(
-        title="max_xfmr_loading",
+    max_transformer_loading: float = Field(
+        title="max_transformer_loading",
         description="Maximum transformer loading",
         units="pu",
     )
-    num_of_lines_with_violations_above_line_upper_limit: int = Field(
-        title="num_of_lines_with_violations_above_line_upper_limit",
-        description="Number of lines with violations above upper limit",
+    num_of_line_violations: int = Field(
+        title="num_of_line_violations",
+        description="Number of lines with violations above line upper limit",
     )
     line_upper_limit: float = Field(
         title="line_upper_limit",
         description="Line upper limit",
         units="pu",
     )
-    num_of_xfmrs_with_violations_above_xfmr_upper_limit: int = Field(
-        title="num_of_xfmrs_with_violations_above_xfmr_upper_limit",
-        description="Number of transformers with violations above upper limit",
+    num_of_transformer_violations: int = Field(
+        title="num_of_transformer_violations",
+        description="Number of transformers with violations above transformer upper limit",
     )
-    xfmr_upper_limit: float = Field(
-        title="xfmr_upper_limit",
-        description="xfmr upper limit",
+    transformer_upper_limit: float = Field(
+        title="transformer_upper_limit",
+        description="Transformer upper limit",
         units="pu",
     )
 
@@ -363,13 +381,6 @@ class EquipmentTypeUpgradeCostsModel(UpgradeParamsBaseModel):
         title="total_cost_usd",
         description="Total cost in US dollars",
         units="dollars",
-    )
-    # TODO: The comment field may be split into multiple fields.
-    comment: str = Field(
-        title="comment",
-        description="If the exact unit cost is not available for an equipment, unit cost for "
-            "the closest rated equipement will be considered for the upgrade cost computation. "
-            "This field will document which unit cost was considered.",
     )
 
 

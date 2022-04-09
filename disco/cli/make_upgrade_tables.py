@@ -1,6 +1,7 @@
 """Make new upgrade cost analysis tables for all jobs in a batch."""
 
 import csv
+import json
 import itertools
 import logging
 from collections import namedtuple
@@ -79,7 +80,9 @@ def get_upgrade_summary_table(job_path, job_info):
             return []
         
         try:
-            df = pd.read_csv(upgrade_summary_file)
+            with open(upgrade_summary_file) as json_file:
+                data = json.load(json_file)
+            df = pd.DataFrame(data)
         except pd.errors.EmptyDataError:
             logger.exception("Failed to parse upgrade summary file - '%s'", upgrade_summary_file)
             return []
@@ -95,22 +98,24 @@ def get_upgrade_summary_table(job_path, job_info):
 
     upgrade_summary = []
 
-    thermal_upgrade_summary_file = job_path / "ThermalUpgrades" / "thermal_summary.csv"
+    thermal_upgrade_summary_file = job_path / "ThermalUpgrades" / "thermal_summary.json"
     upgrade_summary.extend(_get_upgrade_summary("thermal", thermal_upgrade_summary_file))
 
-    voltage_upgrade_summary_file = job_path / "VoltageUpgrades" / "voltage_summary.csv"
+    voltage_upgrade_summary_file = job_path / "VoltageUpgrades" / "voltage_summary.json"
     upgrade_summary.extend(_get_upgrade_summary("voltage", voltage_upgrade_summary_file))
 
     return upgrade_summary
 
 
 def get_total_upgrade_costs_table(job_path, job_info):
-    total_upgrade_costs_file = job_path / "UpgradeCosts" / "total_upgrade_costs.csv"
+    total_upgrade_costs_file = job_path / "UpgradeCosts" / "total_upgrade_costs.json"
     if not total_upgrade_costs_file.exists():
         return []
     
     try:
-        df = pd.read_csv(total_upgrade_costs_file)
+        with open(total_upgrade_costs_file) as json_file:
+            data = json.load(json_file)
+        df = pd.DataFrame(data)
     except pd.errors.EmptyDataError:
         logger.exception("Failed to parse total upgrade costs file - '%s'", total_upgrade_costs_file)
         return []
