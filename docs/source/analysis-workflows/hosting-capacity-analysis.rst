@@ -33,6 +33,10 @@ Check the ``--help`` option for creating pipeline template.
                                       pipeline-template.toml]
       -r, --reports-filename TEXT     PyDSS report options. If None, use the
                                       default for the simulation type.
+      -D, --database PATH             The path of new or existing SQLite database
+                                      [default: results.sqlite]
+      -l, --local                     Run in local mode (non-HPC).  [default:
+                                      False]
       --help                          Show this message and exit.
 
 

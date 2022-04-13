@@ -25,7 +25,12 @@ def check_hpc_config(template_file):
         except KeyError:
             continue
         
-        hpc_config_file = submitter_params.get("hpc_config", None)
+        hpc_config =  submitter_params.get("hpc_config")
+        if isinstance(hpc_config, dict) and hpc_config["hpc_type"] == "local":
+            return
+
+        assert isinstance(hpc_config, str)
+        hpc_config_file = hpc_config
         if not hpc_config_file or not os.path.exists(hpc_config_file):
             print(f"{hpc_config_file} does not exist, please run 'jade config hpc' to create.")
             sys.exit(1)

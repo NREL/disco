@@ -4,7 +4,11 @@ import sys
 
 import click
 
-from jade.models import SingularityParams
+from jade.models import (
+    HpcConfig,
+    LocalHpcConfig,
+    SingularityParams,
+)
 from jade.utils.utils import dump_data, load_data
 
 from disco.enums import SimulationType
@@ -151,6 +155,14 @@ def create_pipeline():
     show_default=True,
     help="The path of new or existing SQLite database"
 )
+@click.option(
+    "-l",
+    "--local",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Run in local mode (non-HPC)."
+)
 def template(
     inputs,
     task_name,
@@ -168,7 +180,8 @@ def template(
     reports_filename,
     enable_singularity,
     container,
-    database
+    database,
+    local,
 ):
     """Create pipeline template file"""
     if hosting_capacity and impact_analysis:
@@ -259,6 +272,14 @@ def template(
         for section in template.data.values():
             if isinstance(section, dict) and "submitter-params" in section:
                 section["submitter-params"]["singularity_params"] = singularity_params.dict()
+
+    if local:
+        for section in template.data.values():
+            if isinstance(section, dict) and "submitter-params" in section:
+                hpc_config = HpcConfig(hpc_type="local", hpc=LocalHpcConfig())
+                section["submitter-params"]["hpc_config"] = hpc_config.dict()
+                type_val = hpc_config.hpc_type.value
+                section["submitter-params"]["hpc_config"]["hpc_type"] = type_val
 
     dump_data(template.data, filename=template_file)
     print(f"Pipeline template file created - {template_file}")
