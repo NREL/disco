@@ -214,6 +214,33 @@ CREATE TEMP VIEW hc_max AS
     GROUP BY feeder
     ;
 
+-- Create a table with worst-case values.
+DROP VIEW IF EXISTS worst_case;
+CREATE TEMP VIEW worst_case AS
+    SELECT
+        feeder
+        ,sample
+        ,penetration_level
+        ,transformer_instantaneous_threshold
+        {{#thermal}}
+        ,MAX(line_max_instantaneous_loading_pct) as line_max_instantaneous_loading_pct_overall
+        ,MAX(line_max_moving_average_loading_pct) as line_max_moving_average_loading_pct_overall
+        ,MAX(line_num_time_points_with_instantaneous_violations) as line_num_time_points_with_instantaneous_violations_overall
+        ,MAX(line_num_time_points_with_moving_average_violations) as line_num_time_points_with_moving_average_violations_overall
+        ,MAX(transformer_max_instantaneous_loading_pct) as transformer_max_instantaneous_loading_pct_overall
+        ,MAX(transformer_max_moving_average_loading_pct) as transformer_max_moving_average_loading_pct_overall
+        ,MAX(transformer_num_time_points_with_instantaneous_violations) as transformer_num_time_points_with_instantaneous_violations_overall
+        ,MAX(transformer_num_time_points_with_moving_average_violations) as transformer_num_time_points_with_moving_average_violations_overall
+        {{/thermal}}
+        {{#voltage}}
+        ,MIN(min_voltage) AS min_voltage_overall
+        ,MAX(max_voltage) AS max_voltage_overall
+        ,MAX(num_nodes_any_outside_ansi_b) as num_nodes_any_outside_ansi_b_overall
+        ,MAX(num_time_points_with_ansi_b_violations) as num_time_points_with_ansi_b_violations_overall
+        {{/voltage}}
+        FROM jt
+        GROUP BY feeder, sample, penetration_level, transformer_instantaneous_threshold;
+
 -- Create a table showing hosting capacity by feeder and sample.
 DROP VIEW IF EXISTS hc_by_sample;
 CREATE TEMP VIEW hc_by_sample AS
@@ -222,25 +249,25 @@ CREATE TEMP VIEW hc_by_sample AS
         ,sample
         --,pv_distance
         ,MAX(penetration_level) AS max_passing_penetration_level
-        FROM jt
+        FROM worst_case
         WHERE
             true
             {{#thermal}}
             AND
             (
-                line_max_instantaneous_loading_pct <= {{thermal.line_max_instantaneous_loading_pct}}
-                AND line_max_moving_average_loading_pct <= {{thermal.line_max_moving_average_loading_pct}}
-                AND line_num_time_points_with_instantaneous_violations <= {{thermal.line_num_time_points_with_instantaneous_violations}}
-                AND line_num_time_points_with_moving_average_violations <= {{thermal.line_num_time_points_with_moving_average_violations}}
+                line_max_instantaneous_loading_pct_overall <= {{thermal.line_max_instantaneous_loading_pct}}
+                AND line_max_moving_average_loading_pct_overall <= {{thermal.line_max_moving_average_loading_pct}}
+                AND line_num_time_points_with_instantaneous_violations_overall <= {{thermal.line_num_time_points_with_instantaneous_violations}}
+                AND line_num_time_points_with_moving_average_violations_overall <= {{thermal.line_num_time_points_with_moving_average_violations}}
                 AND
                 (
                     transformer_instantaneous_threshold IS NULL
                     OR
                     (
-                        transformer_max_instantaneous_loading_pct <= {{thermal.transformer_max_instantaneous_loading_pct}}
-                        AND transformer_max_moving_average_loading_pct <= {{thermal.transformer_max_moving_average_loading_pct}}
-                        AND transformer_num_time_points_with_instantaneous_violations <= {{thermal.transformer_num_time_points_with_instantaneous_violations}}
-                        AND transformer_num_time_points_with_moving_average_violations <= {{thermal.transformer_num_time_points_with_moving_average_violations}}
+                        transformer_max_instantaneous_loading_pct_overall <= {{thermal.transformer_max_instantaneous_loading_pct}}
+                        AND transformer_max_moving_average_loading_pct_overall <= {{thermal.transformer_max_moving_average_loading_pct}}
+                        AND transformer_num_time_points_with_instantaneous_violations_overall <= {{thermal.transformer_num_time_points_with_instantaneous_violations}}
+                        AND transformer_num_time_points_with_moving_average_violations_overall <= {{thermal.transformer_num_time_points_with_moving_average_violations}}
                     )
                 )
             )
@@ -248,10 +275,10 @@ CREATE TEMP VIEW hc_by_sample AS
             {{#voltage}}
             AND
             (
-                min_voltage >= {{voltage.min_voltage}}
-                AND max_voltage <= {{voltage.max_voltage}}
-                AND num_nodes_any_outside_ansi_b <= {{voltage.num_nodes_any_outside_ansi_b}}
-                AND num_time_points_with_ansi_b_violations <= {{voltage.num_time_points_with_ansi_b_violations}}
+                min_voltage_overall >= {{voltage.min_voltage}}
+                AND max_voltage_overall <= {{voltage.max_voltage}}
+                AND num_nodes_any_outside_ansi_b_overall <= {{voltage.num_nodes_any_outside_ansi_b}}
+                AND num_time_points_with_ansi_b_violations_overall <= {{voltage.num_time_points_with_ansi_b_violations}}
             )
             {{/voltage}}
         GROUP BY feeder, sample;
@@ -282,25 +309,25 @@ CREATE TEMP VIEW hc_per_level1 AS
         feeder
         ,sample
         ,penetration_level
-        FROM jt
+        FROM worst_case
         WHERE
             true
             {{#thermal}}
             AND
             (
-                line_max_instantaneous_loading_pct <= {{thermal.line_max_instantaneous_loading_pct}}
-                AND line_max_moving_average_loading_pct <= {{thermal.line_max_moving_average_loading_pct}}
-                AND line_num_time_points_with_instantaneous_violations <= {{thermal.line_num_time_points_with_instantaneous_violations}}
-                AND line_num_time_points_with_moving_average_violations <= {{thermal.line_num_time_points_with_moving_average_violations}}
+                line_max_instantaneous_loading_pct_overall <= {{thermal.line_max_instantaneous_loading_pct}}
+                AND line_max_moving_average_loading_pct_overall <= {{thermal.line_max_moving_average_loading_pct}}
+                AND line_num_time_points_with_instantaneous_violations_overall <= {{thermal.line_num_time_points_with_instantaneous_violations}}
+                AND line_num_time_points_with_moving_average_violations_overall <= {{thermal.line_num_time_points_with_moving_average_violations}}
                 AND
                 (
                     transformer_instantaneous_threshold IS NULL
                     OR
                     (
-                        transformer_max_instantaneous_loading_pct <= {{thermal.transformer_max_instantaneous_loading_pct}}
-                        AND transformer_max_moving_average_loading_pct <= {{thermal.transformer_max_moving_average_loading_pct}}
-                        AND transformer_num_time_points_with_instantaneous_violations <= {{thermal.transformer_num_time_points_with_instantaneous_violations}}
-                        AND transformer_num_time_points_with_moving_average_violations <= {{thermal.transformer_num_time_points_with_moving_average_violations}}
+                        transformer_max_instantaneous_loading_pct_overall <= {{thermal.transformer_max_instantaneous_loading_pct}}
+                        AND transformer_max_moving_average_loading_pct_overall <= {{thermal.transformer_max_moving_average_loading_pct}}
+                        AND transformer_num_time_points_with_instantaneous_violations_overall <= {{thermal.transformer_num_time_points_with_instantaneous_violations}}
+                        AND transformer_num_time_points_with_moving_average_violations_overall <= {{thermal.transformer_num_time_points_with_moving_average_violations}}
                     )
                 )
             )
@@ -308,10 +335,10 @@ CREATE TEMP VIEW hc_per_level1 AS
             {{#voltage}}
             AND
             (
-                min_voltage >= {{voltage.min_voltage}}
-                AND max_voltage <= {{voltage.max_voltage}}
-                AND num_nodes_any_outside_ansi_b <= {{voltage.num_nodes_any_outside_ansi_b}}
-                AND num_time_points_with_ansi_b_violations <= {{voltage.num_time_points_with_ansi_b_violations}}
+                min_voltage_overall >= {{voltage.min_voltage}}
+                AND max_voltage_overall <= {{voltage.max_voltage}}
+                AND num_nodes_any_outside_ansi_b_overall <= {{voltage.num_nodes_any_outside_ansi_b}}
+                AND num_time_points_with_ansi_b_violations_overall <= {{voltage.num_time_points_with_ansi_b_violations}}
             )
             {{/voltage}}
         ;
