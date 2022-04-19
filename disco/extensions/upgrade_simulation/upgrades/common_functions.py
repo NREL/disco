@@ -335,6 +335,9 @@ def ensure_line_config_exists(chosen_option, new_config_type, external_upgrades_
         if external_config_df["name"].str.lower().isin([new_config_name]).any():
             config_definition_df = external_config_df.loc[external_config_df["name"] == new_config_name]
             config_definition_dict = dict(config_definition_df.iloc[0])
+            if config_definition_dict["normamps"] != chosen_option["normamps"]:
+                # config_definition_dict["normamps"] = chosen_option["normamps"]  # this is directly done in line definition instead
+                logger.warning(f"Mismatch between noramps for linecode {new_config_name} and chosen upgrade option normamps: {chosen_option['name']}")
             # check format of certain fields
             matrix_fields = [s for s in config_definition_dict.keys() if 'matrix' in s]
             for field in matrix_fields:

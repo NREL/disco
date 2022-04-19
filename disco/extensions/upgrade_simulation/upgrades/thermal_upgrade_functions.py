@@ -28,6 +28,7 @@ def correct_line_violations(
     -------
 
     """
+    print(line_loading_df.loc[line_loading_df['status']=='overloaded'][['name', 'max_amp_loading', 'normamps']])
     equipment_type = "Line"
     line_upgrades_df = pd.DataFrame()
     upgrades_dict = {}
@@ -38,6 +39,7 @@ def correct_line_violations(
     overloaded_loading_df = line_loading_df.loc[
         line_loading_df["status"] == "overloaded"]
     overloaded_loading_df["required_design_amp"] = overloaded_loading_df["max_amp_loading"] / line_design_pu
+    print(overloaded_loading_df[['name', 'max_amp_loading', 'normamps', 'required_design_amp']])
     deciding_property_list = ["Switch", "kV", "phases", "line_placement",]  # list of properties based on which upgrade is chosen
     line_upgrade_options.set_index(deciding_property_list, inplace=True)
     overloaded_loading_df.set_index(deciding_property_list, inplace=True)
@@ -70,7 +72,7 @@ def correct_line_violations(
                     command_string = ensure_line_config_exists(chosen_option, new_config_type, external_upgrades_technical_catalog)
                     if command_string is not None:  # if new line config definition had to be added
                         temp_commands_list.append(command_string)                                                    
-                    command_string = f"Edit Line.{row['name']} {new_config_type}={new_config_name}"
+                    command_string = f"Edit Line.{row['name']} {new_config_type}={new_config_name} normamps={chosen_option['normamps']}"
                     temp_commands_list.append(command_string)
                 # if line geometry and line code is not available
                 else:
@@ -180,7 +182,7 @@ def identify_parallel_lines(options=None, row=None, parallel_lines_limit=None, *
                 commands_list.append(command_string)   
             s = f"New Line.{new_name} bus1={row['bus1']} bus2={row['bus2']} length={row['length']} " \
                 f"units={row['units']} {new_config_type}={row[new_config_type]} " \
-                f"phases={chosen_option['phases']} enabled=True"
+                f"phases={chosen_option['phases']} normamps={chosen_option['normamps']} enabled=True"
             commands_list.append(s)
         # if line geometry and line code is not available
         # TODO decide what other parameters need to be defined when linecode or geometry is not present
