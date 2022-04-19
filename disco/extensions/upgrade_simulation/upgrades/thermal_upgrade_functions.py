@@ -116,7 +116,6 @@ def correct_line_violations(
                 commands_list = commands_list + parallel_line_commands
                 upgrades_dict_parallel = upgrades_dict_parallel + temp_upgrades_dict_parallel  # parallel upgrades is stored in a list (since it has same original_equipment name)
         index_names = ["original_equipment_name", "Parameter_Type"]
-        breakpoint()
         if upgrades_dict:  # if dictionary is not empty
             line_upgrades_df = create_dataframe_from_nested_dict(user_dict=upgrades_dict, index_names=index_names)
         line_upgrades_df = line_upgrades_df.append(pd.DataFrame(upgrades_dict_parallel))
