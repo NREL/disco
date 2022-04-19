@@ -1,7 +1,9 @@
 import re
 import seaborn as sns
-import networkx as nx
+import networkx as nx  # this module requires networkx version 2.6.3
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
 import logging
 from sklearn.cluster import AgglomerativeClustering
 
@@ -11,6 +13,14 @@ from disco import timer_stats_collector
 from jade.utils.timing_utils import track_timing, Timer
 
 logger = logging.getLogger(__name__)
+
+NODE_COLORLEGEND = {'Load': {'node_color': 'blue', 'node_size': 20, "alpha": 1, "label": "Load"},
+                'PV': {'node_color': 'orange', 'node_size': 20, "alpha": 0.8, "label": "PV"},
+                'Transformer': {'node_color': 'purple', 'node_size': 250, "alpha": 0.75, "label": "Transformer"},
+                'Circuit Source': {'node_color': 'black', 'node_size': 500, "alpha": 1, "label": "Source"},
+                'Violation': {'node_color': 'red', 'node_size': 500, "alpha": 0.75, "label": "Violation"},                
+                }
+EDGE_COLORLEGEND = {'Violation': {'edge_color': 'red', 'edge_size': 20, 'alpha': 0.75, "label": "Line Violation"}}
 
 
 def edit_capacitor_settings_for_convergence(voltage_config=None, control_command=''):
@@ -1259,76 +1269,143 @@ def plot_heatmap_distmatrix(square_array=None, fig_folder=None):
     plt.savefig(os.path.join(fig_folder, "Nodal_violations_heatmap.pdf"))
 
 
-def plot_feeder(G=None, show_fig=False, fig_folder=None):
+def plot_feeder(fig_folder, title, show_fig=False, circuit_source=None):
+    G = generate_networkx_representation()
     position_dict = nx.get_node_attributes(G, 'pos')
     nodes_list = G.nodes()
+    Un_G = G.to_undirected()
 
     plt.figure(figsize=(7, 7))
     plt.figure(figsize=(40, 40), dpi=10)
     plt.clf()
-    ec = nx.draw_networkx_edges(G, pos=position_dict, alpha=1.0, width=0.3)
-    ldn = nx.draw_networkx_nodes(G, pos=position_dict, nodelist=nodes_list, node_size=2,
-                                 node_color='k')
-
-    # ld = nx.draw_networkx_nodes(G, pos=position_dict, nodelist=nodes_list, node_size=6,
-    #                             node_color='yellow', alpha=0.7)
-
-    # nx.draw_networkx_labels(G, pos=position_dict, node_size=1, font_size=15)
-    plt.title("Feeder with all customers having DPV systems")
-    plt.axis("off")
-    plt.savefig(os.path.join(fig_folder, "Feeder.pdf"))
+    nx.draw_networkx_edges(Un_G, pos=position_dict, alpha=1.0, width=0.3)
+    default_node_size = 2
+    default_node_color = 'black'
+    
+    NodeLegend = {
+        "Load": get_load_buses(dss), 
+        "PV": get_pv_buses(dss), 
+        "Transformer": list(get_all_transformer_info_instance(compute_loading=False)['bus_names_only'].str[0].values),
+    }
+    if circuit_source is not None:
+        NodeLegend["Circuit Source"] = [circuit_source]
+    
+    colored_nodelist = []
+    for key in NodeLegend.keys():
+        temp_list = NodeLegend[key]
+        colored_nodelist  = colored_nodelist + temp_list
+        if  len(temp_list) != 0:
+            nx.draw_networkx_nodes(Un_G, pos=filter_dictionary(dict_data=position_dict, wanted_keys=temp_list),
+                                nodelist=temp_list, node_size=NODE_COLORLEGEND[key]["node_size"], node_color=NODE_COLORLEGEND[key]["node_color"],
+                                alpha=NODE_COLORLEGEND[key]["alpha"], label=NODE_COLORLEGEND[key]["label"])
+    
+    remaining_nodes = list(set(nodes_list) - set(colored_nodelist)) 
+    nx.draw_networkx_nodes(Un_G, pos=filter_dictionary(dict_data=position_dict, wanted_keys=remaining_nodes),
+                                nodelist=remaining_nodes, node_size=default_node_size, node_color=default_node_color)
+    plt.title(title, fontsize=50)
+    # plt.axis("off")
+    plt.legend(fontsize=50)
+    plt.savefig(os.path.join(fig_folder, title+".pdf"))
     if show_fig:
         plt.show()
     return
 
 
-def plot_voltage_violations(G=None, buses_with_violations=None, fig_folder=None, circuit_source=None):
+def plot_voltage_violations(fig_folder, title, buses_with_violations, circuit_source=None, show_fig=False):
+    default_node_size = 2
+    default_node_color = 'black'
+    G = generate_networkx_representation()
     position_dict = nx.get_node_attributes(G, 'pos')
     nodes_list = G.nodes()
-
-    # convert to undirected
     Un_G = G.to_undirected()
 
-    #plt.figure(figsize=(8, 7))
+    feeder_fig = plt.figure(figsize=(7, 7))
     plt.figure(figsize=(40, 40), dpi=10)
     plt.clf()
-    numV = len(buses_with_violations)
-    plt.title("Number of buses in the feeder with voltage violations: {}".format(numV))
-    ec = nx.draw_networkx_edges(Un_G, pos=position_dict, alpha=1.0, width=0.3)
-    ld = nx.draw_networkx_nodes(Un_G, pos=position_dict, nodelist=nodes_list, node_size=2, node_color='b')
-    nx.draw_networkx_nodes(Un_G, pos=filter_dictionary(dict_data=position_dict, wanted_keys=[circuit_source]),
-                           nodelist=[circuit_source], node_size=10, node_color='Y')
+    nx.draw_networkx_edges(Un_G, pos=position_dict, alpha=1.0, width=0.3)
+    nx.draw_networkx_nodes(Un_G, pos=position_dict, alpha=1.0, node_size=default_node_size, node_color=default_node_color)
+    
 
-    buses_with_violations_pos = filter_dictionary(dict_data=position_dict, wanted_keys=buses_with_violations)
-    # Show buses with violations
-    if len(buses_with_violations) > 0:
-        m = nx.draw_networkx_nodes(Un_G, pos=buses_with_violations_pos,
-                                   nodelist=buses_with_violations, node_size=10, node_color='r')
-    plt.axis("off")
-    plt.savefig(os.path.join(fig_folder, "Nodal_voltage_violations_{}.pdf".format(str(numV))))
+    NodeLegend = {
+        # "Load": get_load_buses(dss), 
+        # "PV": get_pv_buses(dss), 
+        # "Transformer": list(get_all_transformer_info_instance(compute_loading=False)['bus_names_only'].str[0].values),
+        "Violation": buses_with_violations,
+    }
+    if circuit_source is not None:
+        NodeLegend["Circuit Source"] = [circuit_source]
+    
+    colored_nodelist = []
+    for key in NodeLegend.keys():
+        temp_list = NodeLegend[key]
+        colored_nodelist  = colored_nodelist + temp_list
+        if  len(temp_list) != 0:
+            if key == "Violation":
+                label = "Bus " + NODE_COLORLEGEND[key]["label"]
+            else:
+                label = NODE_COLORLEGEND[key]["label"]
+            nx.draw_networkx_nodes(Un_G, pos=filter_dictionary(dict_data=position_dict, wanted_keys=temp_list),
+                                nodelist=temp_list, node_size=NODE_COLORLEGEND[key]["node_size"], node_color=NODE_COLORLEGEND[key]["node_color"], 
+                                alpha=NODE_COLORLEGEND[key]["alpha"], label=label)
+    
+    # remaining_nodes = list(set(nodes_list) - set(colored_nodelist)) 
+    # nx.draw_networkx_nodes(Un_G, pos=filter_dictionary(dict_data=position_dict, wanted_keys=remaining_nodes),
+    #                             nodelist=remaining_nodes, node_size=default_node_size, node_color=default_node_color)
+    plt.title(title, fontsize=50)
+    plt.legend(fontsize=50)
+    plt.savefig(os.path.join(fig_folder, title+".pdf"))
+    if show_fig:
+        plt.show()
     return
 
 
-def plot_thermal_violations(G=None, edge_size_list=None, edge_pos_plt_dict=None, edge_to_plt_dict=None, DT_sec_coords=None, DT_sec_lst=None, DT_size_list=None, fig_folder=None):
+def plot_thermal_violations(fig_folder, title, equipment_with_violations, circuit_source=None, show_fig=False):
+    default_node_size = 2
+    default_node_color = 'black'
+    G = generate_networkx_representation()
     position_dict = nx.get_node_attributes(G, 'pos')
-    nodes_list = G.nodes()
-    # convert to undirected
+    # nodes_list = G.nodes()
+    # edges_list = G.edges()
     Un_G = G.to_undirected()
-
+    feeder_fig = plt.figure(figsize=(7, 7))
     plt.figure(figsize=(40, 40), dpi=10)
-    if len(edge_size_list) > 0:
-        de = nx.draw_networkx_edges(Un_G, pos=edge_pos_plt_dict, edgelist=edge_to_plt_dict, edge_color="r",
-                                    alpha=0.5, width=edge_size_list)
-    ec = nx.draw_networkx_edges(Un_G, pos=position_dict, alpha=1.0, width=1)
-    if len(DT_sec_lst) > 0:
-        dt = nx.draw_networkx_nodes(Un_G, pos=DT_sec_coords, nodelist=DT_sec_lst, node_size=DT_size_list,
-                                    node_color='deeppink', alpha=1)
-    ldn = nx.draw_networkx_nodes(Un_G, pos=position_dict, nodelist=nodes_list, node_size=1,
-                                 node_color='k', alpha=1)
-    # nx.draw_networkx_labels(G, pos=pos_dict, node_size=1, font_size=15)
-    plt.title("Thermal violations")
-    plt.axis("off")
-    plt.savefig(os.path.join(fig_folder, "Thermal_violations_{}.pdf".format(str(len(DT_sec_lst)))))
+    plt.clf()
+    nx.draw_networkx_edges(Un_G, pos=position_dict, alpha=1.0, width=0.3)
+    nx.draw_networkx_nodes(Un_G, pos=position_dict, alpha=1.0, node_size=default_node_size, node_color=default_node_color)
+    
+    temp_xfmr_nodelist = []
+    temp_line_nodelist = []
+    for equipment_name in equipment_with_violations.keys():
+        if equipment_name == "Transformer":
+            # primary bus of transformer is plotted as a node
+            xfmr_df = equipment_with_violations[equipment_name]
+            temp_xfmr_nodelist = list(xfmr_df.loc[xfmr_df['status'] == 'overloaded']['bus_names_only'].str[0].values)
+            key = "Violation"
+            nx.draw_networkx_nodes(Un_G, pos=filter_dictionary(dict_data=position_dict, wanted_keys=temp_xfmr_nodelist),
+                                nodelist=temp_xfmr_nodelist, node_size=NODE_COLORLEGEND[key]["node_size"], 
+                                node_color=NODE_COLORLEGEND[key]["node_color"], alpha=NODE_COLORLEGEND[key]["alpha"], 
+                                label="Transformer " + NODE_COLORLEGEND[key]["label"])
+        elif equipment_name == "Line":
+            # line violations are plotted as edges
+            line_df = equipment_with_violations["Line"]
+            line_df = line_df.loc[line_df['status'] == 'overloaded']
+            if len(line_df) > 0: 
+                line_df['bus1'] = line_df['bus1'].str.split('.', expand=True)[0].str.lower()
+                line_df['bus2'] = line_df['bus2'].str.split('.', expand=True)[0].str.lower()
+                temp_edgelist = list(zip(line_df.bus1, line_df.bus2))
+                temp_line_nodelist = list(line_df['bus1'].unique()) + list(line_df['bus2'].unique())
+                key = "Violation"
+                nx.draw_networkx_edges(Un_G, pos=filter_dictionary(dict_data=position_dict, wanted_keys=temp_line_nodelist), 
+                                    edgelist=temp_edgelist, edge_color=EDGE_COLORLEGEND[key]["edge_color"], alpha=EDGE_COLORLEGEND[key]["alpha"], 
+                                    width=EDGE_COLORLEGEND[key]["edge_size"], label=EDGE_COLORLEGEND[key]["label"])
+            
+    plt.title(title, fontsize=50)
+    plt.legend(fontsize=50)
+    # plt.axis("off")
+    plt.savefig(os.path.join(fig_folder, title+".pdf"))
+    if show_fig:
+        plt.show()
+    return
 
 
 def plot_created_clusters(G=None, clusters_dict=None, upstream_nodes_dict=None, upstream_reg_node=None, cluster_nodes_list=None, optimal_clusters=None, fig_folder=None):
@@ -1392,7 +1469,6 @@ def get_graph_edges_dataframe(attr_fields=None):
         "m": 1,
     }
     chosen_fields = ['bus1', 'bus2'] + attr_fields
-
     # prepare lines dataframe
     all_lines_df = get_thermal_equipment_info(compute_loading=False, equipment_type="line")
     all_lines_df['bus1'] = all_lines_df['bus1'].str.split('.', expand=True)[0].str.lower()
@@ -1407,20 +1483,20 @@ def get_graph_edges_dataframe(attr_fields=None):
     all_xfmrs_df['bus1'] = all_xfmrs_df['bus_names_only'].str[0].str.lower()
     all_xfmrs_df['bus2'] = all_xfmrs_df['bus_names_only'].str[-1].str.lower()
     all_xfmrs_df['equipment_type'] = 'transformer'
-
     all_edges_df = all_lines_df[chosen_fields].append(all_xfmrs_df[chosen_fields])
     return all_edges_df
 
 
 def add_graph_edges(G=None, edges_df=None, attr_fields=None, source='bus1', target='bus2'):
-    # add edges from dataframe
+    """add betworkx edges from dataframe
+    """
     # # for networkx 1.10 version (but doing this removes the node attributes) -- so resorting to looping through edges
     # G = nx.from_pandas_dataframe(df=edges_df, source=source, target=target, edge_attr=attr_fields,
     #                              create_using=G)
 
     # looping through all edges to add into graph
     for index, row in edges_df.iterrows():
-        G.add_edge(u=row[source], v=row[target], attr_dict=dict(row[attr_fields]))
+        G.add_edge(u_of_edge=row[source], v_of_edge=row[target], attr_dict=dict(row[attr_fields]))
 
     # # will need to use this for networkx > 2.0
     # nx.convert_matrix.from_pandas_edgelist(all_lines_df[chosen_fields], source='bus1', target='bus2', edge_attr=attr_fields,
@@ -1485,29 +1561,31 @@ def correct_node_coordinates(G=None):
 
     # iterate over all nodes with missing coordinates
     for missing_node in missing_coords_nodes:
-        parent_node = G.predecessors(missing_node)  # find list of parent nodes
-        child_node = G.successors(missing_node)  # find list of child nodes
+        position_dict = nx.get_node_attributes(G, 'pos')
+        parent_node = list(G.predecessors(missing_node))  # find list of parent nodes
+        child_node = list(G.successors(missing_node))  # find list of child nodes
         reference_coord_set = {0}
         if len(parent_node) != 0:  # parent node exists
-            reference_coord = G.node[parent_node[0]]["pos"]
+            reference_coord = position_dict[parent_node[0]]
             if set(reference_coord) == {0}:  # if parent node also has [0,0] coordinates
                 ancestors_list = G.ancestors(missing_node)  # find list of ancestors, and iterate over them
                 for ancestor in ancestors_list:
-                    reference_coord = G.node[ancestor]["pos"]
+                    reference_coord = position_dict[ancestor]
                     # once an ancestor with non zero coordinates is found, stop iteration
                     if set(reference_coord) != {0}:
                         break
-            G.node[missing_node]["pos"] = reference_coord  # assign coordinates
+            nx.set_node_attributes(G, {missing_node: reference_coord}, name="pos")  # assign coordinates
+            
         elif len(child_node) != 0:  # child node exists
-            reference_coord = G.node[child_node[0]]["pos"]
+            reference_coord = position_dict[child_node[0]]
             if set(reference_coord) == {0}:  # if child node also has [0,0] coordinates
                 successors_list = nx.dfs_successors(G, missing_node)
                 for successor in successors_list:
-                    reference_coord = G.node[successor]["pos"]
+                    reference_coord = position_dict[successor]
                     # once a node with non zero coordinates is found, stop iteration
                     if set(reference_coord) != {0}:
                         break
-            G.node[missing_node]["pos"] = reference_coord  # assign coordinates
+            nx.set_node_attributes(G, {missing_node: reference_coord}, name="pos")  # assign coordinates
         else:  # if there are no parent or child nodes
             continue  # can't correct coordinates cause no parent or child nodes found.
     return G

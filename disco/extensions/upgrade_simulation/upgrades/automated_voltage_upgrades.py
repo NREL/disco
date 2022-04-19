@@ -31,7 +31,7 @@ def determine_voltage_upgrades(
     voltage_summary_file,
     output_json_voltage_upgrades_filepath,
     feeder_stats_json_file,
-    output_folder,
+    voltage_upgrades_directory,
     ignore_switch=True,
     verbose=False
 ):
@@ -134,6 +134,9 @@ def determine_voltage_upgrades(
         upgrade_status = 'No Voltage Upgrades needed'  # status - whether voltage upgrades done or not
     # else, if there are bus violations based on initial check, start voltage upgrades process
     else:
+        circuit_source = orig_ckt_info["source_bus"]
+        plot_voltage_violations(fig_folder=voltage_upgrades_directory, title="Bus violations before voltage upgrades_"+str(len(initial_buses_with_violations)), 
+                                buses_with_violations=initial_buses_with_violations, circuit_source=circuit_source, show_fig=False)
         # change voltage checking thresholds. determine violations based on final limits
         voltage_upper_limit = voltage_config["final_upper_limit"]
         voltage_lower_limit = voltage_config["final_lower_limit"]
@@ -284,7 +287,6 @@ def determine_voltage_upgrades(
             logger.info("Place new regulators.")
             # do compare objective function and choose best scenario, before placement of new regulators
             max_regulators = int(min(voltage_config["max_regulators"], len(buses_with_violations)))
-            circuit_source = orig_ckt_info["source_bus"]
             regcontrol_cluster_commands = determine_new_regulator_location(max_regs=max_regulators,
                                                                            circuit_source=circuit_source,
                                                                            buses_with_violations=buses_with_violations,
@@ -345,6 +347,8 @@ def determine_voltage_upgrades(
                                                 timepoint_multipliers=timepoint_multipliers, **simulation_params)
     overloaded_xfmr_list = list(xfmr_loading_df.loc[xfmr_loading_df['status'] == 'overloaded']['name'].unique())
     overloaded_line_list = list(line_loading_df.loc[line_loading_df['status'] == 'overloaded']['name'].unique())
+    plot_voltage_violations(fig_folder=voltage_upgrades_directory, title="Bus violations after voltage upgrades_"+str(len(buses_with_violations)), 
+                                buses_with_violations=buses_with_violations, circuit_source=circuit_source, show_fig=False)
     end_time = time.time()
     logger.info(f"Simulation end time: {end_time}")
     simulation_time = end_time - start_time

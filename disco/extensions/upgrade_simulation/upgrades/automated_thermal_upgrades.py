@@ -7,6 +7,8 @@ from jade.utils.timing_utils import track_timing, Timer
 from jade.utils.utils import load_data, dump_data
 
 from .thermal_upgrade_functions import *
+from .voltage_upgrade_functions import *
+
 from disco.models.upgrade_cost_analysis_generic_model import UpgradeResultModel
 from disco import timer_stats_collector
 
@@ -28,6 +30,7 @@ def determine_thermal_upgrades(
     output_json_line_upgrades_filepath,
     output_json_xfmr_upgrades_filepath,
     feeder_stats_json_file,
+    thermal_upgrades_directory,
     ignore_switch=True,
     verbose=False
 ):
@@ -81,6 +84,12 @@ def determine_thermal_upgrades(
                                                                     "overloaded"]["name"].unique())
     
     if len(initial_overloaded_xfmr_list) > 0 or len(initial_overloaded_line_list) > 0:
+        n = len(initial_overloaded_xfmr_list) +  len(initial_overloaded_line_list)
+        equipment_with_violations = {"Transformer": initial_xfmr_loading_df, "Line": initial_line_loading_df}
+        plot_thermal_violations(fig_folder=thermal_upgrades_directory, title="Thermal violations before thermal upgrades_"+str(n), 
+                                equipment_with_violations=equipment_with_violations, circuit_source=None, show_fig=False)
+        plot_voltage_violations(fig_folder=thermal_upgrades_directory, title="Bus violations before thermal upgrades_"+str(len(initial_buses_with_violations)), 
+                                buses_with_violations=initial_buses_with_violations, circuit_source=None, show_fig=False)
         upgrade_status = "Thermal Upgrades Required"  # status - whether upgrades done or not
     else:
         upgrade_status = "Thermal Upgrades not Required"  # status - whether upgrades done or not
@@ -113,7 +122,9 @@ def determine_thermal_upgrades(
     temp_results = dict(initial_results)
     output_results = [temp_results]
     dump_data(output_results, thermal_summary_file, indent=4)
-    
+    title = "Feeder"
+    orig_ckt_info = get_circuit_info()
+    plot_feeder(show_fig=False, fig_folder=thermal_upgrades_directory, title=title, circuit_source=orig_ckt_info['source_bus'])
     # Mitigate thermal violations
     iteration_counter = 0
     # if number of violations is very high,  limit it to a small number
@@ -217,6 +228,12 @@ def determine_thermal_upgrades(
 
     dump_data(line_upgrades_df.to_dict('records'), output_json_line_upgrades_filepath, indent=4)
     dump_data(xfmr_upgrades_df.to_dict('records'), output_json_xfmr_upgrades_filepath, indent=4)
+    n = len(overloaded_xfmr_list) +  len(overloaded_line_list)
+    equipment_with_violations = {"Transformer": xfmr_loading_df, "Line": line_loading_df}
+    plot_thermal_violations(fig_folder=thermal_upgrades_directory, title="Thermal violations after thermal upgrades_"+str(n), 
+                            equipment_with_violations=equipment_with_violations, circuit_source=None, show_fig=False)
+    plot_voltage_violations(fig_folder=thermal_upgrades_directory, title="Bus violations after thermal upgrades_"+str(len(buses_with_violations)), 
+                            buses_with_violations=buses_with_violations, circuit_source=None, show_fig=False)
     end_time = time.time()
     logger.info(f"Simulation end time: {end_time}")
     simulation_time = end_time - start_time

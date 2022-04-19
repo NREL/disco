@@ -599,6 +599,8 @@ def get_all_line_info_instance(compute_loading=True, upper_limit=1.5, ignore_swi
                 all_df.at[index, "status"] = "normal"
     all_df = all_df.reset_index(drop=True).set_index('name')
     all_df["kV"] = all_df["kV"].round(5)
+    # add units to switch length (needed to plot graph). By default, length of switch is taken as max
+    all_df.loc[(all_df.units == 'none') & (all_df.Switch == True), 'units'] = 'm'
     # if switch is to be ignored
     if ignore_switch:
         all_df = all_df.loc[all_df['Switch'] == False]
