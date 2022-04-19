@@ -209,6 +209,7 @@ def determine_voltage_upgrades(
         comparison_dict = {"before_addition_of_new_device": compute_voltage_violation_severity(
             voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)}
         if (voltage_config['use_ltc_placement']) and (len(buses_with_violations) > 0):
+            new_sub_commands = []
             logger.info("Enter Substation LTC module.")
             if orig_regcontrols_df.empty:  # if there are no reg controls
                 subltc_present_flag = False
@@ -283,30 +284,30 @@ def determine_voltage_upgrades(
                 new_sub_commands = subltc_control_settings_commands_list
                 dss_commands_list = dss_commands_list + new_sub_commands
 
-        # determine voltage violations after changes
-        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
-            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
-        comparison_dict["after_sub_ltc_checking"] = compute_voltage_violation_severity(
-            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit)
-        deciding_field = "deviation_severity"
-        best_setting_so_far = "after_sub_ltc_checking"
-        if comparison_dict["after_sub_ltc_checking"][deciding_field] > comparison_dict["before_addition_of_new_device"][deciding_field]:
-            best_setting_so_far = "before_addition_of_new_device"
-            dss_commands_list = list(set(dss_commands_list) - set(new_sub_commands))
-            # ltc_name = new_subltc_added_dict['new_regcontrol_name']
-            # if orig_ckt_info['substation_xfmr'] is None:
-            #     updated_ckt_info = get_circuit_info()
-            #     get_regcontrol_info()
-            #     disable_new_xfmr_and_edit_line(transformer_name_to_disable=new_subxfmr_added_dict['new_xfmr_name'],
-            #                                     line_name_to_modify=new_subxfmr_added_dict['modified_line_name'])
-            # command_string = f"Edit RegControl.{ltc_name} enabled=No"
-            # comparison_dict["disabled_sub_ltc_checking"] = compute_voltage_violation_severity(
-            #                                                 voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit)
-            reload_dss_circuit(dss_file_list=dss_file_list, commands_list=dss_commands_list,
-                                **simulation_params)
             # determine voltage violations after changes
             bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
                 voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
+            comparison_dict["after_sub_ltc_checking"] = compute_voltage_violation_severity(
+                voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit)
+            deciding_field = "deviation_severity"
+            best_setting_so_far = "after_sub_ltc_checking"
+            if comparison_dict["after_sub_ltc_checking"][deciding_field] > comparison_dict["before_addition_of_new_device"][deciding_field]:
+                best_setting_so_far = "before_addition_of_new_device"
+                dss_commands_list = list(set(dss_commands_list) - set(new_sub_commands))
+                # ltc_name = new_subltc_added_dict['new_regcontrol_name']
+                # if orig_ckt_info['substation_xfmr'] is None:
+                #     updated_ckt_info = get_circuit_info()
+                #     get_regcontrol_info()
+                #     disable_new_xfmr_and_edit_line(transformer_name_to_disable=new_subxfmr_added_dict['new_xfmr_name'],
+                #                                     line_name_to_modify=new_subxfmr_added_dict['modified_line_name'])
+                # command_string = f"Edit RegControl.{ltc_name} enabled=No"
+                # comparison_dict["disabled_sub_ltc_checking"] = compute_voltage_violation_severity(
+                #                                                 voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit)
+                reload_dss_circuit(dss_file_list=dss_file_list, commands_list=dss_commands_list,
+                                    **simulation_params)
+        # determine voltage violations after changes
+        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
+            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
 
         if len(buses_with_violations) >= min((100 * len(initial_buses_with_violations)), 500,
                                              len(dss.Circuit.AllBusNames())):
