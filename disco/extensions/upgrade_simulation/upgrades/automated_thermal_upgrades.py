@@ -206,7 +206,7 @@ def determine_thermal_upgrades(
                         f"You can increase the Iteration limit in the thermal_config['upgrade_iteration_threshold']")
             break
 
-    if iteration_counter > 0:
+    if iteration_counter > 1:
         logger.info(f"Multiple iterations ({iteration_counter}) were needed to resolve thermal violations."
                     f"This indicates that feeder was extremely overloaded to start with.")
     write_text_file(string_list=commands_list, text_file_path=thermal_upgrades_dss_filepath)

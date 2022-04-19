@@ -23,7 +23,7 @@ NODE_COLORLEGEND = {'Load': {'node_color': 'blue', 'node_size': 20, "alpha": 1, 
                 'Capacitor': {'node_color': 'green', 'node_size': 100, "alpha": 0.75, "label": "Capacitor"},                
                 'Voltage Regulator': {'node_color': 'cyan', 'node_size': 1000, "alpha": 0.75, "label": "Voltage Regulator"},                
                 }
-EDGE_COLORLEGEND = {'Violation': {'edge_color': 'red', 'edge_size': 20, 'alpha': 0.75, "label": "Line Violation"}}
+EDGE_COLORLEGEND = {'Violation': {'edge_color': 'mediumvioletred', 'edge_size': 50, 'alpha': 0.75, "label": "Line Violation"}}
 
 
 def edit_capacitor_settings_for_convergence(voltage_config=None, control_command=''):
