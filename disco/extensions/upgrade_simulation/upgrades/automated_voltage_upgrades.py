@@ -135,8 +135,9 @@ def determine_voltage_upgrades(
         upgrade_status = 'No Voltage Upgrades needed'  # status - whether voltage upgrades done or not
     # else, if there are bus violations based on initial check, start voltage upgrades process
     else:
+        enable_detailed = True
         plot_voltage_violations(fig_folder=voltage_upgrades_directory, title="Bus violations before voltage upgrades_"+str(len(initial_buses_with_violations)), 
-                                buses_with_violations=initial_buses_with_violations, circuit_source=circuit_source, show_fig=False)
+                                buses_with_violations=initial_buses_with_violations, circuit_source=circuit_source, show_fig=False, enable_detailed=enable_detailed)
         # change voltage checking thresholds. determine violations based on final limits
         voltage_upper_limit = voltage_config["final_upper_limit"]
         voltage_lower_limit = voltage_config["final_lower_limit"]
@@ -152,7 +153,6 @@ def determine_voltage_upgrades(
             dss_commands_list = dss_commands_list + capcontrol_parameter_commands_list
             bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
                 voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
-            
             if len(buses_with_violations) > 0:
                 # get capacitors dataframe before any settings changes are made
                 nosetting_changes_capacitors_df = get_capacitor_info(correct_PT_ratio=False)
@@ -206,22 +206,31 @@ def determine_voltage_upgrades(
         # if LTC exists, first try to correct its non set point simulation settings.
         # If this does not correct everything, correct its set points through a sweep.
         # If LTC does not exist, add one including a xfmr if required, then do a settings sweep if required
+        comparison_dict = {"before_addition_of_new_device": compute_voltage_violation_severity(
+            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)}
         if (voltage_config['use_ltc_placement']) and (len(buses_with_violations) > 0):
             logger.info("Enter Substation LTC module.")
-            subltc_present_flag = (
-                len(orig_regcontrols_df.loc[orig_regcontrols_df['at_substation_xfmr_flag'] == True]) > 0)
+            if orig_regcontrols_df.empty:  # if there are no reg controls
+                subltc_present_flag = False
+            else:
+                subltc_present_flag = (
+                    len(orig_regcontrols_df.loc[orig_regcontrols_df['at_substation_xfmr_flag'] == True]) > 0)
             # if there is no substation transformer in the network
             if orig_ckt_info['substation_xfmr'] is None:
                 # check add substation transformer and add ltc reg control on it
-                add_subxfmr_commands = add_substation_xfmr(**simulation_params)
-                pass_flag, add_subltc_commands = add_new_regcontrol_command(
-                    xfmr_info_series=pd.Series(orig_ckt_info['substation_xfmr']),
+                new_subxfmr_added_dict = add_new_node_and_xfmr(action_type='New', node=circuit_source, circuit_source=circuit_source, 
+                                                            sub_xfmr_conn_type="wye" ,**simulation_params)
+                add_subxfmr_commands = new_subxfmr_added_dict['commands_list']
+                updated_ckt_info = get_circuit_info()
+                new_subltc_added_dict = add_new_regcontrol_command(
+                    xfmr_info_series=pd.Series(updated_ckt_info['substation_xfmr']),
                     default_regcontrol_settings=default_subltc_settings,
                     nominal_voltage=voltage_config["nominal_voltage"], **simulation_params)
-                if not pass_flag:
+                add_subltc_commands = new_subltc_added_dict["command_list"]
+                if not new_subltc_added_dict["pass_flag"]:
                     logger.info("No convergence after adding regulator control at substation LTC. "
                                 "Check if there is any setting that has convergence. Else remove substation LTC")
-                    reload_dss_circuit(dss_file_list=dss_file_list, commands_list=dss_commands_list + add_subltc_commands,
+                    reload_dss_circuit(dss_file_list=dss_file_list, commands_list=dss_commands_list + add_subxfmr_commands + add_subltc_commands,
                                        **simulation_params)
                 # this needs to be collected again, since a new regulator control might have been added at the substation
                 initial_sub_regcontrols_df = get_regcontrol_info(correct_PT_ratio=True,
@@ -231,10 +240,12 @@ def determine_voltage_upgrades(
                     voltage_config=voltage_config, initial_regcontrols_df=initial_sub_regcontrols_df,
                     upper_limit=voltage_upper_limit, lower_limit=voltage_lower_limit, exclude_sub_ltc=False,
                     only_sub_ltc=True, dss_file_list=dss_file_list,
-                    dss_commands_list=dss_commands_list + add_subltc_commands, **simulation_params)
+                    dss_commands_list=dss_commands_list + add_subxfmr_commands + add_subltc_commands, **simulation_params)
+                
                 circuit_solve_and_check(raise_exception=True, **simulation_params)
-                dss_commands_list = dss_commands_list + add_subxfmr_commands + add_subltc_commands + \
+                new_sub_commands = add_subxfmr_commands + add_subltc_commands + \
                     subltc_control_settings_commands_list
+                dss_commands_list = dss_commands_list + new_sub_commands
             # if substation transformer is present but there are no regulator controls on the subltc
             elif (orig_ckt_info['substation_xfmr'] is not None) and (not subltc_present_flag):
                 pass_flag, add_subltc_commands = add_new_regcontrol_command(
@@ -256,7 +267,8 @@ def determine_voltage_upgrades(
                     only_sub_ltc=True, dss_file_list=dss_file_list,
                     dss_commands_list=dss_commands_list + add_subltc_commands, **simulation_params)
                 circuit_solve_and_check(raise_exception=True, **simulation_params)
-                dss_commands_list = dss_commands_list + add_subltc_commands + subltc_control_settings_commands_list
+                new_sub_commands = add_subltc_commands + subltc_control_settings_commands_list
+                dss_commands_list = dss_commands_list + new_sub_commands
             # if substation transformer, and reg controls are both present
             else:
                 initial_sub_regcontrols_df = get_regcontrol_info(correct_PT_ratio=True,
@@ -268,11 +280,33 @@ def determine_voltage_upgrades(
                     only_sub_ltc=True, dss_file_list=dss_file_list,
                     dss_commands_list=dss_commands_list, **simulation_params)
                 circuit_solve_and_check(raise_exception=True, **simulation_params)
-                dss_commands_list = dss_commands_list + subltc_control_settings_commands_list
+                new_sub_commands = subltc_control_settings_commands_list
+                dss_commands_list = dss_commands_list + new_sub_commands
 
         # determine voltage violations after changes
         bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
             voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
+        comparison_dict["after_sub_ltc_checking"] = compute_voltage_violation_severity(
+            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit)
+        deciding_field = "deviation_severity"
+        best_setting_so_far = "after_sub_ltc_checking"
+        if comparison_dict["after_sub_ltc_checking"][deciding_field] > comparison_dict["before_addition_of_new_device"][deciding_field]:
+            best_setting_so_far = "before_addition_of_new_device"
+            dss_commands_list = list(set(dss_commands_list) - set(new_sub_commands))
+            # ltc_name = new_subltc_added_dict['new_regcontrol_name']
+            # if orig_ckt_info['substation_xfmr'] is None:
+            #     updated_ckt_info = get_circuit_info()
+            #     get_regcontrol_info()
+            #     disable_new_xfmr_and_edit_line(transformer_name_to_disable=new_subxfmr_added_dict['new_xfmr_name'],
+            #                                     line_name_to_modify=new_subxfmr_added_dict['modified_line_name'])
+            # command_string = f"Edit RegControl.{ltc_name} enabled=No"
+            # comparison_dict["disabled_sub_ltc_checking"] = compute_voltage_violation_severity(
+            #                                                 voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit)
+            reload_dss_circuit(dss_file_list=dss_file_list, commands_list=dss_commands_list,
+                                **simulation_params)
+            # determine voltage violations after changes
+            bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
+                voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
 
         if len(buses_with_violations) >= min((100 * len(initial_buses_with_violations)), 500,
                                              len(dss.Circuit.AllBusNames())):
@@ -296,8 +330,9 @@ def determine_voltage_upgrades(
                                                                            default_regcontrol_settings=DEFAULT_REGCONTROL_SETTINGS, **simulation_params)
             dss_commands_list = dss_commands_list + regcontrol_cluster_commands
             logger.info("Settings sweep for existing reg control devices (other than sub LTC).")
+            regcontrol_df = get_regcontrol_info()
             regcontrol_sweep_df = sweep_regcontrol_settings(voltage_config=voltage_config,
-                                                            initial_regcontrols_df=orig_regcontrols_df,
+                                                            initial_regcontrols_df=regcontrol_df,
                                                             voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit,
                                                             exclude_sub_ltc=True, only_sub_ltc=False, **simulation_params)
             # reload circuit after settings sweep
@@ -306,6 +341,22 @@ def determine_voltage_upgrades(
             regcontrols_df, regcontrol_settings_commands_list = choose_best_regcontrol_sweep_setting(
                 regcontrol_sweep_df=regcontrol_sweep_df, initial_regcontrols_df=orig_regcontrols_df, **simulation_params)
             dss_commands_list = dss_commands_list + regcontrol_settings_commands_list
+            comparison_dict["after_addition_new_regcontrol"] = compute_voltage_violation_severity(
+                voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit)
+            
+            if comparison_dict["after_addition_new_regcontrol"][deciding_field] > comparison_dict[best_setting_so_far][deciding_field]:
+                best_setting_so_far = "before_addition_of_new_device"
+                dss_commands_list = list(set(dss_commands_list) - set(regcontrol_settings_commands_list) - regcontrol_cluster_commands)
+                ltc_name = new_subltc_added_dict['new_regcontrol_name']
+                reload_dss_circuit(dss_file_list=dss_file_list, commands_list=dss_commands_list,
+                        **simulation_params)
+                comparison_dict["disabled_new_regcontrol"] = compute_voltage_violation_severity(
+                                                                voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit)
+                
+
+            # determine voltage violations after changes
+            bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
+                voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
 
         dss_commands_list = dss_commands_list
 

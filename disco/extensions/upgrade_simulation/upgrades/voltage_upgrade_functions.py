@@ -1,4 +1,5 @@
 import re
+import time
 import seaborn as sns
 import networkx as nx  # this module requires networkx version 2.6.3
 import matplotlib.pyplot as plt
@@ -15,10 +16,12 @@ from jade.utils.timing_utils import track_timing, Timer
 logger = logging.getLogger(__name__)
 
 NODE_COLORLEGEND = {'Load': {'node_color': 'blue', 'node_size': 20, "alpha": 1, "label": "Load"},
-                'PV': {'node_color': 'orange', 'node_size': 20, "alpha": 0.8, "label": "PV"},
+                'PV': {'node_color': 'orange', 'node_size': 50, "alpha": 0.8, "label": "PV"},
                 'Transformer': {'node_color': 'purple', 'node_size': 250, "alpha": 0.75, "label": "Transformer"},
                 'Circuit Source': {'node_color': 'black', 'node_size': 500, "alpha": 1, "label": "Source"},
-                'Violation': {'node_color': 'red', 'node_size': 500, "alpha": 0.75, "label": "Violation"},                
+                'Violation': {'node_color': 'red', 'node_size': 500, "alpha": 0.75, "label": "Violation"},   
+                'Capacitor': {'node_color': 'green', 'node_size': 100, "alpha": 0.75, "label": "Capacitor"},                
+                'Voltage Regulator': {'node_color': 'cyan', 'node_size': 1000, "alpha": 0.75, "label": "Voltage Regulator"},                
                 }
 EDGE_COLORLEGEND = {'Violation': {'edge_color': 'red', 'edge_size': 20, 'alpha': 0.75, "label": "Line Violation"}}
 
@@ -85,15 +88,8 @@ def correct_capacitor_parameters(default_capacitor_settings=None, orig_capacitor
     capacitors_commands_list = []
     capcontrol_present_df = orig_capacitors_df.loc[orig_capacitors_df['capcontrol_present'] == 'capcontrol']
     for index, row in capcontrol_present_df.iterrows():
-        # if it is already voltage controlled, modify PT ratio if new is different after re-computation
-        if (row["capcontrol_type"].lower() == "voltage") and (round(row['PTratio'], 2) != round(row['old_PTratio'], 2)):
-            orig_string = ' !original, corrected PTratio only'
-            command_string = f"Edit CapControl.{row['capcontrol_name']} PTRatio={row['PTratio']}" + orig_string
-            dss.run_command(command_string)
-            # this does not change original settings, so should not cause convergence
-            circuit_solve_and_check(raise_exception=True, **kwargs)
-        # if capcontrol is present, change to voltage controlled and apply default settings.
-        else:
+        # if capcontrol is present, change to voltage controlled and apply default settings. (this also adds re-computed PTratio)
+        if (row["capcontrol_type"].lower() != "voltage"):
             command_string = f"Edit CapControl.{row['capcontrol_name']} PTRatio={row['PTratio']} " \
                              f"{default_capcontrol_command}"
             dss.run_command(command_string)
@@ -103,8 +99,17 @@ def correct_capacitor_parameters(default_capacitor_settings=None, orig_capacitor
                 dss.run_command(command_string)
                 # raise exception if no convergence even after change
                 circuit_solve_and_check(raise_exception=True, **kwargs)
-        capacitors_commands_list.append(command_string)
-
+            capacitors_commands_list.append(command_string)
+       
+        # if it is already voltage controlled, modify PT ratio if new is different after re-computation
+        if (row["capcontrol_type"].lower() == "voltage") and (round(row['PTratio'], 2) != round(row['old_PTratio'], 2)):
+            orig_string = ' !original, corrected PTratio only'
+            command_string = f"Edit CapControl.{row['capcontrol_name']} PTRatio={row['PTratio']}" + orig_string
+            dss.run_command(command_string)
+            # this does not change original settings, so should not cause convergence
+            circuit_solve_and_check(raise_exception=True, **kwargs)
+            capacitors_commands_list.append(command_string)
+            
     # if there are capacitors without cap control, add a voltage-controlled cap control
     lines_df = get_thermal_equipment_info(compute_loading=False, equipment_type="line")
     lines_df['bus1_extract'] = lines_df['bus1'].str.split(".").str[0]
@@ -491,16 +496,18 @@ def add_new_regcontrol_command(xfmr_info_series=None, default_regcontrol_setting
     # use the primary bus to define name
     regcontrol_info_series['regcontrol_name'] = 'new_regcontrol_' + xfmr_info_series['bus_names_only'][0]
     temp_df = get_regcontrol_info()
-    enabled_regcontrol_exists = len(
-        temp_df.loc[(temp_df['name'] == regcontrol_info_series['regcontrol_name']) & (temp_df['enabled'] == True)]) > 0
-    if enabled_regcontrol_exists:
-        logger.debug(f"Enabled regcontrol already exists: {regcontrol_info_series['name']}")
+    if not temp_df.empty:
+        enabled_regcontrol_exists = len(
+            temp_df.loc[(temp_df['name'] == regcontrol_info_series['regcontrol_name']) & (temp_df['enabled'] == True)]) > 0
+        if enabled_regcontrol_exists:
+            logger.debug(f"Enabled regcontrol already exists: {regcontrol_info_series['name']}")
         # return {'command_list': [], 'new_regcontrol_name': None}
         return None
-    disabled_regcontrol_exists = len(
-        temp_df.loc[(temp_df['name'] == regcontrol_info_series['regcontrol_name']) & (temp_df['enabled'] == False)]) > 0
-    if disabled_regcontrol_exists:
-        action_type = 'Edit'
+    if not temp_df.empty:
+        disabled_regcontrol_exists = len(
+            temp_df.loc[(temp_df['name'] == regcontrol_info_series['regcontrol_name']) & (temp_df['enabled'] == False)]) > 0
+        if disabled_regcontrol_exists:
+            action_type = 'Edit'
     new_regcontrol_command = define_regcontrol_object(regcontrol_name=regcontrol_info_series['regcontrol_name'],
                                                       action_type=action_type, regcontrol_info_series=regcontrol_info_series,
                                                       general_property_list=regcontrol_info_series["properties_to_be_defined"])
@@ -508,7 +515,7 @@ def add_new_regcontrol_command(xfmr_info_series=None, default_regcontrol_setting
     check_dss_run_command('CalcVoltageBases')
     pass_flag = circuit_solve_and_check(raise_exception=False, **kwargs)  # solve circuit
     command_list.append(new_regcontrol_command)
-    return {'command_list': command_list, 'new_regcontrol_name': regcontrol_info_series['regcontrol_name']}
+    return {'command_list': command_list, 'new_regcontrol_name': regcontrol_info_series['regcontrol_name'], 'pass_flag': pass_flag}
 
 
 def define_regcontrol_object(regcontrol_name='', action_type='', regcontrol_info_series=None,
@@ -1198,7 +1205,6 @@ def cluster_and_place_regulator(G=None, square_distance_df=None, buses_with_viol
         if (len(buses_with_violations)) == 0:
             logger.info("All nodal violations have been removed successfully.....quitting")
             break
-
     return cluster_group_info_dict
 
 
@@ -1222,6 +1228,16 @@ def determine_new_regulator_location(max_regs=2, circuit_source=None, buses_with
         cluster_option_name = f"cluster_option_{num_clusters}"
         print(f"Clustering: {num_clusters}")
         logger.debug(f"\nClustering option: {num_clusters}")
+        if (len(buses_with_violations)) < num_clusters:
+            break
+        if len(buses_with_violations) == 1:
+            cluster_option_name = f"cluster_option_1"
+            cluster_options_dict[cluster_option_name] = {}
+            cluster_options_dict[cluster_option_name]["details"] = per_cluster_group_regulator_analysis(G=G, buses_list=buses_with_violations, voltage_config=voltage_config,
+                                                                                   voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, default_regcontrol_settings=default_regcontrol_settings,
+                                                                                   circuit_source=circuit_source, **kwargs)
+            
+            break
         temp_dict = cluster_and_place_regulator(G=G, square_distance_df=square_distance_df,
                                                 buses_with_violations=buses_with_violations, num_clusters=num_clusters,
                                                 voltage_config=voltage_config, voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit,
@@ -1269,7 +1285,7 @@ def plot_heatmap_distmatrix(square_array=None, fig_folder=None):
     plt.savefig(os.path.join(fig_folder, "Nodal_violations_heatmap.pdf"))
 
 
-def plot_feeder(fig_folder, title, show_fig=False, circuit_source=None):
+def plot_feeder(fig_folder, title, show_fig=False, circuit_source=None, enable_detailed=False):
     G = generate_networkx_representation()
     position_dict = nx.get_node_attributes(G, 'pos')
     nodes_list = G.nodes()
@@ -1289,7 +1305,12 @@ def plot_feeder(fig_folder, title, show_fig=False, circuit_source=None):
     }
     if circuit_source is not None:
         NodeLegend["Circuit Source"] = [circuit_source]
-    
+    if enable_detailed:
+        cap_df = get_capacitor_info()
+        if not cap_df.empty:
+            NodeLegend["Capacitor"] = list(cap_df['bus1'].str.split(".").str[0].unique())
+        reg_df =  get_regcontrol_info()
+        # if not reg_df.empty:
     colored_nodelist = []
     for key in NodeLegend.keys():
         temp_list = NodeLegend[key]
@@ -1311,7 +1332,7 @@ def plot_feeder(fig_folder, title, show_fig=False, circuit_source=None):
     return
 
 
-def plot_voltage_violations(fig_folder, title, buses_with_violations, circuit_source=None, show_fig=False):
+def plot_voltage_violations(fig_folder, title, buses_with_violations, circuit_source=None, show_fig=False, enable_detailed=False):
     default_node_size = 2
     default_node_color = 'black'
     G = generate_networkx_representation()
@@ -1325,7 +1346,6 @@ def plot_voltage_violations(fig_folder, title, buses_with_violations, circuit_so
     nx.draw_networkx_edges(Un_G, pos=position_dict, alpha=1.0, width=0.3)
     nx.draw_networkx_nodes(Un_G, pos=position_dict, alpha=1.0, node_size=default_node_size, node_color=default_node_color)
     
-
     NodeLegend = {
         # "Load": get_load_buses(dss), 
         # "PV": get_pv_buses(dss), 
@@ -1334,7 +1354,13 @@ def plot_voltage_violations(fig_folder, title, buses_with_violations, circuit_so
     }
     if circuit_source is not None:
         NodeLegend["Circuit Source"] = [circuit_source]
-    
+    if enable_detailed:
+        cap_df = get_capacitor_info()
+        if not cap_df.empty:
+            NodeLegend["Capacitor"] = list(cap_df['bus1'].str.split(".").str[0].unique())
+        reg_df =  get_regcontrol_info()
+        # if not reg_df.empty:
+                           
     colored_nodelist = []
     for key in NodeLegend.keys():
         temp_list = NodeLegend[key]
