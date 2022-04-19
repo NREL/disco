@@ -225,7 +225,9 @@ def determine_thermal_upgrades(
                                                 timepoint_multipliers=timepoint_multipliers, **simulation_params)
     overloaded_xfmr_list = list(xfmr_loading_df.loc[xfmr_loading_df["status"] == "overloaded"]["name"].unique())
     overloaded_line_list = list(line_loading_df.loc[line_loading_df["status"] == "overloaded"]["name"].unique())
-
+    # same equipment could be upgraded(edited) multiple times. Only consider last upgrade edit done. original_equipment details are currently not used.
+    line_upgrades_df = line_upgrades_df.drop_duplicates(subset=["Upgrade_Type", "Action", "final_equipment_name"], keep="last")  
+    xfmr_upgrades_df = xfmr_upgrades_df.drop_duplicates(subset=["Upgrade_Type", "Action", "final_equipment_name"], keep="last") 
     dump_data(line_upgrades_df.to_dict('records'), output_json_line_upgrades_filepath, indent=4)
     dump_data(xfmr_upgrades_df.to_dict('records'), output_json_xfmr_upgrades_filepath, indent=4)
     n = len(overloaded_xfmr_list) +  len(overloaded_line_list)

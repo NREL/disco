@@ -31,6 +31,7 @@ def correct_line_violations(
     equipment_type = "Line"
     line_upgrades_df = pd.DataFrame()
     upgrades_dict = {}
+    upgrades_dict_parallel = []
     commands_list = []
     # This finds a line code which provides a specified safety margin to a line above its maximum observed loading.
     # If a line code is not found or if line code is too overrated, one or more parallel lines (num_par_lns-1) are added
@@ -50,8 +51,8 @@ def correct_line_violations(
                 options = pd.DataFrame([options])  # convert to required DataFrame format
                 options = options.rename_axis(deciding_property_list)  # assign names to the index
             options = options.reset_index().sort_values("normamps")
-            if row["max_per_unit_loading"] > 3:  # i.e. equipment is very overloaded, then oversize more to avoid multiple upgrade iterations
-                row["required_design_amp"] = row["required_design_amp"] * 1.25
+            if row["max_per_unit_loading"] > 2.25:  # i.e. equipment is very overloaded, then oversize more to avoid multiple upgrade iterations
+                row["required_design_amp"] = row["required_design_amp"] * (row["max_per_unit_loading"] * 0.5)
             chosen_option = options.loc[options["normamps"] >= row["required_design_amp"]].sort_values("normamps")
             # TODO: TOGGLE FLAG - EXPLORE IF WE CAN HAVE OPTIONS FOR: PARALLEL, REPLACE,
             # if one chosen option exists and is not very oversized (which is determined by acceptable oversize limit)
@@ -101,7 +102,7 @@ def correct_line_violations(
             # dont oversize. Instead, place lines in parallel
             else:
                 external_upgrades_technical_catalog = kwargs.get("external_upgrades_technical_catalog", None)
-                parallel_line_commands, upgrades_dict_parallel = identify_parallel_lines(options=options, row=row,
+                parallel_line_commands, temp_upgrades_dict_parallel = identify_parallel_lines(options=options, row=row,
                                                                                          parallel_lines_limit=parallel_lines_limit, 
                                                                                          external_upgrades_technical_catalog=external_upgrades_technical_catalog)
                 # run command for all parallel equipment added, that resolves overloading for one equipment
@@ -110,9 +111,10 @@ def correct_line_violations(
                     check_dss_run_command('CalcVoltageBases')
                     circuit_solve_and_check(raise_exception=True, **kwargs)
                 commands_list = commands_list + parallel_line_commands
-                upgrades_dict.update(upgrades_dict_parallel)
+                upgrades_dict_parallel = upgrades_dict_parallel + temp_upgrades_dict_parallel  # parallel upgrades is stored in a list (since it has same original_equipment name)
         index_names = ["original_equipment_name", "Parameter_Type"]
         line_upgrades_df = create_dataframe_from_nested_dict(user_dict=upgrades_dict, index_names=index_names)
+        line_upgrades_df = line_upgrades_df.append(pd.DataFrame(upgrades_dict_parallel))
         line_upgrades_df.rename(columns={"name": "final_equipment_name"}, inplace=True)
         line_upgrades_df = line_upgrades_df.set_index(
             ["Equipment_Type", "Upgrade_Type", "Parameter_Type", "Action", "final_equipment_name",
@@ -139,7 +141,7 @@ def identify_parallel_lines(options=None, row=None, parallel_lines_limit=None, *
 
     """
     commands_list = []
-    upgrades_dict_parallel = {}
+    temp_dict = {}
     # calculate number of parallel lines needed to carry remaining amperes (in addition to existing line)
     options["num_parallel_raw"] = (row["required_design_amp"] - row["normamps"]) / options["normamps"]
     options["num_parallel"] = options["num_parallel_raw"].apply(np.ceil)
@@ -152,20 +154,25 @@ def identify_parallel_lines(options=None, row=None, parallel_lines_limit=None, *
     if num_parallel_lines > parallel_lines_limit:
         raise Exception(f"Number of parallel lines is greater than limit!")
     new_config_type = chosen_option["line_definition_type"]
-
+    upgrades_dict_parallel = []
     for line_count in range(0, num_parallel_lines):
         curr_time = str(time.time())
         # this is added to line name to ensure it is unique
         time_stamp = curr_time.split(".")[0] + "_" + curr_time.split(".")[1]
         new_name = "upgrade_" + row["name"] + time_stamp
         chosen_option["name"] = new_name
-        upgrades_dict_parallel[row["name"]] = {}
-        upgrades_dict_parallel[row["name"]]["new_equipment"] = chosen_option.to_dict()
-        upgrades_dict_parallel[row["name"]]["new_equipment"]["length"] = row["length"]
-        upgrades_dict_parallel[row["name"]]["new_equipment"].update({"Equipment_Type": "Line",
-                                                                     "Upgrade_Type": "new (parallel)",
-                                                                     # "Parameter_Type": "new_equipment",
-                                                                     "Action": "add"})
+        temp_dict = {}
+        temp_dict.update(chosen_option.to_dict())
+        temp_dict["length"] = row["length"]
+        temp_dict.update({"Equipment_Type": "Line",
+                          "original_equipment_name": row["name"],
+                          "Upgrade_Type": "new (parallel)",
+                          "Parameter_Type": "new_equipment",
+                          "Action": "add"})
+        # # if too much info, can remove this metrics from output. For now, these are included.
+        # remove_fields = ['num_parallel_raw', 'num_parallel', 'choose_parallel_metric']
+        # for x in remove_fields:
+        #     temp_dict.pop(x)
         if (new_config_type == "geometry") or (new_config_type == "linecode"):
             external_upgrades_technical_catalog = kwargs.get("external_upgrades_technical_catalog", None)
             command_string = ensure_line_config_exists(chosen_option, new_config_type, external_upgrades_technical_catalog)
@@ -182,6 +189,7 @@ def identify_parallel_lines(options=None, row=None, parallel_lines_limit=None, *
                 f"units={row['units']} phases={chosen_option['phases']} " \
                 f"normamps={chosen_option['normamps']} enabled=True"
             commands_list.append(s)
+        upgrades_dict_parallel.append(temp_dict)
     return commands_list, upgrades_dict_parallel
 
 
@@ -253,6 +261,7 @@ def correct_xfmr_violations(xfmr_loading_df=None, xfmr_design_pu=None, xfmr_upgr
     equipment_type = "Transformer"
     xfmr_upgrades_df = pd.DataFrame()
     upgrades_dict = {}
+    upgrades_dict_parallel = []
     commands_list = []
     # This finds a line code which provides a specified safety margin to a line above its maximum observed loading.
     # If a line code is not found or if line code is too overrated, one or more parallel lines (num_par_lns-1) are added
@@ -264,6 +273,7 @@ def correct_xfmr_violations(xfmr_loading_df=None, xfmr_design_pu=None, xfmr_upgr
     overloaded_loading_df.set_index(deciding_property_list, inplace=True)
     oversize_limit = 2  # limit to determine if chosen upgrade option is too oversized
     if len(overloaded_loading_df) > 0:  # if overloading exists
+        xfmr_upgrades_df = pd.DataFrame()
         # iterate over each overloaded line to find a solution
         for index, row in overloaded_loading_df.iterrows():
             options = xfmr_upgrade_options.loc[index]
@@ -271,8 +281,8 @@ def correct_xfmr_violations(xfmr_loading_df=None, xfmr_design_pu=None, xfmr_upgr
                 options = pd.DataFrame([options])  # convert to required DataFrame format
                 options = options.rename_axis(deciding_property_list)  # assign names to the index
             options = options.reset_index().sort_values("amp_limit_per_phase")
-            if row["max_per_unit_loading"] > 3:  # i.e. equipment is very overloaded, then oversize to avoid multiple upgrade iterations
-                row["required_design_amp"] = row["required_design_amp"] * 1.25
+            if row["max_per_unit_loading"] > 2.25:  # i.e. equipment is very overloaded, then oversize to avoid multiple upgrade iterations
+                row["required_design_amp"] = row["required_design_amp"] * (row["max_per_unit_loading"] * 0.5)
             chosen_option = options.loc[options["amp_limit_per_phase"] >=
                                         row["required_design_amp"]].sort_values("amp_limit_per_phase")
             # if one chosen option exists and is not very oversized (which is determined by acceptable oversize limit)
@@ -310,7 +320,7 @@ def correct_xfmr_violations(xfmr_loading_df=None, xfmr_design_pu=None, xfmr_upgr
             # if higher upgrade is not available or chosen upgrade rating is much higher than required,
             # dont oversize. Instead, place equipment in parallel
             else:
-                parallel_xfmr_commands, upgrades_dict_parallel = identify_parallel_xfmrs(options=options, row=row,
+                parallel_xfmr_commands, temp_upgrades_dict_parallel = identify_parallel_xfmrs(options=options, row=row,
                                                                                          parallel_transformer_limit=parallel_transformer_limit)
                 # run command for all new parallel equipment added, that resolves overloading for one equipment
                 for command_item in parallel_xfmr_commands:
@@ -318,9 +328,11 @@ def correct_xfmr_violations(xfmr_loading_df=None, xfmr_design_pu=None, xfmr_upgr
                     check_dss_run_command('CalcVoltageBases')
                     circuit_solve_and_check(raise_exception=True, **kwargs)
                 commands_list = commands_list + parallel_xfmr_commands
-                upgrades_dict.update(upgrades_dict_parallel)
+                upgrades_dict_parallel = upgrades_dict_parallel + temp_upgrades_dict_parallel  # parallel upgrades is stored in a list (since it has same original_equipment name)
         index_names = ["original_equipment_name", "Parameter_Type"]
-        xfmr_upgrades_df = create_dataframe_from_nested_dict(user_dict=upgrades_dict, index_names=index_names)
+        if upgrades_dict:  # if dictionary is not empty
+            xfmr_upgrades_df = create_dataframe_from_nested_dict(user_dict=upgrades_dict, index_names=index_names)
+        xfmr_upgrades_df = xfmr_upgrades_df.append(pd.DataFrame(upgrades_dict_parallel))
         xfmr_upgrades_df.rename(columns={"name": "final_equipment_name"}, inplace=True)
         xfmr_upgrades_df = xfmr_upgrades_df.set_index(
             ["Equipment_Type", "Upgrade_Type", "Parameter_Type", "Action", "final_equipment_name",
@@ -367,20 +379,22 @@ def identify_parallel_xfmrs(options=None, row=None, parallel_transformer_limit=N
                     chosen_option["%Rs"] = ast.literal_eval(chosen_option["%Rs"])
     if isinstance(chosen_option["kVAs"], str):
         chosen_option["kVAs"] = ast.literal_eval(chosen_option["kVAs"])
+    upgrades_dict_parallel = []
     for xfmr_count in range(0, num_parallel_xfmrs):
         curr_time = str(time.time())
         # the timestamp is added to line name to ensure it is unique
         time_stamp = curr_time.split(".")[0] + "_" + curr_time.split(".")[1]
         new_name = "upgrade_" + row["name"] + time_stamp
         chosen_option["name"] = new_name
-        upgrades_dict_parallel[row["name"]] = {}
-        upgrades_dict_parallel[row["name"]]["new_equipment"] = chosen_option.to_dict()
-        upgrades_dict_parallel[row["name"]]["new_equipment"].update({"Equipment_Type": equipment_type,
-                                                                     "Upgrade_Type": "new (parallel)",
-                                                                     # "Parameter_Type": "new_equipment",
-                                                                     "Action": "add"})
-
+        temp_dict = {}
+        temp_dict.update(chosen_option.to_dict())
+        temp_dict.update({"Equipment_Type": equipment_type,
+                        "original_equipment_name": row["name"],
+                        "Upgrade_Type": "new (parallel)",
+                        "Parameter_Type": "new_equipment",
+                        "Action": "add"})
         command_string = define_xfmr_object(xfmr_name=new_name, xfmr_info_series=chosen_option, action_type="New",
                                             buses_list=row["buses"])
         commands_list.append(command_string)
+        upgrades_dict_parallel.append(temp_dict)
     return commands_list, upgrades_dict_parallel

@@ -127,6 +127,7 @@ def determine_voltage_upgrades(
     temp_results = dict(initial_results)
     output_results = [temp_results]
     dump_data(output_results, voltage_summary_file, indent=4)
+    circuit_source = orig_ckt_info["source_bus"]
     # if there are no buses with violations based on initial check, don't get into upgrade process
     # directly go to end of file
     if len(initial_buses_with_violations) <= 0:
@@ -134,7 +135,6 @@ def determine_voltage_upgrades(
         upgrade_status = 'No Voltage Upgrades needed'  # status - whether voltage upgrades done or not
     # else, if there are bus violations based on initial check, start voltage upgrades process
     else:
-        circuit_source = orig_ckt_info["source_bus"]
         plot_voltage_violations(fig_folder=voltage_upgrades_directory, title="Bus violations before voltage upgrades_"+str(len(initial_buses_with_violations)), 
                                 buses_with_violations=initial_buses_with_violations, circuit_source=circuit_source, show_fig=False)
         # change voltage checking thresholds. determine violations based on final limits
