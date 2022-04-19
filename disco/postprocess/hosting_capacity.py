@@ -63,7 +63,7 @@ def synthesize_voltage(results_df):
                    "sample",
                    "penetration_level",
                    "scenario",
-                   "node_type"]
+    ]
 
     df = results_df.groupby(filter_cols)[["min_voltage"]].min().reset_index()
     df2 = results_df.groupby(filter_cols)[["max_voltage"]].max().reset_index()
@@ -72,8 +72,8 @@ def synthesize_voltage(results_df):
         results_df.groupby(filter_cols)[
             [
                 "num_nodes_any_outside_ansi_b",
-                "num_time_points_with_ansi_b_violations"
-                ]
+                "num_time_points_with_ansi_b_violations",
+            ]
         ]
         .max()
         .reset_index()
@@ -161,10 +161,10 @@ def compute_hc_per_metric_class(
     )
     meta_df = meta_df.dropna(axis="index", subset=["sample", "penetration_level"])
 
-    metric_df, meta_df = synthesize(metric_df, meta_df, metric_class)
-
     if metric_class == "voltage" and len(node_types) == 1:
-        metric_df = metric_df[metric_df.node_types == node_types[0]]
+        metric_df = metric_df[metric_df.node_type == node_types[0]]
+
+    metric_df, meta_df = synthesize(metric_df, meta_df, metric_class)
 
     queries = build_queries(metric_df.columns, thresholds, metric_class, on=on)
     query_phrase = " & ".join(queries)
