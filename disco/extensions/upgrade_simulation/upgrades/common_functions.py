@@ -488,7 +488,8 @@ def get_all_transformer_info_instance(compute_loading=True, upper_limit=1.5):
             extract_magang = dss.CktElement.CurrentsMagAng()[: 2 * row["phases"]]  # extract elements based on num of ph
             xfmr_current_magnitude = extract_magang[::2]
             max_amp_loading = max(xfmr_current_magnitude)
-            max_per_unit_loading = round(round(max_amp_loading, 3) / round(amp_limit_per_phase, 3), 3)
+            max_per_unit_loading = round(max_amp_loading / amp_limit_per_phase, 4)
+            # max_per_unit_loading = round(round(max_amp_loading, 3) / round(amp_limit_per_phase, 3), 3)
             all_df.at[index, "max_amp_loading"] = max_amp_loading
             all_df.at[index, "max_per_unit_loading"] = max_per_unit_loading
             if max_per_unit_loading > upper_limit:
@@ -591,7 +592,8 @@ def get_all_line_info_instance(compute_loading=True, upper_limit=1.5, ignore_swi
             extract_magang = dss.CktElement.CurrentsMagAng()[: 2 * row["phases"]]
             line_current = extract_magang[::2]
             max_amp_loading = max(line_current)
-            max_per_unit_loading = round(round(max_amp_loading, 3) / round(row["normamps"], 3), 3)
+            max_per_unit_loading = round(max_amp_loading / row["normamps"], 4)
+            # max_per_unit_loading = round(round(max_amp_loading, 3) / round(row["normamps"], 3), 3)
             all_df.at[index, "max_amp_loading"] = max_amp_loading
             all_df.at[index, "max_per_unit_loading"] = max_per_unit_loading
             if max_per_unit_loading > upper_limit:

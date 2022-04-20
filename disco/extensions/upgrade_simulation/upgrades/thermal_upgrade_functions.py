@@ -28,7 +28,6 @@ def correct_line_violations(
     -------
 
     """
-    print(line_loading_df.loc[line_loading_df['status']=='overloaded'][['name', 'max_amp_loading', 'normamps']])
     equipment_type = "Line"
     line_upgrades_df = pd.DataFrame()
     upgrades_dict = {}
@@ -39,7 +38,6 @@ def correct_line_violations(
     overloaded_loading_df = line_loading_df.loc[
         line_loading_df["status"] == "overloaded"]
     overloaded_loading_df["required_design_amp"] = overloaded_loading_df["max_amp_loading"] / line_design_pu
-    print(overloaded_loading_df[['name', 'max_amp_loading', 'normamps', 'required_design_amp']])
     deciding_property_list = ["Switch", "kV", "phases", "line_placement",]  # list of properties based on which upgrade is chosen
     line_upgrade_options.set_index(deciding_property_list, inplace=True)
     overloaded_loading_df.set_index(deciding_property_list, inplace=True)
