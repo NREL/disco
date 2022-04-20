@@ -37,6 +37,7 @@ def determine_thermal_upgrades(
     start_time = time.time()
     logger.info( f"Simulation start time: {start_time}")   
     pydss_params = {"enable_pydss_solve": enable_pydss_solve, "pydss_volt_var_model": pydss_volt_var_model}
+    create_plots = True
     # start upgrades
     simulation_params = reload_dss_circuit(dss_file_list=[master_path], commands_list=None, **pydss_params)
     timepoint_multipliers = thermal_config["timepoint_multipliers"]
@@ -86,10 +87,11 @@ def determine_thermal_upgrades(
     if len(initial_overloaded_xfmr_list) > 0 or len(initial_overloaded_line_list) > 0:
         n = len(initial_overloaded_xfmr_list) +  len(initial_overloaded_line_list)
         equipment_with_violations = {"Transformer": initial_xfmr_loading_df, "Line": initial_line_loading_df}
-        plot_thermal_violations(fig_folder=thermal_upgrades_directory, title="Thermal violations before thermal upgrades_"+str(n), 
-                                equipment_with_violations=equipment_with_violations, circuit_source=None, show_fig=False)
-        plot_voltage_violations(fig_folder=thermal_upgrades_directory, title="Bus violations before thermal upgrades_"+str(len(initial_buses_with_violations)), 
-                                buses_with_violations=initial_buses_with_violations, circuit_source=None, show_fig=False)
+        if create_plots:
+            plot_thermal_violations(fig_folder=thermal_upgrades_directory, title="Thermal violations before thermal upgrades_"+str(n), 
+                                    equipment_with_violations=equipment_with_violations, circuit_source=None, show_fig=False)
+            plot_voltage_violations(fig_folder=thermal_upgrades_directory, title="Bus violations before thermal upgrades_"+str(len(initial_buses_with_violations)), 
+                                    buses_with_violations=initial_buses_with_violations, circuit_source=None, show_fig=False)
         upgrade_status = "Thermal Upgrades Required"  # status - whether upgrades done or not
     else:
         upgrade_status = "Thermal Upgrades not Required"  # status - whether upgrades done or not
@@ -232,10 +234,11 @@ def determine_thermal_upgrades(
     dump_data(xfmr_upgrades_df.to_dict('records'), output_json_xfmr_upgrades_filepath, indent=4)
     n = len(overloaded_xfmr_list) +  len(overloaded_line_list)
     equipment_with_violations = {"Transformer": xfmr_loading_df, "Line": line_loading_df}
-    plot_thermal_violations(fig_folder=thermal_upgrades_directory, title="Thermal violations after thermal upgrades_"+str(n), 
-                            equipment_with_violations=equipment_with_violations, circuit_source=None, show_fig=False)
-    plot_voltage_violations(fig_folder=thermal_upgrades_directory, title="Bus violations after thermal upgrades_"+str(len(buses_with_violations)), 
-                            buses_with_violations=buses_with_violations, circuit_source=None, show_fig=False)
+    if (upgrade_status == "Thermal Upgrades Required") and create_plots:
+        plot_thermal_violations(fig_folder=thermal_upgrades_directory, title="Thermal violations after thermal upgrades_"+str(n), 
+                                equipment_with_violations=equipment_with_violations, circuit_source=None, show_fig=False)
+        plot_voltage_violations(fig_folder=thermal_upgrades_directory, title="Bus violations after thermal upgrades_"+str(len(buses_with_violations)), 
+                                buses_with_violations=buses_with_violations, circuit_source=None, show_fig=False)
     end_time = time.time()
     logger.info(f"Simulation end time: {end_time}")
     simulation_time = end_time - start_time

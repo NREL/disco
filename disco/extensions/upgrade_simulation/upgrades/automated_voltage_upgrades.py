@@ -42,7 +42,7 @@ def determine_voltage_upgrades(
         multiplier_type = "uniform"
     else:
         multiplier_type = "original"
-        
+    create_plots = True
     # default_capacitor settings and customization
     default_capacitor_settings = DEFAULT_CAPACITOR_SETTINGS
     default_capacitor_settings["capON"] = round(
@@ -135,9 +135,9 @@ def determine_voltage_upgrades(
         upgrade_status = 'No Voltage Upgrades needed'  # status - whether voltage upgrades done or not
     # else, if there are bus violations based on initial check, start voltage upgrades process
     else:
-        enable_detailed = True
-        plot_voltage_violations(fig_folder=voltage_upgrades_directory, title="Bus violations before voltage upgrades_"+str(len(initial_buses_with_violations)), 
-                                buses_with_violations=initial_buses_with_violations, circuit_source=circuit_source, show_fig=False, enable_detailed=enable_detailed)
+        if create_plots:
+            plot_voltage_violations(fig_folder=voltage_upgrades_directory, title="Bus violations before voltage upgrades_"+str(len(initial_buses_with_violations)), 
+                                    buses_with_violations=initial_buses_with_violations, circuit_source=circuit_source, show_fig=False, enable_detailed=True)
         # change voltage checking thresholds. determine violations based on final limits
         voltage_upper_limit = voltage_config["final_upper_limit"]
         voltage_lower_limit = voltage_config["final_lower_limit"]
@@ -399,8 +399,9 @@ def determine_voltage_upgrades(
                                                 timepoint_multipliers=timepoint_multipliers, **simulation_params)
     overloaded_xfmr_list = list(xfmr_loading_df.loc[xfmr_loading_df['status'] == 'overloaded']['name'].unique())
     overloaded_line_list = list(line_loading_df.loc[line_loading_df['status'] == 'overloaded']['name'].unique())
-    plot_voltage_violations(fig_folder=voltage_upgrades_directory, title="Bus violations after voltage upgrades_"+str(len(buses_with_violations)), 
-                                buses_with_violations=buses_with_violations, circuit_source=circuit_source, show_fig=False)
+    if create_plots:
+        plot_voltage_violations(fig_folder=voltage_upgrades_directory, title="Bus violations after voltage upgrades_"+str(len(buses_with_violations)), 
+                                    buses_with_violations=buses_with_violations, circuit_source=circuit_source, show_fig=False)
     end_time = time.time()
     logger.info(f"Simulation end time: {end_time}")
     simulation_time = end_time - start_time
