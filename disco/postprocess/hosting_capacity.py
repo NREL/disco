@@ -108,19 +108,19 @@ def synthesize_thermal(results_df):
     return df
 
 def synthesize(metrics_df, metadata_df, metric_class):
-    """ For snapshot hosting capacity analysis,
-    reduce metrics and metadata tables to one time-point like tables
+    """Reduce metrics and metadata tables to one time-point like tables
     where for each metric, only the worst metric value of all time-points
     is recorded
     """
+    if metric_class == 'voltage':
+        # Both snapshot and time-series have primaries + secondaries.
+        # Snapshot also has several time points.
+        metrics_df = synthesize_voltage(metrics_df)
 
-    """the presence of 'time_point' in the dataframe
-    indicates that we are dealing with a snapshot case"""
-    if 'time_point' in metrics_df.columns:
-        if metric_class == 'voltage':
-            metrics_df = synthesize_voltage(metrics_df)
-        if metric_class == 'thermal':
-            metrics_df = synthesize_thermal(metrics_df)
+    # the presence of 'time_point' in the dataframe
+    # indicates that we are dealing with a snapshot case"""
+    elif metric_class == 'thermal' and 'time_point' in metrics_df.columns:
+        metrics_df = synthesize_thermal(metrics_df)
 
     return metrics_df, metadata_df
 
