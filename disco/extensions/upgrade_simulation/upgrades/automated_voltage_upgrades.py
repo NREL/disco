@@ -131,8 +131,8 @@ def determine_voltage_upgrades(
     # if there are no buses with violations based on initial check, don't get into upgrade process
     # directly go to end of file
     if len(initial_buses_with_violations) <= 0:
-        logger.info("No Voltage Upgrades Required.")
-        upgrade_status = 'No Voltage Upgrades needed'  # status - whether voltage upgrades done or not
+        logger.info("Voltage Upgrades not Required.")
+        upgrade_status = 'Voltage Upgrades not Required'  # status - whether voltage upgrades done or not
     # else, if there are bus violations based on initial check, start voltage upgrades process
     else:
         if create_plots:
@@ -141,7 +141,7 @@ def determine_voltage_upgrades(
         # change voltage checking thresholds. determine violations based on final limits
         voltage_upper_limit = voltage_config["final_upper_limit"]
         voltage_lower_limit = voltage_config["final_lower_limit"]
-        upgrade_status = 'Voltage Upgrades were needed'  # status - whether voltage upgrades done or not
+        upgrade_status = 'Voltage Upgrades Required'  # status - whether voltage upgrades done or not
         logger.info("Voltage Upgrades Required.")
         # start with capacitors
         if voltage_config["capacitor_action_flag"] and len(orig_capacitors_df) > 0:
@@ -399,7 +399,7 @@ def determine_voltage_upgrades(
                                                 timepoint_multipliers=timepoint_multipliers, **simulation_params)
     overloaded_xfmr_list = list(xfmr_loading_df.loc[xfmr_loading_df['status'] == 'overloaded']['name'].unique())
     overloaded_line_list = list(line_loading_df.loc[line_loading_df['status'] == 'overloaded']['name'].unique())
-    if create_plots:
+    if (upgrade_status == "Voltage Upgrades Required") and create_plots:
         plot_voltage_violations(fig_folder=voltage_upgrades_directory, title="Bus violations after voltage upgrades_"+str(len(buses_with_violations)), 
                                     buses_with_violations=buses_with_violations, circuit_source=circuit_source, show_fig=False)
     end_time = time.time()
