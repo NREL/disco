@@ -36,10 +36,10 @@ def determine_thermal_upgrades(
 ):
     start_time = time.time()
     logger.info( f"Simulation start time: {start_time}")   
-    pydss_params = {"enable_pydss_solve": enable_pydss_solve, "pydss_volt_var_model": pydss_volt_var_model}
+    pydss_initial_params = {"enable_pydss_solve": enable_pydss_solve, "pydss_volt_var_model": pydss_volt_var_model}
     create_plots = True
     # start upgrades
-    simulation_params = reload_dss_circuit(dss_file_list=[master_path], commands_list=None, **pydss_params)
+    simulation_params = reload_dss_circuit(dss_file_list=[master_path], commands_list=None, **pydss_initial_params)
     timepoint_multipliers = thermal_config["timepoint_multipliers"]
     if timepoint_multipliers is not None:
         multiplier_type = "uniform"
@@ -71,7 +71,7 @@ def determine_thermal_upgrades(
         initial_undervoltage_bus_list,
         initial_overvoltage_bus_list,
         initial_buses_with_violations,
-    ) = get_bus_voltages(upper_limit=voltage_upper_limit, lower_limit=voltage_lower_limit, **simulation_params)
+    ) = get_bus_voltages(upper_limit=voltage_upper_limit, lower_limit=voltage_lower_limit, pydss_initial_params=pydss_initial_params, **simulation_params)
     initial_xfmr_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["transformer_upper_limit"], 
                                                          equipment_type="transformer", timepoint_multipliers=timepoint_multipliers, 
                                                          multiplier_type=multiplier_type, **simulation_params)

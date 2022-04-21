@@ -921,6 +921,12 @@ def get_bus_voltages(voltage_upper_limit=1.05, voltage_lower_limit=0.95, raise_e
     overvoltage_bus_list = list(all_df.loc[all_df['Overvoltage violation'] == True]['name'].unique())
     buses_with_violations = undervoltage_bus_list + overvoltage_bus_list
 
+    pydss_initial_params = kwargs.pop("pydss_initial_params", None)
+    if pydss_initial_params is not None:
+        breakpoint()
+        temp_params = define_initial_pydss_settings(**pydss_initial_params)
+        kwargs.update(temp_params)
+        
     circuit_solve_and_check(raise_exception=raise_exception, **kwargs)  # this is added as a final check for convergence
     return all_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations
 

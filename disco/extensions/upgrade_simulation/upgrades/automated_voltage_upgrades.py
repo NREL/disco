@@ -67,9 +67,9 @@ def determine_voltage_upgrades(
     if not os.path.exists(thermal_upgrades_dss_filepath):
         raise Exception( f"AutomatedThermalUpgrade did not produce thermal upgrades dss file")
     
-    pydss_params = {"enable_pydss_solve": enable_pydss_solve, "pydss_volt_var_model": pydss_volt_var_model}
+    pydss_initial_params = {"enable_pydss_solve": enable_pydss_solve, "pydss_volt_var_model": pydss_volt_var_model}
     dss_file_list = [master_path, thermal_upgrades_dss_filepath]
-    simulation_params = reload_dss_circuit(dss_file_list=dss_file_list, commands_list=None, **pydss_params)
+    simulation_params = reload_dss_circuit(dss_file_list=dss_file_list, commands_list=None, **pydss_initial_params)
 
     # reading original objects (before upgrades)
     orig_ckt_info = get_circuit_info()
@@ -243,6 +243,7 @@ def determine_voltage_upgrades(
                     only_sub_ltc=True, dss_file_list=dss_file_list,
                     dss_commands_list=dss_commands_list + add_subxfmr_commands + add_subltc_commands, **simulation_params)
                 
+                simulation_params = define_initial_pydss_settings(**pydss_initial_params)
                 circuit_solve_and_check(raise_exception=True, **simulation_params)
                 new_sub_commands = add_subxfmr_commands + add_subltc_commands + \
                     subltc_control_settings_commands_list
@@ -267,6 +268,7 @@ def determine_voltage_upgrades(
                     upper_limit=voltage_upper_limit, lower_limit=voltage_lower_limit, exclude_sub_ltc=False,
                     only_sub_ltc=True, dss_file_list=dss_file_list,
                     dss_commands_list=dss_commands_list + add_subltc_commands, **simulation_params)
+                simulation_params = define_initial_pydss_settings(**pydss_initial_params)
                 circuit_solve_and_check(raise_exception=True, **simulation_params)
                 new_sub_commands = add_subltc_commands + subltc_control_settings_commands_list
                 dss_commands_list = dss_commands_list + new_sub_commands
@@ -280,6 +282,7 @@ def determine_voltage_upgrades(
                     upper_limit=voltage_upper_limit, lower_limit=voltage_lower_limit, exclude_sub_ltc=False,
                     only_sub_ltc=True, dss_file_list=dss_file_list,
                     dss_commands_list=dss_commands_list, **simulation_params)
+                simulation_params = define_initial_pydss_settings(**pydss_initial_params)
                 circuit_solve_and_check(raise_exception=True, **simulation_params)
                 new_sub_commands = subltc_control_settings_commands_list
                 dss_commands_list = dss_commands_list + new_sub_commands

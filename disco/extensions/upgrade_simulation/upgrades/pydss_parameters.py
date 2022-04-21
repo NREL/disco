@@ -21,6 +21,8 @@ def define_initial_pydss_settings(**kwargs):
     controller = CircuitElementController(
         kwargs["pydss_volt_var_model"]
     )  # Use all elements.
+    # TODO CHECK:
+    # it fails here when run again (looks like circuit needs to be reloaded everytime.)
     pydss_controller_manager = ControllerManager.create([controller], settings)
     kwargs.update({"pydss_controller_manager": pydss_controller_manager})
     return kwargs
