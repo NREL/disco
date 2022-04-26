@@ -38,6 +38,12 @@ logger = logging.getLogger(__name__)
     help="JADE config file to create",
 )
 @click.option(
+    "--dc-ac-ratio",
+    default=None,
+    type=float,
+    help="Set a custom DC-AC ratio for PV Systems.",
+)
+@click.option(
     "-e", "--exports-filename",
     default=get_default_exports_file(SimulationType.SNAPSHOT, AnalysisType.IMPACT_ANALYSIS),
     show_default=True,
@@ -118,6 +124,7 @@ logger = logging.getLogger(__name__)
 def snapshot(
     inputs,
     config_file,
+    dc_ac_ratio,
     exports_filename,
     reports_filename,
     pf1,
@@ -179,6 +186,7 @@ def snapshot(
         scenarios=scenarios,
         order_by_penetration=order_by_penetration,
         estimated_exec_secs_per_job=ESTIMATED_EXEC_SECS_PER_JOB,
+        dc_ac_ratio=dc_ac_ratio,
     )
 
     if volt_var_curve is not None:

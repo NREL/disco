@@ -77,6 +77,10 @@ class PyDssSimulationBase(JobExecutionInterface, abc.ABC):
         self._add_pct_pmpp = add_pct_pmpp
         self._irradiance_scaling_factor = irradiance_scaling_factor
 
+    @property
+    def model(self):
+        return self._model
+
     def _get_control_mode(self):
         if self._model.model_type in (
             "SnapshotImpactAnalysisModel",
