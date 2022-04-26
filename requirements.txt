@@ -15,5 +15,6 @@ sqlalchemy
 toml>=0.10.0
 xlrd
 unidecode>=1.2.0
+seaborn
 sklearn
 NREL-jade
