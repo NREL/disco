@@ -7,10 +7,10 @@ This section gives an overview about DISCO and its workflows.
 DISCO can be used for distributed grid system simulation analysis.
 The analysis types are:
 
-* snapshot impact analysis
-* hosting capacity analysis (based on snapshot impact analysis results)
-* time series impact analysis
-* time series hosting capacity
+* Snapshot Impact Analysis
+* Static Hosting Capacity Analysis
+* Time Series Impact Analysis
+* Dynamic Hosting Capacity
 
 The diagram below shows the DISCO workflow:
 
