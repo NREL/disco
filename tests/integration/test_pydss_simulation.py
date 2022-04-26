@@ -12,7 +12,7 @@ from jade.utils.subprocess_manager import run_command
 from disco.extensions.pydss_simulation.pydss_configuration import PyDssConfiguration
 from disco.extensions.pydss_simulation.pydss_inputs import PyDssInputs
 from disco.extensions.pydss_simulation.pydss_simulation import PyDssSimulation
-from disco.pydss.pydss_analysis import PyDssAnalysis
+from disco.pydss.pydss_analysis import PyDssAnalysis, PyDssScenarioAnalysis
 from tests.common import *
 
 
@@ -29,7 +29,7 @@ def test_pydss_simulation(cleanup):
     config = PyDssConfiguration.deserialize(CONFIG_FILE)
 
     analysis = PyDssAnalysis(OUTPUT, config)
-    result = analysis.list_results()[0]
+    result = analysis.list_results()[1]
     pydss_results = analysis.read_results(result.name)
     assert len(pydss_results.scenarios) == 1
     scenario = pydss_results.scenarios[0]
@@ -37,6 +37,12 @@ def test_pydss_simulation(cleanup):
     df = scenario.get_dataframe("Lines", "Currents", lines[0])
     assert isinstance(df, pd.DataFrame)
     assert len(df) == 1
+
+    simulation = analysis.get_simulation(result.name)
+    scenario_analysis = PyDssScenarioAnalysis(simulation, pydss_results, scenario.name)
+    assert scenario_analysis.get_pu_bus_voltage_magnitudes()
+    assert isinstance(next(iter(scenario_analysis.get_line_loading_percentages().values())), pd.DataFrame)
+    assert isinstance(next(iter(scenario_analysis.get_transformer_loading_percentages().values())), pd.DataFrame)
 
     element_info_files = scenario.list_element_info_files()
     assert element_info_files

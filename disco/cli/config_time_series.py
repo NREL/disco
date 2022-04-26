@@ -48,6 +48,12 @@ def _callback_is_enabled(_, __, value):
     help="Calculate estimated per-job runtime by parsing the OpenDSS files.",
 )
 @click.option(
+    "--dc-ac-ratio",
+    default=None,
+    type=float,
+    help="Set a custom DC-AC ratio for PV Systems.",
+)
+@click.option(
     "--feeder-losses",
     type=click.Choice(("true", "false"), case_sensitive=False),
     callback=_callback_is_enabled,
@@ -153,6 +159,7 @@ def time_series(
     config_file,
     estimated_run_minutes,
     calc_estimated_run_minutes,
+    dc_ac_ratio,
     feeder_losses,
     pv_clipping,
     pv_curtailment,
@@ -200,6 +207,7 @@ def time_series(
         scenarios=scenarios,
         order_by_penetration=order_by_penetration,
         estimated_run_minutes=estimated_run_minutes,
+        dc_ac_ratio=dc_ac_ratio,
     )
 
     if volt_var_curve is not None:
