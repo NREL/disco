@@ -10,7 +10,7 @@ The analysis types are:
 * Snapshot Impact Analysis
 * Static Hosting Capacity Analysis
 * Time Series Impact Analysis
-* Dynamic Hosting Capacity
+* Dynamic Hosting Capacity Analysis
 
 The diagram below shows the DISCO workflow:
 

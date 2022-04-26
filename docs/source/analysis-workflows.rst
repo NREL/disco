@@ -9,9 +9,9 @@ batches of jobs, or a pipeline of batches.
 
 The supported analyses include:
 
-* Static Hosting Capacity
+* Static Hosting Capacity Analysis
 * Dynamic Hosting Capacity Analysis
-* Upgrade Cost Analysis
+* Upgrade Cost Analysis Analysis
 * Snapshot/Time Series Impact Analysis
 
 The following sections show the analysis workflows in detail.

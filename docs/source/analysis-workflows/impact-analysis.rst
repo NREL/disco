@@ -1,6 +1,7 @@
 Impact Analysis
 ===============
 This section shows how to perform customized analysis with time-series simulations on a set of input models.
+Note that you could generally substitute "snapshot" for "time-series" for that type of simulation.
 
 Other sections of this documentation describe workflows that rely on DISCO/PyDSS to collect
 specific metrics from each simulation. For example, the dynamic hosting capacity analysis workflow
