@@ -10,6 +10,7 @@ networkx
 opendssdirect.py>=0.3.7
 openpyxl
 pandas
+plotly
 prettytable
 psutil>=5.6.2
 pydantic>=1.6.0
