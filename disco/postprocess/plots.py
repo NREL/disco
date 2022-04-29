@@ -32,7 +32,7 @@ def plot_voltage(output_dir, scenario):
     ax.set_title(feeder_example)
     ax.set_xlabel("Penetration level")
     ax.set_ylabel("max_voltage (pu)")
-    fig.savefig("max_voltage_base_voltvar.png")
+    fig.savefig(os.path.join(output_dir,"max_voltage_base_voltvar.png"))
     logger.info("Voltage plot created.")
 
 
@@ -48,6 +48,6 @@ def plot_hc(output_dir, scenario):
     ax.set_title(f"HCA heatmap: {scenario}")
     ax.set_xlabel("Penetration level (%)")
     ax.legend(ncol=3)
-    plt.savefig("hca.png")
+    plt.savefig(os.path.join(output_dir,"hca.png"))
     
     logger.info("Hostint capacity plot created.")
