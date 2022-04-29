@@ -281,3 +281,13 @@ which contains the results of 3 stages with ``--prescreen`` enabled.
 
 As shown above, the metrics summary tables ``*.csv`` were created in ``output-stage2``
 by postprocess job from stage 3.
+
+**5. Check Results and Plots**
+
+Based on the metrics results, DISCO integrate plot functions which help create 3 plots.
+
+1. compare voltage primary and secondary on the first feeder.
+2. compare pf1 and volt-var on the first feeder.
+3. heatmap for max and min hosting capacity for all feeders.
+
+These visualizations show the feeder operational conditions under different PV penetration levels.
