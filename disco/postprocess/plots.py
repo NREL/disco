@@ -116,4 +116,4 @@ def plot_hc(output_dir, scenario):
     ax.legend(ncol=3)
     plt.savefig(os.path.join(output_dir,f"hca__{scenario}.png"))
     
-    logger.info("Hostint capacity plot created.")
+    logger.info("Hosting capacity plot created.")
