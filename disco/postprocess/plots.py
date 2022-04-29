@@ -21,7 +21,7 @@ def plot_voltage(output_dir, scenario):
     ax.set_title(feeder_example)
     ax.set_xlabel("Penetration level")
     ax.set_ylabel("max_voltage (pu)")
-    fig.savefig("max_voltage_pri_sec.png")
+    fig.savefig(os.path.join(output_dir,"max_voltage_pri_sec.png"))
 
 
     fig, ax = plt.subplots(figsize=(8,8))
