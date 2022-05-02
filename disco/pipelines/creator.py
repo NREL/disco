@@ -66,7 +66,7 @@ class SnapshotPipelineCreator(PipelineCreatorBase):
         if impact_analysis or hosting_capacity:
             # Postprocess to make summary tables
             inputs = os.path.join("$JADE_PIPELINE_OUTPUT_DIR", f"output-stage{self.stage_num-1}")
-            commands.append(f"disco-internal make-summary-tables {inputs}")
+            commands.append(f"disco make-summary-tables {inputs}")
             
             # Postprocess to compute hosting capacity
             if hosting_capacity:
@@ -187,7 +187,7 @@ class TimeSeriesPipelineCreator(PipelineCreatorBase):
         hosting_capacity = self.template.analysis_type == AnalysisType.HOSTING_CAPACITY.value
         if impact_analysis or hosting_capacity:
             inputs = os.path.join("$JADE_PIPELINE_OUTPUT_DIR", f"output-stage{self.stage_num-1}")
-            commands.append(f"disco-internal make-summary-tables {inputs}")
+            commands.append(f"disco make-summary-tables {inputs}")
             if hosting_capacity:
                 for scenario in TIME_SERIES_SCENARIOS:
                     commands.append(f"disco-internal compute-hosting-capacity {inputs} --scenario={scenario}")

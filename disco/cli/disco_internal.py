@@ -9,7 +9,6 @@ from disco.cli.compute_snapshot_impact_analysis import compute_snapshot_impact_a
 from disco.cli.compute_time_series_hosting_capacity import compute_time_series_hosting_capacity
 from disco.cli.compute_time_series_impact_analysis import compute_time_series_impact_analysis
 from disco.cli.make_cba_tables import make_cba_tables
-from disco.cli.make_summary_tables import make_summary_tables
 from disco.cli.make_upgrade_tables import make_upgrade_tables
 from disco.cli.compute_hosting_capacity import compute_hosting_capacity
 from disco.cli.cba_post_process import cba_post_process
@@ -30,7 +29,6 @@ cli.add_command(compute_snapshot_impact_analysis)
 cli.add_command(compute_time_series_hosting_capacity)
 cli.add_command(compute_time_series_impact_analysis)
 cli.add_command(make_cba_tables)
-cli.add_command(make_summary_tables)
 cli.add_command(make_upgrade_tables)
 cli.add_command(compute_hosting_capacity)
 cli.add_command(cba_post_process)

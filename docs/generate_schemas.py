@@ -3,6 +3,10 @@ from pathlib import Path
 
 import click
 
+from disco.models.power_flow_generic_models import (
+    PowerFlowSnapshotSimulationModel,
+    PowerFlowTimeSeriesSimulationModel,
+)
 from disco.models.upgrade_cost_analysis_generic_model import *
 
 
@@ -11,6 +15,8 @@ from disco.models.upgrade_cost_analysis_generic_model import *
 def generate_schemas(output_dir):
     output_dir.mkdir(exist_ok=True, parents=True)
     for model in (
+        PowerFlowSnapshotSimulationModel,
+        PowerFlowTimeSeriesSimulationModel,
         UpgradeCostAnalysisSimulationModel,
         UpgradeSummaryResultsModel,
         # ThermalUpgradeParamsModel,

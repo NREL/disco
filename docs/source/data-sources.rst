@@ -159,3 +159,28 @@ This format requires the following directory structure:
   ├── format.toml
 
 Where in *format.toml*, it defines ``type = "SourceTree2Model"``.
+
+
+Generic Power Flow Models
+=========================
+You can use this format to run power-flow simulations on your own OpenDSS models.
+Unlike simulations run in the other formats, DISCO will not make any dynamic changes to the
+models (as it does for DC-AC ratio for PVSystems).
+
+Refer to these input JSON files as examples:
+
+- `Snapshot <https://github.com/NREL/disco/blob/main/tests/data/snapshot_generic.json>`_
+- `Time Series <https://github.com/NREL/disco/blob/main/tests/data/time_series_generic.json>`_
+
+This `test file <https://github.com/NREL/disco/blob/main/tests/integration/test_generic_power_flow.py>`_
+demonstrates the workflow.
+
+PowerFlowSnapshotSimulationModel
+----------------------------------
+.. literalinclude:: ../build/json_schemas/PowerFlowSnapshotSimulationModel.json
+    :language: json
+
+PowerFlowTimeSeriesSimulationModel
+----------------------------------
+.. literalinclude:: ../build/json_schemas/PowerFlowTimeSeriesSimulationModel.json
+    :language: json
