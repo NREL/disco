@@ -36,9 +36,6 @@ Config Jobs
     [PVSystems.Powers]
     store_values_type = "all"
 
-    [Buses.puVmagAngle]
-    store_values_type = "all"
-
     [Circuits.TotalPower]
     store_values_type = "all"
 
@@ -51,25 +48,10 @@ Config Jobs
     [Lines.Currents]
     store_values_type = "all"
 
-    [Lines.NormalAmps]
-    store_values_type = "all"
-
     [Lines.Losses]
     store_values_type = "all"
 
     [Lines.Powers]
-    store_values_type = "all"
-
-    [Transformers.Currents]
-    store_values_type = "all"
-
-    [Transformers.Losses]
-    store_values_type = "all"
-
-    [Transformers.NormalAmps]
-    store_values_type = "all"
-
-    [Transformers.Powers]
     store_values_type = "all"
 
 2. Create the configuration with all reports disabled, custom exports, all data exported, a custom
@@ -85,9 +67,11 @@ Config Jobs
         --dc-ac-ratio=1.0 \
         --exports-filename exports.toml \
         --export-data-tables \
-        --thermal-metrics=false \
-        --voltage-metrics=false \
-        --feeder-losses=false
+        --store-all-time-points \
+        --store-per-element-data \
+        --thermal-metrics=true \
+        --voltage-metrics=true \
+        --feeder-losses=true
 
 
 Submit Jobs
@@ -110,7 +94,20 @@ View Output Files
 Each job's outputs will be stored in ``time-series-output/job-outputs/<job-name>/pydss_project/project.zip``.
 Extract one zip file. You will see exported data for all element properties. For example, this file
 contains bus voltages for the volt-var scenario: ``Exports/control_mode/Buses__puVmagAngle.csv``.
-The same file will exist for the pf1 scenario.
+``Exports/control_mode/CktElement__ExportLoadingsMetric.csv`` contains thermal loading values.
+The same files will exist for the pf1 scenario.
+
+Summary files will be available for thermal and voltage metrics. Refer to ``Reports/thermal_metrics.json``
+and ``Reports/voltage_metrics.json``.
+
+Make metric table files
+-----------------------
+Run this command to convert the thermal and voltage metrics into tabular form.
+
+.. code-block:: bash
+
+    $ disco make-summary-tables time-series-output
+
 
 Access Results Programmatically
 -------------------------------
@@ -186,3 +183,37 @@ Use the PyDSS Data Viewer
 -------------------------
 PyDSS includes a data viewer that makes it easy to plot circuit element values in a Jupyter
 notebook. Refer to its `docs <https://nrel.github.io/PyDSS/tutorial.html#data-viewer>`_.
+
+
+Generic Models
+--------------
+This section follows the same workflow except that it uses pre-defined OpenDSS models. Unlike
+the previous example, DISCO will not make any changes to the model files.
+
+.. note:: If you enable external controls for PVSystems through PyDSS then the file specified as
+    ``opendss_model_file`` must contain the PVSystem definitions.
+
+.. code-block:: bash
+
+    $ disco config-generic-models time-series ~/disco/tests/data/time_series_generic.json \
+        --config-file time-series-config.json \
+        --volt-var-curve volt_var_ieee_1547_2018_catB \
+        --exports-filename exports.toml \
+        --export-data-tables \
+        --store-all-time-points \
+        --store-per-element-data \
+        --thermal-metrics=true \
+        --voltage-metrics=true \
+        --feeder-losses=true
+
+.. code-block:: bash
+
+    $ jade submit-jobs --local time-series-config.json -o time-series-output
+
+.. code-block:: bash
+    
+    $ jade show-results -o time-series-output
+
+.. code-block:: bash
+
+    $ disco make-summary-tables time-series-output

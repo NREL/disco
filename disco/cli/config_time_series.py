@@ -20,23 +20,133 @@ from disco.pydss.pydss_configuration_base import get_default_reports_file
 logger = logging.getLogger(__name__)
 
 
-def _callback_is_enabled(_, __, value):
+def callback_is_enabled(_, __, value):
     if value is None:
         return None
     return {"true": True, "false": False}[value.lower()]
 
 
+COMMON_TIME_SERIES_OPTIONS = (
+    click.option(
+        "-c",
+        "--config-file",
+        default=CONFIG_FILE,
+        show_default=True,
+        help="JADE config file to create",
+    ),
+    click.option(
+        "--feeder-losses",
+        type=click.Choice(("true", "false"), case_sensitive=False),
+        callback=callback_is_enabled,
+        default=None,
+        show_default=True,
+        help="Whether to enable the Feeder Losses report. If not set, use the value in "
+        "--reports-filename.",
+    ),
+    click.option(
+        "--pv-clipping",
+        type=click.Choice(("true", "false"), case_sensitive=False),
+        callback=callback_is_enabled,
+        default=None,
+        show_default=True,
+        help="Whether to enable the PV clipping report. If not set, use the value in "
+        "--reports-filename.",
+    ),
+    click.option(
+        "--pv-curtailment",
+        type=click.Choice(("true", "false"), case_sensitive=False),
+        callback=callback_is_enabled,
+        default=None,
+        show_default=True,
+        help="Whether to enable the PV curtailment report. If not set, use the value in "
+        "--reports-filename.",
+    ),
+    click.option(
+        "--thermal-metrics",
+        type=click.Choice(("true", "false"), case_sensitive=False),
+        callback=callback_is_enabled,
+        default=None,
+        show_default=True,
+        help="Whether to enable the Thermal Metrics report. If not set, use the value in "
+        "--reports-filename.",
+    ),
+    click.option(
+        "--voltage-metrics",
+        type=click.Choice(("true", "false"), case_sensitive=False),
+        callback=callback_is_enabled,
+        default=None,
+        show_default=True,
+        help="Whether to enable the Voltage Metrics report. If not set, use the value in "
+        "--reports-filename.",
+    ),
+    click.option(
+        "--export-data-tables",
+        default=False,
+        is_flag=True,
+        show_default=True,
+        help="Export collected circuit element properties as tables.",
+    ),
+    click.option(
+        "--exports-filename",
+        default=None,
+        show_default=True,
+        help="PyDSS export options, default is None.",
+    ),
+    click.option(
+        "-r",
+        "--reports-filename",
+        default=get_default_reports_file(SimulationType.QSTS),
+        show_default=True,
+        help="PyDSS report options",
+    ),
+    click.option(
+        "--skip-night/--no-skip-night",
+        default=False,
+        is_flag=True,
+        show_default=True,
+        help="Don't run controls or collect data during nighttime hours.",
+    ),
+    click.option(
+        "--store-all-time-points/--no-store-all-time-points",
+        is_flag=True,
+        default=False,
+        show_default=True,
+        help="Store per-element data at all time points for thermal and voltage metrics.",
+    ),
+    click.option(
+        "--store-per-element-data/--no-store-per-element-data",
+        is_flag=True,
+        default=False,
+        show_default=True,
+        help="Store per-element data in thermal and voltage metrics.",
+    ),
+    click.option(
+        "-v",
+        "--volt-var-curve",
+        default=None,
+        help="Update the PyDSS volt-var curve name. If not set, use the pre-configured curve.",
+    ),
+    click.option(
+        "--verbose",
+        is_flag=True,
+        default=False,
+        help="Enable debug logging",
+    ),
+)
+
+
+def common_time_series_options(func):
+    for option in reversed(COMMON_TIME_SERIES_OPTIONS):
+        func = option(func)
+    return func
+
+
 @click.command()
 @click.argument("inputs")
+@common_time_series_options
 @click.option(
-    "-c",
-    "--config-file",
-    default=CONFIG_FILE,
-    show_default=True,
-    help="JADE config file to create",
-)
-@click.option(
-    "-e", "--estimated-run-minutes",
+    "-e",
+    "--estimated-run-minutes",
     type=int,
     help="Estimated per-job runtime. Default is None.",
 )
@@ -54,125 +164,34 @@ def _callback_is_enabled(_, __, value):
     help="Set a custom DC-AC ratio for PV Systems.",
 )
 @click.option(
-    "--feeder-losses",
-    type=click.Choice(("true", "false"), case_sensitive=False),
-    callback=_callback_is_enabled,
-    default=None,
-    show_default=True,
-    help="Whether to enable the Feeder Losses report. If not set, use the value in "
-         "--reports-filename.",
-)
-@click.option(
-    "--pv-clipping",
-    type=click.Choice(("true", "false"), case_sensitive=False),
-    callback=_callback_is_enabled,
-    default=None,
-    show_default=True,
-    help="Whether to enable the PV clipping report. If not set, use the value in "
-         "--reports-filename.",
-)
-@click.option(
-    "--pv-curtailment",
-    type=click.Choice(("true", "false"), case_sensitive=False),
-
-    callback=_callback_is_enabled,
-    default=None,
-    show_default=True,
-    help="Whether to enable the PV curtailment report. If not set, use the value in "
-         "--reports-filename.",
-)
-@click.option(
-    "--thermal-metrics",
-    type=click.Choice(("true", "false"), case_sensitive=False),
-    callback=_callback_is_enabled,
-    default=None,
-    show_default=True,
-    help="Whether to enable the Thermal Metrics report. If not set, use the value in "
-         "--reports-filename.",
-)
-@click.option(
-    "--voltage-metrics",
-    type=click.Choice(("true", "false"), case_sensitive=False),
-    callback=_callback_is_enabled,
-    default=None,
-    show_default=True,
-    help="Whether to enable the Voltage Metrics report. If not set, use the value in "
-         "--reports-filename.",
-)
-@click.option(
-    "--export-data-tables",
-    default=False,
-    is_flag=True,
-    show_default=True,
-    help="Export collected circuit element properties as tables."
-)
-@click.option(
-    "--exports-filename",
-    default=None,
-    show_default=True,
-    help="PyDSS export options, default is None.",
-)
-@click.option(
-    "-r",
-    "--reports-filename",
-    default=get_default_reports_file(SimulationType.QSTS),
-    show_default=True,
-    help="PyDSS report options",
-)
-@click.option(
-    "--skip-night/--no-skip-night",
-    default=False,
-    is_flag=True,
-    show_default=True,
-    help="Don't run controls or collect data during nighttime hours."
-)
-@click.option(
     "--order-by-penetration/--no-order-by-penetration",
     default=False,
     show_default=True,
     help="Make jobs with higher penetration levels blocked by those with lower levels. This "
-         "can be beneficial if you want the higher-penetration-level jobs to be "
-         "canceled if a job with a lower penetration level fails. However, it can significantly "
-         "reduce the number of jobs that can run simultaneously.",
-)
-@click.option(
-    "--store-per-element-data/--no-store-per-element-data",
-    is_flag=True,
-    default=False,
-    show_default=True,
-    help="Store per-element data in thermal and voltage metrics.",
-)
-@click.option(
-    "-v",
-    "--volt-var-curve",
-    default=None,
-    help="Update the PyDSS volt-var curve name. If not set, use the pre-configured curve.",
-)
-@click.option(
-    "--verbose",
-    is_flag=True,
-    default=False,
-    help="Enable debug logging",
+    "can be beneficial if you want the higher-penetration-level jobs to be "
+    "canceled if a job with a lower penetration level fails. However, it can significantly "
+    "reduce the number of jobs that can run simultaneously.",
 )
 def time_series(
     inputs,
     config_file,
-    estimated_run_minutes,
-    calc_estimated_run_minutes,
-    dc_ac_ratio,
     feeder_losses,
     pv_clipping,
     pv_curtailment,
     thermal_metrics,
     voltage_metrics,
-    export_data_tables=False,
-    exports_filename=None,
-    reports_filename=None,
-    order_by_penetration=True,
-    skip_night=False,
-    store_per_element_data=False,
-    volt_var_curve=None,
-    verbose=False,
+    export_data_tables,
+    exports_filename,
+    reports_filename,
+    skip_night,
+    store_all_time_points,
+    store_per_element_data,
+    volt_var_curve,
+    verbose,
+    estimated_run_minutes,
+    calc_estimated_run_minutes,
+    dc_ac_ratio,
+    order_by_penetration,
 ):
     """Create JADE configuration for time series simulations."""
     level = logging.DEBUG if verbose else logging.INFO
@@ -194,6 +213,7 @@ def time_series(
         if report["name"] == "Voltage Metrics" and voltage_metrics is not None:
             report["enabled"] = voltage_metrics
         if report["name"] in ("Thermal Metrics", "Voltage Metrics"):
+            report["store_all_time_points"] = store_all_time_points
             report["store_per_element_data"] = store_per_element_data
 
     exports = {} if exports_filename is None else load_data(exports_filename)

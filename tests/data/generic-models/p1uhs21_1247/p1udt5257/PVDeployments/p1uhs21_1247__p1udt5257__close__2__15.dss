@@ -1,0 +1,8 @@
+Redirect ../OpenDSS/Master.dss
+
+// PV Scenario for 63.32952323373909 kW total size, Scenario type close, Sample 2 and penetration 15% (PV to load ratio) 
+! =====================PV SCENARIO FILE==============================
+New PVSystem.small_p1ulv5951_1_2_pv phases=1 bus1=p1ulv5951.1.2 kv=0.2402 irradiance=1 Pmpp=55.165 %Pmpp=100 kVA=55.165 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1565102_30.26_-97.47_2019
+New PVSystem.small_p1ulv59420_1_2_pv phases=1 bus1=p1ulv59420.1.2 kv=0.2402 irradiance=1 Pmpp=8.165 %Pmpp=100 kVA=8.165 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1568225_30.16_-97.43_2019
+
+Solve

@@ -91,7 +91,7 @@ def test_time_series_impact_analysis(cleanup):
     assert len(pydss_results.scenarios) == 2
     
     # Verify Post-process & Results
-    postprocess_cmd = f"disco-internal make-summary-tables {OUTPUT}"
+    postprocess_cmd = f"disco make-summary-tables {OUTPUT}"
     assert run_command(postprocess_cmd) == 0
     for filename in POSTPROCESS_RESULTS:
         summary_table = os.path.join(OUTPUT, filename)
@@ -138,7 +138,7 @@ def test_time_series_hosting_capacity(cleanup):
             assert list(controller_dict.values())
 
     # Verify Post-process & Results
-    postprocess_cmd = f"disco-internal make-summary-tables {OUTPUT}"
+    postprocess_cmd = f"disco make-summary-tables {OUTPUT}"
     assert run_command(postprocess_cmd) == 0
     for filename in POSTPROCESS_RESULTS:
         summary_table = os.path.join(OUTPUT, filename)

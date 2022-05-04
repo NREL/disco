@@ -221,7 +221,7 @@ class PipelineCreatorBase(ABC):
     
     @abstractmethod
     def make_postprocess_command(self):
-        """Make disco-internal make-summary-tables & compute-hosting-capacity command"""
+        """Make disco make-summary-tables & compute-hosting-capacity command"""
     
     def create_prescreen_auto_config_text_file(self):
         """Create script for generating prescreen config file"""
