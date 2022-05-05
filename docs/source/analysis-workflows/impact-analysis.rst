@@ -190,8 +190,8 @@ Generic Models
 This section follows the same workflow except that it uses pre-defined OpenDSS models. Unlike
 the previous example, DISCO will not make any changes to the model files.
 
-.. note:: If you enable external controls for PVSystems through PyDSS then the file specified as
-    ``opendss_model_file`` must contain the PVSystem definitions.
+Refer to :ref:`GenericPowerFlowModels` for specific details about the input file
+``time_series_generic.json``.
 
 .. code-block:: bash
 

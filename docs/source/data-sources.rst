@@ -160,6 +160,7 @@ This format requires the following directory structure:
 
 Where in *format.toml*, it defines ``type = "SourceTree2Model"``.
 
+.. _GenericPowerFlowModels:
 
 Generic Power Flow Models
 =========================
@@ -174,6 +175,11 @@ Refer to these input JSON files as examples:
 
 This `test file <https://github.com/NREL/disco/blob/main/tests/integration/test_generic_power_flow.py>`_
 demonstrates the workflow.
+
+.. note:: If you enable external controls for PVSystems through PyDSS then the file specified as
+    ``opendss_model_file`` must contain the PVSystem definitions.
+
+The inputs must conform to the JSON schemas below.
 
 PowerFlowSnapshotSimulationModel
 ----------------------------------
