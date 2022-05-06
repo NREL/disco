@@ -2,9 +2,9 @@
 Quick Start
 ***********
 
-This tutorial will show an example by using SMART-DS models with snapshot
-impact analysis. Note that you could generally substitute "time-series" for "snapshot"
-for that type of simulation.
+This tutorial will show an example by using `SMART-DS <https://www.nrel.gov/grid/smart-ds.html>`_
+models with snapshot impact analysis. Note that you could generally substitute "time-series" for
+"snapshot" for that type of simulation.
 
 Source Data
 ===========
