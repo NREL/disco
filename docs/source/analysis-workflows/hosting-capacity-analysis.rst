@@ -127,6 +127,14 @@ also in ``output/output-stage1``:
 The scenario name will be ``scenario``, ``pf1`` and/or ``control_mode``, depending on your 
 simulation type and/or ``--with-loadshape`` option.
 
+Note that DISCO also produces prototypical visulizations for hosting capacity automatically after each run:
+
+* ``hca__{scenario_name}.png``
+
+The voltage plot examples for the first feeder comparing pf1 vs. voltvar and comparing primary and secondary voltages:
+
+* ``max_voltage_pf1_voltvar.png``
+* ``max_voltage_pri_sec.png``
 
 **4. Results database**
 
