@@ -128,7 +128,7 @@ The scenario name will be ``scenario``, ``pf1`` and/or ``control_mode``, dependi
 simulation type and/or ``--with-loadshape`` option.
 
 
-Note that DISCO also produces prototypical visulizations for hosting capacity automatically after each run:
+Note that DISCO also produces prototypical visualizations for hosting capacity automatically after each run:
 
 * ``hca__{scenario_name}.png``
 
