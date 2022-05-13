@@ -238,7 +238,7 @@ class UpgradeCostAnalysisSimulationModel(BaseModel):
     dc_ac_ratio: Optional[float] = Field(
         title="dc_ac_ratio",
         description="DC-AC ratio for PV Systems",
-        default=1.15
+        default=None
     )
     jobs: List[UpgradeCostAnalysisGenericModel]
 

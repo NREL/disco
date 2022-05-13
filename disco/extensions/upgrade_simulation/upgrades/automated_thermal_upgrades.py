@@ -39,6 +39,7 @@ def determine_thermal_upgrades(
     logger.info( f"Simulation start time: {start_time}")   
     initial_simulation_params = {"enable_pydss_solve": enable_pydss_solve, "pydss_volt_var_model": pydss_volt_var_model,
                                  "dc_ac_ratio": dc_ac_ratio}
+    logger.info("Initial simulation parameters: %s", initial_simulation_params)
     create_plots = True
     # start upgrades
     simulation_params = reload_dss_circuit(dss_file_list=[master_path], commands_list=None, **initial_simulation_params)
