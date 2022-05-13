@@ -235,6 +235,11 @@ class UpgradeCostAnalysisSimulationModel(BaseModel):
         description="Include PF1 scenario (no controls) if pydss_controllers are defined.",
         default=True,
     )
+    dc_ac_ratio: Optional[float] = Field(
+        title="dc_ac_ratio",
+        description="DC-AC ratio for PV Systems",
+        default=1.15
+    )
     jobs: List[UpgradeCostAnalysisGenericModel]
 
     @root_validator(pre=True)

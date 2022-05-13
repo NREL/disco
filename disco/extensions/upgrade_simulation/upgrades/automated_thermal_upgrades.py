@@ -37,11 +37,13 @@ def determine_thermal_upgrades(
 ):
     start_time = time.time()
     logger.info( f"Simulation start time: {start_time}")   
-    pydss_params = {"enable_pydss_solve": enable_pydss_solve, "pydss_volt_var_model": pydss_volt_var_model}
+    initial_simulation_params = {"enable_pydss_solve": enable_pydss_solve, "pydss_volt_var_model": pydss_volt_var_model,
+                                 "dc_ac_ratio": dc_ac_ratio}
     create_plots = True
     # start upgrades
-    simulation_params = reload_dss_circuit(dss_file_list=[master_path], commands_list=None, **pydss_params)
+    simulation_params = reload_dss_circuit(dss_file_list=[master_path], commands_list=None, **initial_simulation_params)
     timepoint_multipliers = thermal_config["timepoint_multipliers"]
+    
     if timepoint_multipliers is not None:
         multiplier_type = "uniform"
     else:

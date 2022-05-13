@@ -68,8 +68,8 @@ def run(config_file, name, output, output_format, verbose):
         thermal_config = config.job_global_config["thermal_upgrade_params"]
         voltage_config = config.job_global_config["voltage_upgrade_params"]
         cost_database_filepath = config.job_global_config["upgrade_cost_database"]
-        
         ret = simulation.run(
+            dc_ac_ratio = dc_ac_ratio,
             enable_pydss_solve=enable_pydss_controller,
             pydss_controller_model=pydss_controller_model,
             thermal_config=thermal_config,

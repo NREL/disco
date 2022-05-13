@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 @track_timing(timer_stats_collector)
-def reload_dss_circuit(dc_ac_ratio, dss_file_list=None, commands_list=None, **kwargs):
+def reload_dss_circuit(dss_file_list=None, commands_list=None,  **kwargs):
     """This function clears the circuit and loads dss files and commands.
     Also solves the circuit and checks for convergence errors
 
@@ -38,7 +38,9 @@ def reload_dss_circuit(dc_ac_ratio, dss_file_list=None, commands_list=None, **kw
     for dss_file in dss_file_list:
         logger.info(f"Redirecting {dss_file}.")
         check_dss_run_command(f"Redirect {dss_file}")
-    change_pv_pctpmpp(dc_ac_ratio=1.15)  # TODO after merge, change
+    dc_ac_ratio = kwargs.get('dc_ac_ratio', None)
+    if dc_ac_ratio is not None:
+        change_pv_pctpmpp(dc_ac_ratio=dc_ac_ratio)
     check_dss_run_command("CalcVoltageBases")
     if commands_list is not None:
         logger.info(f"Running {len(commands_list)} dss commands")
@@ -220,6 +222,7 @@ def get_scenario_name(enable_pydss_solve, pydss_volt_var_model):
     return scenario
 
 
+@track_timing(timer_stats_collector)
 def change_pv_pctpmpp(dc_ac_ratio):
     """This function changes PV system pctpmpp based on passed dc-ac ratio
     newpctpmpp = oldpctpmpp / dc_ac_ratio

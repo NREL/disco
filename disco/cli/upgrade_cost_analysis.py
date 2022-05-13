@@ -195,8 +195,9 @@ def run_job(job, config, jobs_output_dir, verbose):
     global_config = {
         "thermal_upgrade_params": config.thermal_upgrade_params.dict(),
         "voltage_upgrade_params": config.voltage_upgrade_params.dict(),
-        "upgrade_simulation_params": {"enable_pydss_controller": config.enable_pydss_controllers},
+        "upgrade_simulation_params": {"enable_pydss_controller": config.enable_pydss_controllers,},
         "upgrade_cost_database": config.upgrade_cost_database,
+        "dc_ac_ratio": config.dc_ac_ratio,
     }
     global_config["upgrade_simulation_params"]["pydss_controller"] = None
     if (config.pydss_controllers.pv_controller is not None) and (config.enable_pydss_controllers):
@@ -210,6 +211,7 @@ def run_job(job, config, jobs_output_dir, verbose):
         output=jobs_output_dir,
     )
     simulation.run(
+        dc_ac_ratio = global_config["dc_ac_ratio"],
         enable_pydss_solve=global_config["upgrade_simulation_params"]["enable_pydss_controller"],
         pydss_controller_model=config.pydss_controllers.pv_controller,
         thermal_config=global_config["thermal_upgrade_params"],

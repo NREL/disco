@@ -72,9 +72,10 @@ def determine_voltage_upgrades(
     if not os.path.exists(thermal_upgrades_dss_filepath):
         raise Exception( f"AutomatedThermalUpgrade did not produce thermal upgrades dss file")
     
-    pydss_params = {"enable_pydss_solve": enable_pydss_solve, "pydss_volt_var_model": pydss_volt_var_model}
+    initial_simulation_params = {"enable_pydss_solve": enable_pydss_solve, "pydss_volt_var_model": pydss_volt_var_model,
+                                 "dc_ac_ratio": dc_ac_ratio}
     dss_file_list = [master_path, thermal_upgrades_dss_filepath]
-    simulation_params = reload_dss_circuit(dss_file_list=dss_file_list, commands_list=None, **pydss_params)
+    simulation_params = reload_dss_circuit(dss_file_list=dss_file_list, commands_list=None, **initial_simulation_params)
 
     # reading original objects (before upgrades)
     orig_ckt_info = get_circuit_info()
