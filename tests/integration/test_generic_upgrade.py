@@ -11,6 +11,7 @@ from jade.utils.utils import load_data, dump_data
 from tests.common import *
 
 BASE_CONFIG_FILE = Path("tests") / "data" / "upgrade_cost_analysis_generic.json"
+TEST_UPGRADES_CONFIG_FILE = Path("tests") / "data" / "test_upgrade_cost_analysis_generic.json"
 
 
 def test_generic_upgrade_jade_workflow(cleanup):
@@ -27,6 +28,15 @@ def test_generic_upgrade_jade_workflow(cleanup):
             verify_results(OUTPUT, 4)
     finally:
         test_upgrade_file.unlink()
+        
+
+def test_upgrades(cleanup):
+    run_cmd = f"disco upgrade-cost-analysis run {TEST_UPGRADES_CONFIG_FILE} -o {OUTPUT}"
+    assert run_command(run_cmd) == 0
+    breakpoint()
+    # TODO add function to verify thermal and voltage upgrades are zero
+    # verify_results(OUTPUT, 4)
+    # test_upgrade_file.unlink()
 
 
 def test_generic_upgrade_standalone_workflow(cleanup):
@@ -64,6 +74,7 @@ def setup_models():
 
 
 def verify_results(output_dir, num_jobs):
+    breakpoint()
     result_summary = ResultsSummary(output_dir)
     results = result_summary.list_results()
     assert len(results) == num_jobs
