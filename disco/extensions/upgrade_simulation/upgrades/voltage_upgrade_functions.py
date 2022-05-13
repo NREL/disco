@@ -492,17 +492,23 @@ def add_new_regcontrol_command(xfmr_info_series=None, default_regcontrol_setting
         sec_voltage = xfmr_info_series['kVs'][-1] / (math.sqrt(3))
     else:
         sec_voltage = xfmr_info_series['kVs'][-1]
-    regcontrol_info_series["ptratio"] = (sec_voltage * 1000) / nominal_voltage
+     # If the winding is Wye, the line-to-neutral voltage is used. Else, the line-to-line voltage is used.
+    # Here, bus kV is taken from Bus.kVBase
+    dss.Circuit.SetActiveBus(xfmr_info_series['bus'].split('.')[0])  # get base kV of node at which regulator is placed.
+    regcontrol_info_series["ptratio"] = (dss.Bus.kVBase() * 1000) / nominal_voltage
+    
     # use the primary bus to define name
-    regcontrol_info_series['regcontrol_name'] = 'new_regcontrol_' + xfmr_info_series['bus_names_only'][0]
+    curr_time = str(time.time())
+    # timestamp is added to name to ensure it is unique
+    time_stamp = curr_time.split(".")[0] + "_" + curr_time.split(".")[1]
+    regcontrol_info_series['regcontrol_name'] = 'new_regcontrol_' + xfmr_info_series['bus_names_only'][0] + "_" + time_stamp
     temp_df = get_regcontrol_info()
     if not temp_df.empty:
         enabled_regcontrol_exists = len(
             temp_df.loc[(temp_df['name'] == regcontrol_info_series['regcontrol_name']) & (temp_df['enabled'] == True)]) > 0
         if enabled_regcontrol_exists:
             logger.debug(f"Enabled regcontrol already exists: {regcontrol_info_series['name']}")
-        # return {'command_list': [], 'new_regcontrol_name': None}
-        return None
+            return None
     if not temp_df.empty:
         disabled_regcontrol_exists = len(
             temp_df.loc[(temp_df['name'] == regcontrol_info_series['regcontrol_name']) & (temp_df['enabled'] == False)]) > 0
@@ -513,7 +519,7 @@ def add_new_regcontrol_command(xfmr_info_series=None, default_regcontrol_setting
                                                       general_property_list=regcontrol_info_series["properties_to_be_defined"])
     check_dss_run_command(new_regcontrol_command)  # run command
     check_dss_run_command('CalcVoltageBases')
-    pass_flag = circuit_solve_and_check(raise_exception=False, **kwargs)  # solve circuit
+    pass_flag = circuit_solve_and_check(raise_exception=False, calcvoltagebases=True, **kwargs)  # solve circuit
     command_list.append(new_regcontrol_command)
     return {'command_list': command_list, 'new_regcontrol_name': regcontrol_info_series['regcontrol_name'], 'pass_flag': pass_flag}
 
@@ -700,7 +706,7 @@ def add_new_node_and_xfmr(node=None, circuit_source=None, sub_xfmr_conn_type=Non
     commands_list.append(edit_line_command_string)
     commands_list.append(new_xfmr_command_string)
     commands_list.append(f"// new node added {new_node.split('.')[0]},{x},{y}")
-    circuit_solve_and_check(raise_exception=True, **kwargs)
+    circuit_solve_and_check(raise_exception=True, calcvoltagebases=True, **kwargs)
     info_dict = {'commands_list': commands_list, 'new_xfmr_name': xfmr_name,
                  'modified_line_name': chosen_line_info["name"]}
     return info_dict
@@ -777,10 +783,13 @@ def add_new_regcontrol_at_node(node=None, default_regcontrol_settings=None, nomi
         raise Exception(f"Transformer needs to exist at node {node} in order to place regulator control.")
     chosen_xfmr = chosen_xfmr.iloc[0]
     regcontrols_df = get_regcontrol_info()
-    enabled_regcontrols_df = regcontrols_df.loc[regcontrols_df['enabled'] == True]
-    enabled_regcontrol_exists = len(enabled_regcontrols_df.loc[(enabled_regcontrols_df['transformer_bus1'] == node) | (
-        enabled_regcontrols_df['transformer_bus2'] == node)]) > 0
+    enabled_regcontrol_exists = False
+    if not regcontrols_df.empty: 
+        enabled_regcontrols_df = regcontrols_df.loc[regcontrols_df['enabled'] == True]
+        enabled_regcontrol_exists = len(enabled_regcontrols_df.loc[(enabled_regcontrols_df['transformer_bus1'] == node) | (
+                                        enabled_regcontrols_df['transformer_bus2'] == node)]) > 0
     if enabled_regcontrol_exists:
+        logger.debug("Enabled regcontrol already exists.")
         return None
     else:  # if enabled regcontrol does not exist on transformer
         # this runs the command and returns the command list
@@ -852,31 +861,36 @@ def test_new_regulator_placement_on_common_nodes(voltage_upper_limit=None, volta
     intra_cluster_group_severity_dict = {}
 
     for node in common_upstream_nodes_list:
-        print(node)
+        new_xfmr_added_dict = None
+        new_regcontrol_dict = None
+        logger.debug(node)        
         node = node.lower()
         # do not add a new reg control to source bus as it already has a LTC
         if node == circuit_source.lower():
+            logger.debug("This is the source node. Skip.")
             continue
         all_xfmr_df = get_thermal_equipment_info(compute_loading=False, equipment_type="transformer")
         temp_df = all_xfmr_df['bus_names_only'].apply(pd.Series)
         all_xfmr_df["primary_bus"] = temp_df[0].str.lower()
-        all_xfmr_df["secondary_bus"] = temp_df[1].str.lower()
-        # if transformer is already present at this node, skip. This is because:
+        all_xfmr_df["secondary_bus"] = temp_df[1].str.lower()        
+        # if enabled transformer is already present at this node, skip.
         # These pre-existing xfmrs will be "primary to secondary DTs" which we do not want to control.
         # Regulators are primarily in line and not on individual distribution transformers
-        if (len(all_xfmr_df[all_xfmr_df["primary_bus"] == node]) > 0) or \
-                (len(all_xfmr_df[all_xfmr_df["secondary_bus"] == node]) > 0):
+        if len(all_xfmr_df[(all_xfmr_df["primary_bus"].str.lower() == node.lower()) & (all_xfmr_df["enabled"] == True)]) or \
+            len(all_xfmr_df[(all_xfmr_df["secondary_bus"].str.lower() == node.lower()) & (all_xfmr_df["enabled"] == True)]):
+            logger.debug("Distribution transformer already exists on this node. Skip.")
             continue
         # add new transformer at this node
-        new_xfmr_added_dict = add_new_node_and_xfmr(
-            action_type='New', node=node, circuit_source=circuit_source, **kwargs)
-        if new_xfmr_added_dict is None:  # if new elements were not added, continue
+        new_xfmr_added_dict = add_new_node_and_xfmr(action_type='New', node=node, circuit_source=circuit_source, **kwargs)
+        if new_xfmr_added_dict is None:  # if new transformer elements were not added, continue
+            logger.debug("New transformer elements could not be added on this node.")
             continue
         # add new regulator control at this node
         # These are just default settings and do not have to be written in the output file
         new_regcontrol_dict = add_new_regcontrol_at_node(node=node, default_regcontrol_settings=default_regcontrol_settings,
                                                          nominal_voltage=nominal_voltage, **kwargs)
         if new_regcontrol_dict is None:
+            logger.debug("New regulator elements could not be added on this node.")
             if new_xfmr_added_dict is not None:
                 disable_new_xfmr_and_edit_line(transformer_name_to_disable=new_xfmr_added_dict['new_xfmr_name'],
                                                line_name_to_modify=new_xfmr_added_dict['modified_line_name'])
@@ -898,19 +912,18 @@ def test_new_regulator_placement_on_common_nodes(voltage_upper_limit=None, volta
                                                                                                                      line_name_to_modify=new_xfmr_added_dict[
                                                                                                                          'modified_line_name'],
                                                                                                                      **kwargs)
-
     # For a given list of common nodes in a cluster, identify the node which leads to minimum number of violations
     deciding_df = pd.DataFrame.from_dict(intra_cluster_group_severity_dict, orient='index')
     if len(deciding_df) == 0:  # If no nodes is found break the loop and go to next number of clusters
         chosen_node = None
+        logger.debug("There were no regulators found on any common node.")
         return None
     deciding_df = deciding_df.loc[deciding_df['converged'] == True]
     chosen_node = deciding_df[deciding_field].idxmin()  # node with minimum violations severity
     logger.debug(f"Node with minimum violation {deciding_field} is: {chosen_node}")
 
-    # Since this is an optimal location add the transformer here - this transformer will stay as long as
-    # clustering_option_number (num_clusters) does not increment. If this parameter changes then all devices at nodes mentioned
-    # should be disabled
+    # Since this is an optimal location add the transformer here - this transformer will stay as long as clustering_option_number (num_clusters) does not increment. 
+    # If clustering_option_number changes then all devices at nodes mentioned should be disabled
     add_new_node_and_xfmr(node=chosen_node, circuit_source=circuit_source, action_type='New', **kwargs)
     chosen_node_dict = intra_cluster_group_severity_dict[chosen_node]
     chosen_node_dict['node'] = chosen_node
@@ -1162,10 +1175,10 @@ def per_cluster_group_regulator_analysis(G=None, buses_list=None, voltage_config
                                                                     nominal_voltage=nominal_voltage,
                                                                     common_upstream_nodes_list=common_upstream_nodes_list, circuit_source=circuit_source,
                                                                     default_regcontrol_settings=default_regcontrol_settings, **kwargs)
+    
     if chosen_node_dict is None:  # if there is no common node on which regulator can be placed (for this cluster group)
         return None
     cluster_group_info_dict.update(chosen_node_dict)
-    write_flag = 0
     # choose best settings for all regulators (with new regulator added)
     init_regcontrols_df = get_regcontrol_info(correct_PT_ratio=True, nominal_voltage=nominal_voltage)
     regcontrol_sweep_df = sweep_regcontrol_settings(voltage_config=voltage_config, initial_regcontrols_df=init_regcontrols_df,
@@ -1174,21 +1187,21 @@ def per_cluster_group_regulator_analysis(G=None, buses_list=None, voltage_config
     regcontrols_df, regcontrol_settings_commands_list = choose_best_regcontrol_sweep_setting(
         regcontrol_sweep_df=regcontrol_sweep_df, initial_regcontrols_df=init_regcontrols_df, exclude_sub_ltc=True,
         only_sub_ltc=False, **kwargs)
+    # breakpoint()  # TODO CHECK REG SWEEP IMPACTING VOLTAGES
     # determine violation severity after changes
-    severity_dict = compute_voltage_violation_severity(
-        voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
+    severity_dict = compute_voltage_violation_severity(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
     cluster_group_info_dict.update(severity_dict)
     cluster_group_info_dict['settings_commands_list'] = regcontrol_settings_commands_list
-
     return cluster_group_info_dict
 
 
 def cluster_and_place_regulator(G=None, square_distance_df=None, buses_with_violations=None, num_clusters=None,
                                 voltage_config=None, voltage_upper_limit=None, voltage_lower_limit=None,
-                                default_regcontrol_settings=None, circuit_source=None, **kwargs):
-    # this function performs clustering on buses with violations, then iterates through each cluster group, performs regulator placement analysis
-    # Returns the best regulator placement for each cluster group, in the form of a dict
-
+                                default_regcontrol_settings=None, circuit_source=None, original_command_list=None,
+                                **kwargs):
+    """ This function performs clustering on buses with violations, then iterates through each cluster group, performs regulator placement analysis
+    Returns the best regulator placement for each cluster group, in the form of a dict.
+    """
     # this creates clusters of buses based on distance matrix. So nearby buses are clustered together
     clusters_dict = perform_clustering(square_distance_array=square_distance_df, num_clusters=num_clusters,
                                        buses_with_violations=buses_with_violations)
@@ -1199,7 +1212,7 @@ def cluster_and_place_regulator(G=None, square_distance_df=None, buses_with_viol
         cluster_group_info_dict[cluster_id] = per_cluster_group_regulator_analysis(G=G, buses_list=buses_list, voltage_config=voltage_config,
                                                                                    voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, default_regcontrol_settings=default_regcontrol_settings,
                                                                                    circuit_source=circuit_source, **kwargs)
-        # determine voltage violations after capacitor changes
+        # determine voltage violations after changes
         bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
             voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
         if (len(buses_with_violations)) == 0:
@@ -1211,7 +1224,10 @@ def cluster_and_place_regulator(G=None, square_distance_df=None, buses_with_viol
 @track_timing(timer_stats_collector)
 def determine_new_regulator_location(max_regs=2, circuit_source=None, buses_with_violations=None,
                                      voltage_upper_limit=None, voltage_lower_limit=None, create_plot=False, voltage_config=None,
-                                     default_regcontrol_settings=None, **kwargs):
+                                     default_regcontrol_settings=None,  original_command_list=None, **kwargs):
+    """Function to determine new regulator location. This decision is made after testing out various clustering and placement options.
+    """
+    voltage_upgrades_directory = kwargs.pop("voltage_upgrades_directory", None)
     deciding_field = 'deviation_severity'
     # prepare for clustering
     G = generate_networkx_representation(create_plot=False)
@@ -1220,46 +1236,45 @@ def determine_new_regulator_location(max_regs=2, circuit_source=None, buses_with
     if create_plot:
         fig_folder = kwargs.get('fig_folder', None)
         plot_heatmap_distmatrix(square_array=square_distance_df, fig_folder=fig_folder)
-    cluster_options_dict = {}
-
+    options_dict = {}
+    # breakpoint()  # TODO could pass commands and reload
     # Clustering the distance matrix into clusters equal to optimal clusters
-    # change number of clusters to be considered in the network, and perform analysis.
-    for num_clusters in range(1, max_regs + 1, 1):
-        cluster_option_name = f"cluster_option_{num_clusters}"
-        print(f"Clustering: {num_clusters}")
-        logger.debug(f"\nClustering option: {num_clusters}")
-        if (len(buses_with_violations)) < num_clusters:
-            break
-        if len(buses_with_violations) == 1:
-            cluster_option_name = f"cluster_option_1"
-            cluster_options_dict[cluster_option_name] = {}
-            cluster_options_dict[cluster_option_name]["details"] = per_cluster_group_regulator_analysis(G=G, buses_list=buses_with_violations, voltage_config=voltage_config,
-                                                                                   voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, default_regcontrol_settings=default_regcontrol_settings,
-                                                                                   circuit_source=circuit_source, **kwargs)
-            
+    # Iterate by changing number of clusters to be considered in the network, and perform analysis.
+    for option_num in range(1, max_regs + 1, 1):
+        cluster_option_name = f"cluster_option_{option_num}"
+        print(f"Clustering: {option_num}")
+        logger.debug(f"\nClustering option: {option_num}")
+        if (len(buses_with_violations)) < option_num:  # if number of violations is less than number of clusters, exit
             break
         temp_dict = cluster_and_place_regulator(G=G, square_distance_df=square_distance_df,
-                                                buses_with_violations=buses_with_violations, num_clusters=num_clusters,
+                                                buses_with_violations=buses_with_violations, num_clusters=option_num,
                                                 voltage_config=voltage_config, voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit,
-                                                default_regcontrol_settings=default_regcontrol_settings, circuit_source=circuit_source, **kwargs)
-        cluster_options_dict[cluster_option_name] = {}
-        cluster_options_dict[cluster_option_name]["details"] = temp_dict
+                                                default_regcontrol_settings=default_regcontrol_settings, circuit_source=circuit_source,  original_command_list=original_command_list,
+                                                **kwargs)
+        options_dict[cluster_option_name] = {}
+        options_dict[cluster_option_name]["details"] = temp_dict
+        # get severity for this option 
         severity_dict = compute_voltage_violation_severity(
             voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
-        # disable previous clustering option before moving onto next cluster option
-        disable_previous_clustering_option(cluster_group_info_dict=cluster_options_dict[cluster_option_name]["details"])
-        cluster_options_dict[cluster_option_name].update(severity_dict)
         # determine voltage violations after changes
         bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
             voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
+        if voltage_upgrades_directory is not None:
+            plot_voltage_violations(fig_folder=os.path.join(voltage_upgrades_directory, "reg_placement_options"), title="Bus violations during voltage regulator placement_"+cluster_option_name+"_"+
+                                    str(len(buses_with_violations)), buses_with_violations=buses_with_violations, circuit_source=circuit_source, show_fig=False, enable_detailed=True)
         if (len(buses_with_violations)) == 0:
             logger.info("All nodal violations have been removed successfully.....quitting")
             break
+        # disable previous clustering option before moving onto next cluster option
+        disable_previous_clustering_option(cluster_group_info_dict=options_dict[cluster_option_name]["details"])
+        # breakpoint()  # TODO could reload circuit here
+        options_dict[cluster_option_name].update(severity_dict)
+        
     # choose best clustering option based on severity dict
-    deciding_df = pd.DataFrame.from_dict(cluster_options_dict, orient='index')
+    deciding_df = pd.DataFrame.from_dict(options_dict, orient='index')
     # deciding_df = deciding_df.loc[deciding_df['converged'] == True]
     chosen_cluster_option = deciding_df[deciding_field].idxmin()
-    chosen_cluster_details = cluster_options_dict[chosen_cluster_option]["details"]
+    chosen_cluster_details = options_dict[chosen_cluster_option]["details"]
     new_commands = []
     for group_num in chosen_cluster_details.keys():
         if chosen_cluster_details[group_num] is not None:
@@ -1269,6 +1284,7 @@ def determine_new_regulator_location(max_regs=2, circuit_source=None, buses_with
 
 
 def disable_previous_clustering_option(cluster_group_info_dict):
+    """Function to disable opendss objects in previous clustering option"""
     for cluster_id in cluster_group_info_dict.keys():
         if cluster_group_info_dict[cluster_id] is None:
             return
@@ -1286,6 +1302,8 @@ def plot_heatmap_distmatrix(square_array=None, fig_folder=None):
 
 
 def plot_feeder(fig_folder, title, show_fig=False, circuit_source=None, enable_detailed=False):
+    """Function to plot feeder network.
+    """
     G = generate_networkx_representation()
     position_dict = nx.get_node_attributes(G, 'pos')
     nodes_list = G.nodes()
@@ -1333,6 +1351,9 @@ def plot_feeder(fig_folder, title, show_fig=False, circuit_source=None, enable_d
 
 
 def plot_voltage_violations(fig_folder, title, buses_with_violations, circuit_source=None, show_fig=False, enable_detailed=False):
+    """Function to plot voltage violations in network.
+    """
+    os.makedirs(fig_folder, exist_ok=True)
     default_node_size = 2
     default_node_color = 'black'
     G = generate_networkx_representation()
@@ -1359,7 +1380,10 @@ def plot_voltage_violations(fig_folder, title, buses_with_violations, circuit_so
         if not cap_df.empty:
             NodeLegend["Capacitor"] = list(cap_df['bus1'].str.split(".").str[0].unique())
         reg_df =  get_regcontrol_info()
-        # if not reg_df.empty:
+        if not reg_df.empty:
+            reg_df = reg_df.loc[reg_df.enabled == True]
+        if not reg_df.empty:
+            NodeLegend["Voltage Regulator"] = list(reg_df['transformer_bus1'].unique())
                            
     colored_nodelist = []
     for key in NodeLegend.keys():
@@ -1386,6 +1410,8 @@ def plot_voltage_violations(fig_folder, title, buses_with_violations, circuit_so
 
 
 def plot_thermal_violations(fig_folder, title, equipment_with_violations, circuit_source=None, show_fig=False):
+    """Function to plot thermal violations in network.
+    """
     default_node_size = 2
     default_node_color = 'black'
     G = generate_networkx_representation()
@@ -1399,6 +1425,18 @@ def plot_thermal_violations(fig_folder, title, equipment_with_violations, circui
     nx.draw_networkx_edges(Un_G, pos=position_dict, alpha=1.0, width=0.3)
     nx.draw_networkx_nodes(Un_G, pos=position_dict, alpha=1.0, node_size=default_node_size, node_color=default_node_color)
     
+    NodeLegend = {}
+    if circuit_source is not None:
+        NodeLegend["Circuit Source"] = [circuit_source]
+    colored_nodelist = []
+    for key in NodeLegend.keys():
+        temp_list = NodeLegend[key]
+        colored_nodelist  = colored_nodelist + temp_list
+        if  len(temp_list) != 0:
+            label = NODE_COLORLEGEND[key]["label"]
+            nx.draw_networkx_nodes(Un_G, pos=filter_dictionary(dict_data=position_dict, wanted_keys=temp_list),
+                                nodelist=temp_list, node_size=NODE_COLORLEGEND[key]["node_size"], node_color=NODE_COLORLEGEND[key]["node_color"], 
+                                alpha=NODE_COLORLEGEND[key]["alpha"], label=label)
     temp_xfmr_nodelist = []
     temp_line_nodelist = []
     for equipment_name in equipment_with_violations.keys():
@@ -1514,7 +1552,7 @@ def get_graph_edges_dataframe(attr_fields=None):
 
 
 def add_graph_edges(G=None, edges_df=None, attr_fields=None, source='bus1', target='bus2'):
-    """add betworkx edges from dataframe
+    """add networkx edges from dataframe
     """
     # # for networkx 1.10 version (but doing this removes the node attributes) -- so resorting to looping through edges
     # G = nx.from_pandas_dataframe(df=edges_df, source=source, target=target, edge_attr=attr_fields,
@@ -1617,8 +1655,9 @@ def correct_node_coordinates(G=None):
     return G
 
 
-# function to get capacitor upgrades
 def get_capacitor_upgrades(orig_capacitors_df=None, new_capacitors_df=None):
+    """function to get capacitor upgrades
+    """
     if len(orig_capacitors_df) > 0:
         orig_capcontrols = orig_capacitors_df.set_index('capacitor_name').transpose().to_dict()
     else:
@@ -1673,20 +1712,22 @@ def get_capacitor_upgrades(orig_capacitors_df=None, new_capacitors_df=None):
     return processed_outputs
 
 
-# function to assign settings if regulator upgrades are on substation transformer
 def check_substation_LTC(new_ckt_info=None, xfmr_name=None):
-    if new_ckt_info["substation_xfmr"]["name"].lower() == xfmr_name:
-        subltc_dict = {}        
-        subltc_dict["substation_xfmr"] = True
-        subltc_dict["xfmr_kva"] = new_ckt_info["substation_xfmr"]["kVA"]
-        subltc_dict["xfmr_kv"] = new_ckt_info["substation_xfmr"]["kV"]
-    else:
-        subltc_dict = None
+    """Function to assign settings if regulator upgrades are on substation transformer
+
+    """
+    subltc_dict = None      
+    if isinstance(new_ckt_info["substation_xfmr"], dict):
+        if new_ckt_info["substation_xfmr"]["name"].lower() == xfmr_name:
+            subltc_dict = {}
+            subltc_dict["at_substation"] = True
+            subltc_dict.update(new_ckt_info["substation_xfmr"])         
     return subltc_dict
 
 
-# function to check for regulator upgrades
 def get_regulator_upgrades(orig_regcontrols_df=None, new_regcontrols_df=None, orig_xfmrs_df=None, new_ckt_info=None):
+    """function to check for regulator upgrades
+    """
     if len(orig_regcontrols_df) > 0:
         orig_reg_controls = orig_regcontrols_df.set_index('name').transpose().to_dict()
     else:
@@ -1713,7 +1754,7 @@ def get_regulator_upgrades(orig_regcontrols_df=None, new_regcontrols_df=None, or
     if reg_upgrades:
         for ctrl_name in reg_upgrades:
             if new_reg_controls[ctrl_name]['enabled'] == True:
-                final_reg_upgrades["reg_settings"] = "changed"  # settings are changed
+                final_reg_upgrades["reg_settings"] = True  # settings are changed
                 final_reg_upgrades["reg_ctrl_name"] = ctrl_name.lower()
                 final_reg_upgrades["reg_vsp"] = float(new_reg_controls[ctrl_name]["vreg"])
                 final_reg_upgrades["reg_band"] = float(new_reg_controls[ctrl_name]["band"])
@@ -1721,34 +1762,45 @@ def get_regulator_upgrades(orig_regcontrols_df=None, new_regcontrols_df=None, or
                 final_reg_upgrades["xfmr_kv"] = new_reg_controls[ctrl_name]["transformer_kv"]
                 final_reg_upgrades["xfmr_name"] = new_reg_controls[ctrl_name]["transformer"]
                 final_reg_upgrades["new_xfmr"] = False  # default = False: new transformer is not added
-                final_reg_upgrades["sub_xfmr"] = False  # default False; (is not substation xfmr)
+                final_reg_upgrades["at_substation"] = False  # default False; (is not at substation)
                 # if regulators are modified (and exist in both original and new)
+                subltc_dict = None
+                xfmr_dict = None
                 if ctrl_name in modified_regulators:
                     final_reg_upgrades["reg_added"] = False  # not a new regulator
                     subltc_dict = check_substation_LTC(new_ckt_info=new_ckt_info, 
                                                        xfmr_name=final_reg_upgrades["xfmr_name"])  # check if regulator is on substation transformer
                     if subltc_dict is not None:
                         final_reg_upgrades.update(subltc_dict)
+                    # else:  # voltage regcontrol is not at substation_xfmr
+                    #     xfmr_df = get_thermal_equipment_info(equipemnt_type="transformer", compute_loading=False)
+                    #     xfmr_df.loc[xfmr_df["name"] == final_reg_upgrades['xfmr_name']]
+                        
                 elif ctrl_name in new_addition:
                     final_reg_upgrades["reg_added"] = True  # is a new regulator
                     subltc_dict = check_substation_LTC(new_ckt_info=new_ckt_info, 
                                                        xfmr_name=final_reg_upgrades["xfmr_name"])   # check if regulator is on substation transformer
-                    if subltc_dict is not None:
+                    if subltc_dict is not None:  # if transformer is at substation
                         final_reg_upgrades.update(subltc_dict)
+                    else:  # voltage regcontrol is not at substation_xfmr
+                        xfmr_df = get_thermal_equipment_info(equipment_type="transformer", compute_loading=False)
+                        xfmr_dict = xfmr_df.loc[xfmr_df["name"] == final_reg_upgrades['xfmr_name']].to_dict(orient='records')[0]
+                        xfmr_dict["kVs"] = ast.literal_eval(xfmr_dict["kVs"])
                     # if regulator transformer is not in the original xfmr list, then a new xfmr
                     if final_reg_upgrades["xfmr_name"] not in orig_xfmr_info:
                         final_reg_upgrades["new_xfmr"] = True  # is a new xfmr
-                processed_outputs["Regctrl." + final_reg_upgrades["reg_ctrl_name"]] = {
+                processed_outputs["RegControl." + final_reg_upgrades["reg_ctrl_name"]] = {
                     "New controller added": final_reg_upgrades["reg_added"],
                     "Controller settings modified": final_reg_upgrades["reg_settings"],
                     "New transformer added": final_reg_upgrades["new_xfmr"],
-                    "Substation LTC": final_reg_upgrades["sub_xfmr"],
-                    "Final settings": {
-                        "Transformer name": final_reg_upgrades["xfmr_name"],
-                        "Transformer kVA": final_reg_upgrades["xfmr_kva"],
-                        "Transformer kV": final_reg_upgrades["xfmr_kv"],
+                    "At Substation": final_reg_upgrades["at_substation"],
+                    "Final Settings": {
                         "Reg ctrl V set point": final_reg_upgrades["reg_vsp"],
                         "Reg ctrl deadband": final_reg_upgrades["reg_band"]
                     }
                     }
+                if subltc_dict is not None:
+                    processed_outputs["RegControl." + final_reg_upgrades["reg_ctrl_name"]]["Final Settings"].update(subltc_dict)
+                if xfmr_dict is not None:
+                    processed_outputs["RegControl." + final_reg_upgrades["reg_ctrl_name"]]["Final Settings"].update(xfmr_dict)
     return processed_outputs

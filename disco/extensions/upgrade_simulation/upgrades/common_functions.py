@@ -37,6 +37,7 @@ def reload_dss_circuit(dss_file_list=None, commands_list=None, **kwargs):
     for dss_file in dss_file_list:
         logger.info(f"Redirecting {dss_file}.")
         check_dss_run_command(f"Redirect {dss_file}")
+    change_pv_pctpmpp(dc_ac_ratio=1.15)  # TODO after merge, change
     check_dss_run_command("CalcVoltageBases")
     if commands_list is not None:
         logger.info(f"Running {len(commands_list)} dss commands")
@@ -103,6 +104,9 @@ def circuit_solve_and_check(raise_exception=False, **kwargs):
     -------
 
     """
+    calcvoltagebases = kwargs.pop("calcvoltagebases", True)
+    if calcvoltagebases:
+        check_dss_run_command("CalcVoltageBases")
     dss_pass_flag = dss_solve_and_check(raise_exception=raise_exception)
     pass_flag = dss_pass_flag
     enable_pydss_solve = kwargs.get("enable_pydss_solve", False)
@@ -213,6 +217,19 @@ def get_scenario_name(enable_pydss_solve, pydss_volt_var_model):
     else:
         scenario = "pf1"
     return scenario
+
+
+def change_pv_pctpmpp(dc_ac_ratio):
+    """This function changes PV system pctpmpp based on passed dc-ac ratio
+    newpctpmpp = oldpctpmpp / dc_ac_ratio
+    """
+    dss.PVsystems.First()
+    for i in range(dss.PVsystems.Count()):
+        newpctpmpp = int(dss.Properties.Value('%Pmpp')) / dc_ac_ratio
+        command_string = f"Edit PVSystem.{dss.PVsystems.Name()} %Pmpp={newpctpmpp}"
+        check_dss_run_command(command_string)
+        dss.PVsystems.Next()
+    return
 
 
 def get_feeder_stats(dss):
@@ -680,7 +697,7 @@ def get_thermal_equipment_info(compute_loading, equipment_type, upper_limit=None
 
 
 def get_regcontrol_info(correct_PT_ratio=False, nominal_voltage=None):
-    """This collects regulator control information
+    """This collects enabled regulator control information
 
     Returns
     -------
@@ -723,6 +740,7 @@ def get_regcontrol_info(correct_PT_ratio=False, nominal_voltage=None):
         # If the winding is Wye, the line-to-neutral voltage is used. Else, the line-to-line voltage is used.
         # Here, bus kV is taken from Bus.kVBase
         all_df["ptratio"] = (all_df['bus_kv'] * 1000) / nominal_voltage
+    all_df = all_df.loc[all_df['enabled'] == True]
     return all_df.reset_index()
 
 
