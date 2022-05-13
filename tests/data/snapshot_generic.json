@@ -1,6 +1,7 @@
 {
   "model_type": "PowerFlowSnapshotSimulationModel",
   "start_time": "2020-04-17 14:00:00",
+  "include_control_mode": true,
   "include_pf1": true,
   "jobs": [
     {

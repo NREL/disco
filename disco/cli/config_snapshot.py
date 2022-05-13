@@ -3,6 +3,7 @@
 """Creates JADE configuration for stage 1 of pydss_simulation pipeline."""
 
 import logging
+import sys
 from datetime import timedelta
 
 import click
@@ -15,6 +16,7 @@ from PyDSS.reports.pv_reports import PF1_SCENARIO, CONTROL_MODE_SCENARIO
 
 from disco.enums import SimulationType, AnalysisType
 from disco.extensions.pydss_simulation.pydss_configuration import PyDssConfiguration
+from disco.pydss.common import ConfigType
 from disco.pydss.pydss_configuration_base import (
     get_default_exports_file,
     get_default_reports_file,
@@ -128,6 +130,13 @@ def common_snapshot_options(func):
     help="Include PF1 scenario or not",
 )
 @click.option(
+    "--control-mode/--no-control-mode",
+    is_flag=True,
+    default=True,
+    show_default=True,
+    help="Include control_mode scenario or not",
+)
+@click.option(
     "--order-by-penetration/--no-order-by-penetration",
     default=False,
     show_default=True,
@@ -148,16 +157,22 @@ def snapshot(
     verbose,
     dc_ac_ratio,
     pf1,
+    control_mode,
     order_by_penetration,
 ):
     """Create JADE configuration for snapshot simulations."""
     level = logging.DEBUG if verbose else logging.INFO
     setup_logging(__name__, None, console_level=level)
 
+    if not pf1 and not control_mode:
+        logger.error("At least one of '--pf1' or '--control-mode' must be set.")
+        sys.exit(1)
+
     simulation_config, scenarios = make_simulation_config(
         reports_filename,
         exports_filename,
         pf1,
+        control_mode,
         store_per_element_data,
         with_loadshape,
         auto_select_time_points,
@@ -172,8 +187,28 @@ def snapshot(
         dc_ac_ratio=dc_ac_ratio,
     )
 
+    has_pydss_controllers = config.has_pydss_controllers()
+    if control_mode and not has_pydss_controllers:
+        scenarios_config = config.get_pydss_config(ConfigType.SCENARIOS)
+        indices_to_pop = []
+        for i, scenario in enumerate(scenarios_config):
+            if CONTROL_MODE_SCENARIO in scenario["name"]:
+                indices_to_pop.append(i)
+        for i in indices_to_pop.reverse():
+            scenarios_config.pop(i)
+        logger.info(
+            "Excluding %s scenarios because there are no pydss controllers.", CONTROL_MODE_SCENARIO
+        )
+        config.set_pydss_config(ConfigType.SCENARIOS, scenarios_config)
+
     if volt_var_curve is not None:
-        config.update_volt_var_curve(volt_var_curve)
+        if has_pydss_controllers and control_mode:
+            config.update_volt_var_curve(volt_var_curve)
+        else:
+            logger.warning(
+                "Setting a volt_var_curve has no effect when there is no %s scenario.",
+                CONTROL_MODE_SCENARIO,
+            )
 
     # We can't currently predict how long each job will take. If we did, we could set
     # estimated_run_minutes for each job.
@@ -193,7 +228,8 @@ def snapshot(
 def make_simulation_config(
     reports_filename,
     exports_filename,
-    pf1,
+    include_pf1,
+    include_control_mode,
     store_per_element_data,
     with_loadshape,
     auto_select_time_points,
@@ -207,8 +243,13 @@ def make_simulation_config(
 
     if with_loadshape:
         simulation_config["project"]["simulation_type"] = SimulationType.QSTS.value
-        names = [CONTROL_MODE_SCENARIO]
-        if pf1:
+        names = []
+        if not include_control_mode and not include_pf1:
+            logger.error("At least one of 'include_pf1' and 'include_control_mode' must be set.")
+            sys.exit(1)
+        if include_control_mode:
+            names.append(CONTROL_MODE_SCENARIO)
+        if include_pf1:
             names.append(PF1_SCENARIO)
         if auto_select_time_points:
             scenarios = []

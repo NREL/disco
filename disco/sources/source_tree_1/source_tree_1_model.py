@@ -814,13 +814,16 @@ def get_pydss_controller_and_profiles(pv_configs):
     pv_profiles = {}
     pydss_controller = None
     for pv_config in pv_configs:
-        ctrl = (pv_config["pydss_controller"]["controller_type"],
-                pv_config["pydss_controller"]["name"])
-        if ctrl[1] != "pf1" and ctrl not in pydss_controllers:
-            pydss_controller = PyDSSControllerModel.validate(
-                pv_config["pydss_controller"]
-            )
-            pydss_controllers.add(ctrl)
+        if pv_config["pydss_controller"] is None:
+            ctrl = None
+        else:
+            ctrl = (pv_config["pydss_controller"]["controller_type"],
+                    pv_config["pydss_controller"]["name"])
+            if ctrl[1] != "pf1" and ctrl not in pydss_controllers:
+                pydss_controller = PyDSSControllerModel.validate(
+                    pv_config["pydss_controller"]
+                )
+                pydss_controllers.add(ctrl)
         pv_profiles[pv_config["name"]] = pv_config["pv_profile"]
 
     if len(pydss_controllers) > 1:
