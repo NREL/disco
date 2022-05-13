@@ -3,11 +3,12 @@
 import logging
 from collections import defaultdict
 
-from jade.exceptions import InvalidParameter
+from jade.exceptions import InvalidParameter, InvalidConfiguration
 from jade.extensions.generic_command.generic_command_parameters import GenericCommandParameters
 from jade.utils.utils import load_data
 
 from PyDSS.common import ControllerType
+from PyDSS.reports.pv_reports import CONTROL_MODE_SCENARIO
 
 from disco.distribution.deployment_parameters import DeploymentParameters
 from disco.enums import SimulationHierarchy, SimulationType
@@ -116,7 +117,8 @@ class PyDssConfiguration(PyDssConfigurationBase):
 
         if order_by_penetration:
             config.apply_job_order_by_penetration_level()
-        
+
+        config.check_job_consistency()
         return config
 
     def apply_job_order_by_penetration_level(self):
@@ -143,6 +145,22 @@ class PyDssConfiguration(PyDssConfigurationBase):
                 # Blocked by the previous job.
                 job.add_blocking_job(jobs[i].name)
 
+    def check_job_consistency(self):
+        """Check all jobs for consistency.
+        
+        Raises
+        ------
+        InvalidConfiguration
+            Raised if a rule is violated.
+
+        """
+        config_has_pydss_controllers = None
+        for job in self.iter_pydss_simulation_jobs(exclude_base_case=True):
+            if config_has_pydss_controllers is None:
+                config_has_pydss_controllers = job.has_pydss_controllers()
+            elif job.has_pydss_controllers() != config_has_pydss_controllers:
+                raise InvalidParameter("All jobs must consistently define pydss_controllers.")
+        
     def create_from_result(self, job, output_dir):
         cls = self.job_execution_class(job.extension)
         return cls.create(self.pydss_inputs, job, output=output_dir)
@@ -178,6 +196,11 @@ class PyDssConfiguration(PyDssConfigurationBase):
                 return hierarchy
 
         raise Exception("Failed to identify SimulationHierarchy")
+
+    def has_pydss_controllers(self):
+        """Return True if the jobs have pydss controllers defined."""
+        job = next(iter(self.iter_pydss_simulation_jobs(exclude_base_case=True)))
+        return job.has_pydss_controllers()
 
     def iter_feeder_jobs(self, feeder):
         """Return jobs for the given feeder in the config.

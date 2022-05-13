@@ -62,6 +62,14 @@ class DeploymentParameters(JobParametersInterface):
             return self._model.base_case
         return None
 
+    def has_pydss_controllers(self):
+        """Return True if pydss controllers are present."""
+        if self._model.deployment.pydss_controllers is None:
+            return False
+        if isinstance(self._model.deployment.pydss_controllers, list):
+            return bool(self._model.deployment.pydss_controllers)
+        return True
+
     @property
     def name(self):
         return self._model.name

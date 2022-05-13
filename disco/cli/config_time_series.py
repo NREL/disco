@@ -3,6 +3,7 @@
 """Creates JADE configuration for stage 1 of pydss_simulation pipeline."""
 
 import logging
+import sys
 
 import click
 
@@ -164,6 +165,20 @@ def common_time_series_options(func):
     help="Set a custom DC-AC ratio for PV Systems.",
 )
 @click.option(
+    "--pf1/--no-pf1",
+    is_flag=True,
+    default=True,
+    show_default=True,
+    help="Include PF1 scenario or not",
+)
+@click.option(
+    "--control-mode/--no-control-mode",
+    is_flag=True,
+    default=True,
+    show_default=True,
+    help="Include control_mode scenario or not",
+)
+@click.option(
     "--order-by-penetration/--no-order-by-penetration",
     default=False,
     show_default=True,
@@ -191,11 +206,17 @@ def time_series(
     estimated_run_minutes,
     calc_estimated_run_minutes,
     dc_ac_ratio,
+    pf1,
+    control_mode,
     order_by_penetration,
 ):
     """Create JADE configuration for time series simulations."""
     level = logging.DEBUG if verbose else logging.INFO
     setup_logging(__name__, None, console_level=level)
+
+    if not pf1 and not control_mode:
+        logger.error("At least one of '--pf1' or '--control-mode' must be set.")
+        sys.exit(1)
 
     simulation_config = PyDssConfiguration.get_default_pydss_simulation_config()
     simulation_config["project"]["simulation_type"] = SimulationType.QSTS.value
@@ -217,10 +238,13 @@ def time_series(
             report["store_per_element_data"] = store_per_element_data
 
     exports = {} if exports_filename is None else load_data(exports_filename)
-    scenarios = [
-        PyDssConfiguration.make_default_pydss_scenario(CONTROL_MODE_SCENARIO, exports),
-        PyDssConfiguration.make_default_pydss_scenario(PF1_SCENARIO, exports),
-    ]
+    scenarios = []
+    if control_mode:
+        scenarios.append(
+            PyDssConfiguration.make_default_pydss_scenario(CONTROL_MODE_SCENARIO, exports)
+        )
+    if pf1:
+        scenarios.append(PyDssConfiguration.make_default_pydss_scenario(PF1_SCENARIO, exports))
     config = PyDssConfiguration.auto_config(
         inputs,
         simulation_config=simulation_config,
@@ -230,8 +254,24 @@ def time_series(
         dc_ac_ratio=dc_ac_ratio,
     )
 
+    has_pydss_controllers = config.has_pydss_controllers()
+    if control_mode and not has_pydss_controllers:
+        scenarios_config = config.get_pydss_config(ConfigType.SCENARIOS)
+        assert scenarios_config[0]["name"] == CONTROL_MODE_SCENARIO
+        scenarios_config.pop(0)
+        logger.info(
+            "Excluding %s scenario because there are no pydss controllers.", CONTROL_MODE_SCENARIO
+        )
+        config.set_pydss_config(ConfigType.SCENARIOS, scenarios_config)
+
     if volt_var_curve is not None:
-        config.update_volt_var_curve(volt_var_curve)
+        if has_pydss_controllers and control_mode:
+            config.update_volt_var_curve(volt_var_curve)
+        else:
+            logger.warning(
+                "Setting a volt_var_curve has no effect when there is no %s scenario.",
+                CONTROL_MODE_SCENARIO,
+            )
 
     if calc_estimated_run_minutes:
         generate_estimate_run_minutes(config)

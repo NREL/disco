@@ -59,6 +59,7 @@ def snapshot(
         reports_filename,
         exports_filename,
         pf_config.include_pf1,
+        pf_config.include_control_mode,
         store_per_element_data,
         with_loadshape,
         auto_select_time_points,
@@ -94,11 +95,19 @@ def snapshot(
         )
         config.add_job(job)
 
-    config.set_pydss_config(ConfigType.SIMULATION_CONFIG, simulation_config)
-    config.set_pydss_config(ConfigType.SCENARIOS, scenarios)
+    config.check_job_consistency()
 
     if volt_var_curve is not None:
-        config.update_volt_var_curve(volt_var_curve)
+        if config.has_pydss_controllers() and pf_config.include_control_mode:
+            config.update_volt_var_curve(volt_var_curve)
+        else:
+            logger.warning(
+                "Setting a volt_var_curve has no effect when there is no %s scenario.",
+                CONTROL_MODE_SCENARIO,
+            )
+
+    config.set_pydss_config(ConfigType.SIMULATION_CONFIG, simulation_config)
+    config.set_pydss_config(ConfigType.SCENARIOS, scenarios)
 
     # We can't currently predict how long each job will take. If we did, we could set
     # estimated_run_minutes for each job.
@@ -161,9 +170,11 @@ def time_series(
             report["store_all_time_points"] = store_all_time_points
 
     exports = {} if exports_filename is None else load_data(exports_filename)
-    scenarios = [
-        PyDssConfiguration.make_default_pydss_scenario(CONTROL_MODE_SCENARIO, exports),
-    ]
+    scenarios = []
+    if pf_config.include_control_mode:
+        scenarios.append(
+            PyDssConfiguration.make_default_pydss_scenario(CONTROL_MODE_SCENARIO, exports),
+        )
     if pf_config.include_pf1:
         scenarios.append(
             PyDssConfiguration.make_default_pydss_scenario(PF1_SCENARIO, exports),
@@ -198,8 +209,16 @@ def time_series(
         )
         config.add_job(job)
 
+    config.check_job_consistency()
+
     if volt_var_curve is not None:
-        config.update_volt_var_curve(volt_var_curve)
+        if config.has_pydss_controllers() and pf_config.include_control_mode:
+            config.update_volt_var_curve(volt_var_curve)
+        else:
+            logger.warning(
+                "Setting a volt_var_curve has no effect when there is no %s scenario.",
+                CONTROL_MODE_SCENARIO,
+            )
 
     if skip_night:
         pydss_sim_config = config.get_pydss_config(ConfigType.SIMULATION_CONFIG)

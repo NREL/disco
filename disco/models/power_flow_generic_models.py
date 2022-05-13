@@ -69,6 +69,11 @@ class PowerFlowSimulationBaseModel(BaseModel):
         title="jobs",
         description="Jobs to run as part of the simulation.",
     )
+    include_control_mode: bool = Field(
+        title="include_control_mode",
+        description="Include a control mode (such as volt-var controls) scenario for each job.",
+        default=True,
+    )
     include_pf1: bool = Field(
         title="include_pf1",
         description="Include a Power Factor 1 scenario for each job.",
@@ -94,6 +99,14 @@ class PowerFlowSimulationBaseModel(BaseModel):
             for job in values["jobs"][1:]:
                 if len(job.pydss_controllers) != num_pydss_controllers:
                     raise ValueError("All jobs must have the same number of pydss_controllers.")
+        return values
+
+    @root_validator(pre=False)
+    def check_scenarios(cls, values):
+        if not values["include_pf1"] and not values["include_control_mode"]:
+            raise ValueError(
+                "At least one of 'include_pf1' and 'include_control_mode' must be set."
+            )
         return values
 
     @classmethod
