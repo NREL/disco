@@ -32,6 +32,8 @@ def determine_voltage_upgrades(
     output_json_voltage_upgrades_filepath,
     feeder_stats_json_file,
     voltage_upgrades_directory,
+    dc_ac_ratio,
+    output_folder,
     ignore_switch=True,
     verbose=False
 ):

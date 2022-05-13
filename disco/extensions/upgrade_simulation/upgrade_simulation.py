@@ -120,6 +120,7 @@ class UpgradeSimulation:
         self,
         enable_pydss_solve,
         pydss_controller_model,
+        dc_ac_ratio,
         thermal_config,
         voltage_config,
         cost_database_filepath,
@@ -139,6 +140,7 @@ class UpgradeSimulation:
             output_json_xfmr_upgrades_filepath=self.get_transformer_upgrades_json_file(),
             feeder_stats_json_file = self.get_feeder_stats_json_file(),
             thermal_upgrades_directory=self.get_thermal_upgrades_directory(),
+            dc_ac_ratio=dc_ac_ratio,
             verbose=verbose
         )
         determine_voltage_upgrades(
@@ -154,6 +156,8 @@ class UpgradeSimulation:
             output_json_voltage_upgrades_filepath = self.get_voltage_upgrades_json_file(),
             feeder_stats_json_file = self.get_feeder_stats_json_file(),
             voltage_upgrades_directory=self.get_voltage_upgrades_directory(),
+            dc_ac_ratio=dc_ac_ratio,
+            output_folder=self.job_output,
             verbose=verbose
         )
         compute_all_costs(

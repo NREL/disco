@@ -17,12 +17,13 @@ logger = logging.getLogger(__name__)
 
 
 @track_timing(timer_stats_collector)
-def reload_dss_circuit(dss_file_list=None, commands_list=None, **kwargs):
+def reload_dss_circuit(dc_ac_ratio, dss_file_list=None, commands_list=None, **kwargs):
     """This function clears the circuit and loads dss files and commands.
     Also solves the circuit and checks for convergence errors
 
     Parameters
     ----------
+    dc_ac_ratio
     dss_file_list
     commands_list
 

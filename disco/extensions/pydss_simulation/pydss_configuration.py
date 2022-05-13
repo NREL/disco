@@ -94,13 +94,16 @@ class PyDssConfiguration(PyDssConfigurationBase):
 
     @classmethod
     def auto_config(cls, inputs, simulation_config=None, scenarios=None,
-                    order_by_penetration=False, estimated_run_minutes=None, **kwargs):
+                    order_by_penetration=False, estimated_run_minutes=None,
+                    dc_ac_ratio=None, **kwargs):
         """Create a configuration from all available inputs."""
         if isinstance(inputs, str):
             inputs = PyDssInputs(inputs)
         config = cls(**kwargs)
         for job in inputs.iter_jobs():
             job.estimated_run_minutes = estimated_run_minutes
+            if dc_ac_ratio is not None:
+                job.model.deployment.dc_ac_ratio = dc_ac_ratio
             config.add_job(job)
 
         if simulation_config is None:

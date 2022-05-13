@@ -65,12 +65,12 @@ verbose = false
 
 [postprocess.submitter-params]
 hpc_config = "hpc_config.toml"
-per_node_batch_size = 1
+per_node_batch_size = 32
 poll_interval = 60
 resource_monitor_interval = 0
 num_processes = "null"
 generate_reports = true
-try_add_blocked_jobs = false
+try_add_blocked_jobs = true
 verbose = false
 node_setup_script = "null"
 node_shutdown_script = "null"

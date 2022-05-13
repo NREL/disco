@@ -177,8 +177,8 @@ about ``create-configs`` action based on your hierarchy and according input path
 Details Exploration
 ^^^^^^^^^^^^^^^^^^^
 
-After PV deployments creaated, PV config files need to be generated as well for assigning each 
-PV system in deployments a PV profile, where the PV config files are created in `sample` directories.
+After creating PV deployments we need to generate PV config files that define a load shape
+profile for each PV system. The config files get created in ``sample`` directories.
 The examples below show commands for creating, checking or removing PV config files.
 
 1. Create PV configs on feeder1 based on PV deployments data.
@@ -209,7 +209,7 @@ The examples below show commands for creating, checking or removing PV config fi
     $ jade config create <commands.txt> -c config2.json
     $ jade submit-jobs config2.json
 
-4. Check if there is PV config files missing on feeders.
+4. Check if any feeder is missing PV config files.
 
 .. code-block:: bash
 
@@ -217,7 +217,7 @@ The examples below show commands for creating, checking or removing PV config fi
     $ disco pv-deployments source-tree-1 -a check-configs -h substation -p random <substation1_path>
     $ disco pv-deployments source-tree-1 -a check-configs -h region -p random <region1_path>
 
-5. Remove PV configs if there were something wrong.
+5. Remove PV configs if something is wrong.
 
 .. code-block:: bash
 

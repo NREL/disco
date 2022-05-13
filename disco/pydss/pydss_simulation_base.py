@@ -77,6 +77,10 @@ class PyDssSimulationBase(JobExecutionInterface, abc.ABC):
         self._add_pct_pmpp = add_pct_pmpp
         self._irradiance_scaling_factor = irradiance_scaling_factor
 
+    @property
+    def model(self):
+        return self._model
+
     def _get_control_mode(self):
         if self._model.model_type in (
             "SnapshotImpactAnalysisModel",
@@ -116,8 +120,13 @@ class PyDssSimulationBase(JobExecutionInterface, abc.ABC):
         """Modify parameters in OpenDSS file; can be a no-op."""
 
     def _setup_pydss_project(self, verbose=False):
+        dss_file_absolute_path = False
         if self._is_dss_file_path_absolute():
             deployment_filename = self._get_deployment_input_path()
+            dss_file_absolute_path = True
+        elif self._model.deployment.is_standalone:
+            deployment_filename = self._model.deployment.deployment_file
+            dss_file_absolute_path = True
         else:
             # PyDSS will join the directories with the name.
             deployment_filename = self._get_deployment_input_filename()
@@ -130,7 +139,7 @@ class PyDssSimulationBase(JobExecutionInterface, abc.ABC):
             "project": {
                 "project_path": os.path.abspath(self._run_dir),
                 "dss_file": deployment_filename,
-                "dss_file_absolute_path": self._is_dss_file_path_absolute(),
+                "dss_file_absolute_path": dss_file_absolute_path,
                 "control_mode": self._get_control_mode(),
             },
             "logging": {
@@ -184,7 +193,8 @@ class PyDssSimulationBase(JobExecutionInterface, abc.ABC):
 
         logger.info("Setup folders at %s", self._run_dir)
 
-        self._modify_open_dss_parameters()
+        if not self._model.deployment.is_standalone:
+            self._modify_open_dss_parameters()
 
     def _apply_pydss_controllers(self, project_path, scenario_names):
         """Update PyDSS controllers."""

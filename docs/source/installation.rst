@@ -54,7 +54,7 @@ retry.
     $ pip install -e .
 
 Now, the Conda environment ``disco`` is ready to use.
-To deactivate it, use commands below:
+To deactivate it, use the command below:
 
 .. code-block:: bash
 
@@ -66,7 +66,7 @@ Use Docker
 
 Docker can run on different OS platforms - Linux, Mac, Windows, etc.
 Please follow the document https://docs.docker.com/ to install Docker CE
-on your machine first. Then, can continue DISCO installation with docker.
+on your machine first.
 
 1. Clone DISCO source code to your machine.
 

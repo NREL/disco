@@ -7,10 +7,10 @@ This section gives an overview about DISCO and its workflows.
 DISCO can be used for distributed grid system simulation analysis.
 The analysis types are:
 
-* snapshot impact analysis
-* hosting capacity analysis (based on snapshot impact analysis results)
-* time series impact analysis
-* time series hosting capacity
+* Snapshot Impact Analysis
+* Static Hosting Capacity Analysis
+* Time Series Impact Analysis
+* Dynamic Hosting Capacity Analysis
 
 The diagram below shows the DISCO workflow:
 
@@ -30,13 +30,15 @@ Data Sources
 
 DISCO supports OpenDSS models in several data formats:
 
-#. GEM Model, Grid-connected Energy systems Modeling
-
-#. EPRI Model - J1, K1, and M1, https://dpv.epri.com/feeder_models.html
+#. Generic Model, this format supports any user-defined OpenDSS model - :ref:`GenericPowerFlowModels`.
 
 #. SourceTree1 Model, this format requires directory structure *tree1* defined by DISCO - :ref:`SourceTree1Model`.
 
 #. SourceTree2 Model, this format requires directory structure *tree2* defined by DISCO - :ref:`SourceTree2Model`.
+
+#. GEM Model, Grid-connected Energy systems Modeling
+
+#. EPRI Model - J1, K1, and M1, https://dpv.epri.com/feeder_models.html
 
 
 Transform Model
@@ -44,6 +46,8 @@ Transform Model
 
 Given an analysis type, the source OpenDSS models need to be transformed into 
 DISCO models which then can be used as inputs for configuring JADE jobs.
+
+.. note:: The Generic Model workflows do not use this step. DISCO uses those models directly.
 
 
 Config Jobs

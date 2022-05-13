@@ -97,7 +97,7 @@ def test_snapshot_impact_analysis(cleanup):
     assert not config.list_user_data_keys()
 
     # Verify Post-process & Results
-    postprocess_cmd = f"disco-internal make-summary-tables {OUTPUT}"
+    postprocess_cmd = f"disco make-summary-tables {OUTPUT}"
     assert run_command(postprocess_cmd) == 0
     for filename in POSTPROCESS_RESULTS:
         summary_table = os.path.join(OUTPUT, filename)
@@ -141,7 +141,7 @@ def test_snapshot_hosting_capacity(cleanup):
             assert list(controller_dict.values())
 
     # Verify Post-process & Results
-    postprocess_cmd = f"disco-internal make-summary-tables {OUTPUT}"
+    postprocess_cmd = f"disco make-summary-tables {OUTPUT}"
     assert run_command(postprocess_cmd) == 0
     output_path = Path(OUTPUT)
     for filename in POSTPROCESS_RESULTS:

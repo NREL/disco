@@ -17,4 +17,5 @@ nominal_voltage = 120
 
 [upgrade_simulation_params]
 enable_pydss_controller = true
+dc_ac_ratio = 1.15
 pydss_controller_name = "volt_var_ieee_1547_2018_catB"

@@ -31,6 +31,7 @@ def determine_thermal_upgrades(
     output_json_xfmr_upgrades_filepath,
     feeder_stats_json_file,
     thermal_upgrades_directory,
+    dc_ac_ratio,
     ignore_switch=True,
     verbose=False
 ):

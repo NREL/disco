@@ -54,6 +54,7 @@ def run(config_file, name, output, output_format, verbose):
     )
     try:
         upgrade_simulation_params = config.job_global_config["upgrade_simulation_params"]
+        dc_ac_ratio = upgrade_simulation_params["dc_ac_ratio"]
         enable_pydss_controller = upgrade_simulation_params["enable_pydss_controller"]
         if enable_pydss_controller:
             pv_controllers = load_data(DEFAULT_CONTROLLER_CONFIG_FILE)
