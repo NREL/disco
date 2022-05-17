@@ -7,13 +7,7 @@ from jade.utils.timing_utils import track_timing, Timer
 logger = logging.getLogger(__name__)
 
 @track_timing(timer_stats_collector)
-def correct_line_violations(
-    line_loading_df=None,
-    line_design_pu=None,
-    line_upgrade_options=None,
-    parallel_lines_limit=None,
-    **kwargs,
-):
+def correct_line_violations(line_loading_df, line_design_pu, line_upgrade_options, parallel_lines_limit, **kwargs,):
     """This function determines line upgrades to correct line violations.
     It also updates the opendss model with upgrades.
 
@@ -42,8 +36,9 @@ def correct_line_violations(
     line_upgrade_options.set_index(deciding_property_list, inplace=True)
     overloaded_loading_df.set_index(deciding_property_list, inplace=True)
     oversize_limit = 2  # limit to determine if chosen upgrade option is too oversized
+    extreme_loading_threshold = 2.25  # from observations, if equipment loading is greater than this factor, it is considered extremely overloaded
+    # in such extremely loaded cases, the equipment is oversized much more, to avoid iterations in upgrades
     if len(overloaded_loading_df) > 0:  # if overloading exists
-        line_upgrades_df = pd.DataFrame()
         # iterate over each overloaded line to find a solution
         for index, row in overloaded_loading_df.iterrows():
             logger.debug(row["name"])
@@ -52,7 +47,7 @@ def correct_line_violations(
                 options = pd.DataFrame([options])  # convert to required DataFrame format
                 options = options.rename_axis(deciding_property_list)  # assign names to the index
             options = options.reset_index().sort_values("normamps")
-            if row["max_per_unit_loading"] > 2.25:  # i.e. equipment is very overloaded, then oversize more to avoid multiple upgrade iterations
+            if row["max_per_unit_loading"] > extreme_loading_threshold:  # i.e. equipment is very overloaded, then oversize more to avoid multiple upgrade iterations
                 row["required_design_amp"] = row["required_design_amp"] * (row["max_per_unit_loading"] * 0.5)
             chosen_option = options.loc[options["normamps"] >= row["required_design_amp"]].sort_values("normamps")
             # TODO: TOGGLE FLAG - EXPLORE IF WE CAN HAVE OPTIONS FOR: PARALLEL, REPLACE,
@@ -103,7 +98,7 @@ def correct_line_violations(
             # dont oversize. Instead, place lines in parallel
             else:
                 external_upgrades_technical_catalog = kwargs.get("external_upgrades_technical_catalog", None)
-                parallel_line_commands, temp_upgrades_dict_parallel = identify_parallel_lines(options=options, row=row,
+                parallel_line_commands, temp_upgrades_dict_parallel = identify_parallel_lines(options=options, object_row=row,
                                                                                          parallel_lines_limit=parallel_lines_limit, 
                                                                                          external_upgrades_technical_catalog=external_upgrades_technical_catalog)
                 # run command for all parallel equipment added, that resolves overloading for one equipment
@@ -129,7 +124,7 @@ def correct_line_violations(
 
 
 @track_timing(timer_stats_collector)
-def identify_parallel_lines(options=None, row=None, parallel_lines_limit=None, **kwargs):
+def identify_parallel_lines(options, object_row, parallel_lines_limit, **kwargs):
     """This function identifies parallel line solutions, when a direct upgrade solution is not available from catalogue
 
     Parameters
@@ -145,7 +140,7 @@ def identify_parallel_lines(options=None, row=None, parallel_lines_limit=None, *
     commands_list = []
     temp_dict = {}
     # calculate number of parallel lines needed to carry remaining amperes (in addition to existing line)
-    options["num_parallel_raw"] = (row["required_design_amp"] - row["normamps"]) / options["normamps"]
+    options["num_parallel_raw"] = (object_row["required_design_amp"] - object_row["normamps"]) / options["normamps"]
     options["num_parallel"] = options["num_parallel_raw"].apply(np.ceil)
     options["choose_parallel_metric"] = options["num_parallel"] - options["num_parallel_raw"]
     # choose option that has the least value of this metric- since that represents the per unit oversizing
@@ -161,13 +156,13 @@ def identify_parallel_lines(options=None, row=None, parallel_lines_limit=None, *
         curr_time = str(time.time())
         # this is added to line name to ensure it is unique
         time_stamp = curr_time.split(".")[0] + "_" + curr_time.split(".")[1]
-        new_name = "upgrade_" + row["name"] + time_stamp
+        new_name = "upgrade_" + object_row["name"] + time_stamp
         chosen_option["name"] = new_name
         temp_dict = {}
         temp_dict.update(chosen_option.to_dict())
-        temp_dict["length"] = row["length"]
+        temp_dict["length"] = object_row["length"]
         temp_dict.update({"Equipment_Type": "Line",
-                          "original_equipment_name": row["name"],
+                          "original_equipment_name": object_row["name"],
                           "Upgrade_Type": "new (parallel)",
                           "Parameter_Type": "new_equipment",
                           "Action": "add"})
@@ -180,22 +175,22 @@ def identify_parallel_lines(options=None, row=None, parallel_lines_limit=None, *
             command_string = ensure_line_config_exists(chosen_option, new_config_type, external_upgrades_technical_catalog)
             if command_string is not None:  # if new line config definition had to be added
                 commands_list.append(command_string)   
-            s = f"New Line.{new_name} bus1={row['bus1']} bus2={row['bus2']} length={row['length']} " \
-                f"units={row['units']} {new_config_type}={row[new_config_type]} " \
+            s = f"New Line.{new_name} bus1={object_row['bus1']} bus2={object_row['bus2']} length={object_row['length']} " \
+                f"units={object_row['units']} {new_config_type}={object_row[new_config_type]} " \
                 f"phases={chosen_option['phases']} normamps={chosen_option['normamps']} enabled=True"
             commands_list.append(s)
         # if line geometry and line code is not available
         # TODO decide what other parameters need to be defined when linecode or geometry is not present
         else:
-            s = f"New Line.{row['name']} bus1={row['bus1']} bus2={row['bus2']} length={row['length']} " \
-                f"units={row['units']} phases={chosen_option['phases']} " \
+            s = f"New Line.{object_row['name']} bus1={object_row['bus1']} bus2={object_row['bus2']} length={object_row['length']} " \
+                f"units={object_row['units']} phases={chosen_option['phases']} " \
                 f"normamps={chosen_option['normamps']} enabled=True"
             commands_list.append(s)
         upgrades_dict_parallel.append(temp_dict)
     return commands_list, upgrades_dict_parallel
 
 
-def define_xfmr_object(xfmr_name='', xfmr_info_series=None, action_type=None, buses_list=None):
+def define_xfmr_object(xfmr_name, xfmr_info_series, action_type, buses_list=None):
     """This function is used to create a command string to define an opendss transformer object
 
     Parameters
@@ -211,6 +206,8 @@ def define_xfmr_object(xfmr_name='', xfmr_info_series=None, action_type=None, bu
     """
     command_string = f"{action_type} Transformer.{xfmr_name}"
     if action_type == "New":
+        if buses_list is None:
+            raise Exception("Buses list has to be passed if defining new transformer object.")
         s_temp = " buses=("
         for bus in buses_list:
             s_temp = s_temp + f"{bus} "
@@ -244,8 +241,8 @@ def define_xfmr_object(xfmr_name='', xfmr_info_series=None, action_type=None, bu
 
 
 @track_timing(timer_stats_collector)
-def correct_xfmr_violations(xfmr_loading_df=None, xfmr_design_pu=None, xfmr_upgrade_options=None,
-                            parallel_transformer_limit=None, **kwargs):
+def correct_xfmr_violations(xfmr_loading_df, xfmr_design_pu, xfmr_upgrade_options,
+                            parallel_transformer_limit, **kwargs):
     """This function determines transformer upgrades to correct transformer violations.
     It also updates the opendss model with upgrades.
 
@@ -273,7 +270,9 @@ def correct_xfmr_violations(xfmr_loading_df=None, xfmr_design_pu=None, xfmr_upgr
     deciding_property_list = ["phases", "wdg", "conn", "conns", "kV", "kVs", "LeadLag", "basefreq"]
     xfmr_upgrade_options.set_index(deciding_property_list, inplace=True)
     overloaded_loading_df.set_index(deciding_property_list, inplace=True)
-    oversize_limit = 2  # limit to determine if chosen upgrade option is too oversized
+    equipment_oversize_limit = 2  # limit to determine if chosen upgrade option is too oversized
+    extreme_loading_threshold = 2.25  # if equipment loading is greater than this factor, it is considered extremely overloaded
+    # in such extremely loaded cases, the equipment is oversized much more, to avoid iterations in upgrades
     if len(overloaded_loading_df) > 0:  # if overloading exists
         xfmr_upgrades_df = pd.DataFrame()
         # iterate over each overloaded line to find a solution
@@ -283,14 +282,14 @@ def correct_xfmr_violations(xfmr_loading_df=None, xfmr_design_pu=None, xfmr_upgr
                 options = pd.DataFrame([options])  # convert to required DataFrame format
                 options = options.rename_axis(deciding_property_list)  # assign names to the index
             options = options.reset_index().sort_values("amp_limit_per_phase")
-            if row["max_per_unit_loading"] > 2.25:  # i.e. equipment is very overloaded, then oversize to avoid multiple upgrade iterations
+            if row["max_per_unit_loading"] > extreme_loading_threshold:  # i.e. equipment is very overloaded, then oversize to avoid multiple upgrade iterations
                 row["required_design_amp"] = row["required_design_amp"] * (row["max_per_unit_loading"] * 0.5)
             chosen_option = options.loc[options["amp_limit_per_phase"] >=
                                         row["required_design_amp"]].sort_values("amp_limit_per_phase")
             # if one chosen option exists and is not very oversized (which is determined by acceptable oversize limit)
             # edit existing object
             if (len(chosen_option) != 0) and \
-                    (chosen_option["amp_limit_per_phase"] <= oversize_limit * row["required_design_amp"]).any():
+                    (chosen_option["amp_limit_per_phase"] <= equipment_oversize_limit * row["required_design_amp"]).any():
                 chosen_option = chosen_option.sort_values("amp_limit_per_phase")
                 chosen_option = chosen_option.iloc[0]  # choose lowest available option
                 chosen_option["conns"] = ast.literal_eval(chosen_option["conns"])
@@ -322,7 +321,7 @@ def correct_xfmr_violations(xfmr_loading_df=None, xfmr_design_pu=None, xfmr_upgr
             # if higher upgrade is not available or chosen upgrade rating is much higher than required,
             # dont oversize. Instead, place equipment in parallel
             else:
-                parallel_xfmr_commands, temp_upgrades_dict_parallel = identify_parallel_xfmrs(options=options, row=row,
+                parallel_xfmr_commands, temp_upgrades_dict_parallel = identify_parallel_xfmrs(upgrade_options=options, object_row=row,
                                                                                          parallel_transformer_limit=parallel_transformer_limit)
                 # run command for all new parallel equipment added, that resolves overloading for one equipment
                 for command_item in parallel_xfmr_commands:
@@ -348,7 +347,7 @@ def correct_xfmr_violations(xfmr_loading_df=None, xfmr_design_pu=None, xfmr_upgr
 
 
 @track_timing(timer_stats_collector)
-def identify_parallel_xfmrs(options=None, row=None, parallel_transformer_limit=None):
+def identify_parallel_xfmrs(upgrade_options, object_row, parallel_transformer_limit):
     """This function identifies parallel transformer solutions, when a direct upgrade solution is not available from catalogue
 
     Parameters
@@ -365,15 +364,15 @@ def identify_parallel_xfmrs(options=None, row=None, parallel_transformer_limit=N
     commands_list = []
     upgrades_dict_parallel = {}
     # calculate number of parallel equipment needed to carry remaining amperes (in addition to existing equipment)
-    options["num_parallel_raw"] = (row["required_design_amp"] -
-                                   row["amp_limit_per_phase"]) / options["amp_limit_per_phase"]
-    options["num_parallel"] = options["num_parallel_raw"].apply(np.ceil)
-    options["choose_parallel_metric"] = options["num_parallel"] - options["num_parallel_raw"]
-    options = options.loc[options["num_parallel"] <= parallel_transformer_limit]
-    if len(options) == 0:
+    upgrade_options["num_parallel_raw"] = (object_row["required_design_amp"] -
+                                   object_row["amp_limit_per_phase"]) / upgrade_options["amp_limit_per_phase"]
+    upgrade_options["num_parallel"] = upgrade_options["num_parallel_raw"].apply(np.ceil)
+    upgrade_options["choose_parallel_metric"] = upgrade_options["num_parallel"] - upgrade_options["num_parallel_raw"]
+    upgrade_options = upgrade_options.loc[upgrade_options["num_parallel"] <= parallel_transformer_limit]
+    if len(upgrade_options) == 0:
         raise Exception(f"Number of parallel transformers is greater than limit!")
     # choose option that has the least value of this metric- since that represents the per unit oversizing
-    chosen_option = options.loc[options["choose_parallel_metric"].idxmin()]
+    chosen_option = upgrade_options.loc[upgrade_options["choose_parallel_metric"].idxmin()]
     num_parallel_xfmrs = int(chosen_option["num_parallel"])
     chosen_option["conns"] = ast.literal_eval(chosen_option["conns"])
     chosen_option["kVs"] = ast.literal_eval(chosen_option["kVs"])
@@ -386,17 +385,17 @@ def identify_parallel_xfmrs(options=None, row=None, parallel_transformer_limit=N
         curr_time = str(time.time())
         # the timestamp is added to line name to ensure it is unique
         time_stamp = curr_time.split(".")[0] + "_" + curr_time.split(".")[1]
-        new_name = "upgrade_" + row["name"] + time_stamp
+        new_name = "upgrade_" + object_row["name"] + time_stamp
         chosen_option["name"] = new_name
         temp_dict = {}
         temp_dict.update(chosen_option.to_dict())
         temp_dict.update({"Equipment_Type": equipment_type,
-                        "original_equipment_name": row["name"],
+                        "original_equipment_name": object_row["name"],
                         "Upgrade_Type": "new (parallel)",
                         "Parameter_Type": "new_equipment",
                         "Action": "add"})
         command_string = define_xfmr_object(xfmr_name=new_name, xfmr_info_series=chosen_option, action_type="New",
-                                            buses_list=row["buses"])
+                                            buses_list=object_row["buses"])
         commands_list.append(command_string)
         upgrades_dict_parallel.append(temp_dict)
     return commands_list, upgrades_dict_parallel

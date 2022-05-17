@@ -7,7 +7,8 @@
     "voltage_upper_limit": 1.05,
     "voltage_lower_limit": 0.95,
     "read_external_catalog": true,
-    "external_catalog": "./disco/extensions/upgrade_simulation/upgrades/smartds_upgrades_technical_catalog.json"
+    "external_catalog": "./disco/extensions/upgrade_simulation/upgrades/smartds_upgrades_technical_catalog.json",
+	"create_plots": true
   },
   "voltage_upgrade_params": {
     "initial_upper_limit": 1.05,
@@ -21,11 +22,12 @@
       2
     ],
     "reg_v_delta": 0.5,
-    "max_regulators": 1,
-    "place_new_regulators": true,
+    "max_regulators": 4,
     "use_ltc_placement": true,
+	"place_new_regulators": true,
 	"capacitor_action_flag": true,
-	"existing_regulator_sweep_action": true
+	"existing_regulator_sweep_action": true,
+	"create_plots": true
   },
   "pydss_controllers": "",
   "enable_pydss_controllers": false,
@@ -34,8 +36,29 @@
   "jobs": [
     {
       "model_type": "UpgradeCostAnalysisGenericModel",
-      "name": "sb10_p12uhs0_1247_trans_301__p12udt1277__random__8__200",
-      "opendss_model_file": "./tests/data/upgrade-models/p12uhs0_1247/p12udt1277/PVDeployments/sb10_p12uhs0_1247_trans_301__p12udt1277__random__8__200.dss",
+      "name": "sb10_p12uhs0_1247_trans_301__p12udt1277__random__8__195",
+      "opendss_model_file": "./tests/data/upgrade-models/sb10_p12uhs0_1247_trans_301/p12udt1277/PVDeployments/sb10_p12uhs0_1247_trans_301__p12udt1277__random__8__195.dss",
+      "blocked_by": [],
+      "estimated_run_minutes": null
+    },
+	{
+      "model_type": "UpgradeCostAnalysisGenericModel",
+      "name": "sb10_p12uhs5_1247_trans_301__p12udt6981__random__7__200",
+      "opendss_model_file": "./tests/data/upgrade-models/sb10_p12uhs5_1247_trans_301/p12udt6981/PVDeployments/sb10_p12uhs5_1247_trans_301__p12udt6981__random__7__200.dss",
+      "blocked_by": [],
+      "estimated_run_minutes": null
+    },
+	{
+      "model_type": "UpgradeCostAnalysisGenericModel",
+      "name": "sb10_p12uhs5_1247_trans_301__p12udt6981__random__7__25",
+      "opendss_model_file": "./tests/data/upgrade-models/sb10_p12uhs5_1247_trans_301/p12udt6981/PVDeployments/sb10_p12uhs5_1247_trans_301__p12udt6981__random__7__25.dss",
+      "blocked_by": [],
+      "estimated_run_minutes": null
+    },
+	{
+      "model_type": "UpgradeCostAnalysisGenericModel",
+      "name": "sb10_p1rhs25_1247_trans_301__p1rdt12732__random__4__195",
+      "opendss_model_file": "./tests/data/upgrade-models/sb10_p1rhs25_1247_trans_301/p1rdt12732/PVDeployments/sb10_p1rhs25_1247_trans_301__p1rdt12732__random__4__195.dss",
       "blocked_by": [],
       "estimated_run_minutes": null
     }

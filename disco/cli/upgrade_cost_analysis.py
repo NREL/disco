@@ -200,7 +200,7 @@ def run_job(job, config, jobs_output_dir, verbose):
         "dc_ac_ratio": config.dc_ac_ratio,
     }
     global_config["upgrade_simulation_params"]["pydss_controller"] = None
-    if (config.pydss_controllers.pv_controller is not None) and (config.enable_pydss_controllers):
+    if (config.pydss_controllers.pv_controller is not None) and config.enable_pydss_controllers:
         global_config["upgrade_simulation_params"]["pydss_controller"] = (
             config.pydss_controllers.pv_controller.dict(),
         )

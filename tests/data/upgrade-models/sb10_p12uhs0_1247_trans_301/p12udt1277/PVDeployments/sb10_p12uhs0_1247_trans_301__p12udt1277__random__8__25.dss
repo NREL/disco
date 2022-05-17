@@ -1,0 +1,15 @@
+Redirect ../OpenDSS/Master.dss
+
+// PV Scenario for 207.3551591577105 kW total size, Scenario type random, Sample 8 and penetration 25% (PV to load ratio) 
+! =====================PV SCENARIO FILE==============================
+New PVSystem.small_p12ulv36738_1_2_pv phases=1 bus1=p12ulv36738.1.2 kv=0.2402 irradiance=1 Pmpp=18.16 %Pmpp=100 kVA=18.16 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
+New PVSystem.small_p12ulv25533_1_2_pv phases=1 bus1=p12ulv25533.1.2 kv=0.2402 irradiance=1 Pmpp=12.705 %Pmpp=100 kVA=12.705 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
+New PVSystem.small_p12ulv5483_1_2_pv phases=1 bus1=p12ulv5483.1.2 kv=0.2402 irradiance=1 Pmpp=26.522 %Pmpp=100 kVA=26.522 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
+New PVSystem.small_p12ulv20628_1_2_pv phases=1 bus1=p12ulv20628.1.2 kv=0.2402 irradiance=1 Pmpp=22.456 %Pmpp=100 kVA=22.456 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
+New PVSystem.small_p12ulv5532_1_2_pv phases=1 bus1=p12ulv5532.1.2 kv=0.2402 irradiance=1 Pmpp=18.246 %Pmpp=100 kVA=18.246 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
+New PVSystem.small_p12ulv16360_1_2_pv phases=1 bus1=p12ulv16360.1.2 kv=0.2402 irradiance=1 Pmpp=27.894 %Pmpp=100 kVA=27.894 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
+New PVSystem.small_p12ulv900_1_2_pv phases=1 bus1=p12ulv900.1.2 kv=0.2402 irradiance=1 Pmpp=13.905 %Pmpp=100 kVA=13.905 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
+New PVSystem.small_p12ulv1_1_2_pv phases=1 bus1=p12ulv1.1.2 kv=0.2402 irradiance=1 Pmpp=37.474 %Pmpp=100 kVA=37.474 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
+New PVSystem.small_p12ulv4482_1_2_pv phases=1 bus1=p12ulv4482.1.2 kv=0.2402 irradiance=1 Pmpp=29.994 %Pmpp=100 kVA=29.994 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2
+
+Solve

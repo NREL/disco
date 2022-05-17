@@ -8,7 +8,17 @@ from jade.utils.utils import load_data, dump_data
 from disco import timer_stats_collector
 
 logger = logging.getLogger(__name__)
-
+# Dictionary used to convert between different length units and meters, which are used for all the calculations.
+# OpenDSS can output results in any of these lengths.
+LENGTH_CONVERSION_TO_METRE = {
+    "mi": 1609.34,
+    "kft": 304.8,
+    "km": 1000,
+    "ft": 0.3048,
+    "in": 0.0254,
+    "cm": 0.01,
+    "m": 1,
+}
 
 @track_timing(timer_stats_collector)
 def compute_all_costs(
@@ -82,7 +92,7 @@ def compute_all_costs(
     dump_data(total_cost_df.to_dict('records'), total_cost_output_filepath, indent=4)
 
 
-def compute_transformer_costs(xfmr_upgrades_df=None, xfmr_cost_database=None, **kwargs):
+def compute_transformer_costs(xfmr_upgrades_df, xfmr_cost_database, **kwargs):
     """This function computes the transformer costs.
     -Unit equipment cost for new(parallel) and "upgrade" transformers are the same in the database.
     The difference would be the fixed costs added (if present in misc_database)
@@ -214,7 +224,7 @@ def reformat_xfmr_upgrades_file(xfmr_upgrades_df):
     return xfmr_upgrades_df
 
 
-def compute_line_costs(line_upgrades_df=None, line_cost_database=None, **kwargs):
+def compute_line_costs(line_upgrades_df, line_cost_database, **kwargs):
     """This function computes the line costs.
     -Unit equipment cost for new(parallel) and "upgrade" line are the not same in the database.
     There are different costs given for reconductored and new lines
@@ -243,17 +253,6 @@ def compute_line_costs(line_upgrades_df=None, line_cost_database=None, **kwargs)
     deciding_columns = ["phases", "voltage_kV", "ampere_rating", "line_placement", "Description"]
     output_columns_list = ["type", output_count_field, output_cost_field, "comment", "equipment_parameters"]
     backup_deciding_property = kwargs.get("backup_deciding_property", "ampere_rating")
-    # Dictionary used to convert between different length units and meters, which are used for all the calculations.
-    # OpenDSS can output results in any of these lengths.
-    length_conversion_to_metre = {
-        "mi": 1609.34,
-        "kft": 304.8,
-        "km": 1000,
-        "ft": 0.3048,
-        "in": 0.0254,
-        "cm": 0.01,
-        "m": 1,
-    }
     # choose which properties are to be saved
     upgrade_type_list = ["upgrade", "new (parallel)"]
     added_line_df = line_upgrades_df.loc[(line_upgrades_df["Upgrade_Type"].isin(upgrade_type_list)) & (line_upgrades_df["Action"] == "add")]
@@ -274,7 +273,7 @@ def compute_line_costs(line_upgrades_df=None, line_cost_database=None, **kwargs)
                                            (line_cost_database["Description"] == description)
                                            ]["cost_per_m"]
         # convert line length to metres
-        line_length_m = row["length"] * length_conversion_to_metre[row["units"]]
+        line_length_m = row["length"] * LENGTH_CONVERSION_TO_METRE[row["units"]]
         params_dict = dict(row[['final_equipment_name'] + deciding_columns])
         row["equipment_parameters"] = params_dict
         row["type"] = "Line"
@@ -299,7 +298,7 @@ def compute_line_costs(line_upgrades_df=None, line_cost_database=None, **kwargs)
     return line_cost_df
 
 
-def reformat_line_files(line_upgrades_df=None, line_cost_database=None):
+def reformat_line_files(line_upgrades_df, line_cost_database):
     """This function renames, reformats line upgrades dataframe to match cost database columns
 
     Parameters
@@ -325,7 +324,7 @@ def reformat_line_files(line_upgrades_df=None, line_cost_database=None):
     return line_upgrades_df, line_cost_database
 
 
-def compute_capcontrol_cost(voltage_upgrades_df=None, controls_cost_database=None, keyword="Capacitor"):
+def compute_capcontrol_cost(voltage_upgrades_df, controls_cost_database, keyword="Capacitor"):
     """This function computes the capacitor controller related costs.
     Note we currently are not adding new capacitors to integrate PV.
     Considered here: new controllers, control setting changes
@@ -511,14 +510,16 @@ def compute_voltage_regcontrol_cost(voltage_upgrades_df, vreg_control_cost_datab
                 output_row["type"] = output_fields_dict["add_new_substation_transformer"]
             else: 
                 output_row["type"] = output_fields_dict["add_new_vreg_transformer"]
-    cost_list.append(output_row)
+            cost_list.append(output_row)
 
     reg_cost_df = pd.DataFrame(cost_list)
     reg_cost_df = reg_cost_df[output_columns_list]
     return reg_cost_df
 
 
-def get_total_costs(thermal_cost_df=None, voltage_cost_df=None):
+def get_total_costs(thermal_cost_df, voltage_cost_df):
+    """This function combines voltage and thermal upgrades costs into one file.
+    """
     total_cost_df = thermal_cost_df.append(voltage_cost_df)
     total_cost_df = total_cost_df.groupby('type').sum()
     total_cost_df.reset_index(inplace=True)

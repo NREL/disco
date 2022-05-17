@@ -17,13 +17,12 @@ logger = logging.getLogger(__name__)
 
 
 @track_timing(timer_stats_collector)
-def reload_dss_circuit(dss_file_list=None, commands_list=None,  **kwargs):
+def reload_dss_circuit(dss_file_list, commands_list=None,  **kwargs):
     """This function clears the circuit and loads dss files and commands.
     Also solves the circuit and checks for convergence errors
 
     Parameters
     ----------
-    dc_ac_ratio
     dss_file_list
     commands_list
 
@@ -41,12 +40,11 @@ def reload_dss_circuit(dss_file_list=None, commands_list=None,  **kwargs):
     dc_ac_ratio = kwargs.get('dc_ac_ratio', None)
     if dc_ac_ratio is not None:
         change_pv_pctpmpp(dc_ac_ratio=dc_ac_ratio)
-    check_dss_run_command("CalcVoltageBases")
     if commands_list is not None:
         logger.info(f"Running {len(commands_list)} dss commands")
         for command_string in commands_list:
             check_dss_run_command(command_string)
-            if "new" in command_string.lower():
+            if "new " in command_string.lower():
                 check_dss_run_command("CalcVoltageBases")
     enable_pydss_solve = kwargs.get("enable_pydss_solve", False)
     if enable_pydss_solve:
@@ -58,7 +56,7 @@ def reload_dss_circuit(dss_file_list=None, commands_list=None,  **kwargs):
         return kwargs
 
 
-def run_selective_master_dss(master_filepath=None, **kwargs):
+def run_selective_master_dss(master_filepath, **kwargs):
     """This function executes master.dss file line by line and ignores some commands that Solve yearly mode,
     export or plot data.
 
@@ -71,9 +69,9 @@ def run_selective_master_dss(master_filepath=None, **kwargs):
 
     """
     run_dir = os.getcwd()
-    dss.run_command("Clear")
+    check_dss_run_command("Clear")
     # logger.info("-->Redirecting master file:")
-    # dss.run_command(f"Redirect {master_filepath}")
+    # check_dss_run_command(f"Redirect {master_filepath}")
 
     # do this instead of redirect master to ignore some lines (e.g., that solve for the whole year)
     os.chdir(os.path.dirname(master_filepath))
@@ -85,9 +83,7 @@ def run_selective_master_dss(master_filepath=None, **kwargs):
             logger.info(f"Skipping this line: {line}")
             continue
         else:
-            r = dss.run_command(f"{line}")
-            if r != '':
-                raise ValueError(f"Error: {r}. \nSomething went wrong: check {line}")
+            check_dss_run_command(f"{line}")
     circuit_solve_and_check(raise_exception=True, **kwargs)
     os.chdir(run_dir)
     return
@@ -107,7 +103,7 @@ def circuit_solve_and_check(raise_exception=False, **kwargs):
     -------
 
     """
-    calcvoltagebases = kwargs.pop("calcvoltagebases", True)
+    calcvoltagebases = kwargs.pop("calcvoltagebases", False)
     if calcvoltagebases:
         check_dss_run_command("CalcVoltageBases")
     dss_pass_flag = dss_solve_and_check(raise_exception=raise_exception)
@@ -132,7 +128,7 @@ def dss_solve_and_check(raise_exception=False):
     """
     dss.Solution.Solve()
     logger.debug("Solving circuit using OpenDSS")
-    # dss.run_command('CalcVoltageBases')
+    # check_dss_run_command('CalcVoltageBases')
     dss_pass_flag = dss.Solution.Converged()
     if not dss_pass_flag:
         logger.info(f"OpenDSS Convergence Error")
@@ -147,7 +143,7 @@ def dss_run_command_list(command_list):
     return
 
 
-def write_text_file(string_list=None, text_file_path=None):
+def write_text_file(string_list, text_file_path):
     """This function writes the string contents of a list to a text file
 
     Parameters
@@ -162,7 +158,7 @@ def write_text_file(string_list=None, text_file_path=None):
     pathlib.Path(text_file_path).write_text("\n".join(string_list))
 
 
-def create_dataframe_from_nested_dict(user_dict=None, index_names=None):
+def create_dataframe_from_nested_dict(user_dict, index_names):
     """This function creates dataframe from a nested dictionary
 
     Parameters
@@ -182,7 +178,7 @@ def create_dataframe_from_nested_dict(user_dict=None, index_names=None):
     return df.reset_index()
 
 
-def get_dictionary_of_duplicates(df, subset=None, index_field=None):
+def get_dictionary_of_duplicates(df, subset, index_field):
     """This creates a mapping dictionary of duplicate indices in a dataframe
 
     Parameters
@@ -233,7 +229,6 @@ def change_pv_pctpmpp(dc_ac_ratio):
         command_string = f"Edit PVSystem.{dss.PVsystems.Name()} %Pmpp={newpctpmpp}"
         check_dss_run_command(command_string)
         dss.PVsystems.Next()
-    return
 
 
 def get_feeder_stats(dss):
@@ -357,7 +352,6 @@ def ensure_line_config_exists(chosen_option, new_config_type, external_upgrades_
             config_definition_df = external_config_df.loc[external_config_df["name"] == new_config_name]
             config_definition_dict = dict(config_definition_df.iloc[0])
             if config_definition_dict["normamps"] != chosen_option["normamps"]:
-                # config_definition_dict["normamps"] = chosen_option["normamps"]  # this is directly done in line definition instead
                 logger.warning(f"Mismatch between noramps for linecode {new_config_name} and chosen upgrade option normamps: {chosen_option['name']}")
             # check format of certain fields
             matrix_fields = [s for s in config_definition_dict.keys() if 'matrix' in s]
@@ -462,7 +456,7 @@ def get_present_pvgeneration():
     return pv_df
 
 
-def get_all_transformer_info_instance(compute_loading=True, upper_limit=1.5):
+def get_all_transformer_info_instance(upper_limit=None, compute_loading=True):
     """This collects transformer information
 
     Returns
@@ -505,12 +499,13 @@ def get_all_transformer_info_instance(compute_loading=True, upper_limit=1.5):
             raise Exception(f"Incorrect number of phases for transformer {row['name']}")
         all_df.at[index, "amp_limit_per_phase"] = amp_limit_per_phase
         if compute_loading:
+            if upper_limit is None:
+                raise Exception("Transformer upper limit is to be passed to function to compute transformer loading")
             dss.Circuit.SetActiveElement("Transformer.{}".format(row["name"]))
             extract_magang = dss.CktElement.CurrentsMagAng()[: 2 * row["phases"]]  # extract elements based on num of ph
             xfmr_current_magnitude = extract_magang[::2]
             max_amp_loading = max(xfmr_current_magnitude)
             max_per_unit_loading = round(max_amp_loading / amp_limit_per_phase, 4)
-            # max_per_unit_loading = round(round(max_amp_loading, 3) / round(amp_limit_per_phase, 3), 3)
             all_df.at[index, "max_amp_loading"] = max_amp_loading
             all_df.at[index, "max_per_unit_loading"] = max_per_unit_loading
             if max_per_unit_loading > upper_limit:
@@ -566,7 +561,7 @@ def determine_line_placement(line_series):
     return info_dict
 
 
-def get_all_line_info_instance(compute_loading=True, upper_limit=1.5, ignore_switch=True):
+def get_all_line_info_instance(upper_limit=None, compute_loading=True, ignore_switch=True):
     """This collects line information
 
     Returns
@@ -609,12 +604,13 @@ def get_all_line_info_instance(compute_loading=True, upper_limit=1.5, ignore_swi
             all_df.at[index, key] = placement_dict[key] 
         # if line loading is to be computed
         if compute_loading:
+            if upper_limit is None:
+                raise Exception("Line upper limit is to be passed to function to compute line loading")
             dss.Circuit.SetActiveElement("Line.{}".format(row["name"]))
             extract_magang = dss.CktElement.CurrentsMagAng()[: 2 * row["phases"]]
             line_current = extract_magang[::2]
             max_amp_loading = max(line_current)
             max_per_unit_loading = round(max_amp_loading / row["normamps"], 4)
-            # max_per_unit_loading = round(round(max_amp_loading, 3) / round(row["normamps"], 3), 3)
             all_df.at[index, "max_amp_loading"] = max_amp_loading
             all_df.at[index, "max_per_unit_loading"] = max_per_unit_loading
             if max_per_unit_loading > upper_limit:
@@ -634,28 +630,28 @@ def get_all_line_info_instance(compute_loading=True, upper_limit=1.5, ignore_swi
 
 
 def compare_multiple_dataframes(comparison_dict, deciding_column_name, comparison_type="max"):
-            """This function compares all dataframes in a given dictionary based on a deciding column name
+    """This function compares all dataframes in a given dictionary based on a deciding column name
 
-            Returns
-            -------
-            Dataframe
-            """
-            summary_df = pd.DataFrame()
-            for df_name in comparison_dict.keys():
-                summary_df[df_name] = comparison_dict[df_name][deciding_column_name]
-            if comparison_type == "max":
-                label_df = summary_df.idxmax(axis=1)  # find dataframe name that has max 
-            elif comparison_type == "min":
-                label_df = summary_df.idxmax(axis=1)  # find dataframe name that has min 
-            else:
-                raise Exception(f"Unknown comparison type {comparison_type} passed.")
-            final_list = []
-            for index, label in label_df.iteritems():  # index is element name
-                temp_dict = dict(comparison_dict[label].loc[index])
-                temp_dict.update({"name": index})
-                final_list.append(temp_dict)
-            final_df = pd.DataFrame(final_list)
-            return final_df
+    Returns
+    -------
+    Dataframe
+    """
+    summary_df = pd.DataFrame()
+    for df_name in comparison_dict.keys():
+        summary_df[df_name] = comparison_dict[df_name][deciding_column_name]
+    if comparison_type == "max":
+        label_df = summary_df.idxmax(axis=1)  # find dataframe name that has max 
+    elif comparison_type == "min":
+        label_df = summary_df.idxmax(axis=1)  # find dataframe name that has min 
+    else:
+        raise Exception(f"Unknown comparison type {comparison_type} passed.")
+    final_list = []
+    for index, label in label_df.iteritems():  # index is element name
+        temp_dict = dict(comparison_dict[label].loc[index])
+        temp_dict.update({"name": index})
+        final_list.append(temp_dict)
+    final_df = pd.DataFrame(final_list)
+    return final_df
         
 
 @track_timing(timer_stats_collector)
@@ -701,7 +697,12 @@ def get_thermal_equipment_info(compute_loading, equipment_type, upper_limit=None
 
 
 def get_regcontrol_info(correct_PT_ratio=False, nominal_voltage=None):
-    """This collects enabled regulator control information
+    """This collects enabled regulator control information.
+    If correcting PT ratio, the following information is followed (based on OpenDSS documentation)
+    PT ratio: # If the winding is Wye, the line-to-neutral voltage is used. Else, the line-to-line voltage is used.
+              # Here, bus kV is taken from Bus.kVBase
+    
+    Bus base kV:  Returns L-L voltages for 2- and 3-phase. Else for 1-ph, return L-N voltage
 
     Returns
     -------
@@ -721,6 +722,11 @@ def get_regcontrol_info(correct_PT_ratio=False, nominal_voltage=None):
     if ckt_info_dict['substation_xfmr'] is not None:
         sub_xfmr_present = True
         sub_xfmr_name = ckt_info_dict['substation_xfmr']['name']
+    if correct_PT_ratio:
+        if nominal_voltage is None:
+            raise Exception("Nominal voltage not provided to correct regcontrol PT ratio.")
+        all_df['old_ptratio'] = all_df['ptratio']
+        
     for index, row in all_df.iterrows():
         dss.Circuit.SetActiveElement("Regcontrol.{}".format(row["name"]))
         reg_bus = dss.CktElement.BusNames()[0].split(".")[0]
@@ -732,26 +738,36 @@ def get_regcontrol_info(correct_PT_ratio=False, nominal_voltage=None):
         all_df.at[index, "transformer_kva"] = float(dss.Properties.Value("kva"))
         dss.Transformers.Wdg(1)  # setting winding to 1, to get kV for winding 1
         all_df.at[index, "transformer_kv"] = dss.Transformers.kV()
+        all_df.at[index, "transformer_conn"] = dss.Properties.Value("conn").replace(" ", "")  # opendss returns conn with a space 
         all_df.at[index, "transformer_bus1"] = dss.CktElement.BusNames()[0].split(".")[0]
         all_df.at[index, "transformer_bus2"] = dss.CktElement.BusNames()[1].split(".")[0]
+        if correct_PT_ratio:
+            if (all_df.loc[index]["bus_num_phases"] > 1) and (all_df.loc[index]["transformer_conn"].lower() == "wye"):
+                kV_to_be_used = all_df.loc[index]["transformer_kv"] * 1000 / math.sqrt(3)
+            else:
+                kV_to_be_used = all_df.loc[index]["transformer_kv"] * 1000
+            # kV_to_be_used = dss.Bus.kVBase() * 1000
+            all_df.at[index, "ptratio"] = kV_to_be_used / nominal_voltage
         if sub_xfmr_present and (row["transformer"] == sub_xfmr_name):  # if reg control is at substation xfmr
             all_df.at[index, 'at_substation_xfmr_flag'] = True
-    all_df = all_df.reset_index(drop=True).set_index('name')
-    if correct_PT_ratio:
-        if nominal_voltage is None:
-            raise Exception("Nominal voltage not provided to correct regcontrol PT ratio.")
-        all_df['old_ptratio'] = all_df['ptratio']
-        # If the winding is Wye, the line-to-neutral voltage is used. Else, the line-to-line voltage is used.
-        # Here, bus kV is taken from Bus.kVBase
-        all_df["ptratio"] = (all_df['bus_kv'] * 1000) / nominal_voltage
+    all_df = all_df.reset_index(drop=True).set_index('name')        
     all_df = all_df.loc[all_df['enabled'] == True]
     return all_df.reset_index()
 
 
 def get_capacitor_info(nominal_voltage=None, correct_PT_ratio=False):
     """
-    This collects capacitor information
-
+    This collects capacitor information.
+    For correcting PT ratio, the following information and definitions are followed:
+    # cap banks are 3 phase, 2 phase or 1 phase. 1 phase caps will have LN voltage
+    # PT ratio: Ratio of the PT that converts the monitored voltage to the control voltage. 
+    # If the capacitor is Wye, the 1st phase line-to-neutral voltage is monitored.
+    # Else, the line-to-line voltage (1st - 2nd phase) is monitored.
+    # Capacitor kv: Rated kV of the capacitor (not necessarily same as bus rating). 
+    # For Phases=2 or Phases=3, it is line-to-line (phase-to-phase) rated voltage. 
+    # For all other numbers of phases, it is actual rating. (For Delta connection this is always line-to-line rated voltage). 
+    This function doesnt currently check if object is "enabled".
+    
     Returns
     -------
     DataFrame
@@ -763,12 +779,6 @@ def get_capacitor_info(nominal_voltage=None, correct_PT_ratio=False):
     all_df["equipment_type"] = all_df.index.str.split(".").str[0]
     float_columns = ["phases", "kv"]
     all_df[float_columns] = all_df[float_columns].astype(float)
-    # all_df["cap_bus"] = None
-    for index, row in all_df.iterrows():
-        all_df.at[index, "kvar"] = [float(a) for a in row["kvar"]][0]
-        # dss.Circuit.SetActiveElement(index)
-        # cap_bus = dss.CktElement.BusNames()[0].split(".")[0]
-        # all_df.at[index, "cap_bus"] = cap_bus
     all_df = all_df.reset_index(drop=True).set_index("capacitor_name")
     # collect capcontrol information to combine with capcontrols
     capcontrol_df = get_cap_control_info()
@@ -780,15 +790,23 @@ def get_capacitor_info(nominal_voltage=None, correct_PT_ratio=False):
     all_df = pd.concat([all_df, capcontrol_df], axis=1)
     all_df.index.name = 'capacitor_name'
     all_df = all_df.reset_index().set_index('capacitor_name')
-
-    # if capcontrol type is empty, then that capacitor does not have controls
-    # correct PT ratios for existing cap controls
-    # TODO: cap banks are 3 phase, 2 phase or 1 phase. 1 phase caps will have LN voltage
+    
     if correct_PT_ratio and (len(capcontrol_df) > 0):
         if nominal_voltage is None:
             raise Exception("Nominal voltage not provided to correct capacitor bank PT ratio.")
         all_df['old_PTratio'] = all_df['PTratio']
-        all_df["PTratio"] = (all_df['kv'] * 1000) / nominal_voltage
+    
+    # iterate over all capacitors
+    for index, row in all_df.iterrows():
+        all_df.at[index, "kvar"] = [float(a) for a in row["kvar"]][0]
+        # if capcontrol type is empty, then that capacitor does not have controls
+        # correct PT ratios for existing cap controls
+        if correct_PT_ratio and (len(capcontrol_df) > 0):
+            if row["phases"] > 1 and row["conn"].lower() == "wye":
+                kv_to_be_used = (row['kv'] * 1000) / math.sqrt(3)
+            else:
+                kv_to_be_used = row['kv'] * 1000
+            all_df.at[index, "PTratio"] = kv_to_be_used / nominal_voltage
     return all_df.reset_index()
 
 
@@ -902,20 +920,22 @@ def check_dss_run_command(command_string):
 
 
 @track_timing(timer_stats_collector)
-def get_bus_voltages(voltage_upper_limit=1.05, voltage_lower_limit=0.95, raise_exception=True, **kwargs):
+def get_bus_voltages(voltage_upper_limit, voltage_lower_limit, raise_exception=True, **kwargs):
     """This computes per unit voltages for all buses in network
 
     Returns
     -------
     DataFrame
     """
+    circuit_solve_and_check(raise_exception=raise_exception, **kwargs)  # this is added as a final check for convergence
     all_dict = {}
     all_bus_names = dss.Circuit.AllBusNames()
     for bus_name in all_bus_names:
         dss.Circuit.SetActiveBus(bus_name)
         data_dict = {
             "name": bus_name,
-            "voltages": dss.Bus.puVmagAngle()[::2]
+            "voltages": dss.Bus.puVmagAngle()[::2],
+            "kvbase": dss.Bus.kVBase(),
         }
         data_dict["Max per unit voltage"] = max(data_dict["voltages"])
         data_dict["Min per unit voltage"] = min(data_dict["voltages"])
@@ -942,8 +962,6 @@ def get_bus_voltages(voltage_upper_limit=1.05, voltage_lower_limit=0.95, raise_e
     undervoltage_bus_list = list(all_df.loc[all_df['Undervoltage violation'] == True]['name'].unique())
     overvoltage_bus_list = list(all_df.loc[all_df['Overvoltage violation'] == True]['name'].unique())
     buses_with_violations = undervoltage_bus_list + overvoltage_bus_list
-
-    circuit_solve_and_check(raise_exception=raise_exception, **kwargs)  # this is added as a final check for convergence
     return all_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations
 
 
@@ -1031,13 +1049,13 @@ def get_bus_coordinates():
     return pd.DataFrame(buses_list)
 
 
-def convert_summary_dict_to_df(summary_dict=None):
+def convert_summary_dict_to_df(summary_dict):
     df = pd.DataFrame.from_dict(summary_dict, orient='index')
     df.index.name = "stage"
     return df
 
 
-def filter_dictionary(dict_data=None, wanted_keys=None):
+def filter_dictionary(dict_data, wanted_keys):
     return {k: dict_data.get(k, None) for k in wanted_keys}
 
 

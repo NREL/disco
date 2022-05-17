@@ -7,7 +7,7 @@ from jade.utils.timing_utils import track_timing, Timer
 from jade.utils.utils import load_data, dump_data
 
 from .thermal_upgrade_functions import *
-from .voltage_upgrade_functions import *
+from .voltage_upgrade_functions import plot_thermal_violations, plot_voltage_violations, plot_feeder
 
 from disco.models.upgrade_cost_analysis_generic_model import UpgradeResultModel
 from disco import timer_stats_collector
@@ -40,11 +40,11 @@ def determine_thermal_upgrades(
     initial_simulation_params = {"enable_pydss_solve": enable_pydss_solve, "pydss_volt_var_model": pydss_volt_var_model,
                                  "dc_ac_ratio": dc_ac_ratio}
     logger.info("Initial simulation parameters: %s", initial_simulation_params)
-    create_plots = True
+    create_plots = thermal_config["create_plots"]
     # start upgrades
     simulation_params = reload_dss_circuit(dss_file_list=[master_path], commands_list=None, **initial_simulation_params)
     timepoint_multipliers = thermal_config["timepoint_multipliers"]
-    
+
     if timepoint_multipliers is not None:
         multiplier_type = "uniform"
     else:
@@ -75,7 +75,7 @@ def determine_thermal_upgrades(
         initial_undervoltage_bus_list,
         initial_overvoltage_bus_list,
         initial_buses_with_violations,
-    ) = get_bus_voltages(upper_limit=voltage_upper_limit, lower_limit=voltage_lower_limit, **simulation_params)
+    ) = get_bus_voltages(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
     initial_xfmr_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["transformer_upper_limit"], 
                                                          equipment_type="transformer", timepoint_multipliers=timepoint_multipliers, 
                                                          multiplier_type=multiplier_type, **simulation_params)
@@ -95,9 +95,9 @@ def determine_thermal_upgrades(
         equipment_with_violations = {"Transformer": initial_xfmr_loading_df, "Line": initial_line_loading_df}
         if create_plots:
             plot_thermal_violations(fig_folder=thermal_upgrades_directory, title="Thermal violations before thermal upgrades_"+str(n), 
-                                    equipment_with_violations=equipment_with_violations, circuit_source=circuit_source, show_fig=False)
+                                    equipment_with_violations=equipment_with_violations, circuit_source=circuit_source)
             plot_voltage_violations(fig_folder=thermal_upgrades_directory, title="Bus violations before thermal upgrades_"+str(len(initial_buses_with_violations)), 
-                                    buses_with_violations=initial_buses_with_violations, circuit_source=circuit_source, show_fig=False, enable_detailed=True)
+                                    buses_with_violations=initial_buses_with_violations, circuit_source=circuit_source, enable_detailed=True)
         upgrade_status = "Thermal Upgrades Required"  # status - whether upgrades done or not
     else:
         upgrade_status = "Thermal Upgrades not Required"  # status - whether upgrades done or not
@@ -131,7 +131,7 @@ def determine_thermal_upgrades(
     output_results = [temp_results]
     dump_data(output_results, thermal_summary_file, indent=4)
     title = "Feeder"
-    plot_feeder(show_fig=False, fig_folder=thermal_upgrades_directory, title=title, circuit_source=circuit_source)
+    plot_feeder(fig_folder=thermal_upgrades_directory, title=title, circuit_source=circuit_source, enable_detailed=True)
     # Mitigate thermal violations
     iteration_counter = 0
     # if number of violations is very high,  limit it to a small number
@@ -216,6 +216,8 @@ def determine_thermal_upgrades(
     if iteration_counter > 1:
         logger.info(f"Multiple iterations ({iteration_counter}) were needed to resolve thermal violations."
                     f"This indicates that feeder was extremely overloaded to start with.")
+    if any("new " in string.lower() for string in commands_list):  # if new equipment is added.
+        commands_list.append("CalcVoltageBases")
     write_text_file(string_list=commands_list, text_file_path=thermal_upgrades_dss_filepath)
     reload_dss_circuit(dss_file_list=[master_path, thermal_upgrades_dss_filepath], commands_list=None, **simulation_params,)
     (
@@ -223,7 +225,7 @@ def determine_thermal_upgrades(
         undervoltage_bus_list,
         overvoltage_bus_list,
         buses_with_violations,
-    ) = get_bus_voltages(upper_limit=voltage_upper_limit, lower_limit=voltage_lower_limit, **simulation_params)
+    ) = get_bus_voltages(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
     xfmr_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["transformer_upper_limit"], 
                                                 equipment_type="transformer", timepoint_multipliers=timepoint_multipliers, 
                                                 multiplier_type=multiplier_type, **simulation_params)
@@ -241,9 +243,9 @@ def determine_thermal_upgrades(
     equipment_with_violations = {"Transformer": xfmr_loading_df, "Line": line_loading_df}
     if (upgrade_status == "Thermal Upgrades Required") and create_plots:
         plot_thermal_violations(fig_folder=thermal_upgrades_directory, title="Thermal violations after thermal upgrades_"+str(n), 
-                                equipment_with_violations=equipment_with_violations, circuit_source=circuit_source, show_fig=False)
+                                equipment_with_violations=equipment_with_violations, circuit_source=circuit_source)
         plot_voltage_violations(fig_folder=thermal_upgrades_directory, title="Bus violations after thermal upgrades_"+str(len(buses_with_violations)), 
-                                buses_with_violations=buses_with_violations, circuit_source=circuit_source, show_fig=False, enable_detailed=True)
+                                buses_with_violations=buses_with_violations, circuit_source=circuit_source, enable_detailed=True)
     end_time = time.time()
     logger.info(f"Simulation end time: {end_time}")
     simulation_time = end_time - start_time
