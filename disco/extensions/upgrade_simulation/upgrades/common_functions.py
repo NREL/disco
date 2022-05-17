@@ -1007,7 +1007,7 @@ def get_bus_voltages_instance(voltage_upper_limit, voltage_lower_limit, raise_ex
     all_df = pd.DataFrame.from_dict(all_dict, orient='index').reset_index(drop=True)
     undervoltage_bus_list = list(all_df.loc[all_df['Undervoltage violation'] == True]['name'].unique())
     overvoltage_bus_list = list(all_df.loc[all_df['Overvoltage violation'] == True]['name'].unique())
-    buses_with_violations = undervoltage_bus_list + overvoltage_bus_list
+    buses_with_violations = list(set(undervoltage_bus_list + overvoltage_bus_list))
     return all_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations
 
 
@@ -1051,8 +1051,8 @@ def get_voltage_violations(voltage_upper_limit, voltage_lower_limit, bus_voltage
     """
     bus_voltages_df['Overvoltage violation'] = False
     bus_voltages_df['Undervoltage violation'] = False
-    bus_voltages_df['Max voltage_deviation'] = 0
-    bus_voltages_df['Min voltage_deviation'] = 0
+    bus_voltages_df['Max voltage_deviation'] = 0.0
+    bus_voltages_df['Min voltage_deviation'] = 0.0
     
     for index, row in bus_voltages_df.iterrows():
         # check for overvoltage violation
@@ -1074,7 +1074,7 @@ def get_voltage_violations(voltage_upper_limit, voltage_lower_limit, bus_voltage
     bus_voltages_df.reset_index(inplace=True)
     undervoltage_bus_list = list(bus_voltages_df.loc[bus_voltages_df['Undervoltage violation'] == True]['name'].unique())
     overvoltage_bus_list = list(bus_voltages_df.loc[bus_voltages_df['Overvoltage violation'] == True]['name'].unique())
-    buses_with_violations = undervoltage_bus_list + overvoltage_bus_list
+    buses_with_violations = list(set(undervoltage_bus_list + overvoltage_bus_list))
     return bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations
             
 
