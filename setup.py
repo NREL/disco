@@ -110,6 +110,7 @@ setup(
         "dev": read_lines("dev-requirements.txt"),
         "extras": ["ipywidgets"]
     },
-    # Disabled because this method is not compatible with wheels.
+    # Disabled because this method is not compatible with wheels, and so we
+    # can't build a PyPi package.
     #cmdclass={"install": PostInstallCommand, "develop": PostDevelopCommand},
 )
