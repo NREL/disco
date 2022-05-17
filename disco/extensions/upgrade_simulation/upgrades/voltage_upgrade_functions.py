@@ -797,8 +797,8 @@ def determine_substation_ltc_upgrades(voltage_upper_limit, voltage_lower_limit, 
     if comparison_dict["after_sub_ltc_checking"][deciding_field] < comparison_dict[best_setting_so_far][deciding_field]:
         best_setting_so_far = "after_sub_ltc_checking"
     else:
-        subltc_upgrade_commands = []
         all_commands_list = list(set(all_commands_list) - set(subltc_upgrade_commands))
+        subltc_upgrade_commands = []
         reload_dss_circuit(dss_file_list=dss_file_list, commands_list=all_commands_list, **kwargs)
     results_dict["comparison_dict"] = comparison_dict
     results_dict["best_setting_so_far"] = best_setting_so_far
@@ -833,10 +833,12 @@ def determine_new_regulator_upgrades(voltage_config, buses_with_violations, volt
                                                     exclude_sub_ltc=True, only_sub_ltc=False, **kwargs)
     regcontrols_df, regcontrol_settings_commands_list = choose_best_regcontrol_sweep_setting(deciding_field=deciding_field,
         regcontrol_sweep_df=regcontrol_sweep_df, initial_regcontrols_df=regcontrol_df, **kwargs)
-
+     
+    # # can test: to include subltc as well while doing sweep
+    
     # reload circuit after settings sweep
-    reload_dss_circuit(dss_file_list=dss_file_list, commands_list=dss_commands_list, **kwargs)  # reload circuit after settings sweep
     dss_commands_list = dss_commands_list + regcontrol_settings_commands_list
+    reload_dss_circuit(dss_file_list=dss_file_list, commands_list=dss_commands_list, **kwargs)  # reload circuit after settings sweep
     comparison_dict["after_addition_new_regcontrol"] = compute_voltage_violation_severity(
         voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
     new_reg_upgrade_commands = regcontrol_cluster_commands + regcontrol_settings_commands_list
@@ -844,7 +846,7 @@ def determine_new_regulator_upgrades(voltage_config, buses_with_violations, volt
         best_setting_so_far = "after_addition_new_regcontrol"
     else: 
         new_reg_upgrade_commands = []
-        dss_commands_list = list(set(dss_commands_list) - set(regcontrol_settings_commands_list) - regcontrol_cluster_commands)
+        dss_commands_list = list(set(dss_commands_list) - set(regcontrol_settings_commands_list) - set(regcontrol_cluster_commands))
         reload_dss_circuit(dss_file_list=dss_file_list, commands_list=dss_commands_list, **kwargs)
         comparison_dict["disabled_new_regcontrol"] = compute_voltage_violation_severity(
                                                         voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)

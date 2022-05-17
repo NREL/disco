@@ -88,7 +88,7 @@ class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
     )
     timepoint_multipliers: Optional[dict] = Field(
         title="timepoint_multipliers",
-        description="Dictionary to provide timepoint multipliers",
+        description='Dictionary to provide timepoint multipliers. example: timepoint_multipliers={"load_multipliers": {"with_pv": [0.6], "without_pv": [1]}} ',
         default=None
     )
 

@@ -76,7 +76,7 @@ def determine_voltage_upgrades(
                                  "dc_ac_ratio": dc_ac_ratio}
     dss_file_list = [master_path, thermal_upgrades_dss_filepath]
     simulation_params = reload_dss_circuit(dss_file_list=dss_file_list, commands_list=None, **initial_simulation_params)
-
+    simulation_params.update({"timepoint_multipliers": timepoint_multipliers, "multiplier_type": multiplier_type})
     # reading original objects (before upgrades)
     orig_ckt_info = get_circuit_info()
     orig_xfmrs_df =  get_thermal_equipment_info(compute_loading=False, equipment_type="transformer")
@@ -93,11 +93,9 @@ def determine_voltage_upgrades(
     voltage_lower_limit = voltage_config["initial_lower_limit"]
 
     initial_xfmr_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["transformer_upper_limit"], 
-                                                        equipment_type="transformer", timepoint_multipliers=timepoint_multipliers, 
-                                                        multiplier_type=multiplier_type, **simulation_params)
+                                                        equipment_type="transformer", **simulation_params)
     initial_line_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["line_upper_limit"], 
-                                                        equipment_type="line", ignore_switch=ignore_switch, multiplier_type=multiplier_type,
-                                                        timepoint_multipliers=timepoint_multipliers, **simulation_params)
+                                                        equipment_type="line", ignore_switch=ignore_switch, **simulation_params)
     initial_bus_voltages_df, initial_undervoltage_bus_list, initial_overvoltage_bus_list, \
         initial_buses_with_violations = get_bus_voltages(
             voltage_upper_limit=thermal_config['voltage_upper_limit'], voltage_lower_limit=thermal_config['voltage_lower_limit'],
@@ -176,7 +174,7 @@ def determine_voltage_upgrades(
             # added to commands list only if it is different from original
             dss_commands_list = dss_commands_list + reg_sweep_commands_list
             # determine voltage violations after changes
-            bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(                voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
+            bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
         # Writing out the results before adding new devices
         logger.info("Write upgrades to dss file, before adding new devices.")
         write_text_file(string_list=dss_commands_list, text_file_path=voltage_upgrades_dss_filepath)
@@ -255,11 +253,9 @@ def determine_voltage_upgrades(
         voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
     
     xfmr_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["transformer_upper_limit"], 
-                                                equipment_type="transformer", timepoint_multipliers=timepoint_multipliers, 
-                                                multiplier_type=multiplier_type, **simulation_params)
+                                                equipment_type="transformer", **simulation_params)
     line_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["line_upper_limit"], 
-                                                equipment_type="line", ignore_switch=ignore_switch, multiplier_type=multiplier_type,
-                                                timepoint_multipliers=timepoint_multipliers, **simulation_params)
+                                                equipment_type="line", ignore_switch=ignore_switch, **simulation_params)
     overloaded_xfmr_list = list(xfmr_loading_df.loc[xfmr_loading_df['status'] == 'overloaded']['name'].unique())
     overloaded_line_list = list(line_loading_df.loc[line_loading_df['status'] == 'overloaded']['name'].unique())
     if (upgrade_status == "Voltage Upgrades Required") and create_plots:

@@ -1,6 +1,6 @@
 Clear
 
-New Circuit.feeder_p12udt6981-p12uhs5_1247x bus1=p12udt6981-p12uhs5_1247x pu=1.03 basekV=12.47 R1=1e-05 X1=1e-05 R0=1e-05 X0=1e-05
+New Circuit.feeder_p7udt173-p7uhs7_1247x bus1=p7udt173-p7uhs7_1247x pu=1.03 basekV=12.47 R1=1e-05 X1=1e-05 R0=1e-05 X0=1e-05
 
 Redirect LineCodes.dss
 Redirect Lines.dss
@@ -9,12 +9,12 @@ Redirect Transformers.dss
 Redirect Loads.dss
 Redirect Capacitors.dss
 !Redirect PVShapes.dss
-!New EnergyMeter.m1 element=Line.l(r:p12udt6981-p12uhs5_1247)
+!New EnergyMeter.m1 element=Line.l(r:p7udt173-p7uhs7_1247)
 !BatchEdit Fuse..* enable=False
 
-!new monitor.m1 element=Line.l(r:p12udt6981-p12uhs5_1247) mode=0
-!new monitor.m2 element=Line.l(r:p12udt6981-p12uhs5_1247) mode=1
-!new energymeter.m3 Line.l(r:p12udt6981-p12uhs5_1247)
+!new monitor.m1 element=Line.l(r:p7udt173-p7uhs7_1247) mode=0
+!new monitor.m2 element=Line.l(r:p7udt173-p7uhs7_1247) mode=1
+!new energymeter.m3 Line.l(r:p7udt173-p7uhs7_1247)
 
 Set Voltagebases=[69.0, 25.0, 14.4338, 12.47, 7.199560000000001, 0.48, 0.2080002494301389]
 

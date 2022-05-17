@@ -1,0 +1,4 @@
+New Capacitor.p7uc45 bus1=p7udt24 phases=3 Kv=12.47 conn=Wye Kvar=300.0
+
+New CapControl.p7uc45 Capacitor=p7uc45 Element=Line.padswitch(r:p7udt14-p7udt24)p7u_69764 Terminal=1 delay=100.0 Type=voltage ONsetting=115 OFFsetting=126.0 Ptratio=60 Ctratio=100.0
+

@@ -1,4 +1,0 @@
-New Capacitor.p12uc41 bus1=p12udt1031 phases=3 Kv=12.47 conn=Wye Kvar=300.0
-
-New CapControl.p12uc41 Capacitor=p12uc41 Element=Line.padswitch(r:p12udt1031-p12udt1153)p12u_63359 Terminal=1 delay=100.0 Type=voltage ONsetting=115 OFFsetting=126.0 Ptratio=60 Ctratio=100.0
-

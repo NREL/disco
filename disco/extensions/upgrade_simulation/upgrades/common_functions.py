@@ -655,13 +655,15 @@ def compare_multiple_dataframes(comparison_dict, deciding_column_name, compariso
         
 
 @track_timing(timer_stats_collector)
-def get_thermal_equipment_info(compute_loading, equipment_type, upper_limit=None, ignore_switch=False, timepoint_multipliers=None, multiplier_type='uniform', **kwargs):
+def get_thermal_equipment_info(compute_loading, equipment_type, upper_limit=None, ignore_switch=False, **kwargs):
     """This function determines the thermal equipment loading (line, transformer), based on timepoint multiplier
 
     Returns
     -------
     DataFrame
     """
+    timepoint_multipliers = kwargs.get("timepoint_multipliers", None)
+    multiplier_type = kwargs.get("multiplier_type", "original")
      # if there are no multipliers, run on rated load i.e. multiplier=1. 0
      # if compute_loading is false, then just run once (no need to check multipliers)
     if (timepoint_multipliers is None) or (not compute_loading) or (multiplier_type == "original"): 
@@ -921,6 +923,50 @@ def check_dss_run_command(command_string):
 
 @track_timing(timer_stats_collector)
 def get_bus_voltages(voltage_upper_limit, voltage_lower_limit, raise_exception=True, **kwargs):
+    """This function determines the voltages, based on timepoint multiplier
+
+    Returns
+    -------
+    DataFrame
+    """
+    timepoint_multipliers = kwargs.get("timepoint_multipliers", None)
+    multiplier_type = kwargs.get("multiplier_type", "original")
+     # if there are no multipliers, run on rated load i.e. multiplier=1. 0
+     # if compute_loading is false, then just run once (no need to check multipliers)
+    if (timepoint_multipliers is None) or (multiplier_type == "original"): 
+        if multiplier_type != "original":
+            apply_uniform_timepoint_multipliers(multiplier_name=1, field="with_pv", **kwargs)
+            # determine voltage violations after changes
+        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages_instance(
+            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, raise_exception=raise_exception, 
+            **kwargs)
+        return bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations
+    if multiplier_type == 'uniform':
+        comparison_dict = {}
+        for pv_field in timepoint_multipliers["load_multipliers"].keys():
+            logger.debug(pv_field)
+            for multiplier_name in timepoint_multipliers["load_multipliers"][pv_field]:
+                logger.debug("Multipler name: %s", multiplier_name)
+                
+                # this changes the dss network load and pv
+                apply_uniform_timepoint_multipliers(multiplier_name=multiplier_name, field=pv_field, **kwargs)
+                bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages_instance(
+                    voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, raise_exception=raise_exception, **kwargs)
+                bus_voltages_df.set_index("name", inplace=True)
+                comparison_dict[pv_field+"_"+str(multiplier_name)] = bus_voltages_df
+        # compare all dataframe, and create one that contains all worst loading conditions (across all multiplier conditions)
+        deciding_column_dict = {"Max per unit voltage": "max", "Min per unit voltage": "min"}
+        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = compare_multiple_dataframes_voltage(comparison_dict=comparison_dict, 
+                                                                                                                                  deciding_column_dict=deciding_column_dict,
+                                                                                                                                  voltage_upper_limit=voltage_upper_limit,
+                                                                                                                                  voltage_lower_limit=voltage_lower_limit)
+    else:
+        raise Exception(f"Undefined multiplier_type {multiplier_type} passed.")    
+    return bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations
+    
+
+@track_timing(timer_stats_collector)
+def get_bus_voltages_instance(voltage_upper_limit, voltage_lower_limit, raise_exception=True, **kwargs):
     """This computes per unit voltages for all buses in network
 
     Returns
@@ -935,7 +981,7 @@ def get_bus_voltages(voltage_upper_limit, voltage_lower_limit, raise_exception=T
         data_dict = {
             "name": bus_name,
             "voltages": dss.Bus.puVmagAngle()[::2],
-            "kvbase": dss.Bus.kVBase(),
+            # "kvbase": dss.Bus.kVBase(),
         }
         data_dict["Max per unit voltage"] = max(data_dict["voltages"])
         data_dict["Min per unit voltage"] = min(data_dict["voltages"])
@@ -964,6 +1010,73 @@ def get_bus_voltages(voltage_upper_limit, voltage_lower_limit, raise_exception=T
     buses_with_violations = undervoltage_bus_list + overvoltage_bus_list
     return all_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations
 
+
+def compare_multiple_dataframes_voltage(comparison_dict, deciding_column_dict, voltage_upper_limit, voltage_lower_limit):
+    """This function compares all dataframes in a given dictionary based on a deciding column 
+
+    Returns
+    -------
+    Dataframe
+    """
+    all_df = pd.DataFrame()
+    for deciding_column_name in deciding_column_dict.keys():
+        summary_df = pd.DataFrame()
+        comparison_type = deciding_column_dict[deciding_column_name]
+        for df_name in comparison_dict.keys():
+            label_df = pd.DataFrame()
+            summary_df[df_name] = comparison_dict[df_name][deciding_column_name]
+            if comparison_type == "max":
+                label_df[deciding_column_name] = summary_df.idxmax(axis=1)  # find dataframe name that has max 
+            elif comparison_type == "min":
+               label_df[deciding_column_name] = summary_df.idxmin(axis=1)  # find dataframe name that has min 
+            else:
+                raise Exception(f"Unknown comparison type {comparison_type} passed.")
+        final_list = []
+        for index, row in label_df.iterrows():  # index is element name
+            label = row[deciding_column_name]
+            temp_dict = {deciding_column_name: comparison_dict[label].loc[index][deciding_column_name]}
+            temp_dict.update({"name": index})
+            final_list.append(temp_dict)
+        temp_df = pd.DataFrame(final_list)
+        temp_df.set_index("name", inplace=True)
+        all_df = pd.concat([all_df, temp_df], axis=1)
+    bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_voltage_violations(voltage_upper_limit=voltage_upper_limit, 
+                                                                                                voltage_lower_limit=voltage_lower_limit, 
+                                                                                                bus_voltages_df=all_df)
+    return bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations
+        
+        
+def get_voltage_violations(voltage_upper_limit, voltage_lower_limit, bus_voltages_df):
+    """Function to determine voltage violations
+    """
+    bus_voltages_df['Overvoltage violation'] = False
+    bus_voltages_df['Undervoltage violation'] = False
+    bus_voltages_df['Max voltage_deviation'] = 0
+    bus_voltages_df['Min voltage_deviation'] = 0
+    
+    for index, row in bus_voltages_df.iterrows():
+        # check for overvoltage violation
+        if row["Max per unit voltage"] > voltage_upper_limit:
+            bus_voltages_df.at[index, 'Overvoltage violation'] = True
+            bus_voltages_df.at[index, "Max voltage_deviation"] = row["Max per unit voltage"] - voltage_upper_limit
+        else:
+            bus_voltages_df.at[index, 'Overvoltage violation'] = False
+            bus_voltages_df.at[index, "Max voltage_deviation"] = 0
+
+        # check for undervoltage violation
+        if row["Min per unit voltage"] < voltage_lower_limit:
+            bus_voltages_df.at[index, 'Undervoltage violation'] = True
+            bus_voltages_df.at[index, "Min voltage_deviation"] = voltage_lower_limit - row["Min per unit voltage"]
+        else:
+            bus_voltages_df.at[index, 'Undervoltage violation'] = False
+            bus_voltages_df.at[index, "Min voltage_deviation"] = 0
+    
+    bus_voltages_df.reset_index(inplace=True)
+    undervoltage_bus_list = list(bus_voltages_df.loc[bus_voltages_df['Undervoltage violation'] == True]['name'].unique())
+    overvoltage_bus_list = list(bus_voltages_df.loc[bus_voltages_df['Overvoltage violation'] == True]['name'].unique())
+    buses_with_violations = undervoltage_bus_list + overvoltage_bus_list
+    return bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations
+            
 
 def determine_available_line_upgrades(line_loading_df):
     property_list = ['line_definition_type', 'linecode', 'phases', 'kV', 'Switch',

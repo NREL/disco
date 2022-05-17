@@ -49,6 +49,8 @@ def determine_thermal_upgrades(
         multiplier_type = "uniform"
     else:
         multiplier_type = "original"
+    simulation_params.update({"timepoint_multipliers": timepoint_multipliers, "multiplier_type": multiplier_type})
+    
     voltage_upper_limit = thermal_config["voltage_upper_limit"]
     voltage_lower_limit = thermal_config["voltage_lower_limit"]
     feeder_stats = {"before_upgrades": get_feeder_stats(dss)}  # save feeder stats
@@ -69,7 +71,6 @@ def determine_thermal_upgrades(
         xfmr_upgrade_options = determine_available_xfmr_upgrades(orig_xfmrs_df)
         dump_data(line_upgrade_options.to_dict('records'), line_upgrade_options_file, indent=4)
         dump_data(xfmr_upgrade_options.to_dict('records'), xfmr_upgrade_options_file, indent=4)
-
     (
         initial_bus_voltages_df,
         initial_undervoltage_bus_list,
@@ -77,11 +78,9 @@ def determine_thermal_upgrades(
         initial_buses_with_violations,
     ) = get_bus_voltages(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
     initial_xfmr_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["transformer_upper_limit"], 
-                                                         equipment_type="transformer", timepoint_multipliers=timepoint_multipliers, 
-                                                         multiplier_type=multiplier_type, **simulation_params)
+                                                         equipment_type="transformer", **simulation_params)
     initial_line_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["line_upper_limit"], 
-                                                         equipment_type="line", ignore_switch=ignore_switch, multiplier_type=multiplier_type,
-                                                         timepoint_multipliers=timepoint_multipliers, **simulation_params)
+                                                         equipment_type="line", ignore_switch=ignore_switch, **simulation_params)
     
     initial_overloaded_xfmr_list = list(initial_xfmr_loading_df.loc[initial_xfmr_loading_df["status"] == 
                                                                     "overloaded"]["name"].unique())
@@ -147,8 +146,7 @@ def determine_thermal_upgrades(
     while (len(overloaded_line_list) > 0 or len(overloaded_xfmr_list) > 0) and (
         iteration_counter < max_upgrade_iteration):
         line_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["line_upper_limit"], 
-                                                    equipment_type="line", ignore_switch=ignore_switch, multiplier_type=multiplier_type,
-                                                    timepoint_multipliers=timepoint_multipliers, **simulation_params)
+                                                    equipment_type="line", ignore_switch=ignore_switch, **simulation_params)
         overloaded_line_list = list(line_loading_df.loc[line_loading_df["status"] == "overloaded"]["name"].unique())
         logger.info(f"Iteration_{iteration_counter}: Determined line loadings.")
         logger.info(f"Iteration_{iteration_counter}: Number of line violations: {len(overloaded_line_list)}")
@@ -166,8 +164,7 @@ def determine_thermal_upgrades(
             line_upgrades_df = line_upgrades_df.append(temp_line_upgrades_df)
 
         xfmr_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["transformer_upper_limit"], 
-                                                    equipment_type="transformer", timepoint_multipliers=timepoint_multipliers, 
-                                                    multiplier_type=multiplier_type, **simulation_params)
+                                                    equipment_type="transformer", **simulation_params)
         overloaded_xfmr_list = list(xfmr_loading_df.loc[xfmr_loading_df["status"] == "overloaded"]["name"].unique())
         logger.info(f"Iteration_{iteration_counter}: Determined xfmr loadings.")
         logger.info(f"Iteration_{iteration_counter}: Number of xfmr violations: {len(overloaded_xfmr_list)}")
@@ -185,12 +182,10 @@ def determine_thermal_upgrades(
 
         # compute loading after upgrades
         xfmr_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["transformer_upper_limit"], 
-                                                    equipment_type="transformer", timepoint_multipliers=timepoint_multipliers, 
-                                                    multiplier_type=multiplier_type, **simulation_params)
+                                                    equipment_type="transformer",  **simulation_params)
         overloaded_xfmr_list = list(xfmr_loading_df.loc[xfmr_loading_df["status"] == "overloaded"]["name"].unique())
         line_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["line_upper_limit"], 
-                                                    equipment_type="line", ignore_switch=ignore_switch, multiplier_type=multiplier_type,
-                                                    timepoint_multipliers=timepoint_multipliers, **simulation_params)
+                                                    equipment_type="line", ignore_switch=ignore_switch, **simulation_params)
         overloaded_line_list = list(line_loading_df.loc[line_loading_df["status"] == "overloaded"]["name"].unique())
         
         if len(overloaded_line_list) > before_upgrade_num_line_violations:
@@ -227,11 +222,9 @@ def determine_thermal_upgrades(
         buses_with_violations,
     ) = get_bus_voltages(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
     xfmr_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["transformer_upper_limit"], 
-                                                equipment_type="transformer", timepoint_multipliers=timepoint_multipliers, 
-                                                multiplier_type=multiplier_type, **simulation_params)
+                                                equipment_type="transformer", **simulation_params)
     line_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["line_upper_limit"], 
-                                                equipment_type="line", ignore_switch=ignore_switch, multiplier_type=multiplier_type,
-                                                timepoint_multipliers=timepoint_multipliers, **simulation_params)
+                                                equipment_type="line", ignore_switch=ignore_switch, **simulation_params)
     overloaded_xfmr_list = list(xfmr_loading_df.loc[xfmr_loading_df["status"] == "overloaded"]["name"].unique())
     overloaded_line_list = list(line_loading_df.loc[line_loading_df["status"] == "overloaded"]["name"].unique())
     # same equipment could be upgraded(edited) multiple times. Only consider last upgrade edit done. original_equipment details are currently not used.
