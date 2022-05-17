@@ -127,7 +127,7 @@ def run(powers_file: Path, costs_file: Path, output_file: Path, skipna: bool):
 def compute_cba(powers_file, costs_file, output_file, skipna, force, verbose):
     """Compute Cost Benefit Analysis metrics."""
     level = logging.DEBUG if verbose else logging.INFO
-    setup_logging(LOGGER_NAME, None, console_level=level)
+    setup_logging(LOGGER_NAME, None, console_level=level, packages=["disco"])
     if output_file.exists() and not force:
         logger.error(
             "%s already exists. Pass --force to overwrite or choose a custom name.", output_file
