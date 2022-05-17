@@ -1,0 +1,5 @@
+﻿Output Parameter,Type,Description
+name,str,Job name
+type,str,Equipment type
+count,str,Count of upgraded equipment
+total_cost_usd,float,Total cost in US dollars

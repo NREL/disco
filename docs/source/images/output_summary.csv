@@ -1,0 +1,21 @@
+﻿Output Parameter,Type,Description
+name,str,Job name that produced the result
+upgrade_type,str,Type of upgrade: thermal or voltage
+scenario,str,Simulation scenario describing the controls being used
+stage,str,Stage of upgrades: Initial (before upgrades) or Final (after upgrades)
+simulation_time_s,float,Simulation time to perform upgrades (seconds). This will be present when stage=Final
+thermal_violations_present,bool,Flag indicating whether thermal violations are present
+voltage_violations_present,bool,Flag indicating whether voltage violations are present
+max_bus_voltage,float,Maximum voltage recorded on any bus
+min_bus_voltage,float,Minimum voltage recorded on any bus
+num_of_voltage_violation_buses,int,Number of buses with voltage violations
+num_of_overvoltage_violation_buses,int,Number of buses with voltage above voltage_upper_limit
+voltage_upper_limit,float,"Voltage upper limit, the threshold considered for determining overvoltages"
+num_of_undervoltage_violation_buses,int,Number of buses with voltage below voltage_lower_limit
+voltage_lower_limit,float,"Voltage lower limit, the threshold considered for determining undervoltages"
+max_line_loading,float,Maximum line loading
+max_transformer_loading,float,Maximum transformer loading
+num_of_line_violations,int,Number of lines with loading above line upper limit
+line_upper_limit,float,"Line upper limit, the threshold considered for determining line overloading"
+num_of_transformer_violations,int,Number of transformers with loading above transformer upper limit
+transformer_upper_limit,float,"Transformer upper limit, the threshold considered for determining transformer overloading"

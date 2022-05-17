@@ -1,0 +1,14 @@
+﻿Input Parameter,Type,Description,Required/Optional,Default/Example
+    transformer_upper_limit,float,Transformer upper limit in per unit,Required,1.25
+    line_upper_limit,float,Line upper limit in per unit,Required,1.25
+line_design_pu,float,Line design in per unit ,Required,0.75
+transformer_design_pu,float,Transformer design in per unit ,Required,0.75
+voltage_upper_limit,float,Voltage upper limit in per unit,Required,1.05
+voltage_lower_limit,float,Voltage lower limit in per unit,Required,0.95
+read_external_catalog,bool,Flag to determine whether external catalog is to be used,Required,FALSE
+external_catalog,str,"Location to external upgrades technical catalog json file. Can be empty string, if read_external_catalog is False",Required,""""""
+create_plots,bool,Flag to enable or disable figure creation,Optional,TRUE
+parallel_transformer_limit,int,Parallel transformer limit,Optional,4
+parallel_lines_limit,int,Parallel lines limit,Optional,4
+upgrade_iteration_threshold,int,Upgrade iteration threshold,Optional,5
+timepoint_multipliers,dict,Dictionary to provide timepoint multipliers,Optional,None
