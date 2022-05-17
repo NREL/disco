@@ -140,14 +140,14 @@ A high level overview of thermal and voltage upgrades considerations is shown be
 In this sub-module, the thermal equipment (lines and transformers) violations are identified, and upgrades are determined as per the flowchart given below.
 
 .. image:: ../images/thermal_workflow.png
-   :height: 550
+   :height: 650
 
 
 The technical equipment database is a catalog of available lines and transformers and can optionally be provided as an input. 
 All the equipment in this database will be considered as available options while determining thermal upgrades. 
 If this file is not provided, a technical database will be automatically generated from the given feeder model. 
 This would provide the thermal upgrades module with a limited set of upgrade options.
-Sample technical equipment catalog can be found here: TODO add link
+Sample technical equipment catalog can be found `here <https://github.com/NREL/disco/blob/main/disco/extensions/upgrade_simulation/upgrades/smartds_upgrades_technical_catalog.json>`_
 
 
 For an overloaded equipment, if a higher rated equipment of similar configuration is available in the technical catalog, that is considered as an upgrade and is chosen.
@@ -167,6 +167,8 @@ In this sub-module, the voltage violations present in the feeder are identified,
 *a.  Existing Capacitors:*
 
 * If capacitors are present
+
+
     * If capacitor control is present for a capacitor: correct capacitor control parameters i.e. PT ratio is checked and corrected (if needed)
     * If capacitor control is present, it is changed to voltage-controlled (if it is of any other kind) 
     * If capacitor control is not present, voltage-controlled capacitor control is added and default control settings are applied to any newly added controller
@@ -177,20 +179,21 @@ In this sub-module, the voltage violations present in the feeder are identified,
 *b.  Existing Regulators:*
 
 * If voltage regulators are present, regulator control parameters (like ptratio) are corrected (if needed), including for substation LTC.
+
+
 * A settings sweep is performed for existing regulator control devices (excluding substation LTC). 
     * In this settings sweep method, same settings are applied to all regulators
 
 
 *c. Add new Regulator:*
 
-* A new regulator is added by clustering nearby buses with violations and testing regulator placement (one at a time) on each of the common upstream nodes. 
-    The placement with least number of violations is chosen. 
+* A new regulator is added by clustering nearby buses with violations and testing regulator placement (one at a time) on each of the common upstream nodes. The placement option with least number of violations is chosen. 
 
 
 
 **3. Upgrades Cost computation**
 A unit cost database is used to determine the total costs associated thermal and voltage upgrades determined through the workflows described above.
-Sample input cost database can be found here: TODO add link to disco repo.
+Sample input cost database can be found `here <https://github.com/NREL/disco/blob/main/disco/extensions/upgrade_simulation/upgrades/Generic_DISCO_cost_database_v2.xlsx>`_
 
 
 
@@ -235,6 +238,8 @@ Outputs
 .. csv-table:: Output costs
    :file: ../images/output_costs.csv
    :header-rows: 1
+
+
 
 
 *2. Summary*
