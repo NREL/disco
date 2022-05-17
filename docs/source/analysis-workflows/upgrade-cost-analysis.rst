@@ -249,6 +249,10 @@ Example
 
 For a feeder with thermal and voltage violations, the following figures show the violations in a feeder before and after upgrades.
 
+.. image:: ../images/feeder.png
+   :width: 400
+
+
 *1. Thermal Upgrades*
 
 The following figures show the thermal violations in a feeder before and after thermal upgrades:
@@ -262,7 +266,7 @@ The following figures show the thermal violations in a feeder before and after t
 
 The following figures show the voltage violations in a feeder before and after thermal upgrades:
 
-.. image:: ../images/voltagelbefore_thermalupgrades.png
+.. image:: ../images/voltagebefore_thermalupgrades.png
    :width: 400
 
 
