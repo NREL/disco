@@ -15,10 +15,8 @@ Conda Installation
 
     $ conda create -n disco python=3.9
     $ conda activate disco
-    # Run this command if your git version is lower than 2.19.
-    $ conda install git">=2.19"
 
-Optional: Install desired packages.
+Optional: Install extra packages.
 
 .. code-block:: bash
 
@@ -64,3 +62,6 @@ Follow these instructions if you will be developing DISCO code and running tests
     $ git clone git@github.com:NREL/disco.git
     $ cd disco
     $ pip install -e '.[dev]'
+
+    # Run this command if your git version is lower than 2.19.
+    $ conda install git">=2.19"
