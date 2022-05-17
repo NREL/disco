@@ -17,7 +17,6 @@ from typing import Optional, Tuple, Sequence
 import numpy as np
 import opendssdirect as dss
 from filelock import SoftFileLock
-from unidecode import unidecode
 
 from jade.utils.run_command import check_run_command
 from jade.utils.utils import load_data, dump_data
@@ -82,13 +81,13 @@ class PVDSSInstance:
         """Parse feeder path from master file path"""
         return os.path.dirname(self.master_file)
 
-    def convert_to_ascii(self) -> None:
-        """Convert unicode data in ASCII characters for representation"""
-        logger.info("Convert master file - %s", self.master_file)
-        data = Path(self.master_file).read_text()
-        updated_data = unidecode(data)
-        with open(self.master_file, "w") as f:
-            f.write(updated_data)
+    # def convert_to_ascii(self) -> None:
+    #     """Convert unicode data in ASCII characters for representation"""
+    #     logger.info("Convert master file - %s", self.master_file)
+    #     data = Path(self.master_file).read_text()
+    #     updated_data = unidecode(data)
+    #     with open(self.master_file, "w") as f:
+    #         f.write(updated_data)
 
     def disable_loadshapes_redirect(self) -> None:
         """To comment out 'Redirect LoadShapes.dss' in Master.dss file
@@ -342,7 +341,11 @@ class PVScenarioGeneratorBase(abc.ABC):
         try:
             lock_file = master_file + ".lock"
             with SoftFileLock(lock_file=lock_file, timeout=900):
-                pvdss_instance.convert_to_ascii()
+                # This code was ported from a different location. The functionality
+                # should not be needed. Leaving it commented-out in case this assumption
+                # is incorrect.
+                # unidecode is no longer being installed with disco.
+                # pvdss_instance.convert_to_ascii()
                 pvdss_instance.disable_loadshapes_redirect()
                 pvdss_instance.load_feeder()
                 flag = pvdss_instance.ensure_energy_meter()
