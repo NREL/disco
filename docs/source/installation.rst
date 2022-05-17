@@ -3,17 +3,10 @@
 ************
 Installation
 ************
+We recommend that you install DISCO in a virtual environment such as ``Conda``.
 
-DISCO can be installed on your computer or HPC. If trying to install it on your
-computer, you can choose to install it in a conda environment or Docker
-container.
-
-Use Conda
-=========
-
-This section shows how to create a virtual Python environment by using Conda,
-and install necessary packages required by DISCO, including JADE, PyDSS and
-third-party libraries.
+Conda Installation
+==================
 
 1. Create a Conda virtual environment. This example uses the name ``disco``
    as a convention.
@@ -31,19 +24,13 @@ Optional: Install desired packages.
 
     $ conda install ipython
 
-2. Clone DISCO repo from GitHub and install.
+2. Install DISCO from the PyPi repository.
 
 .. code-block:: bash
 
-    $ cd <path-to-your-local-repos>
-    $ git clone git@github.com:NREL/disco.git
-    $ cd disco
-    $ pip install -e .
+    $ pip install NREL-disco
 
-    # If you will also be developing DISCO code then include dev packages.
-    $ pip install -e '.[dev]'
-
-Known Windows installation problem: DISCO requires PyDSS which requires the
+**Known Windows installation problem**: DISCO requires PyDSS which requires the
 Shapely package. In some cases Shapely will fail to install.
 pip will report an error about ``geos_c.dll``. Install it from conda and then
 retry.
@@ -51,77 +38,29 @@ retry.
 .. code-block:: bash
 
     $ conda install shapely
-    $ pip install -e .
+
+Then retry the DISCO installation command.
+
+3. If you will run your jobs through JADE, install DISCO's extensions.
+
+.. code-block:: bash
+
+    $ disco install-extensions
 
 Now, the Conda environment ``disco`` is ready to use.
-To deactivate it, use the command below:
+To deactivate it, run the command below:
 
 .. code-block:: bash
 
     $ conda deactivate
 
 
-Use Docker
-==========
-
-Docker can run on different OS platforms - Linux, Mac, Windows, etc.
-Please follow the document https://docs.docker.com/ to install Docker CE
-on your machine first.
-
-1. Clone DISCO source code to your machine.
+Developer Installation
+======================
+Follow these instructions if you will be developing DISCO code and running tests.
 
 .. code-block:: bash
 
     $ git clone git@github.com:NREL/disco.git
-
-2. Clone PyDSS source code to your ``disco`` folder.
-
-.. code-block:: bash
-
     $ cd disco
-    $ git clone git@github.com:NREL/PyDSS.git
-
-3. Build ``disco`` docker image
-
-.. code-block:: bash
-
-    docker build -t disco .
-
-4. Run ``disco`` docker container
-
-.. code-block:: bash
-
-    docker run --rm -it -v absolute-disco-models-path:/data/disco-models disco
-
-After the container starts, the terminal will show something like this
-
-.. code-block:: bash
-
-    (disco) root@d14851e20888:/data#
-
-Then type ``disco`` to show DISCO related commands
-
-.. code-block:: bash
-
-    (disco) root@d14851e20888:/data# disco
-    Usage: disco [OPTIONS] COMMAND [ARGS]...
-
-      Entry point
-
-    Options:
-      --help  Show this message and exit.
-
-    Commands:
-      auto-config-analysis        Automatically create a configuration.
-      generate-input-data         Generate input data for a model.
-
-This base image is https://hub.docker.com/r/continuumio/miniconda3, which is
-built on top of ``debian``, so you can use Linux commands for operation.
-
-5. To exit docker environment, just type
-
-::
-
-    exit
-
-For more about docker commands, please refer https://docs.docker.com/engine/reference/commandline/docker/.
+    $ pip install -e '.[dev]'

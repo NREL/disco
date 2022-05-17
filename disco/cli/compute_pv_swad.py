@@ -146,7 +146,7 @@ def collect_weighted_average_pv_distances(path: Path, option):
 def compute_pv_swad(path, option, verbose):
     """Compute weighted average PV distance for each model. Requires an EnergyMeter."""
     level = logging.DEBUG if verbose else logging.INFO
-    setup_logging("swad", None, console_level=level)
+    setup_logging("swad", None, console_level=level, packages=["disco"])
     results = collect_weighted_average_pv_distances(path, option)
     if results:
         output_file = path / "weighted_average_pv_distances.csv"

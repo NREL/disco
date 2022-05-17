@@ -212,7 +212,7 @@ def time_series(
 ):
     """Create JADE configuration for time series simulations."""
     level = logging.DEBUG if verbose else logging.INFO
-    setup_logging(__name__, None, console_level=level)
+    setup_logging(__name__, None, console_level=level, packages=["disco"])
 
     if not pf1 and not control_mode:
         logger.error("At least one of '--pf1' or '--control-mode' must be set.")

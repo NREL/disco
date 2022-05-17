@@ -298,7 +298,7 @@ def source_tree_1(
 ):
     """Generate PV deployments for source tree 1."""
     level = logging.DEBUG if verbose else logging.INFO
-    setup_logging("pv_deployments", None, console_level=level)
+    setup_logging("pv_deployments", None, console_level=level, packages=["disco"])
     
     if action == "create-pv":
         logger.info("Set integer %s as initial random seed for PV deployments.", random_seed)

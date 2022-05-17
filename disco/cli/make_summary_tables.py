@@ -282,6 +282,6 @@ def serialize_table(table, filename):
 def make_summary_tables(output_dir, verbose):
     """Make hosting capacity summary tables for all jobs in a batch."""
     level = logging.DEBUG if verbose else logging.INFO
-    setup_logging(__name__, None, console_level=level)
+    setup_logging(__name__, None, console_level=level, packages=["disco"])
     output_dir = ensure_jade_pipeline_output_dir(output_dir)
     parse_batch_results(output_dir)

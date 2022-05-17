@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 def plot(output_dir, scenario, verbose):
     """Plot voltage and hosting capacity charts"""
     level = logging.DEBUG if verbose else logging.INFO
-    setup_logging(__name__, None, console_level=level)
+    setup_logging(__name__, None, console_level=level, packages=["disco"])
     output_dir = ensure_jade_pipeline_output_dir(output_dir)
     plot_voltage(output_dir, scenario)
     plot_hc(output_dir, scenario)

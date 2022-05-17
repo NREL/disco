@@ -37,6 +37,21 @@ JobInfo = namedtuple("JobInfo", ["name"])
 
 @click.command()
 @click.argument("upgrades-config-file", type=click.Path(exists=True))
+def check_config(upgrades_config_file):
+    """Check that the upgrade cost analysis config file is valid."""
+    setup_logging(__name__, None, console_level=logging.INFO, packages=["disco"])
+    ret = 0
+    try:
+        UpgradeCostAnalysisSimulationModel.from_file(upgrades_config_file)
+        print(f"UpgradeCostAnalysis config file {upgrades_config_file} is valid")
+    except Exception:
+        logger.exception("Failed to validate UpgradeCostAnalysis config file")
+        ret = 1
+    sys.exit(ret)
+
+
+@click.command()
+@click.argument("upgrades-config-file", type=click.Path(exists=True))
 @click.option(
     "-c",
     "--config-file",
@@ -148,7 +163,7 @@ def run(config_file, aggregate_results, job_name, jade_runtime_output, fmt, forc
     log_file_dir.mkdir(exist_ok=True)
     level = logging.DEBUG if verbose else logging.INFO
     log_file = log_file_dir / log_filename
-    setup_logging(__name__, log_file, console_level=level)
+    setup_logging(__name__, log_file, console_level=level, packages=["disco"])
     logger.info(get_cli_string())
 
     ret = 0
@@ -241,7 +256,7 @@ def aggregate_results(jade_runtime_output, fmt, verbose):
     """Aggregate results on a directory of upgrade cost analysis simulations."""
     level = logging.DEBUG if verbose else logging.INFO
     log_file = jade_runtime_output / f"upgrade_cost_analysis_aggregation.log"
-    setup_logging(__name__, log_file, console_level=level)
+    setup_logging(__name__, log_file, console_level=level, packages=["disco"])
     logger.info(get_cli_string())
     jade_config_file = jade_runtime_output / CONFIG_FILE
     if not jade_config_file.exists():
@@ -301,6 +316,7 @@ def upgrade_cost_analysis():
     """Commands related to running upgrade cost analysis simulations"""
 
 
+upgrade_cost_analysis.add_command(check_config)
 upgrade_cost_analysis.add_command(config)
 upgrade_cost_analysis.add_command(run)
 upgrade_cost_analysis.add_command(aggregate_results)
