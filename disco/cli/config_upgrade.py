@@ -58,7 +58,7 @@ def upgrade(
 ):
     """Create JADE configuration for upgrade simulations"""
     level = logging.DEBUG if verbose else logging.INFO
-    setup_logging(__name__, None, console_level=level)
+    setup_logging(__name__, None, console_level=level, packages=["disco"])
 
     params = load_data(params_file)
     thermal_upgrade_params = ThermalUpgradeParamsModel(**params["thermal_upgrade_params"]).dict()

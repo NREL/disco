@@ -152,7 +152,7 @@ def summarize_hosting_capacity(
 
     level = logging.DEBUG if verbose else logging.INFO
     log_file = output_directory / "summarize_hc_metrics.log"
-    setup_logging("summarize_hc_metrics", log_file, console_level=level, file_level=level)
+    setup_logging("summarize_hc_metrics", log_file, console_level=level, file_level=level, packages=["disco"])
     logger.info(get_cli_string())
 
     if task_pattern is None and not task_names:

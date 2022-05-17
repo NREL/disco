@@ -53,7 +53,7 @@ def snapshot(
     """Create a JADE config file for a snapshot power-flow simulation."""
     pf_config = PowerFlowSnapshotSimulationModel.from_file(power_flow_config_file)
     level = logging.DEBUG if verbose else logging.INFO
-    setup_logging(__name__, None, console_level=level)
+    setup_logging(__name__, None, console_level=level, packages=["disco"])
 
     simulation_config, scenarios = make_simulation_config(
         reports_filename,
@@ -146,7 +146,7 @@ def time_series(
 ):
     """Create JADE configuration for time series simulations."""
     level = logging.DEBUG if verbose else logging.INFO
-    setup_logging(__name__, None, console_level=level)
+    setup_logging(__name__, None, console_level=level, packages=["disco"])
 
     pf_config = PowerFlowTimeSeriesSimulationModel.from_file(power_flow_config_file)
     simulation_config = PyDssConfiguration.get_default_pydss_simulation_config()

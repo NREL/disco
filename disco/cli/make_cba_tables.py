@@ -270,5 +270,5 @@ def make_cba_tables(output_dir, verbose):
     level = logging.DEBUG if verbose else logging.INFO
     output_dir = Path(ensure_jade_pipeline_output_dir(output_dir))
     log_file = output_dir / "make_cba_tables.log"
-    setup_logging(__name__, log_file, file_level=level, console_level=level)
+    setup_logging(__name__, log_file, file_level=level, console_level=level, packages=["disco"])
     parse_batch_results(output_dir)
