@@ -37,6 +37,21 @@ JobInfo = namedtuple("JobInfo", ["name"])
 
 @click.command()
 @click.argument("upgrades-config-file", type=click.Path(exists=True))
+def check_config(upgrades_config_file):
+    """Check that the upgrade cost analysis config file is valid."""
+    setup_logging(__name__, None, console_level=logging.INFO)
+    ret = 0
+    try:
+        UpgradeCostAnalysisSimulationModel.from_file(upgrades_config_file)
+        print(f"UpgradeCostAnalysis config file {upgrades_config_file} is valid")
+    except Exception:
+        logger.exception("Failed to validate UpgradeCostAnalysis config file")
+        ret = 1
+    sys.exit(ret)
+
+
+@click.command()
+@click.argument("upgrades-config-file", type=click.Path(exists=True))
 @click.option(
     "-c",
     "--config-file",
@@ -301,6 +316,7 @@ def upgrade_cost_analysis():
     """Commands related to running upgrade cost analysis simulations"""
 
 
+upgrade_cost_analysis.add_command(check_config)
 upgrade_cost_analysis.add_command(config)
 upgrade_cost_analysis.add_command(run)
 upgrade_cost_analysis.add_command(aggregate_results)
