@@ -59,7 +59,37 @@ with open(os.path.join(here, "disco", "version.py"), encoding="utf-8") as f:
 
 version = lines[0].split()[2].strip('"').strip("'")
 
-test_requires = ["pytest", ]
+install_requires = [
+    "NREL-jade",
+    "chevron",
+    "click>=8.0",
+    "dsspy>=2.2.0",
+    "filelock",
+    "matplotlib",
+    "networkx",
+    "opendssdirect.py>=0.6.0",
+    "openpyxl",
+    "pandas",
+    "pydantic>=1.6.0",
+    "seaborn",
+    "sklearn",
+    "sqlalchemy",
+    "toml>=0.10.0",
+]
+dev_requires = [
+    "flake8",
+    "ghp-import",
+    "mock>=3.0.0",
+    "pycodestyle",
+    "pylint",
+    "pytest",
+    "pytest-cov",
+    "sphinx>=2.0",
+    "sphinx-rtd-theme>=0.4.3",
+    "sphinxcontrib-plantuml",
+    "tox",
+]
+test_requires = ["pytest"]
 
 setup(
     name="NREL-disco",
@@ -98,16 +128,15 @@ setup(
     keywords=["disco"],
     python_requires=">=3.7",
     classifiers=[
-        "Development Status :: Alpha",
-        "Intended Audience :: Modelers",
+        "Development Status :: 4 - Beta",
         "License :: OSI Approved :: BSD License",
         "Natural Language :: English",
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.9",
     ],
     test_suite="tests",
-    install_requires=read_lines("requirements.txt"),
+    install_requires=install_requires,
     extras_require={
-        "dev": read_lines("dev-requirements.txt"),
+        "dev": dev_requires,
         "extras": ["ipywidgets"]
     },
     # Disabled because this method is not compatible with wheels, and so we
