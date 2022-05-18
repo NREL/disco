@@ -194,7 +194,9 @@ The technical equipment database is a catalog of available lines and transformer
 All the equipment in this database will be considered as available options while determining thermal upgrades. 
 If this file is not provided, a technical database will be automatically generated from the given feeder model. 
 This would provide the thermal upgrades module with a limited set of upgrade options.
-Sample technical equipment catalog can be found at this `link <https://github.com/NREL/disco/blob/main/disco/extensions/upgrade_simulation/upgrades/smartds_upgrades_technical_catalog.json>`_
+Refer to this `sample technical equipment catalog
+<https://github.com/NREL/disco/blob/main/disco/extensions/upgrade_simulation/upgrades/smartds_upgrades_technical_catalog.json>`_
+for more information.
 
 
 For an overloaded equipment, if a higher rated equipment of similar configuration is available in the technical catalog, that is considered as an upgrade and is chosen.

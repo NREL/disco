@@ -1,8 +1,8 @@
 import logging
 from pathlib import Path
-from typing import Any, List, Optional, Set
+from typing import List, Optional, Set, Dict
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, root_validator, validator
 
 from jade.utils.utils import load_data
 from PyDSS.controllers import PvControllerModel
@@ -11,9 +11,24 @@ from disco.models.base import BaseAnalysisModel
 from disco.extensions.upgrade_simulation.upgrade_configuration import DEFAULT_UPGRADE_PARAMS_FILE
 
 logger = logging.getLogger(__name__)
-DEFAULT_UPGRADE_PARAMS = load_data(DEFAULT_UPGRADE_PARAMS_FILE)
-DEFAULT_THERMAL_UPGRADE_PARAMS = DEFAULT_UPGRADE_PARAMS["thermal_upgrade_params"]
-DEFAULT_VOLTAGE_UPGRADE_PARAMS = DEFAULT_UPGRADE_PARAMS["voltage_upgrade_params"]
+
+_DEFAULT_UPGRADE_PARAMS = None
+_SUPPORTED_UPGRADE_TYPES = ["thermal", "voltage"]
+
+
+def _get_default_upgrade_params():
+    global _DEFAULT_UPGRADE_PARAMS
+    if _DEFAULT_UPGRADE_PARAMS is None:
+        _DEFAULT_UPGRADE_PARAMS = load_data(DEFAULT_UPGRADE_PARAMS_FILE)
+    return _DEFAULT_UPGRADE_PARAMS
+
+
+def get_default_thermal_upgrade_params():
+    return _get_default_upgrade_params()["thermal_upgrade_params"]
+
+
+def get_default_voltage_upgrade_params():
+    return _get_default_upgrade_params()["voltage_upgrade_params"]
 
 
 class UpgradeParamsBaseModel(BaseModel):
@@ -67,34 +82,49 @@ class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
 
     # Optional fields
     create_plots: Optional[bool] = Field(
-        title="create_plots",
-        description="Flag to enable or disable figure creation",
-        default=True
+        title="create_plots", description="Flag to enable or disable figure creation", default=True
     )
     parallel_transformer_limit: Optional[int] = Field(
-        title="parallel_transformer_limit",
-        description="Parallel transformer limit",
-        default=4
+        title="parallel_transformer_limit", description="Parallel transformer limit", default=4
     )
     parallel_lines_limit: Optional[int] = Field(
-        title="parallel_lines_limit",
-        description="Parallel lines limit",
-        default=4
+        title="parallel_lines_limit", description="Parallel lines limit", default=4
     )
     upgrade_iteration_threshold: Optional[int] = Field(
-        title="upgrade_iteration_threshold",
-        description="Upgrade iteration threshold",
-        default=5
+        title="upgrade_iteration_threshold", description="Upgrade iteration threshold", default=5
     )
-    timepoint_multipliers: Optional[dict] = Field(
+    timepoint_multipliers: Optional[Dict] = Field(
         title="timepoint_multipliers",
-        description='Dictionary to provide timepoint multipliers. example: timepoint_multipliers={"load_multipliers": {"with_pv": [0.1], "without_pv": [0.3]}} ',
-        default=None
+        description='Dictionary to provide timepoint multipliers. example: timepoint_multipliers={"load_multipliers": {"with_pv": [0.1], "without_pv": [0.3]}}',
     )
 
+    @validator("voltage_lower_limit")
+    def check_voltage_lower_limits(cls, voltage_lower_limit, values):
+        upper = values["voltage_upper_limit"]
+        if upper <= voltage_lower_limit:
+            raise ValueError(
+                f"voltage_upper_limit={upper} must be greater than voltage_lower_limit={voltage_lower_limit}"
+            )
+        return voltage_lower_limit
 
-# TODO DT: document error codes
-# document opendss errors specifically
+    @validator("external_catalog")
+    def check_catalog(cls, external_catalog, values):
+        if values["read_external_catalog"] and not external_catalog.exists():
+            raise ValueError(f"{external_catalog} does not exist")
+        return external_catalog
+
+    @validator("timepoint_multipliers")
+    def check_timepoint_multipliers(cls, timepoint_multipliers):
+        if timepoint_multipliers is None:
+            return timepoint_multipliers
+        if "load_multipliers" not in timepoint_multipliers:
+            raise ValueError("load_multipliers must be defined in timepoint_multipliers")
+        if "with_pv" not in timepoint_multipliers and "without_pv" not in timepoint_multipliers:
+            raise ValueError(
+                "Either 'with_pv' or 'without_pv' must be defined in timepoint_multipliers"
+            )
+        return timepoint_multipliers
+
 
 class VoltageUpgradeParamsModel(UpgradeParamsBaseModel):
     """Voltage Upgrade Parameters for all jobs in a simulation"""
@@ -123,9 +153,7 @@ class VoltageUpgradeParamsModel(UpgradeParamsBaseModel):
 
     # Optional fields
     create_plots: Optional[bool] = Field(
-        title="create_plots",
-        description="Flag to enable or disable figure creation",
-        default=True
+        title="create_plots", description="Flag to enable or disable figure creation", default=True
     )
     capacitor_sweep_voltage_gap: float = Field(
         title="capacitor_sweep_voltage_gap",
@@ -160,17 +188,17 @@ class VoltageUpgradeParamsModel(UpgradeParamsBaseModel):
     timepoint_multipliers: dict = Field(
         title="timepoint_multipliers",
         description="Dictionary containing timepoint multipliers. Format: {'load_multipliers': {'with_pv': [1.2, 1], 'without_pv': [0.3]}}",
-        default=None
+        default=None,
     )
     capacitor_action_flag: bool = Field(
         title="capacitor_action_flag",
         description="Flag to enable or disable capacitor controls settings sweep module",
-        default=True
+        default=True,
     )
     existing_regulator_sweep_action: bool = Field(
         title="existing_regulator_sweep_action",
         description="Flag to enable or disable existing regulator controls settings sweep module",
-        default=True
+        default=True,
     )
 
 
@@ -221,24 +249,39 @@ class UpgradeCostAnalysisSimulationModel(BaseModel):
         use_enum_values = False
 
     thermal_upgrade_params: ThermalUpgradeParamsModel = Field(
-        default=ThermalUpgradeParamsModel(**DEFAULT_THERMAL_UPGRADE_PARAMS)
+        default=ThermalUpgradeParamsModel(**get_default_thermal_upgrade_params())
     )
     voltage_upgrade_params: VoltageUpgradeParamsModel = Field(
-        default=VoltageUpgradeParamsModel(**DEFAULT_VOLTAGE_UPGRADE_PARAMS)
+        default=VoltageUpgradeParamsModel(**get_default_voltage_upgrade_params())
     )
     upgrade_cost_database: str = Field(
         title="upgrade_cost_database",
         description="Database containing costs for each equipment type",
+    )
+    calculate_costs: bool = Field(
+        title="calculate_costs",
+        description="If True, calculate upgrade costs from database.",
+        default=True,
+    )
+    upgrade_order: List[str] = Field(
+        description="Order of upgrade algorithm. 'thermal' or 'voltage' can be removed from the "
+        "simulation by excluding them from this parameter.",
+        default=_SUPPORTED_UPGRADE_TYPES,
     )
     pydss_controllers: PyDssControllerModels = Field(
         title="pydss_controllers",
         description="If enable_pydss_controllers is True, these PyDSS controllers are applied to each corresponding element type.",
         default=PyDssControllerModels(),
     )
+    plot_violations: bool = Field(
+        title="plot_violations",
+        description="If True, create plots of violations before and after simulation.",
+        default=True,
+    )
     enable_pydss_controllers: bool = Field(
         title="enable_pydss_controllers",
         description="Flag to enable/disable use of PyDSS controllers",
-        default=True,
+        default=False,
     )
     include_pf1: bool = Field(
         title="include_pf1",
@@ -246,9 +289,7 @@ class UpgradeCostAnalysisSimulationModel(BaseModel):
         default=True,
     )
     dc_ac_ratio: Optional[float] = Field(
-        title="dc_ac_ratio",
-        description="Apply DC-AC ratio for PV Systems",
-        default=None
+        title="dc_ac_ratio", description="Apply DC-AC ratio for PV Systems", default=None
     )
     jobs: List[UpgradeCostAnalysisGenericModel]
 
@@ -260,6 +301,20 @@ class UpgradeCostAnalysisSimulationModel(BaseModel):
                 raise ValueError(f"{job['name']} is duplicated")
             names.add(job["name"])
         return values
+
+    @validator("calculate_costs")
+    def check_database(cls, calculate_costs, values):
+        if calculate_costs:
+            if not Path(values["upgrade_cost_database"]).exists():
+                raise ValueError(f"{values['upgrade_cost_database']} does not exist")
+        return calculate_costs
+
+    @validator("upgrade_order")
+    def check_upgrade_order(cls, upgrade_order):
+        diff = set(upgrade_order).difference(_SUPPORTED_UPGRADE_TYPES)
+        if diff:
+            raise ValueError(f"Unsupported values in upgrade_order: {diff}")
+        return upgrade_order
 
     @classmethod
     def from_file(cls, filename: Path):
@@ -399,6 +454,32 @@ class EquipmentTypeUpgradeCostsModel(UpgradeParamsBaseModel):
     )
 
 
+class UpgradeJobOutputs(UpgradeParamsBaseModel):
+    """Contains outputs from one job."""
+
+    upgraded_opendss_model_file: str = Field(
+        title="upgraded_opendss_model_file",
+        description="Path to file that will load the upgraded network.",
+    )
+    return_code: int = Field(
+        title="return_code",
+        description="Return code from process. Zero is success, non-zero is a failure.",
+    )
+
+
+class UpgradeSimulationOutputs(UpgradeParamsBaseModel):
+    """Contains outputs from all jobs in the simulation."""
+
+    log_file: str = Field(
+        title="log_file",
+        description="Path to log file for the simulation.",
+    )
+    jobs: List[UpgradeJobOutputs] = Field(
+        title="jobs",
+        description="Outputs for each job in the simulation.",
+    )
+
+
 class UpgradeSummaryResultsModel(UpgradeParamsBaseModel):
     """Contains results from all jobs in the simulation."""
 
@@ -409,4 +490,8 @@ class UpgradeSummaryResultsModel(UpgradeParamsBaseModel):
     upgrade_costs: List[EquipmentTypeUpgradeCostsModel] = Field(
         title="total_upgrade_costs",
         description="Contains upgrade cost information for each jobs",
+    )
+    outputs: UpgradeSimulationOutputs = Field(
+        title="outputs",
+        description="Outputs for each job in the simulation.",
     )

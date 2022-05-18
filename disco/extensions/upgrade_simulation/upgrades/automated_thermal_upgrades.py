@@ -11,6 +11,8 @@ from .voltage_upgrade_functions import plot_thermal_violations, plot_voltage_vio
 
 from disco.models.upgrade_cost_analysis_generic_model import UpgradeResultModel
 from disco import timer_stats_collector
+from disco.enums import LoadMultiplierType
+from disco.exceptions import UpgradesInvalidViolationIncrease
 
 
 logger = logging.getLogger(__name__)
@@ -48,9 +50,9 @@ def determine_thermal_upgrades(
     timepoint_multipliers = thermal_config["timepoint_multipliers"]
 
     if timepoint_multipliers is not None:
-        multiplier_type = "uniform"
+        multiplier_type = LoadMultiplierType.UNIFORM
     else:
-        multiplier_type = "original"
+        multiplier_type = LoadMultiplierType.ORIGINAL
     simulation_params.update({"timepoint_multipliers": timepoint_multipliers, "multiplier_type": multiplier_type})
     
     voltage_upper_limit = thermal_config["voltage_upper_limit"]
@@ -196,12 +198,12 @@ def determine_thermal_upgrades(
             logger.debug(overloaded_line_list)
             logger.info("Write upgrades till this step to debug upgrades")
             write_text_file(string_list=commands_list, text_file_path=thermal_upgrades_dss_filepath)
-            raise Exception(f"Line violations increased from {before_upgrade_num_line_violations} to {len(overloaded_line_list)} "
+            raise UpgradesInvalidViolationIncrease(f"Line violations increased from {before_upgrade_num_line_violations} to {len(overloaded_line_list)} "
                 f"during upgrade process")
         if len(overloaded_xfmr_list) > before_upgrade_num_xfmr_violations:
             logger.info("Write upgrades till this step to debug upgrades")
             write_text_file(string_list=commands_list, text_file_path=thermal_upgrades_dss_filepath)
-            raise Exception(f"Xfmr violations increased from {before_upgrade_num_xfmr_violations} to {len(overloaded_xfmr_list)} "
+            raise UpgradesInvalidViolationIncrease(f"Xfmr violations increased from {before_upgrade_num_xfmr_violations} to {len(overloaded_xfmr_list)} "
                 f"during upgrade process")
 
         num_violations_curr_itr = len(overloaded_xfmr_list) + len(overloaded_line_list)

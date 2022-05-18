@@ -2,7 +2,7 @@
 Debugging Issues
 ****************
 
-This section describes debugging techniques for issues encountered during the
+This page describes debugging techniques for issues encountered during the
 simulation and analysis process. All of these tools produce output data in both
 unstructured (.log) and structured form (.csv, .json, etc.).  Aggregating data
 from a batch with thousands of jobs will often require use of UNIX tools (find,
@@ -12,6 +12,19 @@ It is highly recommended that you become proficient at working in a UNIX
 environment with these tools. The internet has plenty of resources to help.
 Here is one such `site
 <https://www.tutorialspoint.com/unix/unix-pipes-filters.htm>`_.
+
+.. _disco_return_codes:
+
+DISCO Return Codes
+==================
+DISCO processes (snapshot, time-series, upgrades simulations) return these codes for known
+conditions.
+
+.. csv-table:: 
+   :file: ../build/tables/return_codes.csv
+   :widths: 5, 75
+   :header-rows: 1
+
 
 Using JADE
 ==========

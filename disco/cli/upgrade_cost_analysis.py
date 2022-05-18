@@ -1,6 +1,7 @@
 import logging
 import shutil
 import sys
+import time
 from collections import namedtuple
 from pathlib import Path
 
@@ -13,11 +14,13 @@ from jade.loggers import setup_logging
 from jade.result import ResultsSummary
 from jade.utils.utils import get_cli_string, load_data, dump_data
 
+from disco.common import EXIT_CODE_GOOD, EXIT_CODE_GENERIC_ERROR
 from disco.cli.make_upgrade_tables import (
     get_upgrade_summary_table,
     get_total_upgrade_costs_table,
     serialize_table,
 )
+from disco.exceptions import DiscoBaseException, get_error_code_from_exception
 from disco.models.base import OpenDssDeploymentModel
 from disco.models.upgrade_cost_analysis_generic_model import (
     UpgradeCostAnalysisSimulationModel,
@@ -113,7 +116,7 @@ def config(upgrades_config_file, config_file, fmt):
 @click.option(
     "-o",
     "--jade-runtime-output",
-    required=True,
+    default="output",
     help="Output directory",
     callback=lambda _, __, x: Path(x),
 )
@@ -166,21 +169,38 @@ def run(config_file, aggregate_results, job_name, jade_runtime_output, fmt, forc
     setup_logging(__name__, log_file, console_level=level, packages=["disco"])
     logger.info(get_cli_string())
 
-    ret = 0
+    batch_return_code = EXIT_CODE_GOOD
+    all_failed = True
     for job in jobs:
+        logger.info("Run upgrades simulation for job %s", job.name)
+        start = time.time()
+        ret = EXIT_CODE_GOOD
         try:
             run_job(job, config, jobs_output_dir, verbose)
+            all_failed = False
+        except DiscoBaseException as exc:
+            logger.exception("Unexpected DISCO error in upgrade cost analysis job=%s", job.name)
+            ret = get_error_code_from_exception(type(exc))
         except Exception:
             logger.exception("Unexpected error in upgrade cost analysis job=%s", job.name)
-            ret = 1
+            ret = EXIT_CODE_GENERIC_ERROR
+        logger.info(
+            "Completed upgrades simulation for job %s return_code=%s duration=%s seconds",
+            job.name,
+            ret,
+            time.time() - start,
+        )
+        if ret != EXIT_CODE_GOOD:
+            batch_return_code = ret
+        _write_job_return_code(jobs_output_dir, job.name, ret)
 
-    if aggregate_results:
+    if aggregate_results and not all_failed:
         job_names = [x.name for x in jobs]
-        _aggregate_results(jade_runtime_output, job_names, fmt)
+        _aggregate_results(jade_runtime_output, log_file, job_names, fmt)
 
     # This will return an error if any job fails. If the user cares about differentiating
     # passes and failures then they should run the jobs through Jade.
-    sys.exit(ret)
+    sys.exit(batch_return_code)
 
 
 def _check_job_dir(job_output_dir, force):
@@ -193,6 +213,22 @@ def _check_job_dir(job_output_dir, force):
                 file=sys.stderr,
             )
             sys.exit(1)
+
+
+def _write_job_return_code(output_dir, job_name, return_code):
+    _get_return_code_filename(output_dir, job_name).write_text(f"{return_code}\n")
+
+
+def _read_job_return_code(output_dir, job_name):
+    return int(_get_return_code_filename(output_dir, job_name).read_text().strip())
+
+
+def _delete_job_return_code_file(output_dir, job_name):
+    _get_return_code_filename(output_dir, job_name).unlink()
+
+
+def _get_return_code_filename(output_dir, job_name):
+    return output_dir / job_name / "return_code"
 
 
 def run_job(job, config, jobs_output_dir, verbose):
@@ -210,7 +246,9 @@ def run_job(job, config, jobs_output_dir, verbose):
     global_config = {
         "thermal_upgrade_params": config.thermal_upgrade_params.dict(),
         "voltage_upgrade_params": config.voltage_upgrade_params.dict(),
-        "upgrade_simulation_params": {"enable_pydss_controller": config.enable_pydss_controllers,},
+        "upgrade_simulation_params": {
+            "enable_pydss_controller": config.enable_pydss_controllers,
+        },
         "upgrade_cost_database": config.upgrade_cost_database,
         "dc_ac_ratio": config.dc_ac_ratio,
     }
@@ -219,14 +257,14 @@ def run_job(job, config, jobs_output_dir, verbose):
         global_config["upgrade_simulation_params"]["pydss_controller"] = (
             config.pydss_controllers.pv_controller.dict(),
         )
-                
+
     simulation = UpgradeSimulation(
         job=job,
         job_global_config=global_config,
         output=jobs_output_dir,
     )
     simulation.run(
-        dc_ac_ratio = global_config["dc_ac_ratio"],
+        dc_ac_ratio=global_config["dc_ac_ratio"],
         enable_pydss_solve=global_config["upgrade_simulation_params"]["enable_pydss_controller"],
         pydss_controller_model=config.pydss_controllers.pv_controller,
         thermal_config=global_config["thermal_upgrade_params"],
@@ -257,7 +295,7 @@ def run_job(job, config, jobs_output_dir, verbose):
 def aggregate_results(jade_runtime_output, fmt, verbose):
     """Aggregate results on a directory of upgrade cost analysis simulations."""
     level = logging.DEBUG if verbose else logging.INFO
-    log_file = jade_runtime_output / f"upgrade_cost_analysis_aggregation.log"
+    log_file = jade_runtime_output / "upgrade_cost_analysis_aggregation.log"
     setup_logging(__name__, log_file, console_level=level, packages=["disco"])
     logger.info(get_cli_string())
     jade_config_file = jade_runtime_output / CONFIG_FILE
@@ -266,17 +304,33 @@ def aggregate_results(jade_runtime_output, fmt, verbose):
         sys.exit(1)
 
     job_names = (x["name"] for x in load_data(jade_config_file)["jobs"])
-    _aggregate_results(jade_runtime_output, job_names, fmt)
+    _aggregate_results(jade_runtime_output, log_file, job_names, fmt)
 
 
-def _aggregate_results(jade_runtime_output, job_names, fmt):
+def _aggregate_results(jade_runtime_output, log_file, job_names, fmt):
     upgrade_summary_table = []
     upgrade_costs_table = []
+    job_outputs = []
+    jobs_output_dir = jade_runtime_output / JOBS_OUTPUT_DIR
+    output_json = {
+        "violation_summary": [],
+        "upgrade_costs": [],
+        "outputs": {"log_file": str(log_file), "jobs": []},
+    }
+
     for name in job_names:
-        job_path = jade_runtime_output / JOBS_OUTPUT_DIR / name
+        job_path = jobs_output_dir / name
         job_info = JobInfo(name)
         summary_table = get_upgrade_summary_table(job_path, job_info)
         costs_table = get_total_upgrade_costs_table(job_path, job_info)
+        outputs = {
+            "upgraded_opendss_model_file": str(
+                jobs_output_dir / name / "upgraded_opendss_models.dss"
+            ),
+            "return_code": _read_job_return_code(jobs_output_dir, name),
+        }
+        output_json["outputs"]["jobs"].append(outputs)
+        _delete_job_return_code_file(jobs_output_dir, name)
         if fmt == "csv":
             upgrade_summary_table += summary_table
             upgrade_costs_table += costs_table
@@ -288,7 +342,6 @@ def _aggregate_results(jade_runtime_output, job_names, fmt):
             for result in costs_table:
                 upgrade_costs_table.append(EquipmentTypeUpgradeCostsModel(**result).dict())
 
-    output_json = {"violation_summary": [], "upgrade_costs": []}
     if upgrade_summary_table:
         if fmt == "csv":
             filename = jade_runtime_output / "upgrade_summary.csv"

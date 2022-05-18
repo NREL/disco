@@ -1,7 +1,10 @@
 import time
 from .common_functions import *
+
+from jade.utils.timing_utils import track_timing
+
 from disco import timer_stats_collector
-from jade.utils.timing_utils import track_timing, Timer
+from disco.exceptions import ExceededParallelLinesLimit, ExceededParallelTransformersLimit
 
 
 logger = logging.getLogger(__name__)
@@ -149,7 +152,7 @@ def identify_parallel_lines(options, object_row, parallel_lines_limit, **kwargs)
     chosen_option = chosen_option.iloc[0]  # choose lowest available option
     num_parallel_lines = int(chosen_option["num_parallel"])
     if num_parallel_lines > parallel_lines_limit:
-        raise Exception(f"Number of parallel lines is greater than limit!")
+        raise ExceededParallelLinesLimit(f"Number of parallel lines is greater than limit={parallel_lines_limit}")
     new_config_type = chosen_option["line_definition_type"]
     upgrades_dict_parallel = []
     for line_count in range(0, num_parallel_lines):
@@ -370,7 +373,7 @@ def identify_parallel_xfmrs(upgrade_options, object_row, parallel_transformer_li
     upgrade_options["choose_parallel_metric"] = upgrade_options["num_parallel"] - upgrade_options["num_parallel_raw"]
     upgrade_options = upgrade_options.loc[upgrade_options["num_parallel"] <= parallel_transformer_limit]
     if len(upgrade_options) == 0:
-        raise Exception(f"Number of parallel transformers is greater than limit!")
+        raise ExceededParallelTransformersLimit(f"Number of parallel transformers is greater than limit!")
     # choose option that has the least value of this metric- since that represents the per unit oversizing
     chosen_option = upgrade_options.loc[upgrade_options["choose_parallel_metric"].idxmin()]
     num_parallel_xfmrs = int(chosen_option["num_parallel"])

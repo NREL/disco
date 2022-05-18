@@ -11,7 +11,16 @@ import opendssdirect as dss
 
 from .pydss_parameters import *
 from jade.utils.timing_utils import track_timing, Timer
+
 from disco import timer_stats_collector
+from disco.enums import LoadMultiplierType
+from disco.exceptions import (
+    OpenDssCompileError,
+    OpenDssConvergenceError,
+    UpgradesExternalCatalogRequired,
+    UpgradesExternalCatalogMissingEquipmentType,
+    InvalidOpenDssElementError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -133,7 +142,7 @@ def dss_solve_and_check(raise_exception=False):
     if not dss_pass_flag:
         logger.info(f"OpenDSS Convergence Error")
         if raise_exception:
-            raise Exception("OpenDSS solution did not converge")
+            raise OpenDssConvergenceError("OpenDSS solution did not converge")
     return dss_pass_flag
 
 
@@ -398,7 +407,7 @@ def ensure_line_config_exists(chosen_option, new_config_type, external_upgrades_
     if not existing_config_dict[new_config_type]["name"].str.lower().isin([new_config_name]).any():  
         # add definition for linecode or linegeometry
         if external_upgrades_technical_catalog is None:
-            raise Exception(f"External upgrades technical catalog not available to determine line config type")
+            raise UpgradesExternalCatalogRequired(f"External upgrades technical catalog not available to determine line config type")
         external_config_df = pd.DataFrame(external_upgrades_technical_catalog[new_config_type])
         if external_config_df["name"].str.lower().isin([new_config_name]).any():
             config_definition_df = external_config_df.loc[external_config_df["name"] == new_config_name]
@@ -413,7 +422,9 @@ def ensure_line_config_exists(chosen_option, new_config_type, external_upgrades_
                 config_definition_dict[field] = config_definition_dict[field].replace("]",")")
             command_string = create_opendss_definition(config_definition_dict=config_definition_dict)
         else:
-            raise Exception(f"{new_config_type} definition for {new_config_name} not found in external upgrades catalog.")
+            raise UpgradesExternalCatalogMissingEquipmentType(
+                f"{new_config_type} definition for {new_config_name} not found in external catalog."
+            )
     else:
         command_string = None   
     return command_string
@@ -548,7 +559,7 @@ def get_all_transformer_info_instance(upper_limit=None, compute_loading=True):
         elif row["phases"] == 1:
             amp_limit_per_phase = primary_kva / primary_kv
         else:
-            raise Exception(f"Incorrect number of phases for transformer {row['name']}")
+            raise InvalidOpenDssElementError(f"Incorrect number of phases for transformer {row['name']}")
         all_df.at[index, "amp_limit_per_phase"] = amp_limit_per_phase
         if compute_loading:
             if upper_limit is None:
@@ -645,7 +656,7 @@ def get_all_line_info_instance(upper_limit=None, compute_loading=True, ignore_sw
         kv_b2 = dss.Bus.kVBase()
         dss.Circuit.SetActiveElement("Line.{}".format(row["name"]))
         if round(kv_b1) != round(kv_b2):
-            raise Exception("To and from bus voltages ({} {}) do not match for line {}".format(
+            raise InvalidOpenDssElementError("To and from bus voltages ({} {}) do not match for line {}".format(
                 kv_b2, kv_b1, row['name']))
         all_df.at[index, "kV"] = kv_b1
         # Distinguish between overhead and underground cables
@@ -715,18 +726,18 @@ def get_thermal_equipment_info(compute_loading, equipment_type, upper_limit=None
     DataFrame
     """
     timepoint_multipliers = kwargs.get("timepoint_multipliers", None)
-    multiplier_type = kwargs.get("multiplier_type", "original")
+    multiplier_type = kwargs.get("multiplier_type", LoadMultiplierType.ORIGINAL)
      # if there are no multipliers, run on rated load i.e. multiplier=1. 0
      # if compute_loading is false, then just run once (no need to check multipliers)
-    if (timepoint_multipliers is None) or (not compute_loading) or (multiplier_type == "original"): 
-        if compute_loading and multiplier_type != "original":
+    if (timepoint_multipliers is None) or (not compute_loading) or (multiplier_type == LoadMultiplierType.ORIGINAL): 
+        if compute_loading and multiplier_type != LoadMultiplierType.ORIGINAL:
             apply_uniform_timepoint_multipliers(multiplier_name=1, field="with_pv", **kwargs)
         if equipment_type == "line":
             loading_df = get_all_line_info_instance(compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch)
         elif equipment_type == "transformer":
             loading_df = get_all_transformer_info_instance(compute_loading=compute_loading, upper_limit=upper_limit)
         return loading_df
-    if multiplier_type == 'uniform':
+    if multiplier_type == LoadMultiplierType.UNIFORM:
         comparison_dict = {}
         for pv_field in timepoint_multipliers["load_multipliers"].keys():
             logger.debug(pv_field)
@@ -963,14 +974,14 @@ def check_dss_run_command(command_string):
 
     Raises
     -------
-    Exception
+    OpenDssCompileError
         Raised if the command fails
 
     """
     logger.debug(f"Running DSS command: {command_string}")
     result = dss.run_command(f"{command_string}")
     if result != "":
-        raise Exception(f"DSS run_command failed with message: {result}. \nCommand: {command_string}")
+        raise OpenDssCompileError(f"OpenDSS run_command failed with message: {result}. \nCommand: {command_string}")
 
 
 @track_timing(timer_stats_collector)
@@ -982,18 +993,18 @@ def get_bus_voltages(voltage_upper_limit, voltage_lower_limit, raise_exception=T
     DataFrame
     """
     timepoint_multipliers = kwargs.get("timepoint_multipliers", None)
-    multiplier_type = kwargs.get("multiplier_type", "original")
+    multiplier_type = kwargs.get("multiplier_type", LoadMultiplierType.ORIGINAL)
      # if there are no multipliers, run on rated load i.e. multiplier=1. 0
      # if compute_loading is false, then just run once (no need to check multipliers)
-    if (timepoint_multipliers is None) or (multiplier_type == "original"): 
-        if multiplier_type != "original":
+    if (timepoint_multipliers is None) or (multiplier_type == LoadMultiplierType.ORIGINAL): 
+        if multiplier_type != LoadMultiplierType.ORIGINAL:
             apply_uniform_timepoint_multipliers(multiplier_name=1, field="with_pv", **kwargs)
             # determine voltage violations after changes
         bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages_instance(
             voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, raise_exception=raise_exception, 
             **kwargs)
         return bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations
-    if multiplier_type == 'uniform':
+    if multiplier_type == LoadMultiplierType.UNIFORM:
         comparison_dict = {}
         for pv_field in timepoint_multipliers["load_multipliers"].keys():
             logger.debug(pv_field)

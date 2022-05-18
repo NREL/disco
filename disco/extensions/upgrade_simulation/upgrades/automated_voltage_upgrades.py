@@ -12,6 +12,7 @@ from .fixed_upgrade_parameters import (
     DEFAULT_REGCONTROL_SETTINGS
 )
 from .voltage_upgrade_functions import *
+from disco.enums import LoadMultiplierType
 from disco.models.upgrade_cost_analysis_generic_model import UpgradeResultModel
 from disco import timer_stats_collector
 
@@ -42,9 +43,9 @@ def determine_voltage_upgrades(
     logger.info(f"Simulation Start time: {start_time}")
     timepoint_multipliers = voltage_config["timepoint_multipliers"]
     if timepoint_multipliers is not None:
-        multiplier_type = "uniform"
+        multiplier_type = LoadMultiplierType.UNIFORM
     else:
-        multiplier_type = "original"
+        multiplier_type = LoadMultiplierType.ORIGINAL
     create_plots = voltage_config["create_plots"]
     # default_capacitor settings and customization
     default_capacitor_settings = DEFAULT_CAPACITOR_SETTINGS
@@ -70,7 +71,7 @@ def determine_voltage_upgrades(
     default_regcontrol_settings["vreg"] = voltage_config["nominal_voltage"]
 
     if not os.path.exists(thermal_upgrades_dss_filepath):
-        raise Exception( f"AutomatedThermalUpgrade did not produce thermal upgrades dss file")
+        raise Exception(f"AutomatedThermalUpgrade did not produce thermal upgrades dss file")
     
     initial_simulation_params = {"enable_pydss_solve": enable_pydss_solve, "pydss_volt_var_model": pydss_volt_var_model,
                                  "dc_ac_ratio": dc_ac_ratio}

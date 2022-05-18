@@ -123,6 +123,12 @@ class AnalysisType(enum.Enum):
     NONE = "none"
 
 
+class LoadMultiplierType(enum.Enum):
+    """Multiplier types"""
+    ORIGINAL = "original"
+    UNIFORM = "uniform"
+
+
 ANALYSIS_MODEL_TYPES = [t.value for t in AnalysisModelType]
 
 
