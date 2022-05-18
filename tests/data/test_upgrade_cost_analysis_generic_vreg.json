@@ -34,7 +34,7 @@
   "jobs": [
 	{
       "model_type": "UpgradeCostAnalysisGenericModel",
-      "name": "sb10_p1rhs25_1247_trans_301__p1rdt12732__random__4__195",
+      "name": "sb10_p1rhs25_1247_trans_301__p1rdt12732__random__4__195_vreg",
       "opendss_model_file": "./tests/data/upgrade-models/sb10_p1rhs25_1247_trans_301/p1rdt12732/PVDeployments/sb10_p1rhs25_1247_trans_301__p1rdt12732__random__4__195.dss",
       "blocked_by": [],
       "estimated_run_minutes": null

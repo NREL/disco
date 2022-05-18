@@ -153,7 +153,8 @@ def determine_voltage_upgrades(
         # start with capacitors
         if voltage_config["capacitor_action_flag"] and len(orig_capacitors_df) > 0:
             capacitor_dss_commands = determine_capacitor_upgrades(voltage_upper_limit, voltage_lower_limit, default_capacitor_settings, orig_capacitors_df, 
-                                                                  voltage_config, deciding_field, **simulation_params)
+                                                                  voltage_config, deciding_field, fig_folder=os.path.join(voltage_upgrades_directory, "interim"), 
+                                                                  create_plots=create_plots, circuit_source=circuit_source,**simulation_params)
             dss_commands_list = dss_commands_list + capacitor_dss_commands
             bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
                 voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)    
@@ -170,6 +171,8 @@ def determine_voltage_upgrades(
                                                         upper_limit=voltage_upper_limit, lower_limit=voltage_lower_limit, 
                                                         dss_file_list=dss_file_list, deciding_field=deciding_field, correct_parameters=True, 
                                                         exclude_sub_ltc=True, only_sub_ltc=False, previous_dss_commands_list=dss_commands_list, 
+                                                        fig_folder=os.path.join(voltage_upgrades_directory, "interim"), create_plots=create_plots, circuit_source=circuit_source,
+                                                        title="Bus violations after existing vreg sweep",
                                                         **simulation_params)
             # added to commands list only if it is different from original
             dss_commands_list = dss_commands_list + reg_sweep_commands_list
@@ -188,7 +191,8 @@ def determine_voltage_upgrades(
                                     orig_regcontrols_df=orig_regcontrols_df, orig_ckt_info=orig_ckt_info, circuit_source=circuit_source, 
                                     default_subltc_settings=default_subltc_settings, voltage_config=voltage_config, dss_file_list=dss_file_list, 
                                     comparison_dict=comparison_dict, deciding_field=deciding_field, previous_dss_commands_list=dss_commands_list, 
-                                    best_setting_so_far=best_setting_so_far,**simulation_params)
+                                    best_setting_so_far=best_setting_so_far, fig_folder=os.path.join(voltage_upgrades_directory, "interim"), create_plots=create_plots, 
+                                    default_capacitor_settings=default_capacitor_settings, **simulation_params)
             best_setting_so_far = subltc_results_dict["best_setting_so_far"]
             comparison_dict = subltc_results_dict["comparison_dict"]
             subltc_upgrade_commands = subltc_results_dict["subltc_upgrade_commands"]
@@ -211,7 +215,7 @@ def determine_voltage_upgrades(
                                              deciding_field=deciding_field, circuit_source=circuit_source, 
                                              default_regcontrol_settings=default_regcontrol_settings, comparison_dict=comparison_dict, 
                                              best_setting_so_far=best_setting_so_far, dss_file_list=dss_file_list, 
-                                             previous_dss_commands_list=dss_commands_list, fig_folder=voltage_upgrades_directory, 
+                                             previous_dss_commands_list=dss_commands_list, fig_folder=os.path.join(voltage_upgrades_directory, "interim"), 
                                              create_plots=create_plots, **simulation_params)
             best_setting_so_far = new_reg_results_dict["best_setting_so_far"]
             comparison_dict = new_reg_results_dict["comparison_dict"]
