@@ -5,6 +5,9 @@ This chapter introduces the workflow for conducting *upgrade cost analysis* by u
 step by step or DISCO pipeline, where the pipeline chains the individual steps and runs upgrade cost
 analysis seamlessly. In the following two sections we will introduce the two methods separately.
 
+There is a third method that bypasses the normal DISCO processes. This generic workflow allows you
+to run the upgrade simulations on existing, non-standardized OpenDSS models without any transformations.
+
 The following commands run with default options. If you need any customization, please run ``--help`` on
 the commands to see the available options.
 
@@ -67,7 +70,7 @@ This command assumes that you are running on a local system. Please remove the o
 
 .. code-block:: bash
 
-    $ jade submit-jobs config.json --local --force
+    $ jade submit-jobs config.json --local
 
 This step will generate the directory ``output``, which contains all upgrade results.
 
@@ -116,6 +119,50 @@ Submit the pipeline with JADE
 
 If everything succeeds, it produces same aggregated upgrade tables in ``output-stage1``.
 
+Generic Workflow
+----------------
+Let's assume that you have multiple networks defined in OpenDSS model files where each network has
+its own ``Master.dss``.
+
+- ``./custom_models/model1/Master.dss``
+- ``./custom_models/model2/Master.dss``
+
+Single Execution Mode
+~~~~~~~~~~~~~~~~~~~~~
+1. Configure the simulation parameters and in an input JSON file called ``upgrades.json``.
+Refer to this
+`file <https://github.com/NREL/disco/blob/main/tests/data/test_upgrade_cost_analysis_generic.json>`_
+as an example. The JSON schemas are defined in :ref:`upgrade_cost_analysis_schemas`.
+
+Each job represents one OpenDSS network and one upgrade simulation.
+
+2. Run the simulation.
+
+.. code-block:: bash
+
+   $ disco upgrade-cost-analysis run upgrades.json
+
+Refer to ``disco upgrade-cost-analysis run --help`` for additional options.
+
+Parallel Execution Mode through JADE
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1. Configure ``upgrades.json`` as described in the previous step.
+
+2. Create the JADE configuration file.
+
+.. code-block:: bash
+
+   $ disco upgrade-cost-analysis config upgrades.json
+
+3. Modify the generated ``config.json`` if necessary.
+
+4. Run the jobs through JADE. This will aggregate results across all jobs.
+   This example assumes local-mode execution.
+
+.. code-block:: bash
+
+   jade submit-jobs --local config.json
+
 
 Technical Details
 -----------------
@@ -147,7 +194,7 @@ The technical equipment database is a catalog of available lines and transformer
 All the equipment in this database will be considered as available options while determining thermal upgrades. 
 If this file is not provided, a technical database will be automatically generated from the given feeder model. 
 This would provide the thermal upgrades module with a limited set of upgrade options.
-Sample technical equipment catalog can be found `here <https://github.com/NREL/disco/blob/main/disco/extensions/upgrade_simulation/upgrades/smartds_upgrades_technical_catalog.json>`_
+Sample technical equipment catalog can be found at this `link <https://github.com/NREL/disco/blob/main/disco/extensions/upgrade_simulation/upgrades/smartds_upgrades_technical_catalog.json>`_
 
 
 For an overloaded equipment, if a higher rated equipment of similar configuration is available in the technical catalog, that is considered as an upgrade and is chosen.
@@ -288,4 +335,3 @@ The following figures show the voltage violations in a feeder before and after v
 
 .. image:: ../images/voltageafter_voltageupgrades.png
    :width: 400
-
