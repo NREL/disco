@@ -119,7 +119,7 @@ def determine_voltage_upgrades(
         scenario = scenario,
         stage = "Initial",
         upgrade_type = "Voltage",
-        simulation_time_s = np.nan,
+        simulation_time_s = 0.0,
         thermal_violations_present = (len(initial_overloaded_xfmr_list) + len(initial_overloaded_line_list)) > 0,
         voltage_violations_present = (len(initial_undervoltage_bus_list) + len(initial_overvoltage_bus_list)) > 0,
         max_bus_voltage = initial_bus_voltages_df['Max per unit voltage'].max(),
@@ -274,7 +274,7 @@ def determine_voltage_upgrades(
         feeder_stats = {}
     feeder_stats["stage_results"].append( get_upgrade_stage_stats(dss, upgrade_stage="Final", upgrade_type="voltage", xfmr_loading_df=xfmr_loading_df, line_loading_df=line_loading_df, 
                                         bus_voltages_df=bus_voltages_df) )
-    dump_data(feeder_stats, feeder_stats_json_file, indent=4)
+    dump_data(feeder_stats, feeder_stats_json_file, indent=4) 
     end_time = time.time()
     logger.info(f"Simulation end time: {end_time}")
     simulation_time = end_time - start_time

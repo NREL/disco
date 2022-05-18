@@ -6,7 +6,6 @@ from disco import timer_stats_collector
 from .upgrades.automated_thermal_upgrades import determine_thermal_upgrades
 from .upgrades.automated_voltage_upgrades import determine_voltage_upgrades
 from .upgrades.cost_computation import compute_all_costs
-from .upgrades.common_functions import analysis_postprocess
 
 
 class UpgradeSimulation:
@@ -175,5 +174,4 @@ class UpgradeSimulation:
             voltage_cost_output_filepath=self.get_voltage_upgrade_costs_file(),
             total_cost_output_filepath=self.get_total_upgrade_costs_file()
         )
-        analysis_postprocess() 
         timer_stats_collector.log_stats(clear=True)

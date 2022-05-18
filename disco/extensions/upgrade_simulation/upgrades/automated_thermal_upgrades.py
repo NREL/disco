@@ -113,7 +113,7 @@ def determine_thermal_upgrades(
         stage="Initial",
         upgrade_type="Thermal",
         # upgrade_status = upgrade_status,
-        simulation_time_s = np.nan,
+        simulation_time_s = 0.0,
         thermal_violations_present=(len(initial_overloaded_xfmr_list) + len(initial_overloaded_line_list)) > 0,
         voltage_violations_present=(len(initial_undervoltage_bus_list) + len(initial_overvoltage_bus_list)) > 0,
         max_bus_voltage=initial_bus_voltages_df['Max per unit voltage'].max(),
