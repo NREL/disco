@@ -6,6 +6,7 @@ from disco import timer_stats_collector
 from .upgrades.automated_thermal_upgrades import determine_thermal_upgrades
 from .upgrades.automated_voltage_upgrades import determine_voltage_upgrades
 from .upgrades.cost_computation import compute_all_costs
+from .upgrades.common_functions import analysis_postprocess
 
 
 class UpgradeSimulation:
@@ -49,6 +50,9 @@ class UpgradeSimulation:
     def get_voltage_upgrades_dss_file(self):
         voltage_upgrades = self.get_voltage_upgrades_directory()
         return os.path.join(voltage_upgrades, "voltage_upgrades.dss")
+    
+    def get_upgraded_master_dss_file(self):
+        return os.path.join(self.job_output, "upgraded_master.dss")
 
     def get_line_upgrades_json_file(self):
         thermal_upgrades = self.get_thermal_upgrades_directory()
@@ -136,6 +140,7 @@ class UpgradeSimulation:
             xfmr_upgrade_options_file=self.get_transformer_upgrade_options_file(),
             thermal_summary_file=self.get_thermal_summary_json_file(),
             thermal_upgrades_dss_filepath=self.get_thermal_upgrades_dss_file(),
+            upgraded_master_dss_filepath=self.get_upgraded_master_dss_file(),
             output_json_line_upgrades_filepath=self.get_line_upgrades_json_file(),
             output_json_xfmr_upgrades_filepath=self.get_transformer_upgrades_json_file(),
             feeder_stats_json_file = self.get_feeder_stats_json_file(),
@@ -152,6 +157,7 @@ class UpgradeSimulation:
             voltage_config=voltage_config,
             thermal_upgrades_dss_filepath=self.get_thermal_upgrades_dss_file(),
             voltage_upgrades_dss_filepath=self.get_voltage_upgrades_dss_file(),
+            upgraded_master_dss_filepath=self.get_upgraded_master_dss_file(),
             voltage_summary_file=self.get_voltage_summary_json_file(),
             output_json_voltage_upgrades_filepath = self.get_voltage_upgrades_json_file(),
             feeder_stats_json_file = self.get_feeder_stats_json_file(),
@@ -169,4 +175,5 @@ class UpgradeSimulation:
             voltage_cost_output_filepath=self.get_voltage_upgrade_costs_file(),
             total_cost_output_filepath=self.get_total_upgrade_costs_file()
         )
+        analysis_postprocess() 
         timer_stats_collector.log_stats(clear=True)
