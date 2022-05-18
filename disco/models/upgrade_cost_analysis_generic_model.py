@@ -66,6 +66,11 @@ class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
     )
 
     # Optional fields
+    create_plots: Optional[bool] = Field(
+        title="create_plots",
+        description="Flag to enable or disable figure creation",
+        default=True
+    )
     parallel_transformer_limit: Optional[int] = Field(
         title="parallel_transformer_limit",
         description="Parallel transformer limit",
@@ -83,7 +88,7 @@ class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
     )
     timepoint_multipliers: Optional[dict] = Field(
         title="timepoint_multipliers",
-        description="Dictionary to provide timepoint multipliers",
+        description='Dictionary to provide timepoint multipliers. example: timepoint_multipliers={"load_multipliers": {"with_pv": [0.1], "without_pv": [0.3]}} ',
         default=None
     )
 
@@ -117,6 +122,11 @@ class VoltageUpgradeParamsModel(UpgradeParamsBaseModel):
     )
 
     # Optional fields
+    create_plots: Optional[bool] = Field(
+        title="create_plots",
+        description="Flag to enable or disable figure creation",
+        default=True
+    )
     capacitor_sweep_voltage_gap: float = Field(
         title="capacitor_sweep_voltage_gap",
         description="Capacitor sweep voltage gap (example: 1)",
@@ -139,12 +149,12 @@ class VoltageUpgradeParamsModel(UpgradeParamsBaseModel):
     )
     place_new_regulators: bool = Field(
         title="place_new_regulators",
-        description="Place new regulators",
+        description="Flag to enable or disable new regulator placement",
         default=False,
     )
     use_ltc_placement: bool = Field(
         title="use_ltc_placement",
-        description="Use LTC placement",
+        description="Flag to enable or disable substation LTC upgrades module",
         default=False,
     )
     timepoint_multipliers: dict = Field(
@@ -154,12 +164,12 @@ class VoltageUpgradeParamsModel(UpgradeParamsBaseModel):
     )
     capacitor_action_flag: bool = Field(
         title="capacitor_action_flag",
-        description="Capacitor action flag",
+        description="Flag to enable or disable capacitor controls settings sweep module",
         default=True
     )
     existing_regulator_sweep_action: bool = Field(
         title="existing_regulator_sweep_action",
-        description="Existing regulator sweep action",
+        description="Flag to enable or disable existing regulator controls settings sweep module",
         default=True
     )
 
@@ -222,18 +232,23 @@ class UpgradeCostAnalysisSimulationModel(BaseModel):
     )
     pydss_controllers: PyDssControllerModels = Field(
         title="pydss_controllers",
-        description="Apply these PyDSS controllers to each corresponding element type.",
+        description="If enable_pydss_controllers is True, these PyDSS controllers are applied to each corresponding element type.",
         default=PyDssControllerModels(),
     )
     enable_pydss_controllers: bool = Field(
         title="enable_pydss_controllers",
-        description="Enable PyDSS controllers",
+        description="Flag to enable/disable use of PyDSS controllers",
         default=True,
     )
     include_pf1: bool = Field(
         title="include_pf1",
         description="Include PF1 scenario (no controls) if pydss_controllers are defined.",
         default=True,
+    )
+    dc_ac_ratio: Optional[float] = Field(
+        title="dc_ac_ratio",
+        description="Apply DC-AC ratio for PV Systems",
+        default=None
     )
     jobs: List[UpgradeCostAnalysisGenericModel]
 
@@ -282,7 +297,7 @@ class UpgradeResultModel(UpgradeParamsBaseModel):
     )
     stage: str = Field(
         title="stage",
-        description="Stage: initial or final",
+        description="Stage of upgrades: initial (before upgrades) or final (after upgrades)",
     )
     upgrade_type: str = Field(
         title="upgrade_type",
@@ -302,12 +317,12 @@ class UpgradeResultModel(UpgradeParamsBaseModel):
     )
     max_bus_voltage: float = Field(
         title="max_bus_voltage",
-        description="Max voltage recorded on any bus",
+        description="Maximum voltage recorded on any bus",
         units="pu",
     )
     min_bus_voltage: float = Field(
         title="min_bus_voltage",
-        description="Max voltage recorded on any bus",
+        description="Minimum voltage recorded on any bus",
         units="pu",
     )
     num_of_voltage_violation_buses: int = Field(
@@ -316,20 +331,20 @@ class UpgradeResultModel(UpgradeParamsBaseModel):
     )
     num_of_overvoltage_violation_buses: int = Field(
         title="num_of_overvoltage_violation_buses",
-        description="Number of violations with buses above voltage_upper_limit",
+        description="Number of buses with voltage above voltage_upper_limit",
     )
     voltage_upper_limit: float = Field(
         title="voltage_upper_limit",
-        description="Voltage upper limit",
+        description="Voltage upper limit, the threshold considered for determining overvoltages",
         units="pu",
     )
     num_of_undervoltage_violation_buses: int = Field(
         title="num_of_undervoltage_violation_buses",
-        description="Number of violations with buses below voltage_lower_limit",
+        description="Number of buses with voltage below voltage_lower_limit",
     )
     voltage_lower_limit: float = Field(
         title="voltage_lower_limit",
-        description="Voltage lower limit",
+        description="Voltage lower limit, the threshold considered for determining undervoltages",
         units="pu",
     )
     max_line_loading: float = Field(
@@ -344,20 +359,20 @@ class UpgradeResultModel(UpgradeParamsBaseModel):
     )
     num_of_line_violations: int = Field(
         title="num_of_line_violations",
-        description="Number of lines with violations above line upper limit",
+        description="Number of lines with loading above line upper limit",
     )
     line_upper_limit: float = Field(
         title="line_upper_limit",
-        description="Line upper limit",
+        description="Line upper limit, the threshold considered for determining line overloading",
         units="pu",
     )
     num_of_transformer_violations: int = Field(
         title="num_of_transformer_violations",
-        description="Number of transformers with violations above transformer upper limit",
+        description="Number of transformers with loading above transformer upper limit",
     )
     transformer_upper_limit: float = Field(
         title="transformer_upper_limit",
-        description="Transformer upper limit",
+        description="Transformer upper limit, the threshold considered for determining transformer overloading",
         units="pu",
     )
 
@@ -375,7 +390,7 @@ class EquipmentTypeUpgradeCostsModel(UpgradeParamsBaseModel):
     )
     count: str = Field(
         title="count",
-        description="Count upgraded",
+        description="Count of upgraded equipment",
     )
     total_cost_usd: float = Field(
         title="total_cost_usd",

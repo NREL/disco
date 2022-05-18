@@ -1,5 +1,6 @@
 import logging
 import pandas as pd
+import ast
 
 from jade.utils.timing_utils import track_timing, Timer
 from jade.utils.utils import load_data, dump_data
@@ -7,7 +8,17 @@ from jade.utils.utils import load_data, dump_data
 from disco import timer_stats_collector
 
 logger = logging.getLogger(__name__)
-
+# Dictionary used to convert between different length units and meters, which are used for all the calculations.
+# OpenDSS can output results in any of these lengths.
+LENGTH_CONVERSION_TO_METRE = {
+    "mi": 1609.34,
+    "kft": 304.8,
+    "km": 1000,
+    "ft": 0.3048,
+    "in": 0.0254,
+    "cm": 0.01,
+    "m": 1,
+}
 
 @track_timing(timer_stats_collector)
 def compute_all_costs(
@@ -67,7 +78,8 @@ def compute_all_costs(
         cap_cost_df = compute_capcontrol_cost(voltage_upgrades_df=voltage_upgrades_df,
                                             controls_cost_database=controls_cost_database)
         reg_cost_df = compute_voltage_regcontrol_cost(voltage_upgrades_df=voltage_upgrades_df,
-                                                    controls_cost_database=controls_cost_database)
+                                                    vreg_control_cost_database=controls_cost_database, 
+                                                    vreg_xfmr_cost_database=voltage_regulators_cost_database, xfmr_cost_database=xfmr_cost_database)
         voltage_cost_df = cap_cost_df.append(reg_cost_df)
     else:
         voltage_cost_df = pd.DataFrame(columns=output_columns).astype({"count": int, "total_cost_usd": float})
@@ -80,7 +92,7 @@ def compute_all_costs(
     dump_data(total_cost_df.to_dict('records'), total_cost_output_filepath, indent=4)
 
 
-def compute_transformer_costs(xfmr_upgrades_df=None, xfmr_cost_database=None, **kwargs):
+def compute_transformer_costs(xfmr_upgrades_df, xfmr_cost_database, **kwargs):
     """This function computes the transformer costs.
     -Unit equipment cost for new(parallel) and "upgrade" transformers are the same in the database.
     The difference would be the fixed costs added (if present in misc_database)
@@ -168,7 +180,7 @@ def compute_transformer_costs(xfmr_upgrades_df=None, xfmr_cost_database=None, **
     return xfmr_cost_df
 
 
-def reformat_xfmr_files(xfmr_upgrades_df=None, xfmr_cost_database=None):
+def reformat_xfmr_files(xfmr_upgrades_df, xfmr_cost_database):
     """This function renames, reformats transformer upgrades dataframe to match cost database columns
 
     Parameters
@@ -199,7 +211,20 @@ def reformat_xfmr_files(xfmr_upgrades_df=None, xfmr_cost_database=None):
     return xfmr_upgrades_df, xfmr_cost_database
 
 
-def compute_line_costs(line_upgrades_df=None, line_cost_database=None, **kwargs):
+def reformat_xfmr_upgrades_file(xfmr_upgrades_df):
+    xfmr_upgrades_df.rename(columns={"kVA": "rated_kVA", "windings": "num_windings"}, inplace=True)
+    xfmr_upgrades_df["rated_kVA"] = xfmr_upgrades_df["rated_kVA"].astype(float)
+    xfmr_upgrades_df["num_windings"] = xfmr_upgrades_df["num_windings"].astype(int)
+    xfmr_upgrades_df["phases"] = xfmr_upgrades_df["phases"].astype(int)
+    xfmr_upgrades_df["primary_kV"] = xfmr_upgrades_df["kVs"].str[0].astype(float)
+    xfmr_upgrades_df["secondary_kV"] = xfmr_upgrades_df["kVs"].str[-1].astype(float)
+    xfmr_upgrades_df["conns"] = xfmr_upgrades_df["conns"].apply(ast.literal_eval)
+    xfmr_upgrades_df["primary_connection_type"] = xfmr_upgrades_df["conns"].str[0]
+    xfmr_upgrades_df["secondary_connection_type"] = xfmr_upgrades_df["conns"].str[-1]
+    return xfmr_upgrades_df
+
+
+def compute_line_costs(line_upgrades_df, line_cost_database, **kwargs):
     """This function computes the line costs.
     -Unit equipment cost for new(parallel) and "upgrade" line are the not same in the database.
     There are different costs given for reconductored and new lines
@@ -228,17 +253,6 @@ def compute_line_costs(line_upgrades_df=None, line_cost_database=None, **kwargs)
     deciding_columns = ["phases", "voltage_kV", "ampere_rating", "line_placement", "Description"]
     output_columns_list = ["type", output_count_field, output_cost_field, "comment", "equipment_parameters"]
     backup_deciding_property = kwargs.get("backup_deciding_property", "ampere_rating")
-    # Dictionary used to convert between different length units and meters, which are used for all the calculations.
-    # OpenDSS can output results in any of these lengths.
-    length_conversion_to_metre = {
-        "mi": 1609.34,
-        "kft": 304.8,
-        "km": 1000,
-        "ft": 0.3048,
-        "in": 0.0254,
-        "cm": 0.01,
-        "m": 1,
-    }
     # choose which properties are to be saved
     upgrade_type_list = ["upgrade", "new (parallel)"]
     added_line_df = line_upgrades_df.loc[(line_upgrades_df["Upgrade_Type"].isin(upgrade_type_list)) & (line_upgrades_df["Action"] == "add")]
@@ -259,7 +273,7 @@ def compute_line_costs(line_upgrades_df=None, line_cost_database=None, **kwargs)
                                            (line_cost_database["Description"] == description)
                                            ]["cost_per_m"]
         # convert line length to metres
-        line_length_m = row["length"] * length_conversion_to_metre[row["units"]]
+        line_length_m = row["length"] * LENGTH_CONVERSION_TO_METRE[row["units"]]
         params_dict = dict(row[['final_equipment_name'] + deciding_columns])
         row["equipment_parameters"] = params_dict
         row["type"] = "Line"
@@ -284,7 +298,7 @@ def compute_line_costs(line_upgrades_df=None, line_cost_database=None, **kwargs)
     return line_cost_df
 
 
-def reformat_line_files(line_upgrades_df=None, line_cost_database=None):
+def reformat_line_files(line_upgrades_df, line_cost_database):
     """This function renames, reformats line upgrades dataframe to match cost database columns
 
     Parameters
@@ -310,7 +324,7 @@ def reformat_line_files(line_upgrades_df=None, line_cost_database=None):
     return line_upgrades_df, line_cost_database
 
 
-def compute_capcontrol_cost(voltage_upgrades_df=None, controls_cost_database=None):
+def compute_capcontrol_cost(voltage_upgrades_df, controls_cost_database, keyword="Capacitor"):
     """This function computes the capacitor controller related costs.
     Note we currently are not adding new capacitors to integrate PV.
     Considered here: new controllers, control setting changes
@@ -328,7 +342,7 @@ def compute_capcontrol_cost(voltage_upgrades_df=None, controls_cost_database=Non
     output_count_field = "count"
     output_columns_list = ["type", output_count_field, output_cost_field, "comment"]
 
-    output_rows = ["New capacitor controller", "Capacitor controller setting change"]
+    output_rows = ["New Capacitor controller", "Capacitor controller setting change"]
     capcontrol_fields = {"add_new_cap_controller": "New controller added",
                          "change_cap_control": "Controller settings modified"}
     cost_database_fields = {"add_new_cap_controller": "Add new capacitor controller",
@@ -341,32 +355,32 @@ def compute_capcontrol_cost(voltage_upgrades_df=None, controls_cost_database=Non
 
     if voltage_upgrades_df.empty:  # if there are no voltage upgrades
         return zero_cost_df
-    cap_cols = voltage_upgrades_df.columns.str.contains("Capacitor")
-    cap_upgrades_df = voltage_upgrades_df[voltage_upgrades_df.columns[cap_cols]]
+    cap_upgrades_df = voltage_upgrades_df.loc[voltage_upgrades_df['equipment_type'].str.contains(keyword)]
     if cap_upgrades_df.empty:  # if there are no capacitor control upgrades
         return zero_cost_df
     # if there are capacitor controller upgrades
-    count_new_controller = cap_upgrades_df.loc[capcontrol_fields["add_new_cap_controller"]].sum()
+    count_new_controller = cap_upgrades_df[capcontrol_fields["add_new_cap_controller"]].sum()
     unit_cost_new_controller = controls_cost_database.loc[controls_cost_database["Type"]
                                                           == cost_database_fields["add_new_cap_controller"]]["cost"].values[0]
     total_cost_new_controller = count_new_controller * unit_cost_new_controller
 
-    count_setting_changes = cap_upgrades_df.loc[capcontrol_fields["change_cap_control"]].sum()
+    count_setting_changes = cap_upgrades_df[capcontrol_fields["change_cap_control"]].sum()
     unit_cost_setting_changes = controls_cost_database.loc[controls_cost_database["Type"] ==
                                                            cost_database_fields["change_cap_control"]]["cost"].values[0]
     total_cost_setting_changes = count_setting_changes * unit_cost_setting_changes
 
     cap_cost_dict = {
-        "type": ["new capacitor controller", "capacitor controller setting changes"],
+        "type": output_rows,
         "count": [count_new_controller, count_setting_changes],
         "total_cost_usd": [total_cost_new_controller, total_cost_setting_changes],
     }
     cap_cost_df = pd.DataFrame.from_dict(cap_cost_dict)
-    cap_cost_df = cap_cost_df[output_columns_list]
+    cap_cost_df["comment"] = ""
+    cap_cost_df = cap_cost_df[output_columns_list]    
     return cap_cost_df
 
 
-def compute_voltage_regcontrol_cost(voltage_upgrades_df=None, controls_cost_database=None, keyword="RegControl"):
+def compute_voltage_regcontrol_cost(voltage_upgrades_df, vreg_control_cost_database, vreg_xfmr_cost_database, xfmr_cost_database, keyword="RegControl"):
     """This function computes the voltage regulator controller related costs.
     Considered here: new voltage regulator controllers, control setting changes
 
@@ -382,54 +396,130 @@ def compute_voltage_regcontrol_cost(voltage_upgrades_df=None, controls_cost_data
     output_cost_field = "total_cost_usd"
     output_count_field = "count"
     output_columns_list = ["type", output_count_field, output_cost_field, "comment"]
-    upgrade_fields = {"add_new_reg_control": "New controller added",
+    upgrade_fields_dict = {"add_new_reg_control": "New controller added",
                       "change_reg_control": "Controller settings modified",
                       "add_new_transformer": "New transformer added",
-                      "add_substation_ltc": "Substation LTC",
-                      "change_ltc_control": "Controller settings modified",
+                      "at_substation": "At Substation",
+                    #   "change_ltc_control": "Substation LTC settings modified",
                         }
-    cost_database_fields = {"add_new_reg_control": "Add new voltage regulator controller",
+    cost_database_fields_dict = {"add_new_reg_control": "Add new voltage regulator controller",
                             "change_reg_control": "Change voltage regulator controller settings",
-                            "replace_reg_control": "Replace voltage regulator controller"}
-
+                            # "replace_reg_control": "Replace voltage regulator controller",   # this is not used currently
+                            "add_substation_ltc": "Add new LTC controller",
+                            "change_ltc_control": "Change LTC settings",
+                            "add_new_transformer": "Add new voltage regulator transformer"}
+    
+    output_fields_dict = {"add_new_reg_control": "New in-line voltage regulator",
+                        "change_reg_control": "In-line voltage regulator control setting change",
+                        # "replace_reg_control": "Replace in-line voltage regulator controller",   # this is not used currently
+                        "add_substation_ltc": "New substation LTC",
+                        "change_ltc_control": "Substation LTC setting change",
+                        "add_new_vreg_transformer": "Transformer for voltage regulator",
+                        "add_new_substation_transformer":  "Substation transformer"}
+    
+    
     output_rows = ["New in-line voltage regulator", "In-line voltage regulator control setting change",
                    "Replace in-line voltage regulator controller",
                    "New substation LTC", "Substation LTC setting change",
-                   "new substation transformer"]
+                   "Substation transformer", "Transformer for voltage regulator"]
 
-    computation_fields = ["add_new_reg_control", "change_reg_control", ""]
+    control_computation_fields = ["add_new_reg_control", "change_reg_control"]
+    xfmr_fields = ["add_new_transformer"]
 
-    empty_reg_cost_dict = {"type": output_rows,
-                           "count": [0] * len(output_rows),  "total_cost_usd": [0] * len(output_rows)}
+    empty_reg_cost_dict = {"type": output_rows, "count": [0] * len(output_rows),  "total_cost_usd": [0] * len(output_rows)}
     zero_cost_df = pd.DataFrame.from_dict(empty_reg_cost_dict)
 
     if voltage_upgrades_df.empty:  # if there are no voltage upgrades
         return zero_cost_df
-    reg_cols = voltage_upgrades_df.columns.str.contains(keyword)
-    reg_upgrades_df = voltage_upgrades_df[voltage_upgrades_df.columns[reg_cols]]
+    reg_upgrades_df = voltage_upgrades_df.loc[voltage_upgrades_df['equipment_type'].str.contains(keyword)]
     if reg_upgrades_df.empty:  # if there are no regulator controller upgrades
         return zero_cost_df
 
-    cost_list = {}
+    cost_list = []
     # if there are regulator controller upgrades
-    for field in computation_fields:
-        count = reg_upgrades_df.loc[upgrade_fields[field]].sum()
-        unit_cost = controls_cost_database.loc[controls_cost_database["Type"]
-                                               == cost_database_fields[field]]["cost"].values[0]
-        total_cost = count * unit_cost
-        cost_list.append({"type": field, "count": count, "total_cost_usd": total_cost})
+    for field in control_computation_fields:
+        # if at substation
+        at_substation_df = reg_upgrades_df.loc[reg_upgrades_df[upgrade_fields_dict["at_substation"]] == True]
+        if field == "add_new_reg_control":
+            cost_field = "add_substation_ltc"
+        elif field == "change_reg_control":
+            cost_field = "change_ltc_control"
+        else:
+            raise Exception(f"Unknown field {field} in regulator cost computation")
+        if not at_substation_df.empty:  # if there are no regcontrols at substation
+            count = at_substation_df[upgrade_fields_dict[field]].sum()
+            unit_cost = vreg_control_cost_database.loc[vreg_control_cost_database["Type"] == cost_database_fields_dict[cost_field]]["cost"].values[0]
+            total_cost = count * unit_cost
+        else:
+            count = 0
+            total_cost = 0
+        cost_list.append({"type": output_fields_dict[cost_field], "count": count, "total_cost_usd": total_cost, "comment": ""})
+        
+        # if not at substation
+        not_at_substation_df = reg_upgrades_df.loc[reg_upgrades_df[upgrade_fields_dict["at_substation"]] == False]
+        cost_field = field
+        if not not_at_substation_df.empty:  # if not at substation
+            count = not_at_substation_df[upgrade_fields_dict[field]].sum()
+            unit_cost = vreg_control_cost_database.loc[vreg_control_cost_database["Type"] == cost_database_fields_dict[cost_field]]["cost"].values[0]
+            total_cost = count * unit_cost
+        else:
+            count = 0
+            total_cost = 0
+        cost_list.append({"type": output_fields_dict[cost_field], "count": count, "total_cost_usd": total_cost, "comment": ""})
+    
+    # add costs for added transformers (needed for voltage regulators)
+    vreg_xfmr_cost_database = vreg_xfmr_cost_database.append(xfmr_cost_database)
+    for field in xfmr_fields:
+        cost_field = field
+        # if at substation
+        new_xfmr_added_df = reg_upgrades_df.loc[reg_upgrades_df[upgrade_fields_dict["add_new_transformer"]] == True]    
+        for index, row in new_xfmr_added_df.iterrows():
+            output_row = {}
+            added_xfmr_details = row["Final Settings"]
+            added_xfmr_details = reformat_xfmr_upgrades_file(pd.DataFrame([added_xfmr_details]))
+            deciding_columns = ["rated_kVA", "phases", "primary_kV", "secondary_kV", "primary_connection_type",
+                        "secondary_connection_type", "num_windings"]
+            params_dict = added_xfmr_details[["name"] + deciding_columns].to_dict(orient="records")[0]
+            added_xfmr_details = added_xfmr_details.to_dict(orient="records")[0]
+            output_row["equipment_parameters"] = params_dict
+            # reformat xfmr dict
+            unit_cost = vreg_xfmr_cost_database.loc[(vreg_xfmr_cost_database["rated_kVA"] == added_xfmr_details["rated_kVA"]) &
+                                            (vreg_xfmr_cost_database["primary_kV"] == added_xfmr_details["primary_kV"]) &
+                                            (vreg_xfmr_cost_database["secondary_kV"] == added_xfmr_details["secondary_kV"]) &
+                                            (vreg_xfmr_cost_database["phases"] == added_xfmr_details["phases"]) &
+                                            (vreg_xfmr_cost_database["num_windings"] == added_xfmr_details["num_windings"]) &
+                                            (vreg_xfmr_cost_database["primary_connection_type"] == added_xfmr_details["primary_connection_type"]) &
+                                            (vreg_xfmr_cost_database["secondary_connection_type"] == added_xfmr_details["secondary_connection_type"])
+                                            ]["cost"]
+            if len(unit_cost) > 0:  # if there are more than one rows, the first one is chosen in random
+                unit_cost = unit_cost.values[0]
+                output_row[output_cost_field] = unit_cost
+                output_row["comment"] = ""
+                output_row[output_count_field] = 1
+            else:  # if costs are not present for this transformer, then choose from other xfmr database rated_kVA
+                backup_deciding_property = "rated_kVA"
+                closest = vreg_xfmr_cost_database.loc[abs(vreg_xfmr_cost_database[backup_deciding_property] - added_xfmr_details[backup_deciding_property]).idxmin()]
+                output_row[output_cost_field] = closest["cost"]
+                output_row[output_count_field] = 1
+                comment_string = f"Transformer {added_xfmr_details['name']}: Exact cost not available. " \
+                                f"Unit cost for transformer with these parameters used " \
+                                f"(based on closest {backup_deciding_property}:  {dict(closest)}"
+                logger.debug(comment_string)
+                output_row["comment"] = comment_string
+            if row[upgrade_fields_dict["at_substation"]]:
+                output_row["type"] = output_fields_dict["add_new_substation_transformer"]
+            else: 
+                output_row["type"] = output_fields_dict["add_new_vreg_transformer"]
+            cost_list.append(output_row)
 
-    # reg_cost_dict = {
-    #     "type": ["new voltage regulator controller", "voltage regulator controller setting changes"],
-    #     "count": [count_new_controller, count_setting_changes],
-    #     "total_cost_usd": [total_cost_new_controller, total_cost_setting_changes],
-    # }
     reg_cost_df = pd.DataFrame(cost_list)
     reg_cost_df = reg_cost_df[output_columns_list]
     return reg_cost_df
 
 
-def get_total_costs(thermal_cost_df=None, voltage_cost_df=None):
+def get_total_costs(thermal_cost_df, voltage_cost_df):
+    """This function combines voltage and thermal upgrades costs into one file.
+    """
     total_cost_df = thermal_cost_df.append(voltage_cost_df)
     total_cost_df = total_cost_df.groupby('type').sum()
     total_cost_df.reset_index(inplace=True)

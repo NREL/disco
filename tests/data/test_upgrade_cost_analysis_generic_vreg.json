@@ -1,0 +1,43 @@
+{
+  "thermal_upgrade_params": {
+    "transformer_upper_limit": 1.5,
+    "line_upper_limit": 1.5,
+    "line_design_pu": 0.75,
+    "transformer_design_pu": 0.75,
+    "voltage_upper_limit": 1.05,
+    "voltage_lower_limit": 0.95,
+    "read_external_catalog": true,
+    "external_catalog": "./disco/extensions/upgrade_simulation/upgrades/smartds_upgrades_technical_catalog.json"
+  },
+  "voltage_upgrade_params": {
+    "initial_upper_limit": 1.05,
+    "initial_lower_limit": 0.95,
+    "final_upper_limit": 1.05,
+    "final_lower_limit": 0.95,
+    "nominal_voltage": 120,
+    "capacitor_sweep_voltage_gap": 1,
+    "reg_control_bands": [
+      1,
+      2
+    ],
+    "reg_v_delta": 0.5,
+    "max_regulators": 4,
+	"use_ltc_placement": false,
+    "place_new_regulators": true,
+	"capacitor_action_flag": true,
+	"existing_regulator_sweep_action": true
+  },
+  "pydss_controllers": "",
+  "enable_pydss_controllers": false,
+  "include_pf1": true,
+  "upgrade_cost_database": "./disco/extensions/upgrade_simulation/upgrades/Generic_DISCO_cost_database_v2.xlsx",
+  "jobs": [
+	{
+      "model_type": "UpgradeCostAnalysisGenericModel",
+      "name": "sb10_p1rhs25_1247_trans_301__p1rdt12732__random__4__195_vreg",
+      "opendss_model_file": "./tests/data/upgrade-models/sb10_p1rhs25_1247_trans_301/p1rdt12732/PVDeployments/sb10_p1rhs25_1247_trans_301__p1rdt12732__random__4__195.dss",
+      "blocked_by": [],
+      "estimated_run_minutes": null
+    }
+  ]
+}

@@ -11,6 +11,9 @@ from jade.utils.utils import load_data, dump_data
 from tests.common import *
 
 BASE_CONFIG_FILE = Path("tests") / "data" / "upgrade_cost_analysis_generic.json"
+TEST_UPGRADES_CONFIG_FILE_1 = Path("tests") / "data" / "test_upgrade_cost_analysis_generic.json"
+TEST_UPGRADES_CONFIG_FILE_2 = Path("tests") / "data" / "test_upgrade_cost_analysis_generic_vreg.json"
+UPGRADES_RESULTS_FILE = "upgrade_summary.json"
 
 
 def test_generic_upgrade_jade_workflow(cleanup):
@@ -27,7 +30,15 @@ def test_generic_upgrade_jade_workflow(cleanup):
             verify_results(OUTPUT, 4)
     finally:
         test_upgrade_file.unlink()
+        
 
+def test_upgrades(cleanup):
+    run_cmd = f"disco upgrade-cost-analysis run {TEST_UPGRADES_CONFIG_FILE_1} -o {OUTPUT}"
+    assert run_command(run_cmd) == 0
+    verify_upgrade_results(OUTPUT)
+    run_cmd = f"disco upgrade-cost-analysis run {TEST_UPGRADES_CONFIG_FILE_2} -o {OUTPUT}"
+    assert run_command(run_cmd) == 0
+    verify_upgrade_results(OUTPUT)
 
 def test_generic_upgrade_standalone_workflow(cleanup):
     test_upgrade_file = setup_models()
@@ -70,3 +81,15 @@ def verify_results(output_dir, num_jobs):
     for result in results:
         assert result.status == "finished"
         assert result.return_code == 0
+
+
+def verify_upgrade_results(output_dir):
+    result_file = Path(output_dir) / UPGRADES_RESULTS_FILE
+    results = load_data(result_file)
+    viol = results["violation_summary"]
+    import pandas as pd
+    df = pd.DataFrame(viol)
+    # no thermal violations are present after thermal upgrades
+    assert not df.loc[(df["upgrade_type"] == "Thermal") & (df["stage"] == "Final")]["thermal_violations_present"].any()
+    # no voltage violations are present after voltage upgrades
+    assert not df.loc[(df["upgrade_type"] == "Voltage") & (df["stage"] == "Final")]["voltage_violations_present"].any()
