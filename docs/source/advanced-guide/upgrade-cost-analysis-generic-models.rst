@@ -1,3 +1,5 @@
+.. _upgrade_cost_analysis_schemas:
+
 **********************************
 Upgrade Cost Analysis JSON Schemas
 **********************************

@@ -1,6 +1,6 @@
 ﻿Input Parameter,Type,Description,Required/Optional,Default/Example
-    transformer_upper_limit,float,Transformer upper limit in per unit,Required,1.25
-    line_upper_limit,float,Line upper limit in per unit,Required,1.25
+transformer_upper_limit,float,Transformer upper limit in per unit,Required,1.25
+line_upper_limit,float,Line upper limit in per unit,Required,1.25
 line_design_pu,float,Line design in per unit ,Required,0.75
 transformer_design_pu,float,Transformer design in per unit ,Required,0.75
 voltage_upper_limit,float,Voltage upper limit in per unit,Required,1.05
