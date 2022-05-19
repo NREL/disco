@@ -13,6 +13,7 @@ from disco.exceptions import (
 def test_error_code_values():
     required_keys = {"description", "error_code"}
     for val in EXCEPTIONS_TO_ERROR_CODES.values():
+        val.pop("corrective_action", None)
         assert not required_keys.symmetric_difference(val)
 
     assert len(EXCEPTIONS_TO_ERROR_CODES) == len(
