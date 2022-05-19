@@ -228,6 +228,12 @@ class UpgradeCostAnalysisGenericModel(BaseAnalysisModel):
         description="Optionally advises the job execution manager on how long the job will run",
     )
 
+    @validator("opendss_model_file")
+    def check_model_file(cls, opendss_model_file):
+        if not Path(opendss_model_file).exists():
+            raise ValueError(f"{opendss_model_file} does not exist")
+        return opendss_model_file
+
 
 class PyDssControllerModels(UpgradeParamsBaseModel):
     """Defines the settings for PyDSS controllers"""
