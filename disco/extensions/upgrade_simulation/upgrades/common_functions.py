@@ -18,7 +18,7 @@ from disco.exceptions import (
     OpenDssCompileError,
     OpenDssConvergenceError,
     UpgradesExternalCatalogRequired,
-    UpgradesExternalCatalogMissingEquipmentType,
+    UpgradesExternalCatalogMissingObjectDefinition,
     InvalidOpenDssElementError,
 )
 
@@ -422,7 +422,7 @@ def ensure_line_config_exists(chosen_option, new_config_type, external_upgrades_
                 config_definition_dict[field] = config_definition_dict[field].replace("]",")")
             command_string = create_opendss_definition(config_definition_dict=config_definition_dict)
         else:
-            raise UpgradesExternalCatalogMissingEquipmentType(
+            raise UpgradesExternalCatalogMissingObjectDefinition(
                 f"{new_config_type} definition for {new_config_name} not found in external catalog."
             )
     else:

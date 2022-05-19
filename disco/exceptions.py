@@ -51,7 +51,7 @@ class UpgradesExternalCatalogRequired(DiscoBaseException):
     """Raise when an upgrade simulation needs an external catalog"""
 
 
-class UpgradesExternalCatalogMissingEquipmentType(DiscoBaseException):
+class UpgradesExternalCatalogMissingObjectDefinition(DiscoBaseException):
     """Raise when an upgrade external catalog is missing an equipment type"""
 
 
@@ -67,10 +67,12 @@ EXCEPTIONS_TO_ERROR_CODES = {
     },
     ExceededParallelLinesLimit: {
         "description": "An Upgrades simulation exceeded the limit for parallel lines.",
+        "corrective_action": "Provide an external catalog or increase ThermalUpgradeParamsModel.parallel_lines_limit.",
         "error_code": 115,
     },
     ExceededParallelTransformersLimit: {
         "description": "An Upgrades simulation exceeded the limit for parallel transformers.",
+        "corrective_action": "Provide an external catalog or increase ThermalUpgradeParamsModel.parallel_transformers_limit.",
         "error_code": 116,
     },
     InvalidOpenDssElementError: {
@@ -79,6 +81,7 @@ EXCEPTIONS_TO_ERROR_CODES = {
     },
     OpenDssCompileError: {
         "description": "OpenDSS failed to compile a model.",
+        "corrective_action": "Check the error message and fix the OpenDSS model definitions.",
         "error_code": 118,
     },
     OpenDssConvergenceError: {
@@ -100,10 +103,13 @@ EXCEPTIONS_TO_ERROR_CODES = {
     UpgradesExternalCatalogRequired: {
         "description": "An Upgrades simulation requires an external catalog in order to add or "
         "modify a component.",
+        "corrective_action": "Provide an external catalog.",
         "error_code": 123,
     },
-    UpgradesExternalCatalogMissingEquipmentType: {
-        "description": "The Upgrades external catalog is missing an equipment type.",
+    UpgradesExternalCatalogMissingObjectDefinition: {
+        "description": "The Upgrades external catalog does not define a required object.",
+        "corrective_action": "Ensure the external catalog defines all required objects. Refer to "
+        "the error message for specific details.",
         "error_code": 124,
     },
     UpgradesInvalidViolationIncrease: {

@@ -15,14 +15,17 @@ def generate_tables(output_dir):
 def generate_return_codes(output_dir):
     output_file = output_dir / "return_codes.csv"
     with open(output_file, "w") as f_out:
-        header = "Return Code,Description"
+        header = "Return Code,Description,Corrective Action"
         f_out.write("\t".join(header) + "\n")
-        f_out.write("0,Success\n")
-        f_out.write("1,Generic error\n")
+        f_out.write("0,Success,\n")
+        f_out.write("1,Generic error,\n")
         for item in EXCEPTIONS_TO_ERROR_CODES.values():
             f_out.write(str(item["error_code"]))
             f_out.write(",")
             f_out.write(item["description"])
+            if item.get("corrective_action"):
+                f_out.write(",")
+                f_out.write(item["corrective_action"])
             f_out.write("\n")
     
 

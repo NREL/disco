@@ -22,7 +22,7 @@ conditions.
 
 .. csv-table:: 
    :file: ../build/tables/return_codes.csv
-   :widths: 5, 75
+   :widths: 5, 30, 30
    :header-rows: 1
 
 
