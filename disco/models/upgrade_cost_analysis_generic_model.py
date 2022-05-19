@@ -109,7 +109,7 @@ class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
 
     @validator("external_catalog")
     def check_catalog(cls, external_catalog, values):
-        if values["read_external_catalog"] and not external_catalog.exists():
+        if values["read_external_catalog"] and not Path(external_catalog).exists():
             raise ValueError(f"{external_catalog} does not exist")
         return external_catalog
 
@@ -460,6 +460,11 @@ class UpgradeJobOutputs(UpgradeParamsBaseModel):
     upgraded_opendss_model_file: str = Field(
         title="upgraded_opendss_model_file",
         description="Path to file that will load the upgraded network.",
+    )
+    feeder_stats: str = Field(
+        title="feeder_stats",
+        description="Path to file containing feeder metadata and equipment details before and "
+        "after upgrades.",
     )
     return_code: int = Field(
         title="return_code",

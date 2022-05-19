@@ -37,6 +37,8 @@ logger = logging.getLogger(__name__)
 
 JobInfo = namedtuple("JobInfo", ["name"])
 
+AGGREGATION_JOB_NAME = "aggregate-results"
+
 
 @click.command()
 @click.argument("upgrades-config-file", type=click.Path(exists=True))
@@ -89,7 +91,7 @@ def config(upgrades_config_file, config_file, fmt):
 
     aggregation_job = GenericCommandParameters(
         command=f"disco upgrade-cost-analysis aggregate-results --fmt {fmt}",
-        name="aggregate-results",
+        name=AGGREGATION_JOB_NAME,
         append_output_dir=True,
         blocked_by=blocking_jobs,
     )
@@ -158,7 +160,7 @@ def run(config_file, aggregate_results, job_name, jade_runtime_output, fmt, forc
             print(f"Job {job_name} is not defined in {config_file}", file=sys.stderr)
             sys.exit(1)
         log_file_dir = jobs_output_dir / job_name
-        log_filename = f"run_upgrade_cost_analysis{job_name}.log"
+        log_filename = f"run_upgrade_cost_analysis__{job_name}.log"
 
     for job in jobs:
         _check_job_dir(jobs_output_dir / job.name, force)
@@ -323,14 +325,17 @@ def _aggregate_results(jade_runtime_output, log_file, job_names, fmt):
         job_info = JobInfo(name)
         summary_table = get_upgrade_summary_table(job_path, job_info)
         costs_table = get_total_upgrade_costs_table(job_path, job_info)
+        return_code = (
+            0 if name == AGGREGATION_JOB_NAME else _read_job_return_code(jobs_output_dir, name)
+        )
         outputs = {
-            "upgraded_opendss_model_file": str(
-                jobs_output_dir / name / "upgraded_opendss_models.dss"
-            ),
-            "return_code": _read_job_return_code(jobs_output_dir, name),
+            "upgraded_opendss_model_file": str(jobs_output_dir / name / "upgraded_master.dss"),
+            "return_code": return_code,
+            "feeder_stats": str(jobs_output_dir / name / "feeder_stats.json"),
         }
         output_json["outputs"]["jobs"].append(outputs)
-        _delete_job_return_code_file(jobs_output_dir, name)
+        if name != AGGREGATION_JOB_NAME:
+            _delete_job_return_code_file(jobs_output_dir, name)
         if fmt == "csv":
             upgrade_summary_table += summary_table
             upgrade_costs_table += costs_table
