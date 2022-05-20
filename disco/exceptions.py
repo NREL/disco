@@ -67,16 +67,21 @@ EXCEPTIONS_TO_ERROR_CODES = {
     },
     ExceededParallelLinesLimit: {
         "description": "An Upgrades simulation exceeded the limit for parallel lines.",
-        "corrective_action": "Provide an external catalog or increase ThermalUpgradeParamsModel.parallel_lines_limit.",
+        "corrective_action": "If not already done, enable ThermalUpgradeParamsModel.read_external_catalog"
+        "and provide an external catalog. Or increase ThermalUpgradeParamsModel.parallel_lines_limit to allow more parallel equipment to"
+        "be placed to resolve thermal violations.",
         "error_code": 115,
     },
     ExceededParallelTransformersLimit: {
         "description": "An Upgrades simulation exceeded the limit for parallel transformers.",
-        "corrective_action": "Provide an external catalog or increase ThermalUpgradeParamsModel.parallel_transformers_limit.",
+        "corrective_action": "If not already done, enable ThermalUpgradeParamsModel.read_external_catalog"
+        "and provide an external catalog. Or increase ThermalUpgradeParamsModel.parallel_transformers_limit to allow more parallel equipment to"
+        "be placed to resolve thermal violations.",
         "error_code": 116,
     },
     InvalidOpenDssElementError: {
         "description": "An OpenDSS element has unexpected properties.",
+        "corrective_action": "Check the error message and fix the OpenDSS element definitions.",
         "error_code": 117,
     },
     OpenDssCompileError: {
@@ -85,7 +90,8 @@ EXCEPTIONS_TO_ERROR_CODES = {
         "error_code": 118,
     },
     OpenDssConvergenceError: {
-        "description": "OpenDSS failed to find a solution.",
+        "description": "OpenDSS failed to converge.",
+        "corrective_action": "Check the OpenDSS model passed. Also refer to the OpenDSS manual available online, to vary settings for convergence.",
         "error_code": 119,
     },
     PyDssConvergenceError: {
@@ -101,9 +107,9 @@ EXCEPTIONS_TO_ERROR_CODES = {
         "error_code": 122,
     },
     UpgradesExternalCatalogRequired: {
-        "description": "An Upgrades simulation requires an external catalog in order to add or "
-        "modify a component.",
-        "corrective_action": "Provide an external catalog.",
+        "description": "An Upgrades simulation requires an external catalog for thermal upgrades in order to add or "
+        "upgrade a component.",
+        "corrective_action": "Provide an external catalog or disable ThermalUpgradeParamsModel.read_external_catalog.",
         "error_code": 123,
     },
     UpgradesExternalCatalogMissingObjectDefinition: {
@@ -114,6 +120,8 @@ EXCEPTIONS_TO_ERROR_CODES = {
     },
     UpgradesInvalidViolationIncrease: {
         "description": "An Upgrades simulation detected an invalid increase in violations.",
+        "corrective_action": "This could happen in cases when lines or transformers are extremely overloaded. Check and "
+        "modify OpenDSS model for such instances",
         "error_code": 125,
     },
 }
