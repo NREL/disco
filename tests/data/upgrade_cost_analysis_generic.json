@@ -32,14 +32,14 @@
     {
       "model_type": "UpgradeCostAnalysisGenericModel",
       "name": "p1uhs21_1247__p1udt5257__close__1__5",
-      "opendss_model_file": "upgrade-models/p1uhs21_1247/p1udt5257/PVDeployments/p1uhs21_1247__p1udt5257__close__1__5.dss",
+      "opendss_model_file": "tests/data/generic-models/p1uhs21_1247/p1udt5257/PVDeployments/p1uhs21_1247__p1udt5257__close__1__5.dss",
       "blocked_by": [],
       "estimated_run_minutes": null
     },
     {
       "model_type": "UpgradeCostAnalysisGenericModel",
       "name": "p1uhs21_1247__p1udt5257__close__1__15",
-      "opendss_model_file": "upgrade-models/p1uhs21_1247/p1udt5257/PVDeployments/p1uhs21_1247__p1udt5257__close__1__5.dss",
+      "opendss_model_file": "tests/data/generic-models/p1uhs21_1247/p1udt5257/PVDeployments/p1uhs21_1247__p1udt5257__close__1__15.dss",
       "blocked_by": [],
       "estimated_run_minutes": null
     }
