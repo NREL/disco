@@ -28,7 +28,7 @@ def auto_config(inputs, **kwargs):
         An instance of job configuration.
     """
     if not os.path.exists(inputs):
-        raise OSError(f"Inputs path '{inputs}' does not exist.")
+        raise FileNotFoundError(f"Inputs path '{inputs}' does not exist.")
 
     inputs = UpgradeInputs(inputs)
     config = UpgradeConfiguration(inputs=inputs, **kwargs)

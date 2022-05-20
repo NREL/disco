@@ -8,7 +8,8 @@ from jade.result import ResultsSummary
 from jade.utils.subprocess_manager import run_command
 from jade.utils.utils import dump_data, load_data
 
-from disco.common import EXIT_CODE_GOOD, EXIT_CODE_CONVERGENCE_ERROR
+from disco.common import EXIT_CODE_GOOD
+from disco.exceptions import is_convergence_error
 from disco.utils.failing_test_bisector import FailingTestBisector
 
 
@@ -73,7 +74,7 @@ def find_highest_passing_penetration_level(key, jobs, src_config_file, prescreen
         ret = _get_job_result(output_dir)
         if ret == EXIT_CODE_GOOD:
             passed = True
-        elif ret == EXIT_CODE_CONVERGENCE_ERROR:
+        elif is_convergence_error(ret):
             passed = False
         else:
             raise Exception(f"Unknown PyDSS error occurred: key={key} job={name}. End bisect: {ret}")

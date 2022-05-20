@@ -10,7 +10,7 @@ from disco.models.upgrade_cost_analysis_generic_model import UpgradeCostAnalysis
 def test_model_load():
     config_file = Path("tests") / "data" / "upgrade_cost_analysis_generic.json"
     model = UpgradeCostAnalysisSimulationModel.from_file(config_file)
-    assert model.has_pydss_controllers()
+    assert not model.has_pydss_controllers()
 
 
 def test_invalid_model_load():

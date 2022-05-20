@@ -2,7 +2,7 @@
 SMART-DS OpenDSS Model Preparation
 **********************************
 Hosting Capacity Analysis makes use of the OpenDSS models from the `SMART-DS <https://data.openei.org/s3_viewer?bucket=oedi-data-lake&prefix=SMART-DS%2Fv1.0%2F2018%2F>`_ dataset.
-More documentation on the open source SMART-DS datasets can be found `here <https://github.com/openEDI/documentation/tree/main/SMART-DS>`_.
+More documentation on the open source SMART-DS datasets can be found at the `SMART-DS website <https://github.com/openEDI/documentation/tree/main/SMART-DS>`_.
 Pre-processing is performed on this dataset to prepare it for the analysis. The chart below shows the various stages of pre-processing performed on the SMART-DS OpenDSS Models.
 
 .. image:: ../images/SMART-DS-flowchart.png

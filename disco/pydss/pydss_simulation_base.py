@@ -6,12 +6,7 @@ import logging
 import os
 import re
 
-from PyDSS.exceptions import (
-    PyDssConvergenceError,
-    PyDssConvergenceErrorCountExceeded,
-    PyDssConvergenceMaxError,
-    OpenDssConvergenceErrorCountExceeded,
-)
+import PyDSS.exceptions as PyDssExceptions
 from PyDSS.pydss_project import update_pydss_controllers
 from PyDSS.pydss_project import PyDssProject, PyDssScenario
 
@@ -23,9 +18,13 @@ from jade.utils.timing_utils import timed_info
 
 from disco.common import (
     EXIT_CODE_GOOD,
-    EXIT_CODE_CONVERGENCE_ERROR,
     LOADS_SUM_GROUP_FILENAME,
     PV_SYSTEMS_SUM_GROUP_FILENAME,
+)
+from disco.exceptions import (
+    PyDssConvergenceError,
+    PyDssConvergenceErrorCountExceeded,
+    PyDssConvergenceMaxError,
 )
 from disco.pydss.common import ConfigType
 from disco.events import EVENT_NO_CONVERGENCE
@@ -298,28 +297,28 @@ class PyDssSimulationBase(JobExecutionInterface, abc.ABC):
         ret = EXIT_CODE_GOOD
         try:
             self._pydss_project.run(logging_configured=False, zip_project=True)
-            ret = self.check_convergence_problems()
-            # TODO DT:
-            ret = EXIT_CODE_GOOD
-        except (
-            PyDssConvergenceError,
-            PyDssConvergenceErrorCountExceeded,
-            PyDssConvergenceMaxError,
-            OpenDssConvergenceErrorCountExceeded,
-        ):
+            self.check_convergence_problems()
+        except PyDssExceptions.PyDssConvergenceError:
             logger.exception("Simulation failed with a convergence error")
-            ret = EXIT_CODE_CONVERGENCE_ERROR
+            ret = PyDssConvergenceError
+        except PyDssExceptions.PyDssConvergenceErrorCountExceeded:
+            logger.exception("Simulation failed with a convergence error")
+            ret = PyDssConvergenceMaxError
+        except PyDssExceptions.PyDssConvergenceMaxError:
+            logger.exception("Simulation failed with a convergence error")
+            ret = PyDssConvergenceMaxError
         finally:
             os.chdir(orig_dir)
 
-        self.list_results_files()
+        # This may be used again in the future.
+        # self.list_results_files()
         return ret
 
     def check_convergence_problems(self):
         """Logs events for convergence errors."""
         problems = detect_convergence_problems(self._pydss_project.project_path)
         if not problems:
-            return 0
+            return
 
         # This is disabled because there can be huge counts. There is no need to duplicate them.
         #for problem in problems:
@@ -332,6 +331,4 @@ class PyDssSimulationBase(JobExecutionInterface, abc.ABC):
         #    )
         #    log_event(event)
 
-        logger.error("Job failed with %s convergence problems", len(problems))
-
-        return 1
+        logger.error("Job experienced with %s convergence problems", len(problems))

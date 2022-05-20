@@ -12,7 +12,6 @@ from PyDSS.reports.pv_reports import CONTROL_MODE_SCENARIO
 
 from disco.distribution.deployment_parameters import DeploymentParameters
 from disco.enums import SimulationHierarchy, SimulationType
-from disco.exceptions import PyDssJobException
 from disco.pydss.pydss_configuration_base import PyDssConfigurationBase
 from disco.pydss.common import ConfigType
 from disco.extensions.pydss_simulation.pydss_inputs import PyDssInputs
@@ -258,10 +257,6 @@ class PyDssConfiguration(PyDssConfigurationBase):
         Returns
         -------
         DeploymentParameters
-
-        Raises
-        ------
-        PyDssJobException
 
         """
         # TODO: callers should just call this.

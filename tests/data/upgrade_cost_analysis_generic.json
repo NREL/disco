@@ -25,49 +25,21 @@
     "place_new_regulators": false,
     "use_ltc_placement": false
   },
-  "pydss_controllers": {
-    "pv_controller": {
-      "control1": "VVar",
-      "control2": "None",
-      "control3": "None",
-      "pf": 1,
-      "pf_min": 0.8,
-      "pf_max": 1.0,
-      "p_min": 0.0,
-      "p_max": 1.0,
-      "u_min": 0.94,
-      "u_db_min": 0.97,
-      "u_db_max": 1.03,
-      "u_max": 1.06,
-      "q_lim_pu": 0.44,
-      "pf_lim": 0.9,
-      "enable_pf_limit": false,
-      "u_min_c": 1.06,
-      "u_max_c": 1.1,
-      "p_min_vw": 10.0,
-      "vw_type": "Rated Power",
-      "percent_p_cutin": 10.0,
-      "percent_p_cutout": 10.0,
-      "efficiency": 100.0,
-      "priority": "Var",
-      "damp_coef": 0.8
-    }
-  },
-  "enable_pydss_controllers": true,
+  "enable_pydss_controllers": false,
   "include_pf1": true,
   "upgrade_cost_database": "./disco/extensions/upgrade_simulation/upgrades/Generic_DISCO_cost_database_v2.xlsx",
   "jobs": [
     {
       "model_type": "UpgradeCostAnalysisGenericModel",
       "name": "p1uhs21_1247__p1udt5257__close__1__5",
-      "opendss_model_file": "upgrade-models/p1uhs21_1247/p1udt5257/PVDeployments/p1uhs21_1247__p1udt5257__close__1__5.dss",
+      "opendss_model_file": "tests/data/generic-models/p1uhs21_1247/p1udt5257/PVDeployments/p1uhs21_1247__p1udt5257__close__1__5.dss",
       "blocked_by": [],
       "estimated_run_minutes": null
     },
     {
       "model_type": "UpgradeCostAnalysisGenericModel",
       "name": "p1uhs21_1247__p1udt5257__close__1__15",
-      "opendss_model_file": "upgrade-models/p1uhs21_1247/p1udt5257/PVDeployments/p1uhs21_1247__p1udt5257__close__1__5.dss",
+      "opendss_model_file": "tests/data/generic-models/p1uhs21_1247/p1udt5257/PVDeployments/p1uhs21_1247__p1udt5257__close__1__15.dss",
       "blocked_by": [],
       "estimated_run_minutes": null
     }

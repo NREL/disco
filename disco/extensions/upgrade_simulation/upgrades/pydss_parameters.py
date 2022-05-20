@@ -5,6 +5,8 @@ from PyDSS.simulation_input_models import ProjectModel
 from PyDSS.common import SimulationType
 from PyDSS.controllers import CircuitElementController, ControllerManager
 
+from disco.exceptions import PyDssConvergenceError
+
 
 logger = logging.getLogger(__name__)
 
@@ -32,5 +34,5 @@ def pydss_solve_and_check(raise_exception=False, **kwargs):
     if not pydss_pass_flag:
         logger.info(f"PyDSS Convergence Error")
         if raise_exception:
-            raise Exception("PyDSS solution did not converge")
+            raise PyDssConvergenceError("PyDSS solution did not converge")
     return pydss_pass_flag
