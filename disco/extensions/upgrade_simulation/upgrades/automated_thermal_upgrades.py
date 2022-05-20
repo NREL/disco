@@ -27,6 +27,7 @@ def determine_thermal_upgrades(
     xfmr_upgrade_options_file,
     thermal_summary_file,
     thermal_upgrades_dss_filepath,
+    upgraded_master_dss_filepath,
     output_json_line_upgrades_filepath,
     output_json_xfmr_upgrades_filepath,
     feeder_stats_json_file,
@@ -42,7 +43,8 @@ def determine_thermal_upgrades(
     logger.info("Initial simulation parameters: %s", initial_simulation_params)
     create_plots = thermal_config["create_plots"]
     # start upgrades
-    simulation_params = reload_dss_circuit(dss_file_list=[master_path], commands_list=None, **initial_simulation_params)
+    initial_dss_file_list = [master_path]
+    simulation_params = reload_dss_circuit(dss_file_list=initial_dss_file_list, commands_list=None, **initial_simulation_params)
     timepoint_multipliers = thermal_config["timepoint_multipliers"]
 
     if timepoint_multipliers is not None:
@@ -53,8 +55,6 @@ def determine_thermal_upgrades(
     
     voltage_upper_limit = thermal_config["voltage_upper_limit"]
     voltage_lower_limit = thermal_config["voltage_lower_limit"]
-    feeder_stats = {"before_upgrades": get_feeder_stats(dss)}  # save feeder stats
-    dump_data(feeder_stats, feeder_stats_json_file, indent=4)
     if thermal_config["read_external_catalog"]:
         with open(thermal_config["external_catalog"]) as json_file:
             external_upgrades_technical_catalog = json.load(json_file)
@@ -88,7 +88,11 @@ def determine_thermal_upgrades(
                                                                     "overloaded"]["name"].unique())
     orig_ckt_info = get_circuit_info()
     circuit_source = orig_ckt_info['source_bus']
-    
+    feeder_stats = {"feeder_metadata": {}, "stage_results": []}
+    feeder_stats["feeder_metadata"].update(get_feeder_stats(dss))
+    feeder_stats["stage_results"].append( get_upgrade_stage_stats(dss, upgrade_stage="Initial", upgrade_type="thermal", xfmr_loading_df=initial_xfmr_loading_df, line_loading_df=initial_line_loading_df, 
+                                        bus_voltages_df=initial_bus_voltages_df) )
+    dump_data(feeder_stats, feeder_stats_json_file, indent=4)   # save feeder stats
     if len(initial_overloaded_xfmr_list) > 0 or len(initial_overloaded_line_list) > 0:
         n = len(initial_overloaded_xfmr_list) +  len(initial_overloaded_line_list)
         equipment_with_violations = {"Transformer": initial_xfmr_loading_df, "Line": initial_line_loading_df}
@@ -109,7 +113,7 @@ def determine_thermal_upgrades(
         stage="Initial",
         upgrade_type="Thermal",
         # upgrade_status = upgrade_status,
-        simulation_time_s = np.nan,
+        simulation_time_s = 0.0,
         thermal_violations_present=(len(initial_overloaded_xfmr_list) + len(initial_overloaded_line_list)) > 0,
         voltage_violations_present=(len(initial_undervoltage_bus_list) + len(initial_overvoltage_bus_list)) > 0,
         max_bus_voltage=initial_bus_voltages_df['Max per unit voltage'].max(),
@@ -213,14 +217,13 @@ def determine_thermal_upgrades(
                     f"This indicates that feeder was extremely overloaded to start with.")
     if any("new " in string.lower() for string in commands_list):  # if new equipment is added.
         commands_list.append("CalcVoltageBases")
+    commands_list.append("Solve")
     write_text_file(string_list=commands_list, text_file_path=thermal_upgrades_dss_filepath)
-    reload_dss_circuit(dss_file_list=[master_path, thermal_upgrades_dss_filepath], commands_list=None, **simulation_params,)
-    (
-        bus_voltages_df,
-        undervoltage_bus_list,
-        overvoltage_bus_list,
-        buses_with_violations,
-    ) = get_bus_voltages(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
+    redirect_command_list = create_upgraded_master_dss(dss_file_list=initial_dss_file_list + [thermal_upgrades_dss_filepath], upgraded_master_dss_filepath=upgraded_master_dss_filepath)
+    write_text_file(string_list=redirect_command_list, text_file_path=upgraded_master_dss_filepath)
+    reload_dss_circuit(dss_file_list=[upgraded_master_dss_filepath], commands_list=None, **simulation_params,)
+    bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(voltage_upper_limit=voltage_upper_limit, 
+                                                                                                           voltage_lower_limit=voltage_lower_limit, **simulation_params)
     xfmr_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["transformer_upper_limit"], 
                                                 equipment_type="transformer", **simulation_params)
     line_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["line_upper_limit"], 
@@ -239,6 +242,13 @@ def determine_thermal_upgrades(
                                 equipment_with_violations=equipment_with_violations, circuit_source=circuit_source)
         plot_voltage_violations(fig_folder=thermal_upgrades_directory, title="Bus violations after thermal upgrades_"+str(len(buses_with_violations)), 
                                 buses_with_violations=buses_with_violations, circuit_source=circuit_source, enable_detailed=True)
+    if os.path.exists(feeder_stats_json_file):
+        feeder_stats = load_data(feeder_stats_json_file)
+    else:
+        feeder_stats = {}
+    feeder_stats["stage_results"].append( get_upgrade_stage_stats(dss, upgrade_stage="Final", upgrade_type="thermal", xfmr_loading_df=xfmr_loading_df, line_loading_df=line_loading_df, 
+                                        bus_voltages_df=bus_voltages_df) )
+    dump_data(feeder_stats, feeder_stats_json_file, indent=4)
     end_time = time.time()
     logger.info(f"Simulation end time: {end_time}")
     simulation_time = end_time - start_time

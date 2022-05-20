@@ -28,6 +28,7 @@ def determine_voltage_upgrades(
     voltage_config,
     thermal_upgrades_dss_filepath,
     voltage_upgrades_dss_filepath,
+    upgraded_master_dss_filepath,
     voltage_summary_file,
     output_json_voltage_upgrades_filepath,
     feeder_stats_json_file,
@@ -61,7 +62,6 @@ def determine_voltage_upgrades(
         ),
         1,
     )
-
     # default subltc settings and customization
     default_subltc_settings = DEFAULT_SUBLTC_SETTINGS
     default_subltc_settings["vreg"] = 1.03 * voltage_config["nominal_voltage"]
@@ -74,8 +74,8 @@ def determine_voltage_upgrades(
     
     initial_simulation_params = {"enable_pydss_solve": enable_pydss_solve, "pydss_volt_var_model": pydss_volt_var_model,
                                  "dc_ac_ratio": dc_ac_ratio}
-    dss_file_list = [master_path, thermal_upgrades_dss_filepath]
-    simulation_params = reload_dss_circuit(dss_file_list=dss_file_list, commands_list=None, **initial_simulation_params)
+    initial_dss_file_list = [master_path, thermal_upgrades_dss_filepath]
+    simulation_params = reload_dss_circuit(dss_file_list=initial_dss_file_list, commands_list=None, **initial_simulation_params)
     simulation_params.update({"timepoint_multipliers": timepoint_multipliers, "multiplier_type": multiplier_type})
     # reading original objects (before upgrades)
     orig_ckt_info = get_circuit_info()
@@ -106,13 +106,20 @@ def determine_voltage_upgrades(
     initial_overloaded_line_list = list(initial_line_loading_df.loc[initial_line_loading_df['status'] ==
                                                                     'overloaded']['name'].unique())
 
+    if os.path.exists(feeder_stats_json_file):
+        feeder_stats = load_data(feeder_stats_json_file)
+    else:
+        feeder_stats = {}
+    feeder_stats["stage_results"].append( get_upgrade_stage_stats(dss, upgrade_stage="Initial", upgrade_type="voltage", xfmr_loading_df=initial_xfmr_loading_df, line_loading_df=initial_line_loading_df, 
+                                        bus_voltages_df=initial_bus_voltages_df) )
+    dump_data(feeder_stats, feeder_stats_json_file, indent=4)
     scenario = get_scenario_name(enable_pydss_solve, pydss_volt_var_model)
     initial_results = UpgradeResultModel(
         name = job_name, 
         scenario = scenario,
         stage = "Initial",
         upgrade_type = "Voltage",
-        simulation_time_s = np.nan,
+        simulation_time_s = 0.0,
         thermal_violations_present = (len(initial_overloaded_xfmr_list) + len(initial_overloaded_line_list)) > 0,
         voltage_violations_present = (len(initial_undervoltage_bus_list) + len(initial_overvoltage_bus_list)) > 0,
         max_bus_voltage = initial_bus_voltages_df['Max per unit voltage'].max(),
@@ -169,7 +176,7 @@ def determine_voltage_upgrades(
             logger.info("Settings sweep for existing reg control devices (excluding substation LTC).")
             regcontrols_df, reg_sweep_commands_list = sweep_and_choose_regcontrol_setting(voltage_config=voltage_config, initial_regcontrols_df=orig_regcontrols_df, 
                                                         upper_limit=voltage_upper_limit, lower_limit=voltage_lower_limit, 
-                                                        dss_file_list=dss_file_list, deciding_field=deciding_field, correct_parameters=True, 
+                                                        dss_file_list=initial_dss_file_list, deciding_field=deciding_field, correct_parameters=True, 
                                                         exclude_sub_ltc=True, only_sub_ltc=False, previous_dss_commands_list=dss_commands_list, 
                                                         fig_folder=os.path.join(voltage_upgrades_directory, "interim"), create_plots=create_plots, circuit_source=circuit_source,
                                                         title="Bus violations after existing vreg sweep",
@@ -189,7 +196,7 @@ def determine_voltage_upgrades(
         if (voltage_config['use_ltc_placement']) and (len(buses_with_violations) > 0):
             subltc_results_dict = determine_substation_ltc_upgrades(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, 
                                     orig_regcontrols_df=orig_regcontrols_df, orig_ckt_info=orig_ckt_info, circuit_source=circuit_source, 
-                                    default_subltc_settings=default_subltc_settings, voltage_config=voltage_config, dss_file_list=dss_file_list, 
+                                    default_subltc_settings=default_subltc_settings, voltage_config=voltage_config, dss_file_list=initial_dss_file_list, 
                                     comparison_dict=comparison_dict, deciding_field=deciding_field, previous_dss_commands_list=dss_commands_list, 
                                     best_setting_so_far=best_setting_so_far, fig_folder=os.path.join(voltage_upgrades_directory, "interim"), create_plots=create_plots, 
                                     default_capacitor_settings=default_capacitor_settings, **simulation_params)
@@ -214,7 +221,7 @@ def determine_voltage_upgrades(
                                              voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, 
                                              deciding_field=deciding_field, circuit_source=circuit_source, 
                                              default_regcontrol_settings=default_regcontrol_settings, comparison_dict=comparison_dict, 
-                                             best_setting_so_far=best_setting_so_far, dss_file_list=dss_file_list, 
+                                             best_setting_so_far=best_setting_so_far, dss_file_list=initial_dss_file_list, 
                                              previous_dss_commands_list=dss_commands_list, fig_folder=os.path.join(voltage_upgrades_directory, "interim"), 
                                              create_plots=create_plots, **simulation_params)
             best_setting_so_far = new_reg_results_dict["best_setting_so_far"]
@@ -227,15 +234,11 @@ def determine_voltage_upgrades(
 
     if any("new " in string.lower() for string in dss_commands_list):  # if new equipment is added.
         dss_commands_list.append("CalcVoltageBases")
+    dss_commands_list.append("Solve")
     write_text_file(string_list=dss_commands_list, text_file_path=voltage_upgrades_dss_filepath)
-    reload_dss_circuit(dss_file_list=[master_path, thermal_upgrades_dss_filepath, voltage_upgrades_dss_filepath],
-                       commands_list=None, **simulation_params)
-    if os.path.exists(feeder_stats_json_file):
-        feeder_stats = load_data(feeder_stats_json_file)
-    else:
-        feeder_stats = {}
-    feeder_stats["after_upgrades"] = get_feeder_stats(dss)
-    dump_data(feeder_stats, feeder_stats_json_file, indent=4)
+    redirect_command_list = create_upgraded_master_dss(dss_file_list=initial_dss_file_list + [voltage_upgrades_dss_filepath], upgraded_master_dss_filepath=upgraded_master_dss_filepath)
+    write_text_file(string_list=redirect_command_list, text_file_path=upgraded_master_dss_filepath)
+    reload_dss_circuit(dss_file_list=[upgraded_master_dss_filepath], commands_list=None, **simulation_params,)
     # reading new objects (after upgrades)
     new_ckt_info = get_circuit_info()
     new_regcontrols_df = get_regcontrol_info(correct_PT_ratio=True, nominal_voltage=voltage_config["nominal_voltage"])
@@ -265,6 +268,13 @@ def determine_voltage_upgrades(
     if (upgrade_status == "Voltage Upgrades Required") and create_plots:
         plot_voltage_violations(fig_folder=voltage_upgrades_directory, title="Bus violations after voltage upgrades_"+str(len(buses_with_violations)), 
                                     buses_with_violations=buses_with_violations, circuit_source=circuit_source, enable_detailed=True)
+    if os.path.exists(feeder_stats_json_file):
+        feeder_stats = load_data(feeder_stats_json_file)
+    else:
+        feeder_stats = {}
+    feeder_stats["stage_results"].append( get_upgrade_stage_stats(dss, upgrade_stage="Final", upgrade_type="voltage", xfmr_loading_df=xfmr_loading_df, line_loading_df=line_loading_df, 
+                                        bus_voltages_df=bus_voltages_df) )
+    dump_data(feeder_stats, feeder_stats_json_file, indent=4) 
     end_time = time.time()
     logger.info(f"Simulation end time: {end_time}")
     simulation_time = end_time - start_time

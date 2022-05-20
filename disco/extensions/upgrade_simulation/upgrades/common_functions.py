@@ -158,6 +158,16 @@ def write_text_file(string_list, text_file_path):
     pathlib.Path(text_file_path).write_text("\n".join(string_list))
 
 
+def create_upgraded_master_dss(dss_file_list, upgraded_master_dss_filepath):
+    """Function to create master dss with redirects to upgrades dss file.
+    The redirect paths in this file are relative to the file"""
+    command_list = []
+    for filename in dss_file_list:
+        rel_filename = os.path.relpath(filename, os.path.dirname(upgraded_master_dss_filepath))
+        command_list.append(f"Redirect {rel_filename}")
+    return command_list
+
+
 def create_dataframe_from_nested_dict(user_dict, index_names):
     """This function creates dataframe from a nested dictionary
 
@@ -256,24 +266,66 @@ def get_feeder_stats(dss):
         pv_kw = pv_df['kW'].sum()
         pv_kVARated = pv_df['kVARated'].sum()
         
-    ckt_info_dict = get_circuit_info()
     data_dict = {
-    "num_buses": dss.Circuit.NumBuses(),
-    "num_nodes": dss.Circuit.NumNodes(),
-    "num_loads": dss.Loads.Count(),
-    "num_lines": dss.Lines.Count(),
-    "num_transformers": dss.Transformers.Count(),
-    "num_pv_systems": dss.PVsystems.Count(),
-    "num_capacitors": dss.Capacitors.Count(),
-    "num_regulators": dss.RegControls.Count(),
     'total_load(kVABase)': load_kVABase,
     'total_load(kW)': load_kw,
     'total_PV(kW)': pv_kw,
     'total_PV(kVARated)': pv_kVARated,
     }
-    ckt_info_dict.update(data_dict)
-    return ckt_info_dict
+    return data_dict
 
+
+def get_upgrade_stage_stats(dss, upgrade_stage, upgrade_type, xfmr_loading_df, line_loading_df, bus_voltages_df, **kwargs):
+    """This function gives upgrade stage stats for a feeder 
+    upgrade_stage can be Initial or Final
+    upgrade_type can be thermal or voltage
+    
+    """
+    final_dict = {"stage": upgrade_stage, "upgrade_type": upgrade_type}
+    ckt_info_dict = get_circuit_info()
+    final_dict["feeder_components"] = ckt_info_dict
+    final_dict["feeder_components"].update({
+                                        "num_nodes": dss.Circuit.NumNodes(),
+                                        "num_loads": dss.Loads.Count(),
+                                        "num_lines": dss.Lines.Count(),
+                                        "num_transformers": dss.Transformers.Count(),
+                                        "num_pv_systems": dss.PVsystems.Count(),
+                                        "num_capacitors": dss.Capacitors.Count(),
+                                        "num_regulators": dss.RegControls.Count(),
+                                        } )
+    equipment_dict = combine_equipment_health_stats(xfmr_loading_df, line_loading_df, bus_voltages_df, **kwargs)
+    final_dict.update(equipment_dict)
+    return final_dict
+
+
+def combine_equipment_health_stats(xfmr_loading_df, line_loading_df, bus_voltages_df, **kwargs):
+    line_properties = kwargs.get("line_properties", None)
+    xfmr_properties = kwargs.get("xfmr_properties", None)
+    voltage_properties = kwargs.get("voltage_properties", None)
+    
+    final_dict = {}
+    if line_properties is None:
+        line_properties = ['name', 'phases','normamps', 'kV', 'line_placement',  'length', 'units', 'max_amp_loading', 
+                           'max_per_unit_loading', 'status']
+    if xfmr_properties is None:
+        xfmr_properties = ['name', 'phases', 'windings', 'conns', 'kVs', 'kVAs', 'amp_limit_per_phase','max_amp_loading', 
+                           'max_per_unit_loading', 'status']  
+    if voltage_properties is None:
+        voltage_properties = ['name', 'Max per unit voltage', 'Min per unit voltage',  'Overvoltage violation', 
+                              'Max voltage_deviation', 'Undervoltage violation', 'Min voltage_deviation']
+        
+    # some file reformatting
+    if "conns" in xfmr_properties:
+        xfmr_loading_df["conns"] = xfmr_loading_df["conns"].apply(ast.literal_eval)
+    if "kVs" in xfmr_properties:
+        xfmr_loading_df["kVs"] = xfmr_loading_df["kVs"].apply(ast.literal_eval)
+    if "windings" in xfmr_properties:
+        xfmr_loading_df["windings"] = xfmr_loading_df["windings"].astype(int)
+    
+    final_dict.update({"transformer_loading": xfmr_loading_df[xfmr_properties].to_dict(orient="records")})
+    final_dict.update({"line_loading": line_loading_df[line_properties].to_dict(orient="records")})
+    final_dict.update({"bus_voltage": bus_voltages_df[voltage_properties].to_dict(orient="records")})
+    return final_dict
 
 
 def get_circuit_info():
@@ -993,7 +1045,7 @@ def get_bus_voltages_instance(voltage_upper_limit, voltage_lower_limit, raise_ex
             data_dict["Max voltage_deviation"] = data_dict["Max per unit voltage"] - voltage_upper_limit
         else:
             data_dict['Overvoltage violation'] = False
-            data_dict["Max voltage_deviation"] = 0
+            data_dict["Max voltage_deviation"] = 0.0
 
         # check for undervoltage violation
         if data_dict["Min per unit voltage"] < voltage_lower_limit:
@@ -1001,7 +1053,7 @@ def get_bus_voltages_instance(voltage_upper_limit, voltage_lower_limit, raise_ex
             data_dict["Min voltage_deviation"] = voltage_lower_limit - data_dict["Min per unit voltage"]
         else:
             data_dict['Undervoltage violation'] = False
-            data_dict["Min voltage_deviation"] = 0
+            data_dict["Min voltage_deviation"] = 0.0
         all_dict[data_dict["name"]] = data_dict
 
     all_df = pd.DataFrame.from_dict(all_dict, orient='index').reset_index(drop=True)
@@ -1061,7 +1113,7 @@ def get_voltage_violations(voltage_upper_limit, voltage_lower_limit, bus_voltage
             bus_voltages_df.at[index, "Max voltage_deviation"] = row["Max per unit voltage"] - voltage_upper_limit
         else:
             bus_voltages_df.at[index, 'Overvoltage violation'] = False
-            bus_voltages_df.at[index, "Max voltage_deviation"] = 0
+            bus_voltages_df.at[index, "Max voltage_deviation"] = 0.0
 
         # check for undervoltage violation
         if row["Min per unit voltage"] < voltage_lower_limit:
@@ -1069,7 +1121,7 @@ def get_voltage_violations(voltage_upper_limit, voltage_lower_limit, bus_voltage
             bus_voltages_df.at[index, "Min voltage_deviation"] = voltage_lower_limit - row["Min per unit voltage"]
         else:
             bus_voltages_df.at[index, 'Undervoltage violation'] = False
-            bus_voltages_df.at[index, "Min voltage_deviation"] = 0
+            bus_voltages_df.at[index, "Min voltage_deviation"] = 0.0
     
     bus_voltages_df.reset_index(inplace=True)
     undervoltage_bus_list = list(bus_voltages_df.loc[bus_voltages_df['Undervoltage violation'] == True]['name'].unique())
