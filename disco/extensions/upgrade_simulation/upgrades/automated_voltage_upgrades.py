@@ -74,7 +74,7 @@ def determine_voltage_upgrades(
     
     initial_simulation_params = {"enable_pydss_solve": enable_pydss_solve, "pydss_volt_var_model": pydss_volt_var_model,
                                  "dc_ac_ratio": dc_ac_ratio}
-    initial_dss_file_list = [os.path.abspath(master_path), os.path.abspath(thermal_upgrades_dss_filepath)]
+    initial_dss_file_list = [master_path, thermal_upgrades_dss_filepath]
     simulation_params = reload_dss_circuit(dss_file_list=initial_dss_file_list, commands_list=None, **initial_simulation_params)
     simulation_params.update({"timepoint_multipliers": timepoint_multipliers, "multiplier_type": multiplier_type})
     # reading original objects (before upgrades)
@@ -236,7 +236,7 @@ def determine_voltage_upgrades(
         dss_commands_list.append("CalcVoltageBases")
     dss_commands_list.append("Solve")
     write_text_file(string_list=dss_commands_list, text_file_path=voltage_upgrades_dss_filepath)
-    redirect_command_list = create_upgraded_master_dss(dss_file_list=initial_dss_file_list + [os.path.abspath(voltage_upgrades_dss_filepath)])
+    redirect_command_list = create_upgraded_master_dss(dss_file_list=initial_dss_file_list + [voltage_upgrades_dss_filepath], upgraded_master_dss_filepath=upgraded_master_dss_filepath)
     write_text_file(string_list=redirect_command_list, text_file_path=upgraded_master_dss_filepath)
     reload_dss_circuit(dss_file_list=[upgraded_master_dss_filepath], commands_list=None, **simulation_params,)
     # reading new objects (after upgrades)

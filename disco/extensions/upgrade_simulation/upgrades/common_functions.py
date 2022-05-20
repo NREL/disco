@@ -158,11 +158,13 @@ def write_text_file(string_list, text_file_path):
     pathlib.Path(text_file_path).write_text("\n".join(string_list))
 
 
-def create_upgraded_master_dss(dss_file_list):
-    """Function to create master dss with redirects to upgrades dss file"""
+def create_upgraded_master_dss(dss_file_list, upgraded_master_dss_filepath):
+    """Function to create master dss with redirects to upgrades dss file.
+    The redirect paths in this file are relative to the file"""
     command_list = []
     for filename in dss_file_list:
-        command_list.append(f"Redirect {filename}")
+        rel_filename = os.path.relpath(filename, os.path.dirname(upgraded_master_dss_filepath))
+        command_list.append(f"Redirect {rel_filename}")
     return command_list
 
 

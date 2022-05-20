@@ -43,7 +43,7 @@ def determine_thermal_upgrades(
     logger.info("Initial simulation parameters: %s", initial_simulation_params)
     create_plots = thermal_config["create_plots"]
     # start upgrades
-    initial_dss_file_list = [os.path.abspath(master_path)]
+    initial_dss_file_list = [master_path]
     simulation_params = reload_dss_circuit(dss_file_list=initial_dss_file_list, commands_list=None, **initial_simulation_params)
     timepoint_multipliers = thermal_config["timepoint_multipliers"]
 
@@ -219,7 +219,7 @@ def determine_thermal_upgrades(
         commands_list.append("CalcVoltageBases")
     commands_list.append("Solve")
     write_text_file(string_list=commands_list, text_file_path=thermal_upgrades_dss_filepath)
-    redirect_command_list = create_upgraded_master_dss(dss_file_list=initial_dss_file_list + [os.path.abspath(thermal_upgrades_dss_filepath)])
+    redirect_command_list = create_upgraded_master_dss(dss_file_list=initial_dss_file_list + [thermal_upgrades_dss_filepath], upgraded_master_dss_filepath=upgraded_master_dss_filepath)
     write_text_file(string_list=redirect_command_list, text_file_path=upgraded_master_dss_filepath)
     reload_dss_circuit(dss_file_list=[upgraded_master_dss_filepath], commands_list=None, **simulation_params,)
     bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(voltage_upper_limit=voltage_upper_limit, 
