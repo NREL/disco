@@ -22,10 +22,14 @@ def generate_return_codes(output_dir):
         for item in EXCEPTIONS_TO_ERROR_CODES.values():
             f_out.write(str(item["error_code"]))
             f_out.write(",")
+            f_out.write('"')
             f_out.write(item["description"])
+            f_out.write('"')
             if item.get("corrective_action"):
                 f_out.write(",")
+                f_out.write('"')
                 f_out.write(item["corrective_action"])
+                f_out.write('"')
             f_out.write("\n")
     
 

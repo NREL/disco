@@ -68,14 +68,14 @@ EXCEPTIONS_TO_ERROR_CODES = {
     ExceededParallelLinesLimit: {
         "description": "An Upgrades simulation exceeded the limit for parallel lines.",
         "corrective_action": "If not already done, enable ThermalUpgradeParamsModel.read_external_catalog"
-        "and provide an external catalog. Or increase ThermalUpgradeParamsModel.parallel_lines_limit to allow more parallel equipment to"
+        "and provide an external catalog. Or, increase ThermalUpgradeParamsModel.parallel_lines_limit to allow more parallel equipment to"
         "be placed to resolve thermal violations.",
         "error_code": 115,
     },
     ExceededParallelTransformersLimit: {
         "description": "An Upgrades simulation exceeded the limit for parallel transformers.",
         "corrective_action": "If not already done, enable ThermalUpgradeParamsModel.read_external_catalog"
-        "and provide an external catalog. Or increase ThermalUpgradeParamsModel.parallel_transformers_limit to allow more parallel equipment to"
+        "and provide an external catalog. Or, increase ThermalUpgradeParamsModel.parallel_transformers_limit to allow more parallel equipment to"
         "be placed to resolve thermal violations.",
         "error_code": 116,
     },
@@ -91,7 +91,7 @@ EXCEPTIONS_TO_ERROR_CODES = {
     },
     OpenDssConvergenceError: {
         "description": "OpenDSS failed to converge.",
-        "corrective_action": "Check the OpenDSS model passed. Also refer to the OpenDSS manual available online, to vary settings for convergence.",
+        "corrective_action": "Check the OpenDSS model. Also, refer to the OpenDSS manual to vary settings for convergence.",
         "error_code": 119,
     },
     PyDssConvergenceError: {
@@ -121,7 +121,7 @@ EXCEPTIONS_TO_ERROR_CODES = {
     UpgradesInvalidViolationIncrease: {
         "description": "An Upgrades simulation detected an invalid increase in violations.",
         "corrective_action": "This could happen in cases when lines or transformers are extremely overloaded. Check and "
-        "modify OpenDSS model for such instances",
+        "modify OpenDSS model for such instances.",
         "error_code": 125,
     },
 }
