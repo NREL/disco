@@ -42,6 +42,17 @@ class UpgradeParamsBaseModel(BaseModel):
         extra = "forbid"
         use_enum_values = False
 
+    @classmethod
+    def from_file(cls, filename: Path):
+        """Return an instance from a file
+
+        Parameters
+        ----------
+        filename : Path
+
+        """
+        return cls(**load_data(filename))
+
 
 class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
     """Thermal Upgrade Parameters for all jobs in a simulation"""
@@ -243,7 +254,7 @@ class PyDssControllerModels(UpgradeParamsBaseModel):
     )
 
 
-class UpgradeCostAnalysisSimulationModel(BaseModel):
+class UpgradeCostAnalysisSimulationModel(UpgradeParamsBaseModel):
     """Defines the jobs in an upgrade cost analysis simulation."""
 
     class Config:
@@ -321,17 +332,6 @@ class UpgradeCostAnalysisSimulationModel(BaseModel):
         if diff:
             raise ValueError(f"Unsupported values in upgrade_order: {diff}")
         return upgrade_order
-
-    @classmethod
-    def from_file(cls, filename: Path):
-        """Return an instance of UpgradeCostAnalysisSimulationModel from a file
-
-        Parameters
-        ----------
-        filename : Path
-
-        """
-        return cls(**load_data(filename))
 
     def has_pydss_controllers(self):
         """Return True if a PyDSS controller is defined.
