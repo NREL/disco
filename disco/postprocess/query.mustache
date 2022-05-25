@@ -14,12 +14,8 @@ CREATE TEMP VIEW jt_all AS
         ,tm.sample
         ,tm.penetration_level
         {{#thermal}}
-        ,tm.line_max_instantaneous_loading_pct
-        ,tm.line_max_moving_average_loading_pct
         ,tm.line_num_time_points_with_instantaneous_violations
         ,tm.line_num_time_points_with_moving_average_violations
-        ,tm.transformer_max_instantaneous_loading_pct
-        ,tm.transformer_max_moving_average_loading_pct
         ,tm.transformer_num_time_points_with_instantaneous_violations
         ,tm.transformer_num_time_points_with_moving_average_violations
         ,tm.transformer_instantaneous_threshold
@@ -60,12 +56,8 @@ CREATE TEMP VIEW bad_feeders AS
     SELECT
         feeder
         {{#thermal}}
-        ,MAX(line_max_instantaneous_loading_pct) AS line_max_instantaneous_loading_pct
-        ,MAX(line_max_moving_average_loading_pct) AS line_max_moving_average_loading_pct
         ,MAX(line_num_time_points_with_instantaneous_violations) AS line_num_time_points_with_instantaneous_violations
         ,MAX(line_num_time_points_with_moving_average_violations) AS line_num_time_points_with_moving_average_violations
-        ,MAX(transformer_max_instantaneous_loading_pct) AS transformer_max_instantaneous_loading_pct
-        ,MAX(transformer_max_moving_average_loading_pct) AS transformer_max_moving_average_loading_pct
         ,MAX(transformer_num_time_points_with_instantaneous_violations) AS transformer_num_time_points_with_instantaneous_violations
         ,MAX(transformer_num_time_points_with_moving_average_violations) AS transformer_num_time_points_with_moving_average_violations
         {{/thermal}}
@@ -82,9 +74,7 @@ CREATE TEMP VIEW bad_feeders AS
         (
             {{#thermal}}
             (
-                line_max_instantaneous_loading_pct > {{thermal.line_max_instantaneous_loading_pct}}
-                OR line_max_moving_average_loading_pct > {{thermal.line_max_moving_average_loading_pct}}
-                OR line_num_time_points_with_instantaneous_violations > {{thermal.line_num_time_points_with_instantaneous_violations}}
+                line_num_time_points_with_instantaneous_violations > {{thermal.line_num_time_points_with_instantaneous_violations}}
                 OR line_num_time_points_with_moving_average_violations > {{thermal.line_num_time_points_with_moving_average_violations}}
                 OR
                 (
@@ -92,9 +82,7 @@ CREATE TEMP VIEW bad_feeders AS
                     transformer_instantaneous_threshold IS NOT NULL
                     AND
                     (
-                        transformer_max_instantaneous_loading_pct > {{thermal.transformer_max_instantaneous_loading_pct}}
-                        OR transformer_max_moving_average_loading_pct > {{thermal.transformer_max_moving_average_loading_pct}}
-                        OR transformer_num_time_points_with_instantaneous_violations > {{thermal.transformer_num_time_points_with_instantaneous_violations}}
+                        transformer_num_time_points_with_instantaneous_violations > {{thermal.transformer_num_time_points_with_instantaneous_violations}}
                         OR transformer_num_time_points_with_moving_average_violations > {{thermal.transformer_num_time_points_with_moving_average_violations}}
                     )
                 )
@@ -124,12 +112,8 @@ CREATE TEMP VIEW bad_feeders_pct_threshold AS
     SELECT
         feeder
         {{#thermal}}
-        ,line_max_instantaneous_loading_pct / {{thermal.line_max_instantaneous_loading_pct}} AS line_max_instantaneous_loading_pct_pct
-        ,line_max_moving_average_loading_pct / {{thermal.line_max_moving_average_loading_pct}} AS line_max_moving_average_loading_pct_pct
         ,line_num_time_points_with_instantaneous_violations / {{thermal.line_num_time_points_with_instantaneous_violations}} AS line_num_time_points_with_instantaneous_violations_pct
         ,line_num_time_points_with_moving_average_violations / {{thermal.line_num_time_points_with_moving_average_violations}} AS line_num_time_points_with_moving_average_violations_pct
-        ,transformer_max_instantaneous_loading_pct / {{thermal.transformer_max_instantaneous_loading_pct}} AS transformer_max_instantaneous_loading_pct_pct
-        ,transformer_max_moving_average_loading_pct / {{thermal.transformer_max_moving_average_loading_pct}} AS transformer_max_moving_average_loading_pct_pct
         ,transformer_num_time_points_with_instantaneous_violations / {{thermal.transformer_num_time_points_with_instantaneous_violations}} AS transformer_num_time_points_with_instantaneous_violations_pct
         ,transformer_num_time_points_with_moving_average_violations / {{thermal.transformer_num_time_points_with_moving_average_violations}} AS transformer_num_time_points_with_moving_average_violations_pct
         {{/thermal}}
@@ -147,12 +131,8 @@ CREATE TEMP VIEW bad_feeders_violation_count AS
     SELECT
         feeder
         {{#thermal}}
-        ,CASE WHEN line_max_instantaneous_loading_pct_pct > 1.0 THEN 1 ELSE 0 END AS line_max_instantaneous_loading_count
-        ,CASE WHEN line_max_moving_average_loading_pct_pct > 1.0 THEN 1 ELSE 0 END AS line_max_moving_average_loading_count
         ,CASE WHEN line_num_time_points_with_instantaneous_violations_pct > 1.0 THEN 1 ELSE 0 END AS line_num_time_points_with_instantaneous_violations_count
         ,CASE WHEN line_num_time_points_with_moving_average_violations_pct > 1.0 THEN 1 ELSE 0 END AS line_num_time_points_with_moving_average_violations_count
-        ,CASE WHEN transformer_max_instantaneous_loading_pct_pct > 1.0 THEN 1 ELSE 0 END AS transformer_max_instantaneous_loading_count
-        ,CASE WHEN transformer_max_moving_average_loading_pct_pct > 1.0 THEN 1 ELSE 0 END AS transformer_max_moving_average_loading_count
         ,CASE WHEN transformer_num_time_points_with_instantaneous_violations_pct > 1.0 THEN 1 ELSE 0 END AS transformer_num_time_points_with_instantaneous_violations_count
         ,CASE WHEN transformer_num_time_points_with_moving_average_violations_pct > 1.0 THEN 1 ELSE 0 END AS transformer_num_time_points_with_moving_average_violations_count
         {{/thermal}}
@@ -169,12 +149,8 @@ DROP VIEW IF EXISTS bad_feeders_violation_count_overall;
 CREATE TEMP VIEW bad_feeders_violation_count_overall AS
     SELECT
         {{#thermal}}
-        SUM(line_max_instantaneous_loading_count) AS line_max_instantaneous_loading_count
-        ,SUM(line_max_moving_average_loading_count) AS line_max_moving_average_loading_count
-        ,SUM(line_num_time_points_with_instantaneous_violations_count) AS line_num_time_points_with_instantaneous_violations_count
+        SUM(line_num_time_points_with_instantaneous_violations_count) AS line_num_time_points_with_instantaneous_violations_count
         ,SUM(line_num_time_points_with_moving_average_violations_count) AS line_num_time_points_with_moving_average_violations_count
-        ,SUM(transformer_max_instantaneous_loading_count) AS transformer_max_instantaneous_loading_count
-        ,SUM(transformer_max_moving_average_loading_count) AS transformer_max_moving_average_loading_count
         ,SUM(transformer_num_time_points_with_instantaneous_violations_count) AS transformer_num_time_points_with_instantaneous_violations_count
         ,SUM(transformer_num_time_points_with_moving_average_violations_count) AS transformer_num_time_points_with_moving_average_violations_count
         {{/thermal}}
@@ -223,12 +199,8 @@ CREATE TEMP VIEW worst_case AS
         ,penetration_level
         ,transformer_instantaneous_threshold
         {{#thermal}}
-        ,MAX(line_max_instantaneous_loading_pct) as line_max_instantaneous_loading_pct_overall
-        ,MAX(line_max_moving_average_loading_pct) as line_max_moving_average_loading_pct_overall
         ,MAX(line_num_time_points_with_instantaneous_violations) as line_num_time_points_with_instantaneous_violations_overall
         ,MAX(line_num_time_points_with_moving_average_violations) as line_num_time_points_with_moving_average_violations_overall
-        ,MAX(transformer_max_instantaneous_loading_pct) as transformer_max_instantaneous_loading_pct_overall
-        ,MAX(transformer_max_moving_average_loading_pct) as transformer_max_moving_average_loading_pct_overall
         ,MAX(transformer_num_time_points_with_instantaneous_violations) as transformer_num_time_points_with_instantaneous_violations_overall
         ,MAX(transformer_num_time_points_with_moving_average_violations) as transformer_num_time_points_with_moving_average_violations_overall
         {{/thermal}}
@@ -255,18 +227,14 @@ CREATE TEMP VIEW hc_by_sample AS
             {{#thermal}}
             AND
             (
-                line_max_instantaneous_loading_pct_overall <= {{thermal.line_max_instantaneous_loading_pct}}
-                AND line_max_moving_average_loading_pct_overall <= {{thermal.line_max_moving_average_loading_pct}}
-                AND line_num_time_points_with_instantaneous_violations_overall <= {{thermal.line_num_time_points_with_instantaneous_violations}}
+                line_num_time_points_with_instantaneous_violations_overall <= {{thermal.line_num_time_points_with_instantaneous_violations}}
                 AND line_num_time_points_with_moving_average_violations_overall <= {{thermal.line_num_time_points_with_moving_average_violations}}
                 AND
                 (
                     transformer_instantaneous_threshold IS NULL
                     OR
                     (
-                        transformer_max_instantaneous_loading_pct_overall <= {{thermal.transformer_max_instantaneous_loading_pct}}
-                        AND transformer_max_moving_average_loading_pct_overall <= {{thermal.transformer_max_moving_average_loading_pct}}
-                        AND transformer_num_time_points_with_instantaneous_violations_overall <= {{thermal.transformer_num_time_points_with_instantaneous_violations}}
+                        transformer_num_time_points_with_instantaneous_violations_overall <= {{thermal.transformer_num_time_points_with_instantaneous_violations}}
                         AND transformer_num_time_points_with_moving_average_violations_overall <= {{thermal.transformer_num_time_points_with_moving_average_violations}}
                     )
                 )
@@ -315,18 +283,14 @@ CREATE TEMP VIEW hc_per_level1 AS
             {{#thermal}}
             AND
             (
-                line_max_instantaneous_loading_pct_overall <= {{thermal.line_max_instantaneous_loading_pct}}
-                AND line_max_moving_average_loading_pct_overall <= {{thermal.line_max_moving_average_loading_pct}}
-                AND line_num_time_points_with_instantaneous_violations_overall <= {{thermal.line_num_time_points_with_instantaneous_violations}}
+                line_num_time_points_with_instantaneous_violations_overall <= {{thermal.line_num_time_points_with_instantaneous_violations}}
                 AND line_num_time_points_with_moving_average_violations_overall <= {{thermal.line_num_time_points_with_moving_average_violations}}
                 AND
                 (
                     transformer_instantaneous_threshold IS NULL
                     OR
                     (
-                        transformer_max_instantaneous_loading_pct_overall <= {{thermal.transformer_max_instantaneous_loading_pct}}
-                        AND transformer_max_moving_average_loading_pct_overall <= {{thermal.transformer_max_moving_average_loading_pct}}
-                        AND transformer_num_time_points_with_instantaneous_violations_overall <= {{thermal.transformer_num_time_points_with_instantaneous_violations}}
+                        transformer_num_time_points_with_instantaneous_violations_overall <= {{thermal.transformer_num_time_points_with_instantaneous_violations}}
                         AND transformer_num_time_points_with_moving_average_violations_overall <= {{thermal.transformer_num_time_points_with_moving_average_violations}}
                     )
                 )

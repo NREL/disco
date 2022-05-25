@@ -1,5 +1,9 @@
 """Create summary files for hosting capacity results."""
 
+# TODO: This doesn't work with the latest hosting capacity thresholds.
+# We can fix this once we sort out how to handle all thresholds across snapshot
+# and time-series simulations.
+
 import json
 import logging
 import re
