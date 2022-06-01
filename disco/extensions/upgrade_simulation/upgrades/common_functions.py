@@ -46,7 +46,7 @@ def reload_dss_circuit(dss_file_list, commands_list=None,  **kwargs):
     -------
 
     """
-    logger.info("-> Reloading OpenDSS circuit")
+    logger.info("Reloading OpenDSS circuit")
     check_dss_run_command("clear")
     if dss_file_list is None:
         raise Exception("No OpenDSS files have been passed to be loaded.")
@@ -86,7 +86,7 @@ def run_selective_master_dss(master_filepath, **kwargs):
     """
     run_dir = os.getcwd()
     check_dss_run_command("Clear")
-    # logger.info("-->Redirecting master file:")
+    # logger.info("Redirecting master file:")
     # check_dss_run_command(f"Redirect {master_filepath}")
 
     # do this instead of redirect master to ignore some lines (e.g., that solve for the whole year)

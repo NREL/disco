@@ -471,7 +471,7 @@ def compute_voltage_regcontrol_cost(voltage_upgrades_df, vreg_control_cost_datab
         cost_list.append({"type": output_fields_dict[cost_field], "count": count, "total_cost_usd": total_cost, "comment": ""})
     
     # add costs for added transformers (needed for voltage regulators)
-    vreg_xfmr_cost_database = vreg_xfmr_cost_database.append(xfmr_cost_database)
+    vreg_xfmr_cost_database = pd.concat([vreg_xfmr_cost_database, xfmr_cost_database])
     for field in xfmr_fields:
         cost_field = field
         # if at substation

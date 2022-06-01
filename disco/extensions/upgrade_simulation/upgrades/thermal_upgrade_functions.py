@@ -32,15 +32,15 @@ def correct_line_violations(line_loading_df, line_design_pu, line_upgrade_option
     commands_list = []
     # This finds a line code which provides a specified safety margin to a line above its maximum observed loading.
     # If a line code is not found or if line code is too overrated, one or more parallel lines (num_par_lns-1) are added
-    overloaded_loading_df = line_loading_df.loc[
-        line_loading_df["status"] == "overloaded"]
+    overloaded_loading_df = line_loading_df.loc[line_loading_df["status"] == "overloaded"].copy()
     overloaded_loading_df["required_design_amp"] = overloaded_loading_df["max_amp_loading"] / line_design_pu
     deciding_property_list = ["Switch", "kV", "phases", "line_placement",]  # list of properties based on which upgrade is chosen
     line_upgrade_options.set_index(deciding_property_list, inplace=True)
-    overloaded_loading_df.set_index(deciding_property_list, inplace=True)
+    line_upgrade_options = line_upgrade_options.sort_index(level=0)
+    overloaded_loading_df.set_index(deciding_property_list, inplace=True)    
     oversize_limit = 2  # limit to determine if chosen upgrade option is too oversized
     extreme_loading_threshold = 2.25  # from observations, if equipment loading is greater than this factor, it is considered extremely overloaded
-    # in such extremely loaded cases, the equipment is oversized much more, to avoid iterations in upgrades
+    # in such extremely loaded cases, the equipment is oversized much more, to avoid iterations in upgrades    
     if len(overloaded_loading_df) > 0:  # if overloading exists
         # iterate over each overloaded line to find a solution
         for index, row in overloaded_loading_df.iterrows():
@@ -266,7 +266,7 @@ def correct_xfmr_violations(xfmr_loading_df, xfmr_design_pu, xfmr_upgrade_option
     commands_list = []
     # This finds a line code which provides a specified safety margin to a line above its maximum observed loading.
     # If a line code is not found or if line code is too overrated, one or more parallel lines (num_par_lns-1) are added
-    overloaded_loading_df = xfmr_loading_df.loc[xfmr_loading_df["status"] == "overloaded"]
+    overloaded_loading_df = xfmr_loading_df.loc[xfmr_loading_df["status"] == "overloaded"].copy()
     overloaded_loading_df["required_design_amp"] = overloaded_loading_df["max_amp_loading"] / xfmr_design_pu
     # list of properties based on which upgrade is chosen
     deciding_property_list = ["phases", "wdg", "conn", "conns", "kV", "kVs", "LeadLag", "basefreq"]
@@ -274,6 +274,7 @@ def correct_xfmr_violations(xfmr_loading_df, xfmr_design_pu, xfmr_upgrade_option
     xfmr_upgrade_options[['conns', 'kVs']] = xfmr_upgrade_options[['conns', 'kVs']].astype(str)
     overloaded_loading_df[['conns', 'kVs']] = overloaded_loading_df[['conns', 'kVs']].astype(str)
     xfmr_upgrade_options.set_index(deciding_property_list, inplace=True)
+    xfmr_upgrade_options = xfmr_upgrade_options.sort_index(level=0)
     overloaded_loading_df.set_index(deciding_property_list, inplace=True)
     equipment_oversize_limit = 2  # limit to determine if chosen upgrade option is too oversized
     extreme_loading_threshold = 2.25  # if equipment loading is greater than this factor, it is considered extremely overloaded

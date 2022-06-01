@@ -1557,7 +1557,7 @@ def determine_new_regulator_location(circuit_source, initial_buses_with_violatio
     # Iterate by changing number of clusters to be considered in the network, and perform analysis.
     for option_num in range(1, max_regs + 1, 1):
         cluster_option_name = f"cluster_option_{option_num}"
-        logger.info(f"\nClustering option: num_of_clusters: {option_num}")
+        logger.info(f"Clustering option: num_of_clusters: {option_num}")
 
         temp_dict = cluster_and_place_regulator(G=G, square_distance_df=square_distance_df, deciding_field=deciding_field,
                                                 initial_buses_with_violations=initial_buses_with_violations, num_clusters=option_num,
@@ -1610,6 +1610,7 @@ def disable_previous_clustering_option(cluster_group_info_dict):
 def plot_heatmap_distmatrix(square_array, fig_folder):
     # TODO THIS FUNCTION is not used
     plt.figure(figsize=(7, 7))
+    plt.clf()
     ax = sns.heatmap(square_array, linewidth=0.5)
     title = "Distance matrix of nodes with violations"
     plt.title(title)
@@ -1626,7 +1627,6 @@ def plot_feeder(fig_folder, title, circuit_source=None, enable_detailed=False):
     nodes_list = G.nodes()
     Un_G = G.to_undirected()
 
-    plt.figure(figsize=(7, 7))
     plt.figure(figsize=(40, 40), dpi=10)
     plt.clf()
     nx.draw_networkx_edges(Un_G, pos=position_dict, alpha=1.0, width=0.3)
@@ -1682,7 +1682,6 @@ def plot_voltage_violations(fig_folder, title, buses_with_violations, circuit_so
     nodes_list = G.nodes()
     Un_G = G.to_undirected()
 
-    feeder_fig = plt.figure(figsize=(7, 7))
     plt.figure(figsize=(40, 40), dpi=10)
     plt.clf()
     nx.draw_networkx_edges(Un_G, pos=position_dict, alpha=1.0, width=0.3)
@@ -1740,7 +1739,6 @@ def plot_thermal_violations(fig_folder, title, equipment_with_violations, circui
     # nodes_list = G.nodes()
     # edges_list = G.edges()
     Un_G = G.to_undirected()
-    feeder_fig = plt.figure(figsize=(7, 7))
     plt.figure(figsize=(40, 40), dpi=10)
     plt.clf()
     nx.draw_networkx_edges(Un_G, pos=position_dict, alpha=1.0, width=0.3)
@@ -1773,10 +1771,10 @@ def plot_thermal_violations(fig_folder, title, equipment_with_violations, circui
         elif equipment_name == "Line":
             # line violations are plotted as edges
             line_df = equipment_with_violations["Line"]
-            line_df = line_df.loc[line_df['status'] == 'overloaded']
+            line_df = line_df.loc[line_df['status'] == 'overloaded'].copy()
             if len(line_df) > 0: 
-                line_df['bus1'] = line_df['bus1'].str.split('.', expand=True)[0].str.lower()
-                line_df['bus2'] = line_df['bus2'].str.split('.', expand=True)[0].str.lower()
+                line_df.loc[:, "bus1"] = line_df['bus1'].str.split('.', expand=True)[0].str.lower()
+                line_df.loc[:, "bus2"] = line_df['bus2'].str.split('.', expand=True)[0].str.lower()
                 temp_edgelist = list(zip(line_df.bus1, line_df.bus2))
                 temp_line_nodelist = list(line_df['bus1'].unique()) + list(line_df['bus2'].unique())
                 key = "Violation"
@@ -1803,7 +1801,6 @@ def plot_created_clusters(fig_folder, clusters_dict, circuit_source=None):
     position_dict = nx.get_node_attributes(G, 'pos')
     Un_G = G.to_undirected()
     
-    feeder_fig = plt.figure(figsize=(7, 7))
     plt.figure(figsize=(40, 40), dpi=10)
     plt.clf()
     nx.draw_networkx_edges(Un_G, pos=position_dict, alpha=1.0, width=0.3)
