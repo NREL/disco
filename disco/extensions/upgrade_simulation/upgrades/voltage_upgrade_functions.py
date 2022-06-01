@@ -594,10 +594,6 @@ def add_new_regcontrol_command(xfmr_info_series, default_regcontrol_settings, no
     # use secondary voltage to define ptratio
     # If the winding is Wye, the line-to-neutral voltage is used to compute PTratio.
     # Else, the line-to-line voltage is used.
-    if type(xfmr_info_series['kVs']) == str:
-        xfmr_info_series['kVs'] = ast.literal_eval(xfmr_info_series['kVs'])
-    if xfmr_info_series['conns'] == str:
-        xfmr_info_series['conns'] = ast.literal_eval(xfmr_info_series['conns'])
     sec_conn = xfmr_info_series['conns'][-1]
     if sec_conn.lower() == 'wye':
         sec_voltage = xfmr_info_series['kVs'][-1] / (math.sqrt(3))
@@ -2045,7 +2041,6 @@ def get_regulator_upgrades(orig_regcontrols_df, new_regcontrols_df, orig_xfmrs_d
                     else:  # voltage regcontrol is not at substation_xfmr
                         xfmr_df = get_thermal_equipment_info(equipment_type="transformer", compute_loading=False)
                         xfmr_dict = xfmr_df.loc[xfmr_df["name"] == final_reg_upgrades['xfmr_name']].to_dict(orient='records')[0]
-                        xfmr_dict["kVs"] = ast.literal_eval(xfmr_dict["kVs"])
                         
                 elif ctrl_name in new_addition:
                     final_reg_upgrades["reg_added"] = True  # is a new regulator
@@ -2057,7 +2052,6 @@ def get_regulator_upgrades(orig_regcontrols_df, new_regcontrols_df, orig_xfmrs_d
                     else:  # voltage regcontrol is not at substation_xfmr
                         xfmr_df = get_thermal_equipment_info(equipment_type="transformer", compute_loading=False)
                         xfmr_dict = xfmr_df.loc[xfmr_df["name"] == final_reg_upgrades['xfmr_name']].to_dict(orient='records')[0]
-                        xfmr_dict["kVs"] = ast.literal_eval(xfmr_dict["kVs"])
                     # if regulator transformer is not in the original xfmr list, then a new xfmr
                     if final_reg_upgrades["xfmr_name"] not in orig_xfmr_info:
                         final_reg_upgrades["new_xfmr"] = True  # is a new xfmr

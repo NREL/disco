@@ -24,6 +24,13 @@ from disco.exceptions import (
 
 logger = logging.getLogger(__name__)
 
+DSS_XFMR_FLOAT_FIELDS = ["kV", "kVA", "tap", "%R", "Rneut", "Xneut", "XHL", "XHT", "XLT", "n", "m", "flrise", "hsrise", "%loadloss", "%noloadloss", 
+                        "normhkVA", "emerghkVA", "MaxTap", "MinTap", "NumTaps", "%imag", "ppm_antifloat", "X12", "X13", "X23", 
+                        "RdcOhms", "normamps", "emergamps", "faultrate", "pctperm", "basefreq"]
+DSS_XFMR_INT_FIELDS = ["wdg", "phases", "windings"]
+DSS_LINE_INT_FIELDS = ["phases"]
+DSS_LINE_FLOAT_FIELDS = ["normamps", "length"]
+
 
 @track_timing(timer_stats_collector)
 def reload_dss_circuit(dss_file_list, commands_list=None,  **kwargs):
@@ -322,12 +329,7 @@ def combine_equipment_health_stats(xfmr_loading_df, line_loading_df, bus_voltage
     if voltage_properties is None:
         voltage_properties = ['name', 'Max per unit voltage', 'Min per unit voltage',  'Overvoltage violation', 
                               'Max voltage_deviation', 'Undervoltage violation', 'Min voltage_deviation']
-        
     # some file reformatting
-    if "conns" in xfmr_properties:
-        xfmr_loading_df["conns"] = xfmr_loading_df["conns"].apply(ast.literal_eval)
-    if "kVs" in xfmr_properties:
-        xfmr_loading_df["kVs"] = xfmr_loading_df["kVs"].apply(ast.literal_eval)
     if "windings" in xfmr_properties:
         xfmr_loading_df["windings"] = xfmr_loading_df["windings"].astype(int)
     
@@ -362,7 +364,6 @@ def get_circuit_info():
     if len(all_xfmr_df.loc[all_xfmr_df["substation_xfmr_flag"] == True]) > 0:
         data_dict["substation_xfmr"] = all_xfmr_df.loc[all_xfmr_df["substation_xfmr_flag"] ==
                                                        True].to_dict(orient='records')[0]
-        data_dict["substation_xfmr"]["kVs"] = ast.literal_eval(data_dict["substation_xfmr"]["kVs"])
         # this checks if the voltage kVs are the same for the substation transformer
         data_dict["substation_xfmr"]["is_autotransformer_flag"] = len(set(data_dict["substation_xfmr"]["kVs"])) <= 1
     return data_dict
@@ -414,10 +415,10 @@ def ensure_line_config_exists(chosen_option, new_config_type, external_upgrades_
             config_definition_dict = dict(config_definition_df.iloc[0])
             if config_definition_dict["normamps"] != chosen_option["normamps"]:
                 logger.warning(f"Mismatch between noramps for linecode {new_config_name} and chosen upgrade option normamps: {chosen_option['name']}")
-            # check format of certain fields
+            # check format of certain fields, and prepare data to write opendss definition
             matrix_fields = [s for s in config_definition_dict.keys() if 'matrix' in s]
             for field in matrix_fields:
-                config_definition_dict[field] = config_definition_dict[field].replace("'","")
+                config_definition_dict[field] = str(config_definition_dict[field]).replace("'","")
                 config_definition_dict[field] = config_definition_dict[field].replace("[","(")
                 config_definition_dict[field] = config_definition_dict[field].replace("]",")")
             command_string = create_opendss_definition(config_definition_dict=config_definition_dict)
@@ -519,6 +520,11 @@ def get_present_pvgeneration():
     return pv_df
 
 
+def remove_trailing_whitespace(text):
+    """Removes trailing whitespace from a string"""
+    return text.rstrip()
+    
+
 def get_all_transformer_info_instance(upper_limit=None, compute_loading=True):
     """This collects transformer information
 
@@ -533,10 +539,9 @@ def get_all_transformer_info_instance(upper_limit=None, compute_loading=True):
     all_df["equipment_type"] = all_df.index.str.split(".").str[0]
     # extract only enabled lines
     all_df = all_df.loc[all_df["enabled"] == True]
-    all_df[["wdg", "phases"]] = all_df[["wdg", "phases"]].astype(int)
-    float_fields = ["kV", "kVA", "normhkVA", "emerghkVA", "%loadloss", "%noloadloss", "XHL", "XHT", "XLT", "%R",
-                    "Rneut", "Xneut", "X12", "X13", "X23", "RdcOhms"]
-    all_df[float_fields] = all_df[float_fields].astype(float)
+    all_df[DSS_XFMR_INT_FIELDS] = all_df[DSS_XFMR_INT_FIELDS].astype(int)
+    all_df[DSS_XFMR_FLOAT_FIELDS] = all_df[DSS_XFMR_FLOAT_FIELDS].astype(float)
+    all_df["conn"] = all_df["conn"].apply(remove_trailing_whitespace)  # remove trailing space from conn field
     # define empty new columns
     all_df['bus_names_only'] = None
     all_df["amp_limit_per_phase"] = np.nan
@@ -545,11 +550,11 @@ def get_all_transformer_info_instance(upper_limit=None, compute_loading=True):
         all_df["max_per_unit_loading"] = np.nan
         all_df["status"] = ""
     for index, row in all_df.iterrows():
-        # convert type from list to tuple since they are hashable objects (and can be indexed)
         all_df.at[index, "kVs"] = [float(a) for a in row["kVs"]]
         all_df.at[index, "kVAs"] = [float(a) for a in row["kVAs"]]
         all_df.at[index, "Xscarray"] = [float(a) for a in row["Xscarray"]]
         all_df.at[index, "%Rs"] = [float(a) for a in row["%Rs"]]
+        all_df.at[index, "taps"] = [float(a) for a in row["taps"]]
         all_df.at[index, "bus_names_only"] = [a.split(".")[0].lower() for a in row["buses"]]
         # first winding is considered primary winding
         primary_kv = float(row["kVs"][0])
@@ -577,8 +582,6 @@ def get_all_transformer_info_instance(upper_limit=None, compute_loading=True):
                 all_df.at[index, "status"] = "unloaded"
             else:
                 all_df.at[index, "status"] = "normal"
-    # convert lists to string type (so they can be set as dataframe index later)
-    all_df[['conns', 'kVs']] = all_df[['conns', 'kVs']].astype(str)
     all_df = all_df.reset_index(drop=True).set_index('name')
     return all_df.reset_index()
 
@@ -638,8 +641,8 @@ def get_all_line_info_instance(upper_limit=None, compute_loading=True, ignore_sw
     all_df["equipment_type"] = all_df.index.str.split(".").str[0]
     # extract only enabled lines
     all_df = all_df.loc[all_df["enabled"] == True]
-    all_df["phases"] = all_df["phases"].astype(int)
-    all_df[["normamps", "length"]] = all_df[["normamps", "length"]].astype(float)
+    all_df[DSS_LINE_INT_FIELDS] = all_df[DSS_LINE_INT_FIELDS].astype(int)
+    all_df[DSS_LINE_FLOAT_FIELDS] = all_df[DSS_LINE_FLOAT_FIELDS].astype(float)
     all_df = add_info_line_definition_type(all_df)
     # define empty new columns
     all_df["kV"] = np.nan
@@ -803,7 +806,7 @@ def get_regcontrol_info(correct_PT_ratio=False, nominal_voltage=None):
         all_df.at[index, "transformer_kva"] = float(dss.Properties.Value("kva"))
         dss.Transformers.Wdg(1)  # setting winding to 1, to get kV for winding 1
         all_df.at[index, "transformer_kv"] = dss.Transformers.kV()
-        all_df.at[index, "transformer_conn"] = dss.Properties.Value("conn").replace(" ", "")  # opendss returns conn with a space 
+        all_df.at[index, "transformer_conn"] = remove_trailing_whitespace(dss.Properties.Value("conn"))  # opendss returns conn with a space 
         all_df.at[index, "transformer_bus1"] = dss.CktElement.BusNames()[0].split(".")[0]
         all_df.at[index, "transformer_bus2"] = dss.CktElement.BusNames()[1].split(".")[0]
         if correct_PT_ratio:

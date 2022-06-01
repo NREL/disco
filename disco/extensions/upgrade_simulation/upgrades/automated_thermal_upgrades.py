@@ -9,7 +9,7 @@ from jade.utils.utils import load_data, dump_data
 from .thermal_upgrade_functions import *
 from .voltage_upgrade_functions import plot_thermal_violations, plot_voltage_violations, plot_feeder
 
-from disco.models.upgrade_cost_analysis_generic_model import UpgradeResultModel
+from disco.models.upgrade_cost_analysis_generic_model import UpgradeResultModel, UpgradeTechnicalCatalogModel
 from disco import timer_stats_collector
 from disco.enums import LoadMultiplierType
 from disco.exceptions import UpgradesInvalidViolationIncrease
@@ -25,8 +25,7 @@ def determine_thermal_upgrades(
     enable_pydss_solve,
     pydss_volt_var_model,
     thermal_config,
-    line_upgrade_options_file,
-    xfmr_upgrade_options_file,
+    internal_upgrades_technical_catalog_filepath,
     thermal_summary_file,
     thermal_upgrades_dss_filepath,
     upgraded_master_dss_filepath,
@@ -60,8 +59,10 @@ def determine_thermal_upgrades(
     if thermal_config["read_external_catalog"]:
         with open(thermal_config["external_catalog"]) as json_file:
             external_upgrades_technical_catalog = json.load(json_file)
-        line_upgrade_options = pd.DataFrame.from_dict(external_upgrades_technical_catalog['line'])
-        xfmr_upgrade_options = pd.DataFrame.from_dict(external_upgrades_technical_catalog['transformer'])
+        # perform validation for external catalog
+        input_catalog_model = UpgradeTechnicalCatalogModel(**external_upgrades_technical_catalog)
+        line_upgrade_options = pd.DataFrame.from_dict(input_catalog_model.dict(by_alias=True)["line"])
+        xfmr_upgrade_options = pd.DataFrame.from_dict(input_catalog_model.dict(by_alias=True)["transformer"])
         # this will remove any duplicates if present
         line_upgrade_options = determine_available_line_upgrades(line_upgrade_options)
         xfmr_upgrade_options = determine_available_xfmr_upgrades(xfmr_upgrade_options)
@@ -71,8 +72,14 @@ def determine_thermal_upgrades(
         orig_xfmrs_df = get_thermal_equipment_info(compute_loading=False, equipment_type="transformer")
         line_upgrade_options = determine_available_line_upgrades(orig_lines_df)
         xfmr_upgrade_options = determine_available_xfmr_upgrades(orig_xfmrs_df)
-        dump_data(line_upgrade_options.to_dict('records'), line_upgrade_options_file, indent=4)
-        dump_data(xfmr_upgrade_options.to_dict('records'), xfmr_upgrade_options_file, indent=4)
+        internal_upgrades_technical_catalog = {"line": line_upgrade_options.to_dict('records'), "transformer": xfmr_upgrade_options.to_dict('records')}
+        # validate internal upgrades catalog
+        breakpoint()
+        input_catalog_model = UpgradeTechnicalCatalogModel(**internal_upgrades_technical_catalog)
+        # reassign from model to dataframes, so datatypes are maintained
+        line_upgrade_options = pd.DataFrame.from_dict(input_catalog_model.dict(by_alias=True)["line"])
+        xfmr_upgrade_options = pd.DataFrame.from_dict(input_catalog_model.dict(by_alias=True)["transformer"])
+        dump_data(input_catalog_model.dict(by_alias=True), internal_upgrades_technical_catalog_filepath, indent=4)  # write internal catalog to json
     (
         initial_bus_voltages_df,
         initial_undervoltage_bus_list,
@@ -92,7 +99,7 @@ def determine_thermal_upgrades(
     circuit_source = orig_ckt_info['source_bus']
     feeder_stats = {"feeder_metadata": {}, "stage_results": []}
     feeder_stats["feeder_metadata"].update(get_feeder_stats(dss))
-    feeder_stats["stage_results"].append( get_upgrade_stage_stats(dss, upgrade_stage="Initial", upgrade_type="thermal", xfmr_loading_df=initial_xfmr_loading_df, line_loading_df=initial_line_loading_df, 
+    feeder_stats["stage_results"].append(get_upgrade_stage_stats(dss, upgrade_stage="Initial", upgrade_type="thermal", xfmr_loading_df=initial_xfmr_loading_df, line_loading_df=initial_line_loading_df, 
                                         bus_voltages_df=initial_bus_voltages_df) )
     dump_data(feeder_stats, feeder_stats_json_file, indent=4)   # save feeder stats
     if len(initial_overloaded_xfmr_list) > 0 or len(initial_overloaded_line_list) > 0:
@@ -162,7 +169,7 @@ def determine_thermal_upgrades(
             line_commands_list, temp_line_upgrades_df = correct_line_violations(
                 line_loading_df=line_loading_df,
                 line_design_pu=thermal_config["line_design_pu"],
-                line_upgrade_options=line_upgrade_options,
+                line_upgrade_options=line_upgrade_options.copy(deep=True),
                 parallel_lines_limit=thermal_config["parallel_lines_limit"],
                 external_upgrades_technical_catalog=external_upgrades_technical_catalog,)
             logger.info(f"Iteration_{iteration_counter}: Corrected line violations.")
@@ -180,12 +187,11 @@ def determine_thermal_upgrades(
             xfmr_commands_list, temp_xfmr_upgrades_df = correct_xfmr_violations(
                 xfmr_loading_df=xfmr_loading_df,
                 xfmr_design_pu=thermal_config["transformer_design_pu"],
-                xfmr_upgrade_options=xfmr_upgrade_options,
+                xfmr_upgrade_options=xfmr_upgrade_options.copy(deep=True),
                 parallel_transformer_limit=thermal_config["parallel_transformer_limit"])
             logger.info(f"Iteration_{iteration_counter}: Corrected xfmr violations.")
             commands_list = commands_list + xfmr_commands_list
             xfmr_upgrades_df = xfmr_upgrades_df.append(temp_xfmr_upgrades_df)
-
         # compute loading after upgrades
         xfmr_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["transformer_upper_limit"], 
                                                     equipment_type="transformer",  **simulation_params)

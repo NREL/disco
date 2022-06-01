@@ -71,13 +71,9 @@ class UpgradeSimulation:
         voltage_upgrades = self.get_voltage_upgrades_directory()
         return os.path.join(voltage_upgrades, "voltage_summary.json")
 
-    def get_line_upgrade_options_file(self):
+    def internal_upgrades_technical_catalog_filepath(self):
         thermal_upgrades = self.get_thermal_upgrades_directory()
-        return os.path.join(thermal_upgrades, "line_upgrade_options.json")
-    
-    def get_transformer_upgrade_options_file(self):
-        thermal_upgrades = self.get_thermal_upgrades_directory()
-        return os.path.join(thermal_upgrades, "xfmr_upgrade_options.json")
+        return os.path.join(thermal_upgrades, "internal_upgrades_technical_catalog.json")
     
     def get_thermal_upgrade_costs_file(self):
         upgrade_costs = self.get_upgrade_costs_directory()
@@ -133,8 +129,7 @@ class UpgradeSimulation:
             enable_pydss_solve=enable_pydss_solve,
             thermal_config=thermal_config,
             pydss_volt_var_model=pydss_controller_model,
-            line_upgrade_options_file=self.get_line_upgrade_options_file(),
-            xfmr_upgrade_options_file=self.get_transformer_upgrade_options_file(),
+            internal_upgrades_technical_catalog_filepath=self.internal_upgrades_technical_catalog_filepath(),
             thermal_summary_file=self.get_thermal_summary_json_file(),
             thermal_upgrades_dss_filepath=self.get_thermal_upgrades_dss_file(),
             upgraded_master_dss_filepath=self.get_upgraded_master_dss_file(),

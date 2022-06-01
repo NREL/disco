@@ -6,6 +6,7 @@ from jade.utils.timing_utils import track_timing, Timer
 from jade.utils.utils import load_data, dump_data
 
 from disco import timer_stats_collector
+from disco.models.upgrade_cost_analysis_generic_model import UpgradeCostDatabaseModel
 
 logger = logging.getLogger(__name__)
 # Dictionary used to convert between different length units and meters, which are used for all the calculations.
@@ -35,16 +36,19 @@ def compute_all_costs(
     xfmr_upgrades_df = pd.DataFrame(load_data(output_json_xfmr_upgrades_filepath))
     line_upgrades_df = pd.DataFrame(load_data(output_json_line_upgrades_filepath))
     voltage_upgrades_df = pd.DataFrame(load_data(output_json_voltage_upgrades_filepath))
-
     # unit cost database files
     xfmr_cost_database = pd.read_excel(cost_database_filepath, "transformers")
     line_cost_database = pd.read_excel(cost_database_filepath, "lines")
     controls_cost_database = pd.read_excel(cost_database_filepath, "control_changes")
-    voltage_regulators_cost_database = pd.read_excel(
-        cost_database_filepath, "voltage_regulators"
-    )
+    voltage_regulators_cost_database = pd.read_excel(cost_database_filepath, "voltage_regulators")
     misc_database = pd.read_excel(cost_database_filepath, "misc")
-
+    
+    # perform validation of input cost database using pydantic models
+    input_cost_model = UpgradeCostDatabaseModel(transformers=xfmr_cost_database.to_dict(orient="records"), 
+                                                lines=line_cost_database.to_dict(orient="records"), 
+                                                control_changes=controls_cost_database.to_dict(orient="records"), 
+                                                voltage_regulators=voltage_regulators_cost_database.to_dict(orient="records"), 
+                                                misc=misc_database.to_dict(orient="records"))
     output_columns = ["type", "count", "total_cost_usd", "comment", "equipment_parameters"]
 
     # reformat data
@@ -218,7 +222,6 @@ def reformat_xfmr_upgrades_file(xfmr_upgrades_df):
     xfmr_upgrades_df["phases"] = xfmr_upgrades_df["phases"].astype(int)
     xfmr_upgrades_df["primary_kV"] = xfmr_upgrades_df["kVs"].str[0].astype(float)
     xfmr_upgrades_df["secondary_kV"] = xfmr_upgrades_df["kVs"].str[-1].astype(float)
-    xfmr_upgrades_df["conns"] = xfmr_upgrades_df["conns"].apply(ast.literal_eval)
     xfmr_upgrades_df["primary_connection_type"] = xfmr_upgrades_df["conns"].str[0]
     xfmr_upgrades_df["secondary_connection_type"] = xfmr_upgrades_df["conns"].str[-1]
     return xfmr_upgrades_df
@@ -414,14 +417,14 @@ def compute_voltage_regcontrol_cost(voltage_upgrades_df, vreg_control_cost_datab
                         # "replace_reg_control": "Replace in-line voltage regulator controller",   # this is not used currently
                         "add_substation_ltc": "New substation LTC",
                         "change_ltc_control": "Substation LTC setting change",
-                        "add_new_vreg_transformer": "Transformer for voltage regulator",
-                        "add_new_substation_transformer":  "Substation transformer"}
+                        "add_new_vreg_transformer": "New Transformer for voltage regulator",
+                        "add_new_substation_transformer":  "New Substation transformer"}
     
     
     output_rows = ["New in-line voltage regulator", "In-line voltage regulator control setting change",
                    "Replace in-line voltage regulator controller",
-                   "New substation LTC", "Substation LTC setting change",
-                   "Substation transformer", "Transformer for voltage regulator"]
+                   "New Substation LTC", "Substation LTC setting change",
+                   "New Substation transformer", "New Transformer for voltage regulator"]
 
     control_computation_fields = ["add_new_reg_control", "change_reg_control"]
     xfmr_fields = ["add_new_transformer"]

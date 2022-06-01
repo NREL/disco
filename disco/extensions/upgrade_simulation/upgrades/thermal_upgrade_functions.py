@@ -121,7 +121,6 @@ def correct_line_violations(line_loading_df, line_design_pu, line_upgrade_option
              "original_equipment_name"]).reset_index()
     else:  # if there is no overloading
         logger.info("This case has no line violations")
-    line_upgrade_options.reset_index(inplace=True)
     circuit_solve_and_check(raise_exception=True, **kwargs)  # this is added as a final check for convergence
     return commands_list, line_upgrades_df
 
@@ -271,6 +270,9 @@ def correct_xfmr_violations(xfmr_loading_df, xfmr_design_pu, xfmr_upgrade_option
     overloaded_loading_df["required_design_amp"] = overloaded_loading_df["max_amp_loading"] / xfmr_design_pu
     # list of properties based on which upgrade is chosen
     deciding_property_list = ["phases", "wdg", "conn", "conns", "kV", "kVs", "LeadLag", "basefreq"]
+    # convert lists to string type (so they can be set as dataframe index later)
+    xfmr_upgrade_options[['conns', 'kVs']] = xfmr_upgrade_options[['conns', 'kVs']].astype(str)
+    overloaded_loading_df[['conns', 'kVs']] = overloaded_loading_df[['conns', 'kVs']].astype(str)
     xfmr_upgrade_options.set_index(deciding_property_list, inplace=True)
     overloaded_loading_df.set_index(deciding_property_list, inplace=True)
     equipment_oversize_limit = 2  # limit to determine if chosen upgrade option is too oversized
@@ -344,7 +346,6 @@ def correct_xfmr_violations(xfmr_loading_df, xfmr_design_pu, xfmr_upgrade_option
 
     else:  # if there is no overloading
         logger.info("This case has no transformer violations")
-    xfmr_upgrade_options.reset_index(inplace=True)
     circuit_solve_and_check(raise_exception=True, **kwargs)  # this is added as a final check for convergence
     return commands_list, xfmr_upgrades_df
 
@@ -377,12 +378,6 @@ def identify_parallel_xfmrs(upgrade_options, object_row, parallel_transformer_li
     # choose option that has the least value of this metric- since that represents the per unit oversizing
     chosen_option = upgrade_options.loc[upgrade_options["choose_parallel_metric"].idxmin()]
     num_parallel_xfmrs = int(chosen_option["num_parallel"])
-    chosen_option["conns"] = ast.literal_eval(chosen_option["conns"])
-    chosen_option["kVs"] = ast.literal_eval(chosen_option["kVs"])
-    if isinstance(chosen_option["%Rs"], str):
-                    chosen_option["%Rs"] = ast.literal_eval(chosen_option["%Rs"])
-    if isinstance(chosen_option["kVAs"], str):
-        chosen_option["kVAs"] = ast.literal_eval(chosen_option["kVAs"])
     upgrades_dict_parallel = []
     for xfmr_count in range(0, num_parallel_xfmrs):
         curr_time = str(time.time())

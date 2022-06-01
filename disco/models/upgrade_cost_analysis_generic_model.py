@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 from pathlib import Path
 from typing import List, Optional, Set, Dict
 
@@ -41,6 +42,7 @@ class UpgradeParamsBaseModel(BaseModel):
         validate_all = True
         extra = "forbid"
         use_enum_values = False
+        arbitrary_types_allowed = True
 
     @classmethod
     def from_file(cls, filename: Path):
@@ -506,3 +508,725 @@ class UpgradeSummaryResultsModel(UpgradeParamsBaseModel):
         title="outputs",
         description="Outputs for each job in the simulation.",
     )
+  
+  
+def check_cost_units(cls, cost_units):
+    if cost_units not in ("USD/unit"):
+        raise ValueError("Incorrect cost units")
+    return cost_units
+    
+    
+class TransformerUnitCostModel(UpgradeParamsBaseModel):
+    """Contains Transformer Unit Cost Database Model"""
+    
+    phases: int = Field(
+        title="phases",
+        description="Number of phases",
+    )
+    primary_kV: float = Field(
+        title="primary_kV",
+        description="Transformer primary winding voltage, in kV",
+    )
+    secondary_kV: float = Field(
+        title="secondary_kV",
+        description="Transformer secondary winding voltage, in kV",
+    )    
+    num_windings: int = Field(
+        title="num_windings",
+        description="Number of windings",
+    )
+    primary_connection_type: str = Field(
+        title="primary_connection_type",
+        description="Transformer primary winding connection type. Should be wye or delta",
+    )
+    secondary_connection_type: str = Field(
+        title="secondary_connection_type",
+        description="Transformer secondary winding connection type. Should be wye or delta",
+    )
+    rated_kVA: float = Field(
+        title="rated_kVA",
+        description="Transformer Rated kVA",
+    )
+    cost: float = Field(
+        title="cost",
+        description="Transformer unit cost",
+    )
+    cost_units: str = Field(
+        title="cost_units",
+        description="Unit for cost. This should be in USD/unit",
+    )
+    
+    # cost_units = validator("cost_units", allow_reuse=True)(check_cost_units)  # TODO not successful to resuse same validator function for different classes, same field
+    @validator("cost_units")
+    def check_transformer_cost_units(cls, cost_units):
+        if cost_units not in ("USD/unit"):
+            raise ValueError("Incorrect cost units")
+        return cost_units
+    
+    @validator("primary_connection_type")
+    def check_primary_connection(cls, primary_connection_type):
+        if primary_connection_type not in ("wye", "delta"):
+            raise ValueError("Incorrect transformer primary connection type")
+        return primary_connection_type
+    
+    @validator("secondary_connection_type")
+    def check_secondary_connection(cls, secondary_connection_type):
+        if secondary_connection_type not in ("wye", "delta"):
+            raise ValueError("Incorrect transformer secondary connection type")
+        return secondary_connection_type
+        
+
+class LineUnitCostModel(UpgradeParamsBaseModel):
+    """Contains Line Unit Cost Database Model"""
+    
+    Description: str = Field(
+        title="Description",
+        description="Description of whether this is a new_line or reconductored_line",
+    )
+    phases: int = Field(
+        title="phases",
+        description="Number of phases",
+    )
+    voltage_kV: float = Field(
+        title="voltage_kV",
+        description="Voltage level in kV",
+    )    
+    ampere_rating: float = Field(
+        title="ampere_rating",
+        description="Line rating in amperes",
+    )
+    line_placement: str = Field(
+        title="line_placement",
+        description="Placement of line: overhead or underground",
+    )
+    cost_per_m: float = Field(
+        title="cost_per_m",
+        description="Cost per meter",
+    )
+    cost_units: str = Field(
+        title="cost_units",
+        description="Unit for cost. This should be in USD",
+    )
+    
+    @validator("line_placement")
+    def check_line_placement(cls, line_placement):
+        if line_placement not in ("underground", "overhead"):
+            raise ValueError("Incorrect Line placement type.")
+        return line_placement
+    
+    @validator("cost_units")
+    def check_line_cost_units(cls, cost_units):
+        if cost_units not in ("USD"):
+            raise ValueError("Incorrect cost units")
+        return cost_units
+    
+    @validator("Description")
+    def check_line_description(cls, Description):
+        if Description not in ("new_line", "reconductored_line"):
+            raise ValueError("Incorrect line description")
+        return Description
+    
+        
+class ControlUnitCostModel(UpgradeParamsBaseModel):
+    """Contains Control Changes Cost Database Model"""
+    
+    Type: str = Field(
+        title="Type",
+        description="Type of control setting",
+    )
+    cost: float = Field(
+        title="cost",
+        description="Control changes unit cost",
+    )
+    cost_units: str = Field(
+        title="cost_units",
+        description="Unit for cost. This should be in USD/unit",
+    )
+    
+    @validator("cost_units")
+    def check_control_cost_units(cls, cost_units):
+        if cost_units not in ("USD/unit"):
+            raise ValueError("Incorrect cost units")
+        return cost_units
+    
+    
+class VRegUnitCostModel(UpgradeParamsBaseModel):
+    """Contains Voltage Regulator Cost Database Model"""
+    
+    Type: str = Field(
+        title="Type",
+        description="This should be 'Add new voltage regulator transformer'.",
+    )
+    # TransformerUnitCostModel  # TODO is it possible to directly inherit this? This didnt work
+        
+    phases: int = Field(
+        title="phases",
+        description="Number of phases",
+    )
+    primary_kV: float = Field(
+        title="primary_kV",
+        description="Transformer primary winding voltage, in kV",
+    )
+    secondary_kV: float = Field(
+        title="secondary_kV",
+        description="Transformer secondary winding voltage, in kV",
+    )    
+    num_windings: int = Field(
+        title="num_windings",
+        description="Number of windings",
+    )
+    primary_connection_type: str = Field(
+        title="primary_connection_type",
+        description="Transformer primary winding connection type. Should be wye or delta",
+    )
+    secondary_connection_type: str = Field(
+        title="secondary_connection_type",
+        description="Transformer secondary winding connection type. Should be wye or delta",
+    )
+    rated_kVA: float = Field(
+        title="rated_kVA",
+        description="Transformer Rated kVA",
+    )
+    cost: float = Field(
+        title="cost",
+        description="Transformer unit cost",
+    )
+    cost_units: str = Field(
+        title="cost_units",
+        description="Unit for cost. This should be in USD/unit",
+    )
+    
+    @validator("cost_units")
+    def check_vreg_cost_units(cls, cost_units):
+        if cost_units not in ("USD/unit"):
+            raise ValueError("Incorrect cost units")
+        return cost_units
+    
+    @validator("primary_connection_type")
+    def check_vregprimary_connection(cls, primary_connection_type):
+        if primary_connection_type not in ("wye", "delta"):
+            raise ValueError("Incorrect transformer primary connection type")
+        return primary_connection_type
+    
+    @validator("secondary_connection_type")
+    def check_vregsecondary_connection(cls, secondary_connection_type):
+        if secondary_connection_type not in ("wye", "delta"):
+            raise ValueError("Incorrect transformer secondary connection type")
+        return secondary_connection_type
+    
+
+class MiscUnitCostModel(UpgradeParamsBaseModel):
+    """Contains Miscellaneous Cost Database Model"""
+    
+    Description: str = Field(
+        title="Description",
+        description="Description of whether this is a fixed cost to add or replace transformer. "
+        "These are optional, and will be used if provided.",
+    )
+    total_cost: float = Field(
+        title="total_cost",
+        description="total_cost",
+    )
+    cost_units: str = Field(
+        title="cost_units",
+        description="Unit for cost. This should be in USD/unit",
+    )
+    
+    @validator("cost_units")
+    def check_misc_cost_units(cls, cost_units):
+        if cost_units not in ("USD/unit"):
+            raise ValueError("Incorrect cost units")
+        return cost_units
+    
+    @validator("Description")
+    def check_misc_description(cls, Description):
+        if Description not in ("Replace transformer (fixed cost)", "Add new transformer (fixed cost)"):
+            raise ValueError("Incorrect Miscellaneous Description")
+        return Description
+    
+
+class UpgradeCostDatabaseModel(UpgradeParamsBaseModel):
+    """Contains Upgrades Unit Cost Database needed for cost analysis"""
+    
+    transformers: List[TransformerUnitCostModel] = Field(
+        title="transformers",
+        description="This consists of all transformer unit costs",
+        default=[]
+    )
+    lines: List[LineUnitCostModel] = Field(
+        title="lines",
+        description="This consists of all line unit costs",
+        default=[]
+    )
+    control_changes: List[ControlUnitCostModel] = Field(
+        title="control_changes",
+        description="This consists of all control changes unit costs",
+        default=[]
+    )
+    voltage_regulators: List[VRegUnitCostModel] = Field(
+        title="voltage_regulators",
+        description="This consists of all voltage regulator unit costs",
+        default=[]
+    )
+    misc: List[MiscUnitCostModel] = Field(
+        title="misc",
+        description="This consists of all miscellaneous unit costs",
+        default=[]
+    )
+
+import enum
+class upgrade_cost_types(enum.Enum):
+    """Possible values for upgrade costs"""
+    TRANSFORMER = "Transformer"
+    LINE = "Line"
+    
+    
+
+class LineCodeCatalogModel(UpgradeParamsBaseModel):
+    """Contains LineCode information needed for thermal upgrade analysis. Most fields can be directly obtained from the opendss models"""
+    name: str = Field(
+        title="name",
+        description="name",
+    )
+    equipment_type: str = Field(
+        title="equipment_type",
+        description="equipment_type",
+    )
+    nphases: int = Field(
+        title="nphases",
+        description="nphases",
+    )
+    r1: Any = Field(
+        title="r1",
+        description="r1",
+    )
+    x1: Any = Field(
+        title="x1",
+        description="x1",
+    )
+    r0: Any = Field(
+        title="r0",
+        description="r0",
+    )
+    x0: Any = Field(
+        title="x0",
+        description="x0",
+    )
+    C1: Any = Field(
+        title="c1",
+        description="c1",
+    )
+    C0: Any = Field(
+        title="c0",
+        description="c0",
+    )
+    units: str = Field(
+        title="units",
+        description="units",
+    )
+    rmatrix: Any = Field(
+        title="rmatrix",
+        description="rmatrix. If provided, should be a list.",
+    )
+    xmatrix: Any = Field(
+        title="xmatrix",
+        description="xmatrix. If provided, should be a list.",
+    )
+    cmatrix: Any = Field(
+        title="cmatrix",
+        description="cmatrix. If provided, should be a list.",
+    )
+    baseFreq: float = Field(
+        title="baseFreq",
+        description="baseFreq",
+    )
+    normamps: float = Field(
+        title="normamps",
+        description="normamps",
+    )
+    emergamps: float = Field(
+        title="emergamps",
+        description="emergamps",
+    )
+    faultrate: float = Field(
+        title="faultrate",
+        description="faultrate",
+    )
+    pctperm: float = Field(
+        title="pctperm",
+        description="pctperm",
+    )
+    repair: float = Field(
+        title="repair",
+        description="repair",
+    )
+    Kron: Any = Field(
+        title="Kron",
+        description="Kron",
+    )
+    Rg: float = Field(
+        title="Rg",
+        description="Rg",
+    )
+    Xg: float = Field(
+        title="Xg",
+        description="Xg",
+    )
+    rho: float = Field(
+        title="rho",
+        description="rho",
+    )
+    neutral: float = Field(
+        title="neutral",
+        description="neutral",
+    )
+    B1: Any = Field(
+        title="B1",
+        description="B1",
+    )
+    B0: Any = Field(
+        title="B0",
+        description="B0",
+    )
+    like: Any = Field(
+        title="like",
+        description="like",
+    )
+    
+
+class LineCatalogModel(UpgradeParamsBaseModel):
+    """Contains Line information needed for thermal upgrade analysis. Most fields can be directly obtained from the opendss models"""
+    name: str = Field(
+        title="name",
+        description="name",
+    )
+    line_definition_type: str = Field(
+        title="line_definition_type",
+        description="This defines if the line is defined by using linecodes or line geometry. Possible values are linecode, geometry"
+    )
+    linecode: Any = Field(
+        title="linecode",
+        description="If line is defined using linecode, then name of associated line code should be provided here.",
+    )
+    phases: int = Field(
+        title="phases",
+        description="phases",
+    )
+    kV: float = Field(
+        title="kV",
+        description="kV",
+    )
+    Switch: bool = Field(
+        title="Switch",
+        description="Flag that determines whether line is switch or not.",
+    )
+    normamps: float = Field(
+        title="normamps",
+        description="normamps",
+    )
+    r1: Any = Field(
+        title="r1",
+        description="r1",
+    )
+    x1: Any = Field(
+        title="x1",
+        description="x1",
+    )
+    r0: Any = Field(
+        title="r0",
+        description="r0",
+    )
+    x0: Any = Field(
+        title="x0",
+        description="x0",
+    )
+    C1: Any = Field(
+        title="c1",
+        description="c1",
+    )
+    C0: Any = Field(
+        title="c0",
+        description="c0",
+    )
+    rmatrix: Any = Field(
+        title="rmatrix",
+        description="rmatrix. If provided, should be a list.",
+    )
+    xmatrix: Any = Field(
+        title="xmatrix",
+        description="xmatrix. If provided, should be a list.",
+    )
+    cmatrix: Any = Field(
+        title="cmatrix",
+        description="cmatrix. If provided, should be a list.",
+    )
+    Rg: float = Field(
+        title="Rg",
+        description="Rg",
+    )
+    Xg: float = Field(
+        title="Xg",
+        description="Xg",
+    )
+    rho: float = Field(
+        title="rho",
+        description="rho",
+    )
+    units: str = Field(
+        title="units",
+        description="units",
+    )
+    spacing: Any = Field(
+        title="spacing",
+        description="spacing",
+    )
+    h: float = Field(
+        title="h",
+        description="h. This is available if line is defined as a line geometry.",
+    )
+    line_placement: Any = Field(
+        title="line_placement",
+        description="line_placement.",
+    )
+    geometry: Any = Field(
+        title="geometry",
+        description="geometry",
+    )
+    
+
+class TransformerCatalogModel(UpgradeParamsBaseModel):
+    """Contains Transformer information needed for thermal upgrade analysis"""
+    name: str = Field(
+        title="name",
+        description="name",
+    )
+    phases: int = Field(
+        title="phases",
+        description="phases",
+    )
+    windings: int = Field(
+        title="windings",
+        description="windings",
+    )
+    wdg: int = Field(
+        title="wdg",
+        description="wdg",
+    )
+    conn: str = Field(
+        title="conn",
+        description="conn",
+    )
+    kV: float = Field(
+        title="kV",
+        description="kV",
+    )
+    kVA: float = Field(
+        title="kVA",
+        description="kVA",
+    )
+    tap: float = Field(
+        title="tap",
+        description="tap",
+    )
+    pctR: float = Field(
+        title="pctR",
+        description="pctR",
+        alias="%R",
+    )
+    Rneut: float = Field(
+        title="Rneut",
+        description="Rneut",
+    )
+    Xneut: float = Field(
+        title="Xneut",
+        description="Xneut",
+    )
+    conns: Any = Field(
+        title="conns",
+        description="conns. This needs to be passes as a list.",
+    )
+    kVs: Any = Field(
+        title="kVs",
+        description="kVs. This needs to be passes as a list.",
+    )   
+    kVAs: Any = Field(
+        title="kVAs",
+        description="kVAs. This needs to be passes as a list.",
+    )
+    taps: Any = Field(
+        title="taps",
+        description="taps. This needs to be passes as a list.",
+    )
+    XHL: float = Field(
+        title="XHL",
+        description="XHL",
+    )
+    XHT: float = Field(
+        title="XHT",
+        description="XHT",
+    )
+    XLT: float = Field(
+        title="XLT",
+        description="XLT",
+    )
+    Xscarray: Any = Field(
+        title="Xscarray",
+        description="Xscarray",
+    )
+    thermal: Any = Field(
+        title="thermal",
+        description="thermal",
+    )
+    n: float = Field(
+        title="n",
+        description="n",
+    )
+    m: float = Field(
+        title="m",
+        description="m",
+    )
+    flrise: float = Field(
+        title="flrise",
+        description="flrise",
+    )
+    hsrise: float = Field(
+        title="hsrise",
+        description="hsrise",
+    ) 
+    pctloadloss: float = Field(
+        title="%loadloss",
+        description="%loadloss",
+        alias="%loadloss",
+    )
+    pctnoloadloss: float = Field(
+        title="%noloadloss",
+        description="%noloadloss",
+        alias="%noloadloss",
+    )
+    normhkVA: float = Field(
+        title="normhkVA",
+        description="normhkVA",
+    ) 
+    emerghkVA: float = Field(
+        title="emerghkVA",
+        description="emerghkVA",
+    )
+    sub: str = Field(
+        title="sub",
+        description="sub",
+    )
+    MaxTap: float = Field(
+        title="MaxTap",
+        description="MaxTap",
+    ) 
+    MinTap: float = Field(
+        title="MinTap",
+        description="MinTap",
+    )
+    NumTaps: float = Field(
+        title="NumTaps",
+        description="NumTaps",
+    )
+    subname: Any = Field(
+        title="subname",
+        description="subname",
+    ) 
+    pctimag: float = Field(
+        title="%imag",
+        description="%imag",
+        alias="%imag",
+    )
+    ppm_antifloat: float = Field(
+        title="ppm_antifloat",
+        description="ppm_antifloat",
+    )
+    pctRs: Any = Field(
+        title="%Rs",
+        description="%Rs. If present, should be a list.",
+        alias="%Rs",
+    ) 
+    bank: Any = Field(
+        title="bank",
+        description="bank",
+    )
+    XfmrCode: Any = Field(
+        title="XfmrCode",
+        description="XfmrCode",
+    )
+    XRConst: Any = Field(
+        title="XRConst",
+        description="XRConst",
+    ) 
+    X12: float = Field(
+        title="X12",
+        description="X12",
+    )
+    X13: float = Field(
+        title="X13",
+        description="X13",
+    )
+    X23: float = Field(
+        title="X23",
+        description="X23",
+    ) 
+    LeadLag: Any = Field(
+        title="LeadLag",
+        description="LeadLag",
+    )
+    Core: Any = Field(
+        title="Core",
+        description="Core",
+    )
+    RdcOhms: float = Field(
+        title="RdcOhms",
+        description="RdcOhms",
+    )  
+    normamps: float = Field(
+        title="normamps",
+        description="normamps",
+    )
+    emergamps: float = Field(
+        title="emergamps",
+        description="emergamps",
+    )
+    faultrate: float = Field(
+        title="faultrate",
+        description="faultrate",
+    )  
+    pctperm: float = Field(
+        title="pctperm",
+        description="pctperm",
+    )  
+    basefreq: float = Field(
+        title="basefreq",
+        description="basefreq",
+    )  
+    amp_limit_per_phase: float = Field(
+        title="amp_limit_per_phase",
+        description="amp_limit_per_phase. This is a computed field.",
+    )  
+    
+
+class UpgradeTechnicalCatalogModel(UpgradeParamsBaseModel):
+    """Contains Upgrades Technical Catalog needed for thermal upgrade analysis"""
+    line: Optional[List[LineCatalogModel]] = Field(
+        title="line",
+        description="line catalog",
+        default=[]
+    )
+    transformer: Optional[List[TransformerCatalogModel]] = Field(
+        title="transformer",
+        description="transformer catalog",
+        default=[]
+    )
+    linecode: Optional[List[LineCodeCatalogModel]] = Field(
+        title="linecode",
+        description="linecode catalog",
+        default=[]
+    )
+    # TODO not implemented yet
+    # geometry: Optional[List[LineCodeCatalogModel]] = Field(
+    #     title="linecode",
+    #     description="linecode catalog",
+    #     default=[]
+    # )
