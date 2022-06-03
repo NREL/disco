@@ -11,7 +11,9 @@ from sklearn.cluster import AgglomerativeClustering
 from .common_functions import *
 from .thermal_upgrade_functions import define_xfmr_object
 from disco import timer_stats_collector
+from disco.models.upgrade_cost_analysis_generic_model import VoltageUpgradesOutputDetails
 from jade.utils.timing_utils import track_timing, Timer
+
 
 logger = logging.getLogger(__name__)
 
@@ -335,7 +337,7 @@ def get_capacitor_upgrades(orig_capacitors_df, new_capacitors_df):
         new_capcontrols = {}
     
     final_cap_upgrades = {}
-    processed_outputs = {}
+    processed_outputs = []
     # STEP 1: compare controllers that exist in both: original and new- and get difference
     change = compare_dict(orig_capcontrols, new_capcontrols)
     modified_capacitors = list(change.keys())
@@ -364,18 +366,23 @@ def get_capacitor_upgrades(orig_capacitors_df, new_capacitors_df):
             # if there are new controllers
             elif cap_name in new_addition:
                 final_cap_upgrades["ctrl_added"] = True
-        processed_outputs[final_cap_upgrades["cap_name"]] = {
-            "New controller added": final_cap_upgrades["ctrl_added"],
-            "Controller settings modified": final_cap_upgrades["cap_settings"],
-            "Final Settings": {
-                "capctrl name": final_cap_upgrades["ctrl_name"],
-                "cap kvar": final_cap_upgrades["cap_kvar"],
-                "cap kV": final_cap_upgrades["cap_kv"],
-                "ctrl type": final_cap_upgrades["ctrl_type"],
-                "ON setting (V)": final_cap_upgrades["cap_on"],
-                "OFF setting (V)": final_cap_upgrades["cap_off"]
-            }
-        }
+        processed_outputs.append(
+            VoltageUpgradesOutputDetails(**{
+                "equipment_type": final_cap_upgrades["cap_name"].split(".")[0],
+                "name": final_cap_upgrades["cap_name"].split(".")[1],
+                "New controller added": final_cap_upgrades["ctrl_added"],
+                "Controller settings modified": final_cap_upgrades["cap_settings"],
+                "Final Settings": {
+                    "capctrl name": final_cap_upgrades["ctrl_name"],
+                    "cap kvar": final_cap_upgrades["cap_kvar"],
+                    "cap kV": final_cap_upgrades["cap_kv"],
+                    "ctrl type": final_cap_upgrades["ctrl_type"],
+                    "ON setting (V)": final_cap_upgrades["cap_on"],
+                    "OFF setting (V)": final_cap_upgrades["cap_off"]
+                     },
+                "New transformer added": False,
+                "At Substation": False,
+        }))
     return processed_outputs
 
 
@@ -2005,7 +2012,7 @@ def get_regulator_upgrades(orig_regcontrols_df, new_regcontrols_df, orig_xfmrs_d
         orig_xfmr_info = {}
     
     final_reg_upgrades = {}
-    processed_outputs = {}
+    processed_outputs = []
     # STEP 1: compare controllers that exist in both: original and new
     change = compare_dict(orig_reg_controls, new_reg_controls)
     modified_regulators = list(change.keys())
@@ -2052,7 +2059,9 @@ def get_regulator_upgrades(orig_regcontrols_df, new_regcontrols_df, orig_xfmrs_d
                     # if regulator transformer is not in the original xfmr list, then a new xfmr
                     if final_reg_upgrades["xfmr_name"] not in orig_xfmr_info:
                         final_reg_upgrades["new_xfmr"] = True  # is a new xfmr
-                processed_outputs["RegControl." + final_reg_upgrades["reg_ctrl_name"]] = {
+                temp = {
+                    "equipment_type": "RegControl",
+                    "name": final_reg_upgrades["reg_ctrl_name"],
                     "New controller added": final_reg_upgrades["reg_added"],
                     "Controller settings modified": final_reg_upgrades["reg_settings"],
                     "New transformer added": final_reg_upgrades["new_xfmr"],
@@ -2060,10 +2069,11 @@ def get_regulator_upgrades(orig_regcontrols_df, new_regcontrols_df, orig_xfmrs_d
                     "Final Settings": {
                         "Reg ctrl V set point": final_reg_upgrades["reg_vsp"],
                         "Reg ctrl deadband": final_reg_upgrades["reg_band"]
-                    }
-                    }
+                    }}
                 if subltc_dict is not None:
-                    processed_outputs["RegControl." + final_reg_upgrades["reg_ctrl_name"]]["Final Settings"].update(subltc_dict)
+                    temp["Final Settings"].update(subltc_dict)
                 if xfmr_dict is not None:
-                    processed_outputs["RegControl." + final_reg_upgrades["reg_ctrl_name"]]["Final Settings"].update(xfmr_dict)
+                    temp["Final Settings"].update(xfmr_dict)
+                m = VoltageUpgradesOutputDetails(**temp)
+                processed_outputs.append(m)    
     return processed_outputs

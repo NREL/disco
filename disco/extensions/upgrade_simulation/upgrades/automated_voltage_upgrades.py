@@ -13,7 +13,7 @@ from .fixed_upgrade_parameters import (
 )
 from .voltage_upgrade_functions import *
 from disco.enums import LoadMultiplierType
-from disco.models.upgrade_cost_analysis_generic_model import UpgradeResultModel
+from disco.models.upgrade_cost_analysis_generic_model import UpgradeViolationResultModel, VoltageUpgradesOutputDetails
 from disco import timer_stats_collector
 
 logger = logging.getLogger(__name__)
@@ -115,7 +115,7 @@ def determine_voltage_upgrades(
                                         bus_voltages_df=initial_bus_voltages_df) )
     dump_data(feeder_stats, feeder_stats_json_file, indent=4)
     scenario = get_scenario_name(enable_pydss_solve, pydss_volt_var_model)
-    initial_results = UpgradeResultModel(
+    initial_results = UpgradeViolationResultModel(
         name = job_name, 
         scenario = scenario,
         stage = "Initial",
@@ -247,16 +247,10 @@ def determine_voltage_upgrades(
     processed_cap = get_capacitor_upgrades(orig_capacitors_df=orig_capacitors_df, new_capacitors_df=new_capacitors_df)
     processed_reg = get_regulator_upgrades(orig_regcontrols_df=orig_regcontrols_df, new_regcontrols_df=new_regcontrols_df, 
                                            orig_xfmrs_df=orig_xfmrs_df, new_ckt_info=new_ckt_info)
-    processed_cap.update(processed_reg)
-    processed_df = pd.DataFrame.from_dict(processed_cap, orient='index')
-    processed_df.index.name = 'temp'
-    processed_df.reset_index(inplace=True)
-    processed_df[['name', 'equipment_type']] = ""
-    if not processed_df.empty:  # if there are voltage upgrades
-        processed_df[['equipment_type', 'name']] = processed_df['temp'].str.split('.', expand=True)
-    processed_df = processed_df.set_index(['equipment_type', 'name']).reset_index()
-    del processed_df["temp"]
-    dump_data(processed_df.to_dict('records'), output_json_voltage_upgrades_filepath, indent=4)
+    all_processed = processed_cap + processed_reg
+    all_processed = [x.dict(by_alias=True) for x in all_processed]
+    breakpoint()
+    dump_data(all_processed, output_json_voltage_upgrades_filepath, indent=4)
     bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
         voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
     
@@ -280,7 +274,7 @@ def determine_voltage_upgrades(
     logger.info(f"Simulation end time: {end_time}")
     simulation_time = end_time - start_time
     logger.info(f"Simulation time: {simulation_time}")
-    final_results = UpgradeResultModel(
+    final_results = UpgradeViolationResultModel(
         name = job_name, 
         scenario = scenario,
         stage = "Final",

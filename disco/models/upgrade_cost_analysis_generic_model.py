@@ -55,7 +55,7 @@ class UpgradeParamsBaseModel(BaseModel):
         """
         return cls(**load_data(filename))
 
-
+# INPUT MODELS
 class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
     """Thermal Upgrade Parameters for all jobs in a simulation"""
 
@@ -345,176 +345,12 @@ class UpgradeCostAnalysisSimulationModel(UpgradeParamsBaseModel):
         """
         return self.pydss_controllers.pv_controller is not None
 
-
-class UpgradeResultModel(UpgradeParamsBaseModel):
-    """Defines result parameters for thermal upgrades."""
-
-    name: str = Field(
-        title="name",
-        description="Job name that produced the result",
-    )
-    scenario: str = Field(
-        title="scenario",
-        description="Simulation scenario describing the controls being used",
-        default="control_mode",
-    )
-    stage: str = Field(
-        title="stage",
-        description="Stage of upgrades: initial (before upgrades) or final (after upgrades)",
-    )
-    upgrade_type: str = Field(
-        title="upgrade_type",
-        description="Type of upgrade: thermal or voltage",
-    )
-    simulation_time_s: float = Field(
-        title="simulation_time_s",
-        description="Simulation time to perform upgrades (seconds)",
-    )
-    thermal_violations_present: bool = Field(
-        title="thermal_violations_present",
-        description="Flag indicating whether thermal violations are present",
-    )
-    voltage_violations_present: bool = Field(
-        title="voltage_violations_present",
-        description="Flag indicating whether voltage violations are present",
-    )
-    max_bus_voltage: float = Field(
-        title="max_bus_voltage",
-        description="Maximum voltage recorded on any bus",
-        units="pu",
-    )
-    min_bus_voltage: float = Field(
-        title="min_bus_voltage",
-        description="Minimum voltage recorded on any bus",
-        units="pu",
-    )
-    num_of_voltage_violation_buses: int = Field(
-        title="num_of_voltage_violation_buses",
-        description="Number of buses with voltage violations",
-    )
-    num_of_overvoltage_violation_buses: int = Field(
-        title="num_of_overvoltage_violation_buses",
-        description="Number of buses with voltage above voltage_upper_limit",
-    )
-    voltage_upper_limit: float = Field(
-        title="voltage_upper_limit",
-        description="Voltage upper limit, the threshold considered for determining overvoltages",
-        units="pu",
-    )
-    num_of_undervoltage_violation_buses: int = Field(
-        title="num_of_undervoltage_violation_buses",
-        description="Number of buses with voltage below voltage_lower_limit",
-    )
-    voltage_lower_limit: float = Field(
-        title="voltage_lower_limit",
-        description="Voltage lower limit, the threshold considered for determining undervoltages",
-        units="pu",
-    )
-    max_line_loading: float = Field(
-        title="max_line_loading",
-        description="Maximum line loading",
-        units="pu",
-    )
-    max_transformer_loading: float = Field(
-        title="max_transformer_loading",
-        description="Maximum transformer loading",
-        units="pu",
-    )
-    num_of_line_violations: int = Field(
-        title="num_of_line_violations",
-        description="Number of lines with loading above line upper limit",
-    )
-    line_upper_limit: float = Field(
-        title="line_upper_limit",
-        description="Line upper limit, the threshold considered for determining line overloading",
-        units="pu",
-    )
-    num_of_transformer_violations: int = Field(
-        title="num_of_transformer_violations",
-        description="Number of transformers with loading above transformer upper limit",
-    )
-    transformer_upper_limit: float = Field(
-        title="transformer_upper_limit",
-        description="Transformer upper limit, the threshold considered for determining transformer overloading",
-        units="pu",
-    )
-
-
-class EquipmentTypeUpgradeCostsModel(UpgradeParamsBaseModel):
-    """Provides costs for upgrading a type of equipment."""
-
-    name: str = Field(
-        title="name",
-        description="Job name",
-    )
-    type: str = Field(
-        title="type",
-        description="Equipment type",
-    )
-    count: str = Field(
-        title="count",
-        description="Count of upgraded equipment",
-    )
-    total_cost_usd: float = Field(
-        title="total_cost_usd",
-        description="Total cost in US dollars",
-        units="dollars",
-    )
-
-
-class UpgradeJobOutputs(UpgradeParamsBaseModel):
-    """Contains outputs from one job."""
-
-    upgraded_opendss_model_file: str = Field(
-        title="upgraded_opendss_model_file",
-        description="Path to file that will load the upgraded network.",
-    )
-    feeder_stats: str = Field(
-        title="feeder_stats",
-        description="Path to file containing feeder metadata and equipment details before and "
-        "after upgrades.",
-    )
-    return_code: int = Field(
-        title="return_code",
-        description="Return code from process. Zero is success, non-zero is a failure.",
-    )
-
-
-class UpgradeSimulationOutputs(UpgradeParamsBaseModel):
-    """Contains outputs from all jobs in the simulation."""
-
-    log_file: str = Field(
-        title="log_file",
-        description="Path to log file for the simulation.",
-    )
-    jobs: List[UpgradeJobOutputs] = Field(
-        title="jobs",
-        description="Outputs for each job in the simulation.",
-    )
-
-
-class UpgradeSummaryResultsModel(UpgradeParamsBaseModel):
-    """Contains results from all jobs in the simulation."""
-
-    violation_summary: List[UpgradeResultModel] = Field(
-        title="upgrade_summary",
-        description="Contains thermal or voltage upgrade results for each job",
-    )
-    upgrade_costs: List[EquipmentTypeUpgradeCostsModel] = Field(
-        title="total_upgrade_costs",
-        description="Contains upgrade cost information for each jobs",
-    )
-    outputs: UpgradeSimulationOutputs = Field(
-        title="outputs",
-        description="Outputs for each job in the simulation.",
-    )
-  
   
 def check_cost_units(cls, cost_units):
     if cost_units not in ("USD/unit"):
         raise ValueError("Incorrect cost units")
     return cost_units
-    
+   
     
 class TransformerUnitCostModel(UpgradeParamsBaseModel):
     """Contains Transformer Unit Cost Database Model"""
@@ -557,11 +393,10 @@ class TransformerUnitCostModel(UpgradeParamsBaseModel):
     )
     
     # cost_units = validator("cost_units", allow_reuse=True)(check_cost_units)  # TODO not successful to resuse same validator function for different classes, same field
-    @validator("cost_units")
+    @validator("cost_units")    
     def check_transformer_cost_units(cls, cost_units):
-        if cost_units not in ("USD/unit"):
-            raise ValueError("Incorrect cost units")
-        return cost_units
+        return check_cost_units(cost_units)
+
     
     @validator("primary_connection_type")
     def check_primary_connection(cls, primary_connection_type):
@@ -779,23 +614,10 @@ class upgrade_cost_types(enum.Enum):
     """Possible values for upgrade costs"""
     TRANSFORMER = "Transformer"
     LINE = "Line"
-    
-    
 
-class LineCodeCatalogModel(UpgradeParamsBaseModel):
-    """Contains LineCode information needed for thermal upgrade analysis. Most fields can be directly obtained from the opendss models"""
-    name: str = Field(
-        title="name",
-        description="name",
-    )
-    equipment_type: str = Field(
-        title="equipment_type",
-        description="equipment_type",
-    )
-    nphases: int = Field(
-        title="nphases",
-        description="nphases",
-    )
+
+class CommonLineParameters(UpgradeParamsBaseModel):
+    """This model contains common line parameters that are used in linecode technical catalog, line technical catalog, line output upgrades"""
     r1: Any = Field(
         title="r1",
         description="r1",
@@ -820,10 +642,6 @@ class LineCodeCatalogModel(UpgradeParamsBaseModel):
         title="c0",
         description="c0",
     )
-    units: str = Field(
-        title="units",
-        description="units",
-    )
     rmatrix: Any = Field(
         title="rmatrix",
         description="rmatrix. If provided, should be a list.",
@@ -836,13 +654,45 @@ class LineCodeCatalogModel(UpgradeParamsBaseModel):
         title="cmatrix",
         description="cmatrix. If provided, should be a list.",
     )
-    baseFreq: float = Field(
-        title="baseFreq",
-        description="baseFreq",
-    )
     normamps: float = Field(
         title="normamps",
         description="normamps",
+    )
+    Rg: float = Field(
+        title="Rg",
+        description="Rg",
+    )
+    Xg: float = Field(
+        title="Xg",
+        description="Xg",
+    )
+    rho: float = Field(
+        title="rho",
+        description="rho",
+    )
+    units: str = Field(
+        title="units",
+        description="units",
+    )   
+    
+
+class LineCodeCatalogModel(CommonLineParameters):
+    """Contains LineCode information needed for thermal upgrade analysis. Most fields can be directly obtained from the opendss models"""
+    name: str = Field(
+        title="name",
+        description="name",
+    )
+    equipment_type: str = Field(
+        title="equipment_type",
+        description="equipment_type",
+    )
+    nphases: int = Field(
+        title="nphases",
+        description="nphases",
+    )
+    baseFreq: float = Field(
+        title="baseFreq",
+        description="baseFreq",
     )
     emergamps: float = Field(
         title="emergamps",
@@ -864,18 +714,6 @@ class LineCodeCatalogModel(UpgradeParamsBaseModel):
         title="Kron",
         description="Kron",
     )
-    Rg: float = Field(
-        title="Rg",
-        description="Rg",
-    )
-    Xg: float = Field(
-        title="Xg",
-        description="Xg",
-    )
-    rho: float = Field(
-        title="rho",
-        description="rho",
-    )
     neutral: float = Field(
         title="neutral",
         description="neutral",
@@ -894,7 +732,7 @@ class LineCodeCatalogModel(UpgradeParamsBaseModel):
     )
     
 
-class LineCatalogModel(UpgradeParamsBaseModel):
+class LineCatalogModel(CommonLineParameters):
     """Contains Line information needed for thermal upgrade analysis. Most fields can be directly obtained from the opendss models"""
     name: str = Field(
         title="name",
@@ -920,62 +758,6 @@ class LineCatalogModel(UpgradeParamsBaseModel):
         title="Switch",
         description="Flag that determines whether line is switch or not.",
     )
-    normamps: float = Field(
-        title="normamps",
-        description="normamps",
-    )
-    r1: Any = Field(
-        title="r1",
-        description="r1",
-    )
-    x1: Any = Field(
-        title="x1",
-        description="x1",
-    )
-    r0: Any = Field(
-        title="r0",
-        description="r0",
-    )
-    x0: Any = Field(
-        title="x0",
-        description="x0",
-    )
-    C1: Any = Field(
-        title="c1",
-        description="c1",
-    )
-    C0: Any = Field(
-        title="c0",
-        description="c0",
-    )
-    rmatrix: Any = Field(
-        title="rmatrix",
-        description="rmatrix. If provided, should be a list.",
-    )
-    xmatrix: Any = Field(
-        title="xmatrix",
-        description="xmatrix. If provided, should be a list.",
-    )
-    cmatrix: Any = Field(
-        title="cmatrix",
-        description="cmatrix. If provided, should be a list.",
-    )
-    Rg: float = Field(
-        title="Rg",
-        description="Rg",
-    )
-    Xg: float = Field(
-        title="Xg",
-        description="Xg",
-    )
-    rho: float = Field(
-        title="rho",
-        description="rho",
-    )
-    units: str = Field(
-        title="units",
-        description="units",
-    )
     spacing: Any = Field(
         title="spacing",
         description="spacing",
@@ -994,12 +776,8 @@ class LineCatalogModel(UpgradeParamsBaseModel):
     )
     
 
-class TransformerCatalogModel(UpgradeParamsBaseModel):
-    """Contains Transformer information needed for thermal upgrade analysis"""
-    name: str = Field(
-        title="name",
-        description="name",
-    )
+class CommonTransformerParameters(UpgradeParamsBaseModel):
+    """This model contains common transformer parameters which are inherited by transformer catalog, and transformer upgrade output."""
     phases: int = Field(
         title="phases",
         description="phases",
@@ -1204,7 +982,14 @@ class TransformerCatalogModel(UpgradeParamsBaseModel):
     amp_limit_per_phase: float = Field(
         title="amp_limit_per_phase",
         description="amp_limit_per_phase. This is a computed field.",
-    )  
+    )
+
+
+    """Contains Transformer information needed for thermal upgrade analysis"""
+    name: str = Field(
+        title="name",
+        description="name",
+    )
     
 
 class UpgradeTechnicalCatalogModel(UpgradeParamsBaseModel):
@@ -1230,3 +1015,352 @@ class UpgradeTechnicalCatalogModel(UpgradeParamsBaseModel):
     #     description="linecode catalog",
     #     default=[]
     # )
+    
+# OUTPUT MODELS
+
+class UpgradeViolationResultModel(UpgradeParamsBaseModel):
+    """Defines result parameters for thermal upgrades."""
+
+    name: str = Field(
+        title="name",
+        description="Job name that produced the result",
+    )
+    scenario: str = Field(
+        title="scenario",
+        description="Simulation scenario describing the controls being used",
+        default="control_mode",
+    )
+    stage: str = Field(
+        title="stage",
+        description="Stage of upgrades: initial (before upgrades) or final (after upgrades)",
+    )
+    upgrade_type: str = Field(
+        title="upgrade_type",
+        description="Type of upgrade: thermal or voltage",
+    )
+    simulation_time_s: float = Field(
+        title="simulation_time_s",
+        description="Simulation time to perform upgrades (seconds)",
+    )
+    thermal_violations_present: bool = Field(
+        title="thermal_violations_present",
+        description="Flag indicating whether thermal violations are present",
+    )
+    voltage_violations_present: bool = Field(
+        title="voltage_violations_present",
+        description="Flag indicating whether voltage violations are present",
+    )
+    max_bus_voltage: float = Field(
+        title="max_bus_voltage",
+        description="Maximum voltage recorded on any bus",
+        units="pu",
+    )
+    min_bus_voltage: float = Field(
+        title="min_bus_voltage",
+        description="Minimum voltage recorded on any bus",
+        units="pu",
+    )
+    num_of_voltage_violation_buses: int = Field(
+        title="num_of_voltage_violation_buses",
+        description="Number of buses with voltage violations",
+    )
+    num_of_overvoltage_violation_buses: int = Field(
+        title="num_of_overvoltage_violation_buses",
+        description="Number of buses with voltage above voltage_upper_limit",
+    )
+    voltage_upper_limit: float = Field(
+        title="voltage_upper_limit",
+        description="Voltage upper limit, the threshold considered for determining overvoltages",
+        units="pu",
+    )
+    num_of_undervoltage_violation_buses: int = Field(
+        title="num_of_undervoltage_violation_buses",
+        description="Number of buses with voltage below voltage_lower_limit",
+    )
+    voltage_lower_limit: float = Field(
+        title="voltage_lower_limit",
+        description="Voltage lower limit, the threshold considered for determining undervoltages",
+        units="pu",
+    )
+    max_line_loading: float = Field(
+        title="max_line_loading",
+        description="Maximum line loading",
+        units="pu",
+    )
+    max_transformer_loading: float = Field(
+        title="max_transformer_loading",
+        description="Maximum transformer loading",
+        units="pu",
+    )
+    num_of_line_violations: int = Field(
+        title="num_of_line_violations",
+        description="Number of lines with loading above line upper limit",
+    )
+    line_upper_limit: float = Field(
+        title="line_upper_limit",
+        description="Line upper limit, the threshold considered for determining line overloading",
+        units="pu",
+    )
+    num_of_transformer_violations: int = Field(
+        title="num_of_transformer_violations",
+        description="Number of transformers with loading above transformer upper limit",
+    )
+    transformer_upper_limit: float = Field(
+        title="transformer_upper_limit",
+        description="Transformer upper limit, the threshold considered for determining transformer overloading",
+        units="pu",
+    )
+
+
+class EquipmentTypeUpgradeCostsResult(UpgradeParamsBaseModel):
+    """Provides costs for upgrading a type of equipment."""
+
+    name: str = Field(
+        title="name",
+        description="Job name",
+    )
+    type: str = Field(
+        title="type",
+        description="Equipment type",
+    )
+    count: str = Field(
+        title="count",
+        description="Count of upgraded equipment",
+    )
+    total_cost_usd: float = Field(
+        title="total_cost_usd",
+        description="Total cost in US dollars",
+        units="dollars",
+    )
+
+
+class UpgradeJobOutputs(UpgradeParamsBaseModel):
+    """Contains outputs from one job."""
+
+    upgraded_opendss_model_file: str = Field(
+        title="upgraded_opendss_model_file",
+        description="Path to file that will load the upgraded network.",
+    )
+    feeder_stats: str = Field(
+        title="feeder_stats",
+        description="Path to file containing feeder metadata and equipment details before and "
+        "after upgrades.",
+    )
+    return_code: int = Field(
+        title="return_code",
+        description="Return code from process. Zero is success, non-zero is a failure.",
+    )
+
+
+class UpgradeSimulationOutputs(UpgradeParamsBaseModel):
+    """Contains outputs from all jobs in the simulation."""
+
+    log_file: str = Field(
+        title="log_file",
+        description="Path to log file for the simulation.",
+    )
+    jobs: List[UpgradeJobOutputs] = Field(
+        title="jobs",
+        description="Outputs for each job in the simulation.",
+    )
+
+
+class UpgradeSummaryResultsModel(UpgradeParamsBaseModel):
+    """Contains results from all jobs in the simulation."""
+
+    violation_summary: List[UpgradeViolationResultModel] = Field(
+        title="upgrade_summary",
+        description="Contains thermal or voltage upgrade results for each job",
+    )
+    upgrade_costs: List[EquipmentTypeUpgradeCostsResult] = Field(
+        title="total_upgrade_costs",
+        description="Contains upgrade cost information for each jobs",
+    )
+    outputs: UpgradeSimulationOutputs = Field(
+        title="outputs",
+        description="Outputs for each job in the simulation.",
+    )
+
+    
+class VoltageUpgradesOutputDetails(UpgradeParamsBaseModel):
+    """Model for voltage_upgrades.json. This contains the details on the voltages upgrades made to resolve voltage violations"""
+    equipment_type: str = Field(
+        title="equipment_type",
+        description="Type of upgraded equipment",
+    )  
+    name: str = Field(
+        title="name",
+        description="Name of the upgraded equipment",
+    )  
+    new_controller_added: bool = Field(
+        title="new_controller_added",
+        description="This flag depicts whether a new controller was added",
+        alias="New controller added",
+    ) 
+    controller_settings_modified: bool = Field(
+        title="controller_settings_modified",
+        description="This flag depicts whether the controller settings were modified",
+        alias="Controller settings modified",
+    ) 
+    final_settings: dict = Field(
+        title="final_settings",
+        description="Final Settings of the equipment",
+        alias="Final Settings",
+    ) 
+    new_transformer_added: bool = Field(
+        title="new_transformer_added",
+        description="This flag depicts whether a new transformer was added",
+        alias="New transformer added",
+    ) 
+    at_substation: bool = Field(
+        title="at_substation",
+        description="This flag depicts whether the change was made at the Substation",
+        alias="At Substation",
+    ) 
+       
+
+class LineUpgradesOutputDetails(UpgradeParamsBaseModel):
+    """h"""
+    Equipment_Type: str = Field(
+         title="Equipment_Type",
+        description="Equipment_Type"
+    )
+    Upgrade_Type: str = Field(
+         title="Upgrade_Type",
+        description="Upgrade_Type"
+    )
+    Parameter_Type: str = Field(
+         title="Parameter_Type",
+        description="Parameter_Type"
+    )
+    Action: str = Field(
+         title="Action",
+        description="Action"
+    )
+    final_equipment_name: str = Field(
+         title="final_equipment_name",
+        description="final_equipment_name"
+    )
+    original_equipment_name: str = Field(
+         title="original_equipment_name",
+        description="original_equipment_name"
+    )
+    Switch: bool = Field(
+         title="Switch",
+        description="Switch"
+    )
+    kV: float = Field(
+         title="kV",
+        description="kV"
+    )
+    phases: int = Field(
+         title="phases",
+        description="phases"
+    )
+    line_placement: str = Field(
+         title="line_placement",
+        description="line_placement"
+    )
+    line_definition_type: str = Field(
+         title="line_definition_type",
+        description="line_definition_type"
+    )
+    linecode: str = Field(
+         title="linecode",
+        description="linecode"
+    )
+    normamps: float = Field(
+         title="normamps",
+        description="normamps"
+    )
+    r1: Any = Field(
+         title="r1",
+        description="r1"
+    )
+    x1: Any = Field(
+         title="x1",
+        description="x1"
+    )
+    r0: Any = Field(
+         title="r0",
+        description="r0"
+    )
+    x0: Any = Field(
+         title="x0",
+        description="x0"
+    )
+    C1: Any = Field(
+         title="C1",
+        description="C1"
+    )
+    C0: Any = Field(
+         title="C0",
+        description="C0"
+    )
+    rmatrix: Any = Field(
+         title="rmatrix",
+        description="rmatrix"
+    )
+    xmatrix: Any = Field(
+         title="xmatrix",
+        description="xmatrix"
+    )
+    cmatrix: Any = Field(
+         title="cmatrix",
+        description="cmatrix"
+    )
+    Rg: float = Field(
+         title="Rg",
+        description="Rg"
+    )
+    Xg: float = Field(
+         title="Xg",
+        description="Xg"
+    )
+    rho: float = Field(
+         title="rho",
+        description="rho"
+    )
+    units: str = Field(
+         title="units",
+        description="units"
+    )
+    spacing: float = Field(
+         title="spacing",
+        description="spacing"
+    )
+    h: float = Field(
+         title="h",
+        description="h"
+    )
+    geometry: Any = Field(
+         title="geometry",
+        description="geometry"
+    )
+    num_parallel: int = Field(
+         title="num_parallel",
+        description="num_parallel"
+    )
+    length: float = Field(
+         title="length",
+        description="length"
+    )
+
+
+class AllUpgradesOutputDetails(UpgradeParamsBaseModel):
+    """Contains All Upgrades Output Details. Read in as input for cost computation"""
+    # line: Optional[List[LineCatalogModel]] = Field(
+    #     title="line",
+    #     description="line catalog",
+    #     default=[]
+    # )
+    # transformer: Optional[List[TransformerCatalogModel]] = Field(
+    #     title="transformer",
+    #     description="transformer catalog",
+    #     default=[]
+    # )
+    voltage: Optional[List[VoltageUpgradesOutputDetails]] = Field(
+        title="voltage",
+        description="voltage upgrades details",
+        default=[]
+    )

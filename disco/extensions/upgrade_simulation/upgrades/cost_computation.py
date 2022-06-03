@@ -6,7 +6,7 @@ from jade.utils.timing_utils import track_timing, Timer
 from jade.utils.utils import load_data, dump_data
 
 from disco import timer_stats_collector
-from disco.models.upgrade_cost_analysis_generic_model import UpgradeCostDatabaseModel
+from disco.models.upgrade_cost_analysis_generic_model import UpgradeCostDatabaseModel, AllUpgradesOutputDetails
 
 logger = logging.getLogger(__name__)
 # Dictionary used to convert between different length units and meters, which are used for all the calculations.
@@ -33,9 +33,17 @@ def compute_all_costs(
 ):
     # upgrades files
     # TODO add except statement for FileNotFoundError
-    xfmr_upgrades_df = pd.DataFrame(load_data(output_json_xfmr_upgrades_filepath))
-    line_upgrades_df = pd.DataFrame(load_data(output_json_line_upgrades_filepath))
-    voltage_upgrades_df = pd.DataFrame(load_data(output_json_voltage_upgrades_filepath))
+    breakpoint()
+    all_upgrades = {"voltage": load_data(output_json_voltage_upgrades_filepath),
+                    "line": load_data(output_json_line_upgrades_filepath),
+                    "transformer": load_data(output_json_xfmr_upgrades_filepath)
+                    }
+    # validate upgrades details for thermal and voltage, using pydantic models
+    m = AllUpgradesOutputDetails(**all_upgrades)
+    xfmr_upgrades_df = pd.DataFrame(all_upgrades["transformer"])
+    line_upgrades_df = pd.DataFrame(all_upgrades["line"])
+    voltage_upgrades_df = pd.DataFrame(all_upgrades["voltage"])
+    
     # unit cost database files
     xfmr_cost_database = pd.read_excel(cost_database_filepath, "transformers")
     line_cost_database = pd.read_excel(cost_database_filepath, "lines")

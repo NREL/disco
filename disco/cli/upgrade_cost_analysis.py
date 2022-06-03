@@ -24,8 +24,8 @@ from disco.exceptions import DiscoBaseException, get_error_code_from_exception
 from disco.models.base import OpenDssDeploymentModel
 from disco.models.upgrade_cost_analysis_generic_model import (
     UpgradeCostAnalysisSimulationModel,
-    UpgradeResultModel,
-    EquipmentTypeUpgradeCostsModel,
+    UpgradeViolationResultModel,
+    EquipmentTypeUpgradeCostsResult,
     UpgradeSummaryResultsModel,
 )
 from disco.extensions.upgrade_simulation.upgrade_parameters import UpgradeParameters
@@ -343,9 +343,9 @@ def _aggregate_results(jade_runtime_output, log_file, job_names, fmt):
             # It might seem odd to go from dict to model back to dict, but this validates
             # fields and types.
             for result in summary_table:
-                upgrade_summary_table.append(UpgradeResultModel(**result).dict())
+                upgrade_summary_table.append(UpgradeViolationResultModel(**result).dict())
             for result in costs_table:
-                upgrade_costs_table.append(EquipmentTypeUpgradeCostsModel(**result).dict())
+                upgrade_costs_table.append(EquipmentTypeUpgradeCostsResult(**result).dict())
 
     if upgrade_summary_table:
         if fmt == "csv":

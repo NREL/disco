@@ -9,7 +9,7 @@ from jade.utils.utils import load_data, dump_data
 from .thermal_upgrade_functions import *
 from .voltage_upgrade_functions import plot_thermal_violations, plot_voltage_violations, plot_feeder
 
-from disco.models.upgrade_cost_analysis_generic_model import UpgradeResultModel, UpgradeTechnicalCatalogModel
+from disco.models.upgrade_cost_analysis_generic_model import UpgradeViolationResultModel, UpgradeTechnicalCatalogModel
 from disco import timer_stats_collector
 from disco.enums import LoadMultiplierType
 from disco.exceptions import UpgradesInvalidViolationIncrease
@@ -115,7 +115,7 @@ def determine_thermal_upgrades(
     logger.info(upgrade_status)
 
     scenario = get_scenario_name(enable_pydss_solve, pydss_volt_var_model)
-    initial_results = UpgradeResultModel(
+    initial_results = UpgradeViolationResultModel(
         name=job_name,
         scenario=scenario,
         stage="Initial",
@@ -259,7 +259,7 @@ def determine_thermal_upgrades(
     end_time = time.time()
     logger.info(f"Simulation end time: {end_time}")
     simulation_time = end_time - start_time
-    final_results = UpgradeResultModel(
+    final_results = UpgradeViolationResultModel(
         name=job_name,
         scenario=scenario,
         stage="Final",
