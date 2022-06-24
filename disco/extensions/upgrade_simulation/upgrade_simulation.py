@@ -86,7 +86,10 @@ class UpgradeSimulation:
     def get_total_upgrade_costs_file(self):
         upgrade_costs = self.get_upgrade_costs_directory()
         return os.path.join(upgrade_costs, "total_upgrade_costs.json")
-
+    
+    def get_overall_output_summary_file(self):
+        return os.path.join(self.job_output, "overall_output_summary.json")
+    
     @staticmethod
     def generate_command(job, output, config_file, verbose=False):
         """
@@ -159,12 +162,15 @@ class UpgradeSimulation:
             verbose=verbose
         )
         compute_all_costs(
+            job_name = self.job.name,
             output_json_xfmr_upgrades_filepath=self.get_transformer_upgrades_json_file(),
             output_json_line_upgrades_filepath=self.get_line_upgrades_json_file(),
             output_json_voltage_upgrades_filepath=self.get_voltage_upgrades_json_file(),
             cost_database_filepath=cost_database_filepath,
             thermal_cost_output_filepath=self.get_thermal_upgrade_costs_file(),
             voltage_cost_output_filepath=self.get_voltage_upgrade_costs_file(),
-            total_cost_output_filepath=self.get_total_upgrade_costs_file()
+            total_cost_output_filepath=self.get_total_upgrade_costs_file(),
+            overall_output_summary_filepath=self.get_overall_output_summary_file(),
+            feeder_stats_json_file = self.get_feeder_stats_json_file()
         )
         timer_stats_collector.log_stats(clear=True)

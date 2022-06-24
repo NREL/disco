@@ -11,7 +11,7 @@ from sklearn.cluster import AgglomerativeClustering
 from .common_functions import *
 from .thermal_upgrade_functions import define_xfmr_object
 from disco import timer_stats_collector
-from disco.models.upgrade_cost_analysis_generic_model import VoltageUpgradesOutputDetails
+from disco.models.upgrade_cost_analysis_generic_output_model import VoltageUpgradesTechnicalOutput
 from jade.utils.timing_utils import track_timing, Timer
 
 
@@ -367,7 +367,7 @@ def get_capacitor_upgrades(orig_capacitors_df, new_capacitors_df):
             elif cap_name in new_addition:
                 final_cap_upgrades["ctrl_added"] = True
         processed_outputs.append(
-            VoltageUpgradesOutputDetails(**{
+            VoltageUpgradesTechnicalOutput(**{
                 "equipment_type": final_cap_upgrades["cap_name"].split(".")[0],
                 "name": final_cap_upgrades["cap_name"].split(".")[1],
                 "New controller added": final_cap_upgrades["ctrl_added"],
@@ -1932,7 +1932,7 @@ def generate_networkx_representation(**kwargs):
     # add edges to graph
     G = add_graph_edges(G=G, edges_df=edges_df, attr_fields=attr_fields, source='bus1', target='bus2')
     create_plot = kwargs.get('create_plot', False)
-    G = correct_node_coordinates(G=G)  # TODO SHERIN CHECK IF THIS WORKS
+    G = correct_node_coordinates(G=G)  # corrects node coordinates 
     return G
 
 
@@ -2074,6 +2074,6 @@ def get_regulator_upgrades(orig_regcontrols_df, new_regcontrols_df, orig_xfmrs_d
                     temp["Final Settings"].update(subltc_dict)
                 if xfmr_dict is not None:
                     temp["Final Settings"].update(xfmr_dict)
-                m = VoltageUpgradesOutputDetails(**temp)
+                m = VoltageUpgradesTechnicalOutput(**temp)
                 processed_outputs.append(m)    
     return processed_outputs

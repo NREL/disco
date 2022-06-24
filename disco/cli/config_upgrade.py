@@ -11,7 +11,7 @@ from disco.extensions.upgrade_simulation.upgrade_configuration import (
     DEFAULT_UPGRADE_COST_DB_FILE,
     DEFAULT_UPGRADE_PARAMS_FILE
 )
-from disco.models.upgrade_cost_analysis_generic_model import (
+from disco.models.upgrade_cost_analysis_generic_input_model import (
     ThermalUpgradeParamsModel,
     VoltageUpgradeParamsModel
 )

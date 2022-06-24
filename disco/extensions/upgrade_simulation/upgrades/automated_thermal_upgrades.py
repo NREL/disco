@@ -9,7 +9,8 @@ from jade.utils.utils import load_data, dump_data
 from .thermal_upgrade_functions import *
 from .voltage_upgrade_functions import plot_thermal_violations, plot_voltage_violations, plot_feeder
 
-from disco.models.upgrade_cost_analysis_generic_model import UpgradeViolationResultModel, UpgradeTechnicalCatalogModel
+from disco.models.upgrade_cost_analysis_generic_input_model import UpgradeTechnicalCatalogModel
+from disco.models.upgrade_cost_analysis_generic_output_model import UpgradeViolationResultModel, AllUpgradesTechnicalOutput
 from disco import timer_stats_collector
 from disco.enums import LoadMultiplierType
 from disco.exceptions import UpgradesInvalidViolationIncrease
@@ -70,9 +71,11 @@ def determine_thermal_upgrades(
         external_upgrades_technical_catalog = {}
         orig_lines_df = get_thermal_equipment_info(compute_loading=False, equipment_type="line")
         orig_xfmrs_df = get_thermal_equipment_info(compute_loading=False, equipment_type="transformer")
+        orig_linecode_df = get_line_code()
         line_upgrade_options = determine_available_line_upgrades(orig_lines_df)
         xfmr_upgrade_options = determine_available_xfmr_upgrades(orig_xfmrs_df)
-        internal_upgrades_technical_catalog = {"line": line_upgrade_options.to_dict('records'), "transformer": xfmr_upgrade_options.to_dict('records')}
+        internal_upgrades_technical_catalog = {"line": line_upgrade_options.to_dict('records'), "transformer": xfmr_upgrade_options.to_dict('records'),
+                                               "linecode": orig_linecode_df.to_dict('records')}
         # validate internal upgrades catalog
         input_catalog_model = UpgradeTechnicalCatalogModel(**internal_upgrades_technical_catalog)
         # reassign from model to dataframes, so datatypes are maintained
@@ -96,10 +99,12 @@ def determine_thermal_upgrades(
                                                                     "overloaded"]["name"].unique())
     orig_ckt_info = get_circuit_info()
     circuit_source = orig_ckt_info['source_bus']
+    orig_regcontrols_df = get_regcontrol_info(correct_PT_ratio=False)
+    orig_capacitors_df = get_capacitor_info(correct_PT_ratio=False)
     feeder_stats = {"feeder_metadata": {}, "stage_results": []}
     feeder_stats["feeder_metadata"].update(get_feeder_stats(dss))
     feeder_stats["stage_results"].append(get_upgrade_stage_stats(dss, upgrade_stage="Initial", upgrade_type="thermal", xfmr_loading_df=initial_xfmr_loading_df, line_loading_df=initial_line_loading_df, 
-                                        bus_voltages_df=initial_bus_voltages_df) )
+                                        bus_voltages_df=initial_bus_voltages_df, capacitors_df=orig_capacitors_df, regcontrols_df=orig_regcontrols_df) )
     dump_data(feeder_stats, feeder_stats_json_file, indent=4)   # save feeder stats
     if len(initial_overloaded_xfmr_list) > 0 or len(initial_overloaded_line_list) > 0:
         n = len(initial_overloaded_xfmr_list) +  len(initial_overloaded_line_list)
@@ -226,7 +231,8 @@ def determine_thermal_upgrades(
         commands_list.append("CalcVoltageBases")
     commands_list.append("Solve")
     write_text_file(string_list=commands_list, text_file_path=thermal_upgrades_dss_filepath)
-    redirect_command_list = create_upgraded_master_dss(dss_file_list=initial_dss_file_list + [thermal_upgrades_dss_filepath], upgraded_master_dss_filepath=upgraded_master_dss_filepath)
+    redirect_command_list = create_upgraded_master_dss(dss_file_list=initial_dss_file_list + [thermal_upgrades_dss_filepath], upgraded_master_dss_filepath=upgraded_master_dss_filepath,
+                                                       original_master_filename=os.path.basename(master_path))
     write_text_file(string_list=redirect_command_list, text_file_path=upgraded_master_dss_filepath)
     reload_dss_circuit(dss_file_list=[upgraded_master_dss_filepath], commands_list=None, **simulation_params,)
     bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(voltage_upper_limit=voltage_upper_limit, 
@@ -240,8 +246,10 @@ def determine_thermal_upgrades(
     # same equipment could be upgraded(edited) multiple times. Only consider last upgrade edit done. original_equipment details are currently not used.
     line_upgrades_df = line_upgrades_df.drop_duplicates(subset=["Upgrade_Type", "Action", "final_equipment_name"], keep="last")  
     xfmr_upgrades_df = xfmr_upgrades_df.drop_duplicates(subset=["Upgrade_Type", "Action", "final_equipment_name"], keep="last") 
-    dump_data(line_upgrades_df.to_dict('records'), output_json_line_upgrades_filepath, indent=4)
-    dump_data(xfmr_upgrades_df.to_dict('records'), output_json_xfmr_upgrades_filepath, indent=4)
+    # validate upgrades output models
+    m = AllUpgradesTechnicalOutput(line=line_upgrades_df.to_dict('records'), transformer=xfmr_upgrades_df.to_dict('records'))
+    dump_data(m.dict(by_alias=True)["line"], output_json_line_upgrades_filepath, indent=4)
+    dump_data(m.dict(by_alias=True)["transformer"], output_json_xfmr_upgrades_filepath, indent=4)
     n = len(overloaded_xfmr_list) +  len(overloaded_line_list)
     equipment_with_violations = {"Transformer": xfmr_loading_df, "Line": line_loading_df}
     if (upgrade_status == "Thermal Upgrades Required") and create_plots:
@@ -253,8 +261,10 @@ def determine_thermal_upgrades(
         feeder_stats = load_data(feeder_stats_json_file)
     else:
         feeder_stats = {}
+    regcontrols_df = get_regcontrol_info(correct_PT_ratio=False)
+    capacitors_df = get_capacitor_info(correct_PT_ratio=False)
     feeder_stats["stage_results"].append( get_upgrade_stage_stats(dss, upgrade_stage="Final", upgrade_type="thermal", xfmr_loading_df=xfmr_loading_df, line_loading_df=line_loading_df, 
-                                        bus_voltages_df=bus_voltages_df) )
+                                        bus_voltages_df=bus_voltages_df, capacitors_df=capacitors_df, regcontrols_df=regcontrols_df) )
     dump_data(feeder_stats, feeder_stats_json_file, indent=4)
     end_time = time.time()
     logger.info(f"Simulation end time: {end_time}")

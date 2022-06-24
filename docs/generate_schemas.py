@@ -6,7 +6,8 @@ from disco.models.power_flow_generic_models import (
     PowerFlowSnapshotSimulationModel,
     PowerFlowTimeSeriesSimulationModel,
 )
-from disco.models.upgrade_cost_analysis_generic_model import *
+from disco.models.upgrade_cost_analysis_generic_input_model import *
+from disco.models.upgrade_cost_analysis_generic_output_model import *
 
 
 @click.command()
@@ -17,7 +18,7 @@ def generate_schemas(output_dir):
         PowerFlowSnapshotSimulationModel,
         PowerFlowTimeSeriesSimulationModel,
         UpgradeCostAnalysisSimulationModel,
-        UpgradeSummaryResultsModel,
+        JobUpgradeSummaryResultsModel,
         # ThermalUpgradeParamsModel,
         # VoltageUpgradeParamsModel,
         # UpgradeCostAnalysisGenericModel,

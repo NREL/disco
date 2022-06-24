@@ -13,7 +13,7 @@ from .fixed_upgrade_parameters import (
 )
 from .voltage_upgrade_functions import *
 from disco.enums import LoadMultiplierType
-from disco.models.upgrade_cost_analysis_generic_model import UpgradeViolationResultModel, VoltageUpgradesOutputDetails
+from disco.models.upgrade_cost_analysis_generic_output_model import UpgradeViolationResultModel
 from disco import timer_stats_collector
 
 logger = logging.getLogger(__name__)
@@ -112,7 +112,7 @@ def determine_voltage_upgrades(
     else:
         feeder_stats = {}
     feeder_stats["stage_results"].append( get_upgrade_stage_stats(dss, upgrade_stage="Initial", upgrade_type="voltage", xfmr_loading_df=initial_xfmr_loading_df, line_loading_df=initial_line_loading_df, 
-                                        bus_voltages_df=initial_bus_voltages_df) )
+                                        bus_voltages_df=initial_bus_voltages_df, regcontrols_df=orig_regcontrols_df, capacitors_df=orig_capacitors_df) )
     dump_data(feeder_stats, feeder_stats_json_file, indent=4)
     scenario = get_scenario_name(enable_pydss_solve, pydss_volt_var_model)
     initial_results = UpgradeViolationResultModel(
@@ -237,7 +237,8 @@ def determine_voltage_upgrades(
         dss_commands_list.append("CalcVoltageBases")
     dss_commands_list.append("Solve")
     write_text_file(string_list=dss_commands_list, text_file_path=voltage_upgrades_dss_filepath)
-    redirect_command_list = create_upgraded_master_dss(dss_file_list=initial_dss_file_list + [voltage_upgrades_dss_filepath], upgraded_master_dss_filepath=upgraded_master_dss_filepath)
+    redirect_command_list = create_upgraded_master_dss(dss_file_list=initial_dss_file_list + [voltage_upgrades_dss_filepath], upgraded_master_dss_filepath=upgraded_master_dss_filepath,
+                                                       original_master_filename=os.path.basename(master_path))
     write_text_file(string_list=redirect_command_list, text_file_path=upgraded_master_dss_filepath)
     reload_dss_circuit(dss_file_list=[upgraded_master_dss_filepath], commands_list=None, **simulation_params,)
     # reading new objects (after upgrades)
@@ -249,7 +250,6 @@ def determine_voltage_upgrades(
                                            orig_xfmrs_df=orig_xfmrs_df, new_ckt_info=new_ckt_info)
     all_processed = processed_cap + processed_reg
     all_processed = [x.dict(by_alias=True) for x in all_processed]
-    breakpoint()
     dump_data(all_processed, output_json_voltage_upgrades_filepath, indent=4)
     bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
         voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
@@ -268,7 +268,7 @@ def determine_voltage_upgrades(
     else:
         feeder_stats = {}
     feeder_stats["stage_results"].append( get_upgrade_stage_stats(dss, upgrade_stage="Final", upgrade_type="voltage", xfmr_loading_df=xfmr_loading_df, line_loading_df=line_loading_df, 
-                                        bus_voltages_df=bus_voltages_df) )
+                                        bus_voltages_df=bus_voltages_df, regcontrols_df=new_regcontrols_df, capacitors_df=new_capacitors_df) )
     dump_data(feeder_stats, feeder_stats_json_file, indent=4) 
     end_time = time.time()
     logger.info(f"Simulation end time: {end_time}")

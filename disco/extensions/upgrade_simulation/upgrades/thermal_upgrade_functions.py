@@ -5,7 +5,8 @@ from jade.utils.timing_utils import track_timing
 
 from disco import timer_stats_collector
 from disco.exceptions import ExceededParallelLinesLimit, ExceededParallelTransformersLimit
-
+from disco.models.upgrade_cost_analysis_generic_input_model import _extract_specific_model_properties_, TransformerCatalogModel, LineCatalogModel
+from disco.models.upgrade_cost_analysis_generic_output_model import TransformerUpgradesTechnicalOutput, LineUpgradesTechnicalOutput
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,7 @@ def correct_line_violations(line_loading_df, line_design_pu, line_upgrade_option
     # If a line code is not found or if line code is too overrated, one or more parallel lines (num_par_lns-1) are added
     overloaded_loading_df = line_loading_df.loc[line_loading_df["status"] == "overloaded"].copy()
     overloaded_loading_df["required_design_amp"] = overloaded_loading_df["max_amp_loading"] / line_design_pu
-    deciding_property_list = ["Switch", "kV", "phases", "line_placement",]  # list of properties based on which upgrade is chosen
+    deciding_property_list =  _extract_specific_model_properties_(model_name=LineCatalogModel, field_type_key="deciding_property", field_type_value=True)
     line_upgrade_options.set_index(deciding_property_list, inplace=True)
     line_upgrade_options = line_upgrade_options.sort_index(level=0)
     overloaded_loading_df.set_index(deciding_property_list, inplace=True)    
@@ -74,7 +75,7 @@ def correct_line_violations(line_loading_df, line_design_pu, line_upgrade_option
                 # if line geometry and line code is not available
                 else:
                     # TODO can add more parameters in command (like done for transformer)
-                    command_string = f"Edit Line.{row['name']} normamps={chosen_option['normamps']}"
+                    command_string = f"Edit Line.{row['name']} normamps={chosen_option['normamps']} emergamps={chosen_option['emergamps']}"
                     temp_commands_list.append(command_string)
                 # create dictionary of original equipment
                 upgrades_dict[row["name"]] = {}
@@ -122,6 +123,8 @@ def correct_line_violations(line_loading_df, line_design_pu, line_upgrade_option
     else:  # if there is no overloading
         logger.info("This case has no line violations")
     circuit_solve_and_check(raise_exception=True, **kwargs)  # this is added as a final check for convergence
+    output_fields =  list(LineUpgradesTechnicalOutput.schema(True).get("properties").keys())  # get fields with alias
+    line_upgrades_df = line_upgrades_df[output_fields]
     return commands_list, line_upgrades_df
 
 
@@ -188,6 +191,8 @@ def identify_parallel_lines(options, object_row, parallel_lines_limit, **kwargs)
                 f"units={object_row['units']} phases={chosen_option['phases']} " \
                 f"normamps={chosen_option['normamps']} enabled=True"
             commands_list.append(s)
+        temp_dict.pop("choose_parallel_metric")
+        temp_dict.pop("num_parallel_raw")
         upgrades_dict_parallel.append(temp_dict)
     return commands_list, upgrades_dict_parallel
 
@@ -232,9 +237,7 @@ def define_xfmr_object(xfmr_name, xfmr_info_series, action_type, buses_list=None
         command_string = command_string + temp_s
     # these properties contain general transformer rating data
     # (refer OpenDSS manual for more information on these parameters)
-    general_property_list = ["LeadLag", "Core", "thermal", "n", "m", "flrise", "hsrise", "%noloadloss", "%loadloss",
-                             "normhkVA", "emerghkVA", "NumTaps", "%imag", "ppm_antifloat", "XRConst",
-                             "faultrate"]
+    general_property_list =  _extract_specific_model_properties_(model_name=TransformerCatalogModel, field_type_key="write_property", field_type_value=True)
     for property_name in general_property_list:
         temp_s = f" {property_name}={xfmr_info_series[property_name]}"
         command_string = command_string + temp_s
@@ -269,7 +272,7 @@ def correct_xfmr_violations(xfmr_loading_df, xfmr_design_pu, xfmr_upgrade_option
     overloaded_loading_df = xfmr_loading_df.loc[xfmr_loading_df["status"] == "overloaded"].copy()
     overloaded_loading_df["required_design_amp"] = overloaded_loading_df["max_amp_loading"] / xfmr_design_pu
     # list of properties based on which upgrade is chosen
-    deciding_property_list = ["phases", "wdg", "conn", "conns", "kV", "kVs", "LeadLag", "basefreq"]
+    deciding_property_list =  _extract_specific_model_properties_(model_name=TransformerCatalogModel, field_type_key="deciding_property", field_type_value=True)
     # convert lists to string type (so they can be set as dataframe index later)
     xfmr_upgrade_options[['conns', 'kVs']] = xfmr_upgrade_options[['conns', 'kVs']].astype(str)
     overloaded_loading_df[['conns', 'kVs']] = overloaded_loading_df[['conns', 'kVs']].astype(str)
@@ -348,6 +351,8 @@ def correct_xfmr_violations(xfmr_loading_df, xfmr_design_pu, xfmr_upgrade_option
     else:  # if there is no overloading
         logger.info("This case has no transformer violations")
     circuit_solve_and_check(raise_exception=True, **kwargs)  # this is added as a final check for convergence
+    output_fields =  list(TransformerUpgradesTechnicalOutput.schema(True).get("properties").keys())  # get fields with alias
+    xfmr_upgrades_df = xfmr_upgrades_df[output_fields]
     return commands_list, xfmr_upgrades_df
 
 
@@ -396,5 +401,7 @@ def identify_parallel_xfmrs(upgrade_options, object_row, parallel_transformer_li
         command_string = define_xfmr_object(xfmr_name=new_name, xfmr_info_series=chosen_option, action_type="New",
                                             buses_list=object_row["buses"])
         commands_list.append(command_string)
+        temp_dict.pop("choose_parallel_metric")
+        temp_dict.pop("num_parallel_raw")
         upgrades_dict_parallel.append(temp_dict)
     return commands_list, upgrades_dict_parallel
