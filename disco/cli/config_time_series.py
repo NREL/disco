@@ -81,6 +81,24 @@ COMMON_TIME_SERIES_OPTIONS = (
         "--reports-filename.",
     ),
     click.option(
+        "--capacitor-changes",
+        type=click.Choice(("true", "false"), case_sensitive=False),
+        callback=callback_is_enabled,
+        default=None,
+        show_default=True,
+        help="Whether to enable the Capacitor State Changes report. If not set, use the value in "
+        "--reports-filename.",
+    ),
+    click.option(
+        "--regcontrol-changes",
+        type=click.Choice(("true", "false"), case_sensitive=False),
+        callback=callback_is_enabled,
+        default=None,
+        show_default=True,
+        help="Whether to enable the RegControl Tap Number Changes report. If not set, use the "
+        "value in --reports-filename.",
+    ),
+    click.option(
         "--export-data-tables",
         default=False,
         is_flag=True,
@@ -195,6 +213,8 @@ def time_series(
     pv_curtailment,
     thermal_metrics,
     voltage_metrics,
+    capacitor_changes,
+    regcontrol_changes,
     export_data_tables,
     exports_filename,
     reports_filename,
@@ -236,6 +256,10 @@ def time_series(
         if report["name"] in ("Thermal Metrics", "Voltage Metrics"):
             report["store_all_time_points"] = store_all_time_points
             report["store_per_element_data"] = store_per_element_data
+        if report["name"] == "Capacitor State Change Counts" and capacitor_changes is not None:
+            report["enabled"] = capacitor_changes
+        if report["name"] == "RegControl Tap Number Change Counts" and regcontrol_changes is not None:
+            report["enabled"] = regcontrol_changes
 
     exports = {} if exports_filename is None else load_data(exports_filename)
     scenarios = []

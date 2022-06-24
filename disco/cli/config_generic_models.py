@@ -135,6 +135,8 @@ def time_series(
     pv_curtailment,
     thermal_metrics,
     voltage_metrics,
+    capacitor_changes,
+    regcontrol_changes,
     export_data_tables,
     exports_filename,
     reports_filename,
@@ -168,6 +170,10 @@ def time_series(
         if report["name"] in ("Thermal Metrics", "Voltage Metrics"):
             report["store_per_element_data"] = store_per_element_data
             report["store_all_time_points"] = store_all_time_points
+        if report["name"] == "Capacitor State Change Counts" and capacitor_changes is not None:
+            report["enabled"] = capacitor_changes
+        if report["name"] == "RegControl Tap Number Change Counts" and regcontrol_changes is not None:
+            report["enabled"] = regcontrol_changes
 
     exports = {} if exports_filename is None else load_data(exports_filename)
     scenarios = []
