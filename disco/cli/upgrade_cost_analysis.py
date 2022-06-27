@@ -25,8 +25,8 @@ from disco.models.base import OpenDssDeploymentModel
 from disco.models.upgrade_cost_analysis_generic_input_model import UpgradeCostAnalysisSimulationModel
 from disco.models.upgrade_cost_analysis_generic_output_model import (
     UpgradeViolationResultModel,
-    TotalUpgradeCostsResult,
-    JobUpgradeSummaryResultsModel,
+    TotalUpgradeCostsResultModel,
+    JobUpgradeSummaryOutputModel,
 )
 from disco.extensions.upgrade_simulation.upgrade_parameters import UpgradeParameters
 from disco.extensions.upgrade_simulation.upgrade_simulation import UpgradeSimulation
@@ -345,7 +345,7 @@ def _aggregate_results(jade_runtime_output, log_file, job_names, fmt):
             for result in summary_table:
                 upgrade_summary_table.append(UpgradeViolationResultModel(**result).dict())
             for result in costs_table:
-                upgrade_costs_table.append(TotalUpgradeCostsResult(**result).dict())
+                upgrade_costs_table.append(TotalUpgradeCostsResultModel(**result).dict())
 
     if upgrade_summary_table:
         if fmt == "csv":
@@ -367,7 +367,7 @@ def _aggregate_results(jade_runtime_output, log_file, job_names, fmt):
 
     if fmt == "json":
         filename = jade_runtime_output / "upgrade_summary.json"
-        dump_data(JobUpgradeSummaryResultsModel(**output_json).dict(), filename, indent=2)
+        dump_data(JobUpgradeSummaryOutputModel(**output_json).dict(), filename, indent=2)
         logger.info("Output summary data to %s", filename)
 
 

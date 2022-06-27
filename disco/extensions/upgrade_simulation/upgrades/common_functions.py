@@ -27,8 +27,8 @@ from disco.models.upgrade_cost_analysis_generic_input_model import (
     LineCatalogModel, 
     TransformerCatalogModel
 )
-from disco.models.upgrade_cost_analysis_generic_output_model import UpgradesCostOutputSummary, \
-    capacitor_controller_output_type,  voltage_regulator_output_type, equipment_upgrade_status
+from disco.models.upgrade_cost_analysis_generic_output_model import UpgradesCostResultSummaryModel, \
+    CapacitorControllerResultTypeModel,  VoltageRegulatorResultTypeModel, EquipmentUpgradeStatusModel
 
 logger = logging.getLogger(__name__)
 
@@ -393,7 +393,7 @@ def get_circuit_info():
     return data_dict
 
 
-def _create_thermal_output_summary_(all_original_equipment, all_latest_equipment, thermal_equipment_type_list,
+def create_thermal_output_summary(all_original_equipment, all_latest_equipment, thermal_equipment_type_list,
                                     props_dict, thermal_cost_df, upgrades_dict, output_cols):
     """This function creates the thermal output summary file"""
     new_thermal_df = pd.DataFrame(columns=output_cols)
@@ -404,19 +404,19 @@ def _create_thermal_output_summary_(all_original_equipment, all_latest_equipment
         original_equipment_df = original_equipment_df.rename(columns={props_dict[equipment_type]["identifier"]: "equipment_name"})
         temp_upgrade_df = upgrades_dict[equipment_type]
         temp_upgrade_df = temp_upgrade_df.rename(columns={"final_equipment_name": "equipment_name"})
-        replaced = list(temp_upgrade_df.loc[temp_upgrade_df["Upgrade_Type"]=="upgrade"]["equipment_name"].unique())  # list of replaced equipment
-        new = list(temp_upgrade_df.loc[temp_upgrade_df["Upgrade_Type"]=="new (parallel)"]["equipment_name"].unique())  # list of new equipment
+        replaced = list(temp_upgrade_df.loc[temp_upgrade_df["upgrade_type"]=="upgrade"]["equipment_name"].unique())  # list of replaced equipment
+        new = list(temp_upgrade_df.loc[temp_upgrade_df["upgrade_type"]=="new (parallel)"]["equipment_name"].unique())  # list of new equipment
         temp_cost_df = thermal_cost_df.loc[thermal_cost_df.type.str.lower() == equipment_type.lower()]
         temp_cost_df = temp_cost_df.rename(columns={"final_equipment_name": "equipment_name"})
 
-        new_df = latest_equipment_df.copy()
+        new_df = latest_equipment_df.copy(deep=True)
         new_df = pd.concat([new_df, pd.DataFrame(columns=set(output_cols)-set(new_df.columns))], axis=1)
         new_df.loc[:, "equipment_type"] = equipment_type
         new_df.loc[:, "total_cost_usd"] = 0
-        new_df.loc[:, "status"] = equipment_upgrade_status.unchanged.value
+        new_df.loc[:, "status"] = EquipmentUpgradeStatusModel.unchanged.value
         # add upgrade status
-        new_df.loc[new_df.equipment_name.isin(replaced), "status"] = equipment_upgrade_status.replaced.value
-        new_df.loc[new_df.equipment_name.isin(new), "status"] = equipment_upgrade_status.new.value
+        new_df.loc[new_df.equipment_name.isin(replaced), "status"] = EquipmentUpgradeStatusModel.replaced.value
+        new_df.loc[new_df.equipment_name.isin(new), "status"] = EquipmentUpgradeStatusModel.new.value
         # add cost
         temp_cost_df.set_index("equipment_name", inplace=True)
         new_df.set_index("equipment_name", inplace=True)
@@ -438,73 +438,72 @@ def _create_thermal_output_summary_(all_original_equipment, all_latest_equipment
     return new_thermal_df
 
 
-def _create_capacitor_output_summary_(temp_upgrade_df, voltage_cost_df, latest_equipment_df, output_cols, equipment_type):
-    new = list(temp_upgrade_df.loc[temp_upgrade_df["New controller added"]==True]["equipment_name"].unique())  # list of new equipment
-    setting_changed = list(temp_upgrade_df.loc[temp_upgrade_df["Controller settings modified"]==True]["equipment_name"].unique())  # list of setting_changed equipment
-    temp_cost_df = voltage_cost_df.loc[voltage_cost_df.type.isin(capacitor_controller_output_type.list())]
+def create_capacitor_output_summary(temp_upgrade_df, voltage_cost_df, latest_equipment_df, output_cols, equipment_type):
+    new = list(temp_upgrade_df.loc[temp_upgrade_df["new_controller_added"]]["equipment_name"].unique())  # list of new equipment
+    setting_changed = list(temp_upgrade_df.loc[temp_upgrade_df["controller_settings_modified"]]["equipment_name"].unique())  # list of setting_changed equipment
+    temp_cost_df = voltage_cost_df.loc[voltage_cost_df.type.isin(CapacitorControllerResultTypeModel.list())]
     temp_cost_df = voltage_cost_df.rename(columns={"final_equipment_name": "equipment_name"})
     # get unit cost
-    unit_cost_calc = temp_cost_df.loc[temp_cost_df.type == capacitor_controller_output_type.change_cap_control.value]
+    unit_cost_calc = temp_cost_df.loc[temp_cost_df.type == CapacitorControllerResultTypeModel.change_cap_control.value]
     if not unit_cost_calc.empty:
         setting_changed_unit_cost = (unit_cost_calc["total_cost_usd"] / unit_cost_calc["count"]).values[0]
     else: 
         setting_changed_unit_cost = 0
-    unit_cost_calc = temp_cost_df.loc[temp_cost_df.type == capacitor_controller_output_type.add_new_cap_controller.value]
+    unit_cost_calc = temp_cost_df.loc[temp_cost_df.type == CapacitorControllerResultTypeModel.add_new_cap_controller.value]
     if not unit_cost_calc.empty:
         add_new_unit_cost = (unit_cost_calc["total_cost_usd"] / unit_cost_calc["count"]).values[0]
     else:
         add_new_unit_cost = 0
     # create new dataframe
-    new_df = latest_equipment_df.copy()
+    new_df = latest_equipment_df.copy(deep=True)
     new_df = pd.concat([new_df, pd.DataFrame(columns=set(output_cols)-set(new_df.columns))], axis=1)
     new_df.loc[:, "equipment_type"] = equipment_type
     new_df.loc[:, "total_cost_usd"] = 0
-    new_df.loc[:, "status"] = equipment_upgrade_status.unchanged.value
+    new_df.loc[:, "status"] = EquipmentUpgradeStatusModel.unchanged.value
     # add upgrade status and cost
-    new_df.loc[new_df.equipment_name.isin(setting_changed), "status"] = equipment_upgrade_status.setting_changed.value
+    new_df.loc[new_df.equipment_name.isin(setting_changed), "status"] = EquipmentUpgradeStatusModel.setting_changed.value
     new_df.loc[new_df.equipment_name.isin(setting_changed), "total_cost_usd"] = setting_changed_unit_cost
-    new_df.loc[new_df.equipment_name.isin(new), "status"] = equipment_upgrade_status.new.value
+    new_df.loc[new_df.equipment_name.isin(new), "status"] = EquipmentUpgradeStatusModel.new.value
     new_df.loc[new_df.equipment_name.isin(new), "total_cost_usd"] = add_new_unit_cost
     return new_df, new, setting_changed 
 
 
-def _create_regulator_output_summary_(temp_upgrade_df, voltage_cost_df, latest_equipment_df, output_cols, equipment_type):    
-    new = list(temp_upgrade_df.loc[temp_upgrade_df["New controller added"]==True]["equipment_name"].unique())  # list of new equipment
-    setting_changed = list(temp_upgrade_df.loc[temp_upgrade_df["Controller settings modified"]==True]["equipment_name"].unique())  # list of setting_changed equipment
+def create_regulator_output_summary(temp_upgrade_df, voltage_cost_df, latest_equipment_df, output_cols, equipment_type):    
+    new = list(temp_upgrade_df.loc[temp_upgrade_df["new_controller_added"]]["equipment_name"].unique())  # list of new equipment
+    setting_changed = list(temp_upgrade_df.loc[temp_upgrade_df["controller_settings_modified"]]["equipment_name"].unique())  # list of setting_changed equipment
     # create new dataframe
-    new_df = latest_equipment_df.copy()
+    new_df = latest_equipment_df.copy(deep=True)
     new_df = pd.concat([new_df, pd.DataFrame(columns=set(output_cols)-set(new_df.columns))], axis=1)
     new_df.loc[:, "equipment_type"] = equipment_type
     new_df.loc[:, "total_cost_usd"] = 0
-    new_df.loc[:, "status"] = equipment_upgrade_status.unchanged.value
+    new_df.loc[:, "status"] = EquipmentUpgradeStatusModel.unchanged.value
     
     # get unit cost            
-    temp_cost_df = voltage_cost_df.loc[voltage_cost_df.type.isin(voltage_regulator_output_type.list())]
+    temp_cost_df = voltage_cost_df.loc[voltage_cost_df.type.isin(VoltageRegulatorResultTypeModel.list())]
     temp_cost_df = voltage_cost_df.rename(columns={"final_equipment_name": "equipment_name"})
-    unit_cost_calc = temp_cost_df.loc[temp_cost_df.type == voltage_regulator_output_type.add_new_reg_control.value]
+    unit_cost_calc = temp_cost_df.loc[temp_cost_df.type == VoltageRegulatorResultTypeModel.add_new_reg_control.value]
     if not unit_cost_calc.empty:
         new_vreg_unit_cost = (unit_cost_calc["total_cost_usd"] / unit_cost_calc["count"]).values[0]
         new_df.loc[(new_df.equipment_name.isin(new)) & (new_df.at_substation_xfmr_flag == False), "total_cost_usd"] = new_vreg_unit_cost
-    unit_cost_calc = temp_cost_df.loc[temp_cost_df.type == voltage_regulator_output_type.change_reg_control.value]
+    unit_cost_calc = temp_cost_df.loc[temp_cost_df.type == VoltageRegulatorResultTypeModel.change_reg_control.value]
     if not unit_cost_calc.empty:
         vreg_setting_changed_unit_cost = (unit_cost_calc["total_cost_usd"] / unit_cost_calc["count"]).values[0]
         new_df.loc[(new_df.equipment_name.isin(setting_changed)) & (new_df.at_substation_xfmr_flag == False), "total_cost_usd"] = vreg_setting_changed_unit_cost
-    unit_cost_calc = temp_cost_df.loc[temp_cost_df.type == voltage_regulator_output_type.add_substation_ltc.value]
+    unit_cost_calc = temp_cost_df.loc[temp_cost_df.type == VoltageRegulatorResultTypeModel.add_substation_ltc.value]
     if not unit_cost_calc.empty:
         new_ltc_unit_cost = (unit_cost_calc["total_cost_usd"] / unit_cost_calc["count"]).values[0]
-        new_df.loc[(new_df.equipment_name.isin(new)) & (new_df.at_substation_xfmr_flag == True), "total_cost_usd"] = new_ltc_unit_cost
-    unit_cost_calc = temp_cost_df.loc[temp_cost_df.type == voltage_regulator_output_type.change_ltc_control.value]
+        new_df.loc[(new_df.equipment_name.isin(new)) & (new_df.at_substation_xfmr_flag), "total_cost_usd"] = new_ltc_unit_cost
+    unit_cost_calc = temp_cost_df.loc[temp_cost_df.type == VoltageRegulatorResultTypeModel.change_ltc_control.value]
     if not unit_cost_calc.empty:
         ltc_setting_changed_unit_cost = (unit_cost_calc["total_cost_usd"] / unit_cost_calc["count"]).values[0]
-        new_df.loc[(new_df.equipment_name.isin(setting_changed)) & (new_df.at_substation_xfmr_flag == True), "total_cost_usd"] = ltc_setting_changed_unit_cost
-
+        new_df.loc[(new_df.equipment_name.isin(setting_changed)) & (new_df.at_substation_xfmr_flag), "total_cost_usd"] = ltc_setting_changed_unit_cost
     # add upgrade status
-    new_df.loc[new_df.equipment_name.isin(setting_changed), "status"] = equipment_upgrade_status.setting_changed.value
-    new_df.loc[new_df.equipment_name.isin(new), "status"] = equipment_upgrade_status.new.value
+    new_df.loc[new_df.equipment_name.isin(setting_changed), "status"] = EquipmentUpgradeStatusModel.setting_changed.value
+    new_df.loc[new_df.equipment_name.isin(new), "status"] = EquipmentUpgradeStatusModel.new.value
     return new_df, new, setting_changed 
 
 
-def _create_voltage_output_summary_(all_original_equipment, all_latest_equipment, voltage_equipment_type_list,
+def create_voltage_output_summary(all_original_equipment, all_latest_equipment, voltage_equipment_type_list,
                                     props_dict, voltage_cost_df, upgrades_dict, output_cols):
     # VOLTAGE EQUIPMENT
     voltage_upgrade_df = upgrades_dict["voltage"]
@@ -519,9 +518,9 @@ def _create_voltage_output_summary_(all_original_equipment, all_latest_equipment
         temp_upgrade_df = voltage_upgrade_df.loc[voltage_upgrade_df.equipment_type.str.lower() == props_dict[equipment_type]["upgrades_file_string"].lower()]
         temp_upgrade_df = temp_upgrade_df.rename(columns={"name": "equipment_name"})
         if equipment_type == "capacitor_control":
-            new_df, new, setting_changed = _create_capacitor_output_summary_(temp_upgrade_df, voltage_cost_df, latest_equipment_df, output_cols, equipment_type)
+            new_df, new, setting_changed = create_capacitor_output_summary(temp_upgrade_df, voltage_cost_df, latest_equipment_df, output_cols, equipment_type)
         elif equipment_type == "regulator_control":
-            new_df, new, setting_changed  = _create_regulator_output_summary_(temp_upgrade_df, voltage_cost_df, latest_equipment_df, output_cols, equipment_type)
+            new_df, new, setting_changed  = create_regulator_output_summary(temp_upgrade_df, voltage_cost_df, latest_equipment_df, output_cols, equipment_type)
         new_df.set_index("equipment_name", inplace=True)
         parameter_list = props_dict[equipment_type]["parameter_list"]
         if not original_equipment_df.empty:
@@ -544,7 +543,7 @@ def create_overall_output_file(feeder_stats, upgrades_dict, costs_dict, **kwargs
     """This function creates the overall output summary file
     Status can have values: unchanged, replaced, new, setting_changed
     """
-    output_cols = UpgradesCostOutputSummary.schema(True).get("properties").keys()
+    output_cols = UpgradesCostResultSummaryModel.schema(True).get("properties").keys()
     thermal_equipment_type_list = kwargs.get("thermal_equipment_type_list", ["transformer", "line"])
     voltage_equipment_type_list = kwargs.get("voltage_equipment_type_list", ["capacitor_control", "regulator_control"])
     props_dict = {"transformer": {"identifier": "name", "parameter_list": ["kVA"], },
@@ -563,10 +562,10 @@ def create_overall_output_file(feeder_stats, upgrades_dict, costs_dict, **kwargs
         if (stage_item["stage"].lower() == "final") and (stage_item["upgrade_type"].lower() == "voltage"):
             all_latest_equipment = stage_item
     
-    thermal_summary_df = _create_thermal_output_summary_(all_original_equipment, all_latest_equipment, thermal_equipment_type_list,
+    thermal_summary_df = create_thermal_output_summary(all_original_equipment, all_latest_equipment, thermal_equipment_type_list,
                                                         props_dict, thermal_cost_df, upgrades_dict, output_cols)
     
-    voltage_summary_df = _create_voltage_output_summary_(all_original_equipment, all_latest_equipment, voltage_equipment_type_list,
+    voltage_summary_df = create_voltage_output_summary(all_original_equipment, all_latest_equipment, voltage_equipment_type_list,
                                                         props_dict, voltage_cost_df, upgrades_dict, output_cols)
     return pd.concat([thermal_summary_df, voltage_summary_df])
 
@@ -720,12 +719,7 @@ def get_present_pvgeneration():
         flag = dss.ActiveClass.Next() > 0
     pv_df = pd.DataFrame.from_dict(pv_dict, "index")
     return pv_df
-
-
-def remove_trailing_whitespace(text):
-    """Removes trailing whitespace from a string"""
-    return text.rstrip()
-    
+   
 
 def get_all_transformer_info_instance(upper_limit=None, compute_loading=True):
     """This collects transformer information
@@ -740,8 +734,8 @@ def get_all_transformer_info_instance(upper_limit=None, compute_loading=True):
     all_df["name"] = all_df.index.str.split(".").str[1]
     all_df["equipment_type"] = all_df.index.str.split(".").str[0]
     # extract only enabled lines
-    all_df = all_df.loc[all_df["enabled"] == True]
-    all_df["conn"] = all_df["conn"].apply(remove_trailing_whitespace)  # remove trailing space from conn field
+    all_df = all_df.loc[all_df["enabled"]]
+    all_df["conn"] = all_df["conn"].str.strip()  # remove trailing space from conn field
     # define empty new columns
     all_df['bus_names_only'] = None
     all_df["amp_limit_per_phase"] = np.nan
@@ -1008,7 +1002,7 @@ def get_regcontrol_info(correct_PT_ratio=False, nominal_voltage=None):
         all_df.at[index, "transformer_kva"] = float(dss.Properties.Value("kva"))
         dss.Transformers.Wdg(1)  # setting winding to 1, to get kV for winding 1
         all_df.at[index, "transformer_kv"] = dss.Transformers.kV()
-        all_df.at[index, "transformer_conn"] = remove_trailing_whitespace(dss.Properties.Value("conn"))  # opendss returns conn with a space 
+        all_df.at[index, "transformer_conn"] = dss.Properties.Value("conn").strip()  # opendss returns conn with a space 
         all_df.at[index, "transformer_bus1"] = dss.CktElement.BusNames()[0].split(".")[0]
         all_df.at[index, "transformer_bus2"] = dss.CktElement.BusNames()[1].split(".")[0]
         if correct_PT_ratio:
@@ -1352,7 +1346,7 @@ def get_voltage_violations(voltage_upper_limit, voltage_lower_limit, bus_voltage
 def determine_available_line_upgrades(line_loading_df):
     """This function creates a dataframe of available line upgrades by dropping duplicates from line dataframe passed.
     """
-    property_list =  _extract_specific_model_properties_(model_name=LineCatalogModel, field_type_key="upgrade_option_property", field_type_value=True)
+    property_list =  _extract_specific_model_properties_(model_name=LineCatalogModel, field_type_key="determine_upgrade_option", field_type_value=True)
     if 'line_definition_type' not in line_loading_df.columns:  # add line_definition_type if not present
         line_loading_df = add_info_line_definition_type(line_loading_df)
     if 'line_placement' not in line_loading_df.columns:
@@ -1375,7 +1369,7 @@ def determine_available_xfmr_upgrades(xfmr_loading_df):
     """This function creates a dataframe of available transformer upgrades by dropping duplicates from transformer dataframe passed.
     Input dataframe will need to contain "amp_limit_per_phase" column. So if external catalog is supplied, ensure it contains that column.
     """
-    property_list =  _extract_specific_model_properties_(model_name=TransformerCatalogModel, field_type_key="upgrade_option_property", field_type_value=True)
+    property_list =  _extract_specific_model_properties_(model_name=TransformerCatalogModel, field_type_key="determine_upgrade_option", field_type_value=True)
     xfmr_upgrade_options = xfmr_loading_df[property_list]
     xfmr_upgrade_options = xfmr_upgrade_options.loc[xfmr_upgrade_options.astype(str).drop_duplicates().index]
     xfmr_upgrade_options.reset_index(drop=True, inplace=True)

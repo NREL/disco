@@ -51,13 +51,9 @@ class UpgradeSimulation:
     def get_upgraded_master_dss_file(self):
         return os.path.join(self.job_output, "upgraded_master.dss")
 
-    def get_line_upgrades_json_file(self):
+    def get_thermal_upgrades_json_file(self):
         thermal_upgrades = self.get_thermal_upgrades_directory()
-        return os.path.join(thermal_upgrades, "line_upgrades.json")
-    
-    def get_transformer_upgrades_json_file(self):
-        thermal_upgrades = self.get_thermal_upgrades_directory()
-        return os.path.join(thermal_upgrades, "transformer_upgrades.json")
+        return os.path.join(thermal_upgrades, "thermal_upgrades.json")
     
     def get_voltage_upgrades_json_file(self):
         voltage_upgrades = self.get_voltage_upgrades_directory()
@@ -65,19 +61,19 @@ class UpgradeSimulation:
     
     def get_thermal_summary_json_file(self):
         thermal_upgrades = self.get_thermal_upgrades_directory()
-        return os.path.join(thermal_upgrades, "thermal_summary.json")
+        return os.path.join(thermal_upgrades, "thermal_violation_summary.json")
     
     def get_voltage_summary_json_file(self):
         voltage_upgrades = self.get_voltage_upgrades_directory()
-        return os.path.join(voltage_upgrades, "voltage_summary.json")
+        return os.path.join(voltage_upgrades, "voltage_violation_summary.json")
 
     def internal_upgrades_technical_catalog_filepath(self):
         thermal_upgrades = self.get_thermal_upgrades_directory()
         return os.path.join(thermal_upgrades, "internal_upgrades_technical_catalog.json")
     
-    def get_thermal_upgrade_costs_file(self):
+    def get_equipmentwise_upgrade_costs_file(self):
         upgrade_costs = self.get_upgrade_costs_directory()
-        return os.path.join(upgrade_costs, "thermal_upgrade_costs.json")
+        return os.path.join(upgrade_costs, "equipmentwise_upgrade_costs.json")
     
     def get_voltage_upgrade_costs_file(self):
         upgrade_costs = self.get_upgrade_costs_directory()
@@ -136,8 +132,7 @@ class UpgradeSimulation:
             thermal_summary_file=self.get_thermal_summary_json_file(),
             thermal_upgrades_dss_filepath=self.get_thermal_upgrades_dss_file(),
             upgraded_master_dss_filepath=self.get_upgraded_master_dss_file(),
-            output_json_line_upgrades_filepath=self.get_line_upgrades_json_file(),
-            output_json_xfmr_upgrades_filepath=self.get_transformer_upgrades_json_file(),
+            output_json_thermal_upgrades_filepath=self.get_thermal_upgrades_json_file(),
             feeder_stats_json_file = self.get_feeder_stats_json_file(),
             thermal_upgrades_directory=self.get_thermal_upgrades_directory(),
             dc_ac_ratio=dc_ac_ratio,
@@ -163,12 +158,10 @@ class UpgradeSimulation:
         )
         compute_all_costs(
             job_name = self.job.name,
-            output_json_xfmr_upgrades_filepath=self.get_transformer_upgrades_json_file(),
-            output_json_line_upgrades_filepath=self.get_line_upgrades_json_file(),
+            output_json_thermal_upgrades_filepath=self.get_thermal_upgrades_json_file(),
             output_json_voltage_upgrades_filepath=self.get_voltage_upgrades_json_file(),
             cost_database_filepath=cost_database_filepath,
-            thermal_cost_output_filepath=self.get_thermal_upgrade_costs_file(),
-            voltage_cost_output_filepath=self.get_voltage_upgrade_costs_file(),
+            equipmentwise_cost_output_filepath=self.get_equipmentwise_upgrade_costs_file(),
             total_cost_output_filepath=self.get_total_upgrade_costs_file(),
             overall_output_summary_filepath=self.get_overall_output_summary_file(),
             feeder_stats_json_file = self.get_feeder_stats_json_file()

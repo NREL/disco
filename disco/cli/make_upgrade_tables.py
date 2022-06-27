@@ -82,7 +82,7 @@ def get_upgrade_summary_table(job_path, job_info):
         try:
             with open(upgrade_summary_file) as json_file:
                 data = json.load(json_file)
-            df = pd.DataFrame(data)
+            df = pd.DataFrame(data["violation_summary"])
         except pd.errors.EmptyDataError:
             logger.exception("Failed to parse upgrade summary file - '%s'", upgrade_summary_file)
             return []
@@ -98,10 +98,10 @@ def get_upgrade_summary_table(job_path, job_info):
 
     upgrade_summary = []
 
-    thermal_upgrade_summary_file = job_path / "ThermalUpgrades" / "thermal_summary.json"
+    thermal_upgrade_summary_file = job_path / "ThermalUpgrades" / "thermal_violation_summary.json"
     upgrade_summary.extend(_get_upgrade_summary("thermal", thermal_upgrade_summary_file))
 
-    voltage_upgrade_summary_file = job_path / "VoltageUpgrades" / "voltage_summary.json"
+    voltage_upgrade_summary_file = job_path / "VoltageUpgrades" / "voltage_violation_summary.json"
     upgrade_summary.extend(_get_upgrade_summary("voltage", voltage_upgrade_summary_file))
 
     return upgrade_summary
@@ -115,7 +115,7 @@ def get_total_upgrade_costs_table(job_path, job_info):
     try:
         with open(total_upgrade_costs_file) as json_file:
             data = json.load(json_file)
-        df = pd.DataFrame(data)
+        df = pd.DataFrame(data["total_upgrade_costs"])
     except pd.errors.EmptyDataError:
         logger.exception("Failed to parse total upgrade costs file - '%s'", total_upgrade_costs_file)
         return []

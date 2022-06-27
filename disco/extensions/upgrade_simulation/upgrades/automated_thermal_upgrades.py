@@ -10,7 +10,7 @@ from .thermal_upgrade_functions import *
 from .voltage_upgrade_functions import plot_thermal_violations, plot_voltage_violations, plot_feeder
 
 from disco.models.upgrade_cost_analysis_generic_input_model import UpgradeTechnicalCatalogModel
-from disco.models.upgrade_cost_analysis_generic_output_model import UpgradeViolationResultModel, AllUpgradesTechnicalOutput
+from disco.models.upgrade_cost_analysis_generic_output_model import UpgradeViolationResultModel, AllUpgradesTechnicalResultModel
 from disco import timer_stats_collector
 from disco.enums import LoadMultiplierType
 from disco.exceptions import UpgradesInvalidViolationIncrease
@@ -30,8 +30,7 @@ def determine_thermal_upgrades(
     thermal_summary_file,
     thermal_upgrades_dss_filepath,
     upgraded_master_dss_filepath,
-    output_json_line_upgrades_filepath,
-    output_json_xfmr_upgrades_filepath,
+    output_json_thermal_upgrades_filepath,
     feeder_stats_json_file,
     thermal_upgrades_directory,
     dc_ac_ratio,
@@ -81,7 +80,7 @@ def determine_thermal_upgrades(
         # reassign from model to dataframes, so datatypes are maintained
         line_upgrade_options = pd.DataFrame.from_dict(input_catalog_model.dict(by_alias=True)["line"])
         xfmr_upgrade_options = pd.DataFrame.from_dict(input_catalog_model.dict(by_alias=True)["transformer"])
-        dump_data(input_catalog_model.dict(by_alias=True), internal_upgrades_technical_catalog_filepath, indent=4)  # write internal catalog to json
+        dump_data(input_catalog_model.dict(by_alias=True), internal_upgrades_technical_catalog_filepath, indent=2)  # write internal catalog to json
     (
         initial_bus_voltages_df,
         initial_undervoltage_bus_list,
@@ -105,7 +104,7 @@ def determine_thermal_upgrades(
     feeder_stats["feeder_metadata"].update(get_feeder_stats(dss))
     feeder_stats["stage_results"].append(get_upgrade_stage_stats(dss, upgrade_stage="Initial", upgrade_type="thermal", xfmr_loading_df=initial_xfmr_loading_df, line_loading_df=initial_line_loading_df, 
                                         bus_voltages_df=initial_bus_voltages_df, capacitors_df=orig_capacitors_df, regcontrols_df=orig_regcontrols_df) )
-    dump_data(feeder_stats, feeder_stats_json_file, indent=4)   # save feeder stats
+    dump_data(feeder_stats, feeder_stats_json_file, indent=2)   # save feeder stats
     if len(initial_overloaded_xfmr_list) > 0 or len(initial_overloaded_line_list) > 0:
         n = len(initial_overloaded_xfmr_list) +  len(initial_overloaded_line_list)
         equipment_with_violations = {"Transformer": initial_xfmr_loading_df, "Line": initial_line_loading_df}
@@ -131,21 +130,21 @@ def determine_thermal_upgrades(
         voltage_violations_present=(len(initial_undervoltage_bus_list) + len(initial_overvoltage_bus_list)) > 0,
         max_bus_voltage=initial_bus_voltages_df['Max per unit voltage'].max(),
         min_bus_voltage=initial_bus_voltages_df['Min per unit voltage'].min(),
-        num_of_voltage_violation_buses=len(initial_undervoltage_bus_list) + len(initial_overvoltage_bus_list),
-        num_of_overvoltage_violation_buses=len(initial_overvoltage_bus_list),
+        num_voltage_violation_buses=len(initial_undervoltage_bus_list) + len(initial_overvoltage_bus_list),
+        num_overvoltage_violation_buses=len(initial_overvoltage_bus_list),
         voltage_upper_limit=voltage_upper_limit,
-        num_of_undervoltage_violation_buses=len(initial_undervoltage_bus_list),
+        num_undervoltage_violation_buses=len(initial_undervoltage_bus_list),
         voltage_lower_limit=voltage_lower_limit,
         max_line_loading=initial_line_loading_df['max_per_unit_loading'].max(),
         max_transformer_loading=initial_xfmr_loading_df['max_per_unit_loading'].max(),
-        num_of_line_violations=len(initial_overloaded_line_list),
+        num_line_violations=len(initial_overloaded_line_list),
         line_upper_limit=thermal_config['line_upper_limit'],
-        num_of_transformer_violations=len(initial_overloaded_xfmr_list),
+        num_transformer_violations=len(initial_overloaded_xfmr_list),
         transformer_upper_limit=thermal_config['transformer_upper_limit']
     )
     temp_results = dict(initial_results)
-    output_results = [temp_results]
-    dump_data(output_results, thermal_summary_file, indent=4)
+    output_results = {"violation_summary": [temp_results]}
+    dump_data(output_results, thermal_summary_file, indent=2)
     title = "Feeder"
     plot_feeder(fig_folder=thermal_upgrades_directory, title=title, circuit_source=circuit_source, enable_detailed=True)
     # Mitigate thermal violations
@@ -244,12 +243,13 @@ def determine_thermal_upgrades(
     overloaded_xfmr_list = list(xfmr_loading_df.loc[xfmr_loading_df["status"] == "overloaded"]["name"].unique())
     overloaded_line_list = list(line_loading_df.loc[line_loading_df["status"] == "overloaded"]["name"].unique())
     # same equipment could be upgraded(edited) multiple times. Only consider last upgrade edit done. original_equipment details are currently not used.
-    line_upgrades_df = line_upgrades_df.drop_duplicates(subset=["Upgrade_Type", "Action", "final_equipment_name"], keep="last")  
-    xfmr_upgrades_df = xfmr_upgrades_df.drop_duplicates(subset=["Upgrade_Type", "Action", "final_equipment_name"], keep="last") 
+    line_upgrades_df = line_upgrades_df.drop_duplicates(subset=["upgrade_type", "action", "final_equipment_name"], keep="last")  
+    xfmr_upgrades_df = xfmr_upgrades_df.drop_duplicates(subset=["upgrade_type", "action", "final_equipment_name"], keep="last") 
     # validate upgrades output models
-    m = AllUpgradesTechnicalOutput(line=line_upgrades_df.to_dict('records'), transformer=xfmr_upgrades_df.to_dict('records'))
-    dump_data(m.dict(by_alias=True)["line"], output_json_line_upgrades_filepath, indent=4)
-    dump_data(m.dict(by_alias=True)["transformer"], output_json_xfmr_upgrades_filepath, indent=4)
+    m = AllUpgradesTechnicalResultModel(line=line_upgrades_df.to_dict('records'), transformer=xfmr_upgrades_df.to_dict('records'))
+    temp = m.dict(by_alias=True)
+    temp.pop("voltage")
+    dump_data(temp, output_json_thermal_upgrades_filepath, indent=2)
     n = len(overloaded_xfmr_list) +  len(overloaded_line_list)
     equipment_with_violations = {"Transformer": xfmr_loading_df, "Line": line_loading_df}
     if (upgrade_status == "Thermal Upgrades Required") and create_plots:
@@ -265,7 +265,7 @@ def determine_thermal_upgrades(
     capacitors_df = get_capacitor_info(correct_PT_ratio=False)
     feeder_stats["stage_results"].append( get_upgrade_stage_stats(dss, upgrade_stage="Final", upgrade_type="thermal", xfmr_loading_df=xfmr_loading_df, line_loading_df=line_loading_df, 
                                         bus_voltages_df=bus_voltages_df, capacitors_df=capacitors_df, regcontrols_df=regcontrols_df) )
-    dump_data(feeder_stats, feeder_stats_json_file, indent=4)
+    dump_data(feeder_stats, feeder_stats_json_file, indent=2)
     end_time = time.time()
     logger.info(f"Simulation end time: {end_time}")
     simulation_time = end_time - start_time
@@ -280,18 +280,18 @@ def determine_thermal_upgrades(
         voltage_violations_present=(len(undervoltage_bus_list) + len(overvoltage_bus_list)) > 0,
         max_bus_voltage=bus_voltages_df['Max per unit voltage'].max(),
         min_bus_voltage=bus_voltages_df['Min per unit voltage'].min(),
-        num_of_voltage_violation_buses=len(undervoltage_bus_list) + len(overvoltage_bus_list),
-        num_of_overvoltage_violation_buses=len(overvoltage_bus_list),
+        num_voltage_violation_buses=len(undervoltage_bus_list) + len(overvoltage_bus_list),
+        num_overvoltage_violation_buses=len(overvoltage_bus_list),
         voltage_upper_limit=voltage_upper_limit,
-        num_of_undervoltage_violation_buses=len(undervoltage_bus_list),
+        num_undervoltage_violation_buses=len(undervoltage_bus_list),
         voltage_lower_limit=voltage_lower_limit,
         max_line_loading=line_loading_df['max_per_unit_loading'].max(),
         max_transformer_loading=xfmr_loading_df['max_per_unit_loading'].max(),
-        num_of_line_violations=len(overloaded_line_list),
+        num_line_violations=len(overloaded_line_list),
         line_upper_limit=thermal_config['line_upper_limit'],
-        num_of_transformer_violations=len(overloaded_xfmr_list),
+        num_transformer_violations=len(overloaded_xfmr_list),
         transformer_upper_limit=thermal_config['transformer_upper_limit'],
     )
     temp_results = dict(final_results)
-    output_results.append(temp_results)
-    dump_data(output_results, thermal_summary_file, indent=4)
+    output_results["violation_summary"].append(temp_results)
+    dump_data(output_results, thermal_summary_file, indent=2)

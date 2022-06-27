@@ -8,8 +8,9 @@ from jade.utils.utils import load_data, dump_data
 from .common_functions import create_overall_output_file
 from disco import timer_stats_collector
 from disco.models.upgrade_cost_analysis_generic_input_model import UpgradeCostDatabaseModel
-from disco.models.upgrade_cost_analysis_generic_output_model import AllUpgradesTechnicalOutput, \
-    AllEquipmentUpgradeCostsResults, EquipmentTypeUpgradeCostsResult, capacitor_controller_output_type, voltage_regulator_output_type
+from disco.models.upgrade_cost_analysis_generic_output_model import AllUpgradesTechnicalResultModel, \
+    AllEquipmentUpgradeCostsResultModel, EquipmentTypeUpgradeCostsResultModel, CapacitorControllerResultTypeModel, \
+        VoltageRegulatorResultTypeModel, TotalUpgradeCostsResultModel, AllUpgradesCostResultSummaryModel
     
 logger = logging.getLogger(__name__)
 # Dictionary used to convert between different length units and meters, which are used for all the calculations.
@@ -27,24 +28,20 @@ LENGTH_CONVERSION_TO_METRE = {
 @track_timing(timer_stats_collector)
 def compute_all_costs(
     job_name,
-    output_json_xfmr_upgrades_filepath,
-    output_json_line_upgrades_filepath,
+    output_json_thermal_upgrades_filepath,
     output_json_voltage_upgrades_filepath,
     cost_database_filepath,
-    thermal_cost_output_filepath,
-    voltage_cost_output_filepath,
+    equipmentwise_cost_output_filepath,
     total_cost_output_filepath,
     overall_output_summary_filepath,
     feeder_stats_json_file,
 ):
     # upgrades files
-    # TODO add except statement for FileNotFoundError
-    all_upgrades = {"voltage": load_data(output_json_voltage_upgrades_filepath),
-                    "line": load_data(output_json_line_upgrades_filepath),
-                    "transformer": load_data(output_json_xfmr_upgrades_filepath)
-                    }
+    all_upgrades = {}
+    all_upgrades.update(load_data(output_json_voltage_upgrades_filepath))
+    all_upgrades.update(load_data(output_json_thermal_upgrades_filepath))
     # validate upgrades details for thermal and voltage, using pydantic models
-    m = AllUpgradesTechnicalOutput(**all_upgrades)
+    m = AllUpgradesTechnicalResultModel(**all_upgrades)
     xfmr_upgrades_df = pd.DataFrame(m.dict(by_alias=True)["transformer"])
     line_upgrades_df = pd.DataFrame(m.dict(by_alias=True)["line"])
     voltage_upgrades_df = pd.DataFrame(m.dict(by_alias=True)["voltage"])
@@ -62,7 +59,7 @@ def compute_all_costs(
                                                 control_changes=controls_cost_database.to_dict(orient="records"), 
                                                 voltage_regulators=voltage_regulators_cost_database.to_dict(orient="records"), 
                                                 misc=misc_database.to_dict(orient="records"))
-    output_columns = list(EquipmentTypeUpgradeCostsResult.schema(True).get("properties").keys())
+    output_columns = list(EquipmentTypeUpgradeCostsResultModel.schema(True).get("properties").keys())
 
     # reformat data
     if not xfmr_upgrades_df.empty:
@@ -100,27 +97,25 @@ def compute_all_costs(
     voltage_cost_df = voltage_cost_df.loc[voltage_cost_df["count"] != 0]
     thermal_cost_df = thermal_cost_df.loc[thermal_cost_df["count"] != 0]
     total_cost_df = get_total_costs(thermal_cost_df, voltage_cost_df)
-
-    equipment_costs = AllEquipmentUpgradeCostsResults(thermal=thermal_cost_df.to_dict('records'), voltage=voltage_cost_df.to_dict('records'))
-    # save output files
-    dump_data(equipment_costs.dict()["thermal"], thermal_cost_output_filepath, indent=4)
-    dump_data(equipment_costs.dict()["voltage"], voltage_cost_output_filepath, indent=4)
-    dump_data(total_cost_df.to_dict('records'), total_cost_output_filepath, indent=4)
-    
+    equipment_costs = AllEquipmentUpgradeCostsResultModel(thermal=thermal_cost_df.to_dict('records'), voltage=voltage_cost_df.to_dict('records'))
+    dump_data(equipment_costs.dict(by_alias=True), equipmentwise_cost_output_filepath, indent=2)
+    total_cost_df["name"] = job_name
+    m = [TotalUpgradeCostsResultModel(**x) for x in total_cost_df.to_dict(orient="records")]
+    dump_data({"total_upgrade_costs": total_cost_df.to_dict('records')}, total_cost_output_filepath, indent=2)
     feeder_stats = load_data(feeder_stats_json_file)
     output_summary = create_overall_output_file(upgrades_dict={"transformer": xfmr_upgrades_df, "line": line_upgrades_df, "voltage": voltage_upgrades_df},
                                                 costs_dict={"thermal": thermal_cost_df, "voltage": voltage_cost_df}, feeder_stats=feeder_stats)
-    dump_data(output_summary.to_dict(orient="records"), overall_output_summary_filepath, indent=4) 
-    output_summary.to_csv("test.csv")
+    output_summary_model = AllUpgradesCostResultSummaryModel(equipment=output_summary.to_dict(orient="records"))
+    dump_data(output_summary_model.dict(by_alias=True), overall_output_summary_filepath, indent=2) 
     
 
 def compute_transformer_costs(xfmr_upgrades_df, xfmr_cost_database, **kwargs):
     """This function computes the transformer costs.
     -Unit equipment cost for new (parallel) and "upgrade" transformers are the same in the database.
     The difference would be the fixed costs added (if present in misc_database)
-    -For transformers that are of ActionType "upgrade":
+    -For transformers that are of action "upgrade":
     transformers of old rating are removed, and that of upgraded rating is added.
-    -For transformers that are of ActionType "new (parallel)":
+    -For transformers that are of action "new (parallel)":
     A new transformer is placed in parallel with the existing transformer
     -These are the properties considered while choosing unit cost:
     ["rated_kVA", "phases", "primary_kV", "secondary_kV", "primary_connection_type", "secondary_connection_type",
@@ -147,7 +142,7 @@ def compute_transformer_costs(xfmr_upgrades_df, xfmr_cost_database, **kwargs):
     misc_database = kwargs.get("misc_database", None)
     # choose which properties are to be saved
     upgrade_type_list = ["upgrade", "new (parallel)"]
-    added_xfmr_df = xfmr_upgrades_df.loc[(xfmr_upgrades_df["Upgrade_Type"].isin(upgrade_type_list)) & (xfmr_upgrades_df["Action"] == "add")]
+    added_xfmr_df = xfmr_upgrades_df.loc[(xfmr_upgrades_df["upgrade_type"].isin(upgrade_type_list)) & (xfmr_upgrades_df["action"] == "add")]
     computed_cost = []
     for index, row in added_xfmr_df.iterrows():
         unit_cost = xfmr_cost_database.loc[(xfmr_cost_database["rated_kVA"] == row["rated_kVA"]) &
@@ -182,19 +177,19 @@ def compute_transformer_costs(xfmr_upgrades_df, xfmr_cost_database, **kwargs):
             misc_xfmr_fields = {"replace": "Replace transformer (fixed cost)",
                                 "new": "Add new transformer (fixed cost)"}
             # if equipment is upgraded, and misc database contains fixed cost for replacing xfmr
-            if (row["Upgrade_Type"].lower() == "upgrade") and \
-                    ((misc_database["Description"] == misc_xfmr_fields["replace"]).any()):
+            if (row["upgrade_type"].lower() == "upgrade") and \
+                    ((misc_database["description"] == misc_xfmr_fields["replace"]).any()):
                 field_name = misc_xfmr_fields["replace"]
-                fixed_cost = misc_database.loc[misc_database["Description"] == field_name]
+                fixed_cost = misc_database.loc[misc_database["description"] == field_name]
             # if equipment is new, and misc database contains fixed cost for adding new xfmr
-            elif row["Upgrade_Type"].lower() == "new (parallel)" and \
-                    ((misc_database["Description"] == misc_xfmr_fields["new"]).any()):
+            elif row["upgrade_type"].lower() == "new (parallel)" and \
+                    ((misc_database["description"] == misc_xfmr_fields["new"]).any()):
                 field_name = misc_xfmr_fields["new"]
-                fixed_cost = misc_database.loc[misc_database["Description"] == field_name]
+                fixed_cost = misc_database.loc[misc_database["description"] == field_name]
             else:
                 fixed_cost = pd.DataFrame()
             if not fixed_cost.empty:
-                row[output_cost_field] += misc_database.loc[misc_database["Description"]
+                row[output_cost_field] += misc_database.loc[misc_database["description"]
                                                             == field_name]["total_cost"].values[0]
 
         computed_cost.append(row[output_columns_list])
@@ -249,11 +244,11 @@ def compute_line_costs(line_upgrades_df, line_cost_database, **kwargs):
     """This function computes the line costs.
     -Unit equipment cost for new (parallel) and "upgrade" line are the not same in the database.
     There are different costs given for reconductored and new lines
-    -For lines that are of ActionType "upgrade": "reconductored" line unit costs need to be used
-    -For lines that are of ActionType "new (parallel)": "new" line unit costs need to be used
+    -For lines that are of action "upgrade": "reconductored" line unit costs need to be used
+    -For lines that are of action "new (parallel)": "new" line unit costs need to be used
     -Upgraded lines and new lines run along existing circuit, so length is the same for both
     -These are the properties considered while choosing unit cost:
-    ["phases", "voltage_kV", "ampere_rating", "line_placement", "Description" (i.e. whether new or reconductored)]
+    ["phases", "voltage_kV", "ampere_rating", "line_placement", "description" (i.e. whether new or reconductored)]
     -For a given line, if unit cost pertaining to these properties is not available,
     then the closest "ampere_rating" unit cost is chosen.
     User can decide if they want to choose backup based on another property.
@@ -271,27 +266,27 @@ def compute_line_costs(line_upgrades_df, line_cost_database, **kwargs):
     """
     output_cost_field = "total_cost_usd"
     output_count_field = "count"
-    deciding_columns = ["phases", "voltage_kV", "ampere_rating", "line_placement", "Description"]
+    deciding_columns = ["phases", "voltage_kV", "ampere_rating", "line_placement", "description"]
     output_columns_list = ["type", output_count_field, output_cost_field, "comment", "equipment_parameters"]
     backup_deciding_property = kwargs.get("backup_deciding_property", "ampere_rating")
     # choose which properties are to be saved
     upgrade_type_list = ["upgrade", "new (parallel)"]
-    added_line_df = line_upgrades_df.loc[(line_upgrades_df["Upgrade_Type"].isin(upgrade_type_list)) & (line_upgrades_df["Action"] == "add")]
+    added_line_df = line_upgrades_df.loc[(line_upgrades_df["upgrade_type"].isin(upgrade_type_list)) & (line_upgrades_df["action"] == "add")]
     computed_cost = []
     for index, row in added_line_df.iterrows():
-        if row["Upgrade_Type"] == "upgrade":
+        if row["upgrade_type"] == "upgrade":
             description = "reconductored_line"
-        elif row["Upgrade_Type"] == "new (parallel)":
+        elif row["upgrade_type"] == "new (parallel)":
             description = "new_line"
         else:
             # if anything else, by default, use new_line prices
             description = "new_line"
-        row["Description"] = description
+        row["description"] = description
         unit_cost = line_cost_database.loc[(line_cost_database["phases"] == row["phases"]) &
                                            (line_cost_database["voltage_kV"] == row["voltage_kV"]) &
                                            (line_cost_database["ampere_rating"] == row["ampere_rating"]) &
                                            (line_cost_database["line_placement"] == row["line_placement"]) &
-                                           (line_cost_database["Description"] == description)
+                                           (line_cost_database["description"] == description)
                                            ]["cost_per_m"]
         # convert line length to metres
         line_length_m = row["length"] * LENGTH_CONVERSION_TO_METRE[row["units"]]
@@ -363,9 +358,9 @@ def compute_capcontrol_cost(voltage_upgrades_df, controls_cost_database, keyword
     output_count_field = "count"
     output_columns_list = ["type", output_count_field, output_cost_field, "comment"]
 
-    type_rows = capacitor_controller_output_type.list()  # from enum
-    capcontrol_upgrade_fields = {"add_new_cap_controller": "New controller added",
-                         "change_cap_control": "Controller settings modified"}
+    type_rows = CapacitorControllerResultTypeModel.list()  # from enum
+    capcontrol_upgrade_fields = {"add_new_cap_controller": "new_controller_added",
+                         "change_cap_control": "controller_settings_modified"}
     cost_database_fields = {"add_new_cap_controller": "Add new capacitor controller",
                             "change_cap_control": "Change capacitor controller settings",
                             "replace_cap_controller": "Replace capacitor controller"
@@ -382,19 +377,19 @@ def compute_capcontrol_cost(voltage_upgrades_df, controls_cost_database, keyword
     cap_cost = []
     # if there are new capacitor controller 
     count_new_controller = cap_upgrades_df[capcontrol_upgrade_fields["add_new_cap_controller"]].sum()
-    unit_cost_new_controller = controls_cost_database.loc[controls_cost_database["Type"]
+    unit_cost_new_controller = controls_cost_database.loc[controls_cost_database["type"]
                                                           == cost_database_fields["add_new_cap_controller"]]["cost"].values[0]
     total_cost_new_controller = count_new_controller * unit_cost_new_controller
-    cap_cost.append( {"type": capacitor_controller_output_type.add_new_cap_controller.value,
+    cap_cost.append( {"type": CapacitorControllerResultTypeModel.add_new_cap_controller.value,
                  "count": count_new_controller, "total_cost_usd": total_cost_new_controller}
     )
     
     # if there are setting changes
     count_setting_changes = cap_upgrades_df[capcontrol_upgrade_fields["change_cap_control"]].sum()
-    unit_cost_setting_changes = controls_cost_database.loc[controls_cost_database["Type"] ==
+    unit_cost_setting_changes = controls_cost_database.loc[controls_cost_database["type"] ==
                                                            cost_database_fields["change_cap_control"]]["cost"].values[0]
     total_cost_setting_changes = count_setting_changes * unit_cost_setting_changes
-    cap_cost.append( {"type": capacitor_controller_output_type.change_cap_control.value,
+    cap_cost.append( {"type": CapacitorControllerResultTypeModel.change_cap_control.value,
                      "count": count_setting_changes, "total_cost_usd": total_cost_setting_changes}
     )
     cap_cost_df = pd.DataFrame(cap_cost)
@@ -419,10 +414,10 @@ def compute_voltage_regcontrol_cost(voltage_upgrades_df, vreg_control_cost_datab
     output_cost_field = "total_cost_usd"
     output_count_field = "count"
     output_columns_list = ["type", output_count_field, output_cost_field, "comment"]
-    upgrade_fields_dict = {"add_new_reg_control": "New controller added",
-                      "change_reg_control": "Controller settings modified",
-                      "add_new_transformer": "New transformer added",
-                      "at_substation": "At Substation",
+    upgrade_fields_dict = {"add_new_reg_control": "new_controller_added",
+                      "change_reg_control": "controller_settings_modified",
+                      "add_new_transformer": "new_transformer_added",
+                      "at_substation": "at_substation",
                     #   "change_ltc_control": "Substation LTC settings modified",
                         }
     cost_database_fields_dict = {"add_new_reg_control": "Add new voltage regulator controller",
@@ -432,7 +427,7 @@ def compute_voltage_regcontrol_cost(voltage_upgrades_df, vreg_control_cost_datab
                             "change_ltc_control": "Change LTC settings",
                             "add_new_transformer": "Add new voltage regulator transformer"}
     
-    type_fields_dict = {i.name: i.value for i in voltage_regulator_output_type}
+    type_fields_dict = {i.name: i.value for i in VoltageRegulatorResultTypeModel}
     type_rows = list(type_fields_dict.keys())
     
     control_computation_fields = ["add_new_reg_control", "change_reg_control"]
@@ -460,7 +455,7 @@ def compute_voltage_regcontrol_cost(voltage_upgrades_df, vreg_control_cost_datab
             raise Exception(f"Unknown field {field} in regulator cost computation")
         if not at_substation_df.empty:  # if there are no regcontrols at substation
             count = at_substation_df[upgrade_fields_dict[field]].sum()
-            unit_cost = vreg_control_cost_database.loc[vreg_control_cost_database["Type"] == cost_database_fields_dict[cost_field]]["cost"].values[0]
+            unit_cost = vreg_control_cost_database.loc[vreg_control_cost_database["type"] == cost_database_fields_dict[cost_field]]["cost"].values[0]
             total_cost = count * unit_cost
             cost_list.append({"type": type_fields_dict[cost_field], "count": count, "total_cost_usd": total_cost, "comment": ""})
         
@@ -469,7 +464,7 @@ def compute_voltage_regcontrol_cost(voltage_upgrades_df, vreg_control_cost_datab
         cost_field = field
         if not not_at_substation_df.empty:  # if not at substation
             count = not_at_substation_df[upgrade_fields_dict[field]].sum()
-            unit_cost = vreg_control_cost_database.loc[vreg_control_cost_database["Type"] == cost_database_fields_dict[cost_field]]["cost"].values[0]
+            unit_cost = vreg_control_cost_database.loc[vreg_control_cost_database["type"] == cost_database_fields_dict[cost_field]]["cost"].values[0]
             total_cost = count * unit_cost
             cost_list.append({"type": type_fields_dict[cost_field], "count": count, "total_cost_usd": total_cost, "comment": ""})
     
@@ -481,7 +476,7 @@ def compute_voltage_regcontrol_cost(voltage_upgrades_df, vreg_control_cost_datab
         new_xfmr_added_df = reg_upgrades_df.loc[reg_upgrades_df[upgrade_fields_dict["add_new_transformer"]] == True]    
         for index, row in new_xfmr_added_df.iterrows():
             output_row = {}
-            added_xfmr_details = row["Final Settings"]
+            added_xfmr_details = row["final_settings"]
             added_xfmr_details = reformat_xfmr_upgrades_file(pd.DataFrame([added_xfmr_details]))
             deciding_columns = ["rated_kVA", "phases", "primary_kV", "secondary_kV", "primary_connection_type",
                         "secondary_connection_type", "num_windings"]

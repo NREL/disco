@@ -6,7 +6,7 @@ from jade.utils.timing_utils import track_timing
 from disco import timer_stats_collector
 from disco.exceptions import ExceededParallelLinesLimit, ExceededParallelTransformersLimit
 from disco.models.upgrade_cost_analysis_generic_input_model import _extract_specific_model_properties_, TransformerCatalogModel, LineCatalogModel
-from disco.models.upgrade_cost_analysis_generic_output_model import TransformerUpgradesTechnicalOutput, LineUpgradesTechnicalOutput
+from disco.models.upgrade_cost_analysis_generic_output_model import TransformerUpgradesTechnicalResultModel, LineUpgradesTechnicalResultModel
 
 logger = logging.getLogger(__name__)
 
@@ -80,18 +80,18 @@ def correct_line_violations(line_loading_df, line_design_pu, line_upgrade_option
                 # create dictionary of original equipment
                 upgrades_dict[row["name"]] = {}
                 upgrades_dict[row["name"]]["original_equipment"] = row.to_dict()
-                upgrades_dict[row["name"]]["original_equipment"].update({"Equipment_Type": equipment_type,
-                                                                         "Upgrade_Type": "upgrade",
-                                                                         # "Parameter_Type": "original_equipment",
-                                                                         "Action": "remove"})
+                upgrades_dict[row["name"]]["original_equipment"].update({"equipment_type": equipment_type,
+                                                                         "upgrade_type": "upgrade",
+                                                                         # "parameter_type": "original_equipment",
+                                                                         "action": "remove"})
                 upgrades_dict[row["name"]]["original_equipment"] .update(chosen_option[["Switch", "phases",
                                                                                         "line_placement"]].to_dict())
                 # create dictionary of new equipment
                 upgrades_dict[row["name"]]["new_equipment"] = chosen_option.to_dict()
-                upgrades_dict[row["name"]]["new_equipment"].update({"Equipment_Type": equipment_type,
-                                                                    "Upgrade_Type": "upgrade",
-                                                                    # "Parameter_Type": "new_equipment",
-                                                                    "Action": "add", "name": row["name"]})
+                upgrades_dict[row["name"]]["new_equipment"].update({"equipment_type": equipment_type,
+                                                                    "upgrade_type": "upgrade",
+                                                                    # "parameter_type": "new_equipment",
+                                                                    "action": "add", "name": row["name"]})
 
                 # run command for upgraded equipment, that resolves overloading for one equipment
                 for command_item in temp_commands_list:
@@ -112,18 +112,18 @@ def correct_line_violations(line_loading_df, line_design_pu, line_upgrade_option
                     circuit_solve_and_check(raise_exception=True, **kwargs)
                 commands_list = commands_list + parallel_line_commands
                 upgrades_dict_parallel = upgrades_dict_parallel + temp_upgrades_dict_parallel  # parallel upgrades is stored in a list (since it has same original_equipment name)
-        index_names = ["original_equipment_name", "Parameter_Type"]
+        index_names = ["original_equipment_name", "parameter_type"]
         if upgrades_dict:  # if dictionary is not empty
             line_upgrades_df = create_dataframe_from_nested_dict(user_dict=upgrades_dict, index_names=index_names)
         line_upgrades_df = line_upgrades_df.append(pd.DataFrame(upgrades_dict_parallel))
         line_upgrades_df.rename(columns={"name": "final_equipment_name"}, inplace=True)
         line_upgrades_df = line_upgrades_df.set_index(
-            ["Equipment_Type", "Upgrade_Type", "Parameter_Type", "Action", "final_equipment_name",
+            ["equipment_type", "upgrade_type", "parameter_type", "action", "final_equipment_name",
              "original_equipment_name"]).reset_index()
     else:  # if there is no overloading
         logger.info("This case has no line violations")
     circuit_solve_and_check(raise_exception=True, **kwargs)  # this is added as a final check for convergence
-    output_fields =  list(LineUpgradesTechnicalOutput.schema(True).get("properties").keys())  # get fields with alias
+    output_fields =  list(LineUpgradesTechnicalResultModel.schema(True).get("properties").keys())  # get fields with alias
     line_upgrades_df = line_upgrades_df[output_fields]
     return commands_list, line_upgrades_df
 
@@ -166,11 +166,11 @@ def identify_parallel_lines(options, object_row, parallel_lines_limit, **kwargs)
         temp_dict = {}
         temp_dict.update(chosen_option.to_dict())
         temp_dict["length"] = object_row["length"]
-        temp_dict.update({"Equipment_Type": "Line",
+        temp_dict.update({"equipment_type": "Line",
                           "original_equipment_name": object_row["name"],
-                          "Upgrade_Type": "new (parallel)",
-                          "Parameter_Type": "new_equipment",
-                          "Action": "add"})
+                          "upgrade_type": "new (parallel)",
+                          "parameter_type": "new_equipment",
+                          "action": "add"})
         # # if too much info, can remove this metrics from output. For now, these are included.
         # remove_fields = ['num_parallel_raw', 'num_parallel', 'choose_parallel_metric']
         # for x in remove_fields:
@@ -314,17 +314,17 @@ def correct_xfmr_violations(xfmr_loading_df, xfmr_design_pu, xfmr_upgrade_option
                 # create dictionary of original equipment
                 upgrades_dict[row["name"]] = {}
                 upgrades_dict[row["name"]]["original_equipment"] = row.to_dict()
-                upgrades_dict[row["name"]]["original_equipment"].update({"Equipment_Type": equipment_type,
-                                                                         "Upgrade_Type": "upgrade",
-                                                                         # "Parameter_Type": "original_equipment",
-                                                                         "Action": "remove"})
+                upgrades_dict[row["name"]]["original_equipment"].update({"equipment_type": equipment_type,
+                                                                         "upgrade_type": "upgrade",
+                                                                         # "parameter_type": "original_equipment",
+                                                                         "action": "remove"})
                 upgrades_dict[row["name"]]["original_equipment"].update(chosen_option[deciding_property_list].to_dict())
                 # create dictionary of new equipment
                 upgrades_dict[row["name"]]["new_equipment"] = chosen_option.to_dict()
-                upgrades_dict[row["name"]]["new_equipment"].update({"Equipment_Type": equipment_type,
-                                                                    "Upgrade_Type": "upgrade",
-                                                                    # "Parameter_Type": "new_equipment",
-                                                                    "Action": "add", "name": row["name"]})
+                upgrades_dict[row["name"]]["new_equipment"].update({"equipment_type": equipment_type,
+                                                                    "upgrade_type": "upgrade",
+                                                                    # "parameter_type": "new_equipment",
+                                                                    "action": "add", "name": row["name"]})
                 check_dss_run_command(command_string)  # run command for upgraded equipment
                 circuit_solve_and_check(raise_exception=True, **kwargs)
             # if higher upgrade is not available or chosen upgrade rating is much higher than required,
@@ -339,19 +339,19 @@ def correct_xfmr_violations(xfmr_loading_df, xfmr_design_pu, xfmr_upgrade_option
                     circuit_solve_and_check(raise_exception=True, **kwargs)
                 commands_list = commands_list + parallel_xfmr_commands
                 upgrades_dict_parallel = upgrades_dict_parallel + temp_upgrades_dict_parallel  # parallel upgrades is stored in a list (since it has same original_equipment name)
-        index_names = ["original_equipment_name", "Parameter_Type"]
+        index_names = ["original_equipment_name", "parameter_type"]
         if upgrades_dict:  # if dictionary is not empty
             xfmr_upgrades_df = create_dataframe_from_nested_dict(user_dict=upgrades_dict, index_names=index_names)
         xfmr_upgrades_df = xfmr_upgrades_df.append(pd.DataFrame(upgrades_dict_parallel))
         xfmr_upgrades_df.rename(columns={"name": "final_equipment_name"}, inplace=True)
         xfmr_upgrades_df = xfmr_upgrades_df.set_index(
-            ["Equipment_Type", "Upgrade_Type", "Parameter_Type", "Action", "final_equipment_name",
+            ["equipment_type", "upgrade_type", "parameter_type", "action", "final_equipment_name",
              "original_equipment_name"]).reset_index()
 
     else:  # if there is no overloading
         logger.info("This case has no transformer violations")
     circuit_solve_and_check(raise_exception=True, **kwargs)  # this is added as a final check for convergence
-    output_fields =  list(TransformerUpgradesTechnicalOutput.schema(True).get("properties").keys())  # get fields with alias
+    output_fields =  list(TransformerUpgradesTechnicalResultModel.schema(True).get("properties").keys())  # get fields with alias
     xfmr_upgrades_df = xfmr_upgrades_df[output_fields]
     return commands_list, xfmr_upgrades_df
 
@@ -393,11 +393,11 @@ def identify_parallel_xfmrs(upgrade_options, object_row, parallel_transformer_li
         chosen_option["name"] = new_name
         temp_dict = {}
         temp_dict.update(chosen_option.to_dict())
-        temp_dict.update({"Equipment_Type": equipment_type,
+        temp_dict.update({"equipment_type": equipment_type,
                         "original_equipment_name": object_row["name"],
-                        "Upgrade_Type": "new (parallel)",
-                        "Parameter_Type": "new_equipment",
-                        "Action": "add"})
+                        "upgrade_type": "new (parallel)",
+                        "parameter_type": "new_equipment",
+                        "action": "add"})
         command_string = define_xfmr_object(xfmr_name=new_name, xfmr_info_series=chosen_option, action_type="New",
                                             buses_list=object_row["buses"])
         commands_list.append(command_string)

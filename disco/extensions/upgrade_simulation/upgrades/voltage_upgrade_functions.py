@@ -11,7 +11,7 @@ from sklearn.cluster import AgglomerativeClustering
 from .common_functions import *
 from .thermal_upgrade_functions import define_xfmr_object
 from disco import timer_stats_collector
-from disco.models.upgrade_cost_analysis_generic_output_model import VoltageUpgradesTechnicalOutput
+from disco.models.upgrade_cost_analysis_generic_output_model import VoltageUpgradesTechnicalResultModel
 from jade.utils.timing_utils import track_timing, Timer
 
 
@@ -367,21 +367,21 @@ def get_capacitor_upgrades(orig_capacitors_df, new_capacitors_df):
             elif cap_name in new_addition:
                 final_cap_upgrades["ctrl_added"] = True
         processed_outputs.append(
-            VoltageUpgradesTechnicalOutput(**{
+            VoltageUpgradesTechnicalResultModel(**{
                 "equipment_type": final_cap_upgrades["cap_name"].split(".")[0],
                 "name": final_cap_upgrades["cap_name"].split(".")[1],
-                "New controller added": final_cap_upgrades["ctrl_added"],
-                "Controller settings modified": final_cap_upgrades["cap_settings"],
-                "Final Settings": {
-                    "capctrl name": final_cap_upgrades["ctrl_name"],
-                    "cap kvar": final_cap_upgrades["cap_kvar"],
-                    "cap kV": final_cap_upgrades["cap_kv"],
-                    "ctrl type": final_cap_upgrades["ctrl_type"],
-                    "ON setting (V)": final_cap_upgrades["cap_on"],
-                    "OFF setting (V)": final_cap_upgrades["cap_off"]
+                "new_controller_added": final_cap_upgrades["ctrl_added"],
+                "controller_settings_modified": final_cap_upgrades["cap_settings"],
+                "final_settings": {
+                    "kvar": final_cap_upgrades["cap_kvar"],
+                    "kv": final_cap_upgrades["cap_kv"],
+                    "capcontrol_name": final_cap_upgrades["ctrl_name"],
+                    "capcontrol_type": final_cap_upgrades["ctrl_type"],
+                    "ONsetting": final_cap_upgrades["cap_on"],
+                    "OFFsetting": final_cap_upgrades["cap_off"]
                      },
-                "New transformer added": False,
-                "At Substation": False,
+                "new_transformer_added": False,
+                "at_substation": False,
         }))
     return processed_outputs
 
@@ -2062,18 +2062,18 @@ def get_regulator_upgrades(orig_regcontrols_df, new_regcontrols_df, orig_xfmrs_d
                 temp = {
                     "equipment_type": "RegControl",
                     "name": final_reg_upgrades["reg_ctrl_name"],
-                    "New controller added": final_reg_upgrades["reg_added"],
-                    "Controller settings modified": final_reg_upgrades["reg_settings"],
-                    "New transformer added": final_reg_upgrades["new_xfmr"],
-                    "At Substation": final_reg_upgrades["at_substation"],
-                    "Final Settings": {
-                        "Reg ctrl V set point": final_reg_upgrades["reg_vsp"],
-                        "Reg ctrl deadband": final_reg_upgrades["reg_band"]
+                    "new_controller_added": final_reg_upgrades["reg_added"],
+                    "controller_settings_modified": final_reg_upgrades["reg_settings"],
+                    "new_transformer_added": final_reg_upgrades["new_xfmr"],
+                    "at_substation": final_reg_upgrades["at_substation"],
+                    "final_settings": {
+                        "vreg": final_reg_upgrades["reg_vsp"],
+                        "band": final_reg_upgrades["reg_band"]
                     }}
                 if subltc_dict is not None:
-                    temp["Final Settings"].update(subltc_dict)
+                    temp["final_settings"].update(subltc_dict)
                 if xfmr_dict is not None:
-                    temp["Final Settings"].update(xfmr_dict)
-                m = VoltageUpgradesTechnicalOutput(**temp)
+                    temp["final_settings"].update(xfmr_dict)
+                m = VoltageUpgradesTechnicalResultModel(**temp)
                 processed_outputs.append(m)    
     return processed_outputs

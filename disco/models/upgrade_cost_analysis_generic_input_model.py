@@ -413,8 +413,8 @@ class TransformerUnitCostModel(UpgradeParamsBaseModel):
 class LineUnitCostModel(UpgradeParamsBaseModel):
     """Contains Line Unit Cost Database Model"""
     
-    Description: str = Field(
-        title="Description",
+    description: str = Field(
+        title="description",
         description="Description of whether this is a new_line or reconductored_line",
     )
     phases: int = Field(
@@ -454,18 +454,18 @@ class LineUnitCostModel(UpgradeParamsBaseModel):
             raise ValueError("Incorrect cost units")
         return cost_units
     
-    @validator("Description")
-    def check_line_description(cls, Description):
-        if Description not in ("new_line", "reconductored_line"):
+    @validator("description")
+    def check_line_description(cls, description):
+        if description not in ("new_line", "reconductored_line"):
             raise ValueError("Incorrect line description")
-        return Description
+        return description
     
         
 class ControlUnitCostModel(UpgradeParamsBaseModel):
     """Contains Control Changes Cost Database Model"""
     
-    Type: str = Field(
-        title="Type",
+    type: str = Field(
+        title="type",
         description="Type of control setting",
     )
     cost: float = Field(
@@ -484,76 +484,20 @@ class ControlUnitCostModel(UpgradeParamsBaseModel):
         return cost_units
     
     
-class VRegUnitCostModel(UpgradeParamsBaseModel):
+class VRegUnitCostModel(TransformerUnitCostModel):
     """Contains Voltage Regulator Cost Database Model"""
     
-    Type: str = Field(
-        title="Type",
+    type: str = Field(
+        title="type",
         description="This should be 'Add new voltage regulator transformer'.",
     )
-    # TransformerUnitCostModel  # TODO is it possible to directly inherit this? This didnt work
-        
-    phases: int = Field(
-        title="phases",
-        description="Number of phases",
-    )
-    primary_kV: float = Field(
-        title="primary_kV",
-        description="Transformer primary winding voltage, in kV",
-    )
-    secondary_kV: float = Field(
-        title="secondary_kV",
-        description="Transformer secondary winding voltage, in kV",
-    )    
-    num_windings: int = Field(
-        title="num_windings",
-        description="Number of windings",
-    )
-    primary_connection_type: str = Field(
-        title="primary_connection_type",
-        description="Transformer primary winding connection type. Should be wye or delta",
-    )
-    secondary_connection_type: str = Field(
-        title="secondary_connection_type",
-        description="Transformer secondary winding connection type. Should be wye or delta",
-    )
-    rated_kVA: float = Field(
-        title="rated_kVA",
-        description="Transformer Rated kVA",
-    )
-    cost: float = Field(
-        title="cost",
-        description="Transformer unit cost",
-    )
-    cost_units: str = Field(
-        title="cost_units",
-        description="Unit for cost. This should be in USD/unit",
-    )
-    
-    @validator("cost_units")
-    def check_vreg_cost_units(cls, cost_units):
-        if cost_units not in ("USD/unit"):
-            raise ValueError("Incorrect cost units")
-        return cost_units
-    
-    @validator("primary_connection_type")
-    def check_vregprimary_connection(cls, primary_connection_type):
-        if primary_connection_type not in ("wye", "delta"):
-            raise ValueError("Incorrect transformer primary connection type")
-        return primary_connection_type
-    
-    @validator("secondary_connection_type")
-    def check_vregsecondary_connection(cls, secondary_connection_type):
-        if secondary_connection_type not in ("wye", "delta"):
-            raise ValueError("Incorrect transformer secondary connection type")
-        return secondary_connection_type
     
 
 class MiscUnitCostModel(UpgradeParamsBaseModel):
     """Contains Miscellaneous Cost Database Model"""
     
-    Description: str = Field(
-        title="Description",
+    description: str = Field(
+        title="description",
         description="Description of whether this is a fixed cost to add or replace transformer. "
         "These are optional, and will be used if provided.",
     )
@@ -572,11 +516,11 @@ class MiscUnitCostModel(UpgradeParamsBaseModel):
             raise ValueError("Incorrect cost units")
         return cost_units
     
-    @validator("Description")
-    def check_misc_description(cls, Description):
-        if Description not in ("Replace transformer (fixed cost)", "Add new transformer (fixed cost)"):
+    @validator("description")
+    def check_misc_description(cls, description):
+        if description not in ("Replace transformer (fixed cost)", "Add new transformer (fixed cost)"):
             raise ValueError("Incorrect Miscellaneous Description")
-        return Description
+        return description
     
 
 class UpgradeCostDatabaseModel(UpgradeParamsBaseModel):
@@ -621,112 +565,107 @@ class CommonLineParameters(UpgradeParamsBaseModel):
     r1: Any = Field(
         title="r1",
         description="r1",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     x1: Any = Field(
         title="x1",
         description="x1",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     r0: Any = Field(
         title="r0",
         description="r0",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     x0: Any = Field(
         title="x0",
         description="x0",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     C1: Any = Field(
         title="c1",
         description="c1",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     C0: Any = Field(
         title="c0",
         description="c0",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     rmatrix: Any = Field(
         title="rmatrix",
         description="rmatrix. If provided, should be a list.",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     xmatrix: Any = Field(
         title="xmatrix",
         description="xmatrix. If provided, should be a list.",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     cmatrix: Any = Field(
         title="cmatrix",
         description="cmatrix. If provided, should be a list.",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     Rg: float = Field(
         title="Rg",
         description="Rg",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     Xg: float = Field(
         title="Xg",
         description="Xg",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     rho: float = Field(
         title="rho",
         description="rho",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     B1: Any = Field(
         title="B1",
         description="B1",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     B0: Any = Field(
         title="B0",
         description="B0",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     normamps: float = Field(
         title="normamps",
         description="normamps",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     emergamps: float = Field(
         title="emergamps",
         description="emergamps",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     units: str = Field(
         title="units",
         description="units",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )   
-    faultrate: float = Field(
+    faultrate: Optional[float] = Field(
         title="faultrate",
         description="faultrate",
-        upgrade_option_property=True,
     )
-    pctperm: float = Field(
+    pctperm: Optional[float] = Field(
         title="pctperm",
         description="pctperm",
-        upgrade_option_property=True,
     )
-    repair: float = Field(
+    repair: Optional[float] = Field(
         title="repair",
         description="repair",
-        upgrade_option_property=True,
     ) 
-    Seasons: Any = Field(
+    Seasons: Optional[Any] = Field(
         title="Seasons",
         description="Seasons",
-        upgrade_option_property=True,
     )
-    Ratings: Any = Field(
+    Ratings: Optional[Any] = Field(
         title="Ratings",
         description="Ratings",
-        upgrade_option_property=True,
     ) 
 
 
@@ -736,29 +675,31 @@ class LineCodeCatalogModel(CommonLineParameters):
         title="name",
         description="name",
     )
-    equipment_type: str = Field(
-        title="equipment_type",
-        description="equipment_type",
-    )
     nphases: int = Field(
         title="nphases",
         description="nphases",
+        determine_upgrade_option=True,
     )
-    Kron: Any = Field(
+    Kron: Optional[Any] = Field(
         title="Kron",
         description="Kron",
+        default="N",
+        determine_upgrade_option=True,
     )
     neutral: float = Field(
         title="neutral",
         description="neutral",
+        determine_upgrade_option=True,
     )
-    like: Any = Field(
+    like: Optional[Any] = Field(
         title="like",
         description="like",
+        default=None,
     )
     baseFreq: float = Field(
         title="basefreq",
         description="basefreq",
+        determine_upgrade_option=True,
     )
     
 
@@ -772,80 +713,76 @@ class LineCatalogModel(CommonLineParameters):
         title="line_definition_type",
         description="This indicates if the line is defined by using linecodes or line geometry. Possible values are linecode, geometry."
                     "This is a computed field, not a direct OpenDSS object property",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     geometry: Any = Field(
         title="geometry",
         description="geometry",
+        determine_upgrade_option=True,
     )
     linecode: Any = Field(
         title="linecode",
         description="If line is defined using linecode, then name of associated line code should be provided here.",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     phases: int = Field(
         title="phases",
         description="phases",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         deciding_property=True,
     )
     kV: float = Field(
         title="kV",
         description="kV. This is not a direct OpenDSS object property.",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         deciding_property=True,
     )
     EarthModel: Any = Field(
         title="EarthModel",
         description="EarthModel",
-        upgrade_option_property=True,
     )
     cncables: Any = Field(
         title="cncables",
         description="cncables",
-        upgrade_option_property=True,
     )    
     tscables: Any = Field(
         title="tscables",
         description="tscables",
-        upgrade_option_property=True,
     )   
     wires: Any = Field(
         title="wires",
         description="wires",
-        upgrade_option_property=True,
     )
     like: Any = Field(
         title="like",
         description="like",
-        upgrade_option_property=True,
     )
     basefreq: float = Field(
         title="basefreq",
         description="basefreq",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         deciding_property=True,
     )
     Switch: bool = Field(
         title="Switch",
         description="Flag that determines whether line is switch or not.",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         deciding_property=True,
     )
     spacing: Any = Field(
         title="spacing",
         description="spacing",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     h: float = Field(
         title="h",
         description="h. This is not a direct opendss line property, and is added as a new field. A value is available if line is defined as a line geometry.",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     line_placement: Any = Field(
         title="line_placement",
         description="line_placement. This is a new field, not a direct OpenDSS object property.",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         deciding_property=True,
     )
     
@@ -855,281 +792,281 @@ class CommonTransformerParameters(UpgradeParamsBaseModel):
     phases: int = Field(
         title="phases",
         description="phases",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         deciding_property=True,
     )
     windings: int = Field(
         title="windings",
         description="windings",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     wdg: int = Field(
         title="wdg",
         description="wdg",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         deciding_property=True,
     )
     conn: str = Field(
         title="conn",
         description="conn",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         deciding_property=True,
     )
     kV: float = Field(
         title="kV",
         description="kV",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         deciding_property=True,
     )
     kVA: float = Field(
         title="kVA",
         description="kVA",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     tap: float = Field(
         title="tap",
         description="tap",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     pctR: float = Field(
         title="pctR",
         description="pctR",
         alias="%R",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     Rneut: float = Field(
         title="Rneut",
         description="Rneut",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     Xneut: float = Field(
         title="Xneut",
         description="Xneut",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     conns: Any = Field(
         title="conns",
         description="conns. This needs to be passed as a list.",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         deciding_property=True,
     )
     kVs: Any = Field(
         title="kVs",
         description="kVs. This needs to be passed as a list.",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         deciding_property=True,
     )   
     kVAs: Any = Field(
         title="kVAs",
         description="kVAs. This needs to be passed as a list.",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     taps: Any = Field(
         title="taps",
         description="taps. This needs to be passed as a list.",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     XHL: float = Field(
         title="XHL",
         description="XHL",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     XHT: float = Field(
         title="XHT",
         description="XHT",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     XLT: float = Field(
         title="XLT",
         description="XLT",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     Xscarray: Any = Field(
         title="Xscarray",
         description="Xscarray",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     thermal: Any = Field(
         title="thermal",
         description="thermal",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         write_property=True,
     )
     n: float = Field(
         title="n",
         description="n",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         write_property=True,
     )
     m: float = Field(
         title="m",
         description="m",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         write_property=True,
     )
     flrise: float = Field(
         title="flrise",
         description="flrise",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         write_property=True,
     )
     hsrise: float = Field(
         title="hsrise",
         description="hsrise",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         write_property=True,
     ) 
     pctloadloss: float = Field(
         title="%loadloss",
         description="%loadloss",
         alias="%loadloss",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         write_property=True,
     )
     pctnoloadloss: float = Field(
         title="%noloadloss",
         description="%noloadloss",
         alias="%noloadloss",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         write_property=True,
     )
     normhkVA: float = Field(
         title="normhkVA",
         description="normhkVA",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         write_property=True,
     ) 
     emerghkVA: float = Field(
         title="emerghkVA",
         description="emerghkVA",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         write_property=True,
     )
     sub: str = Field(
         title="sub",
         description="sub",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     MaxTap: float = Field(
         title="MaxTap",
         description="MaxTap",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     ) 
     MinTap: float = Field(
         title="MinTap",
         description="MinTap",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     NumTaps: float = Field(
         title="NumTaps",
         description="NumTaps",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         write_property=True,
     )
     subname: Any = Field(
         title="subname",
         description="subname",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     ) 
     pctimag: float = Field(
         title="%imag",
         description="%imag",
         alias="%imag",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         write_property=True,
     )
     ppm_antifloat: float = Field(
         title="ppm_antifloat",
         description="ppm_antifloat",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         write_property=True,
     )
     pctRs: Any = Field(
         title="%Rs",
         description="%Rs. If present, should be a list.",
         alias="%Rs",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     ) 
     bank: Any = Field(
         title="bank",
         description="bank",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     XfmrCode: Any = Field(
         title="XfmrCode",
         description="XfmrCode",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     XRConst: Any = Field(
         title="XRConst",
         description="XRConst",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         write_property=True,
     ) 
     X12: float = Field(
         title="X12",
         description="X12",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     X13: float = Field(
         title="X13",
         description="X13",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     X23: float = Field(
         title="X23",
         description="X23",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     ) 
     LeadLag: Any = Field(
         title="LeadLag",
         description="LeadLag",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         deciding_property=True,
         write_property=True,
     )
     Core: Any = Field(
         title="Core",
         description="Core",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         write_property=True,
     )
     RdcOhms: float = Field(
         title="RdcOhms",
         description="RdcOhms",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )  
     normamps: float = Field(
         title="normamps",
         description="normamps",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     emergamps: float = Field(
         title="emergamps",
         description="emergamps",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
     faultrate: float = Field(
         title="faultrate",
         description="faultrate",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         write_property=True,
     )  
     pctperm: float = Field(
         title="pctperm",
         description="pctperm",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )  
     basefreq: float = Field(
         title="basefreq",
         description="basefreq",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
         deciding_property=True,
     )  
     amp_limit_per_phase: float = Field(
         title="amp_limit_per_phase",
         description="amp_limit_per_phase. This is a new field, not a direct OpenDSS object property.",
-        upgrade_option_property=True,
+        determine_upgrade_option=True,
     )
 
 

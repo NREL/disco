@@ -18,7 +18,7 @@ def generate_schemas(output_dir):
         PowerFlowSnapshotSimulationModel,
         PowerFlowTimeSeriesSimulationModel,
         UpgradeCostAnalysisSimulationModel,
-        JobUpgradeSummaryResultsModel,
+        JobUpgradeSummaryOutputModel,
         # ThermalUpgradeParamsModel,
         # VoltageUpgradeParamsModel,
         # UpgradeCostAnalysisGenericModel,
