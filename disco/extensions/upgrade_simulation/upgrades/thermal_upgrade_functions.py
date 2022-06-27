@@ -211,6 +211,14 @@ def define_xfmr_object(xfmr_name, xfmr_info_series, action_type, buses_list=None
     -------
     string
     """
+    if isinstance(xfmr_info_series["conns"], str):
+        xfmr_info_series["conns"] = ast.literal_eval(xfmr_info_series["conns"])
+    if isinstance(xfmr_info_series["kVs"], str):
+        xfmr_info_series["kVs"] = ast.literal_eval(xfmr_info_series["kVs"])
+    if isinstance(xfmr_info_series["%Rs"], str):
+        xfmr_info_series["%Rs"] = ast.literal_eval(xfmr_info_series["%Rs"])
+    if isinstance(xfmr_info_series["kVAs"], str):
+        xfmr_info_series["kVAs"] = ast.literal_eval(xfmr_info_series["kVAs"])
     command_string = f"{action_type} Transformer.{xfmr_name}"
     if action_type == "New":
         if buses_list is None:
@@ -382,7 +390,13 @@ def identify_parallel_xfmrs(upgrade_options, object_row, parallel_transformer_li
     if len(upgrade_options) == 0:
         raise ExceededParallelTransformersLimit(f"Number of parallel transformers is greater than limit!")
     # choose option that has the least value of this metric- since that represents the per unit oversizing
-    chosen_option = upgrade_options.loc[upgrade_options["choose_parallel_metric"].idxmin()]
+    chosen_option = upgrade_options.loc[upgrade_options["choose_parallel_metric"].idxmin()].copy()
+    chosen_option["conns"] = ast.literal_eval(chosen_option["conns"])
+    chosen_option["kVs"] = ast.literal_eval(chosen_option["kVs"])
+    if isinstance(chosen_option["%Rs"], str):
+        chosen_option["%Rs"] = ast.literal_eval(chosen_option["%Rs"])
+    if isinstance(chosen_option["kVAs"], str):
+        chosen_option["kVAs"] = ast.literal_eval(chosen_option["kVAs"])
     num_parallel_xfmrs = int(chosen_option["num_parallel"])
     upgrades_dict_parallel = []
     for xfmr_count in range(0, num_parallel_xfmrs):

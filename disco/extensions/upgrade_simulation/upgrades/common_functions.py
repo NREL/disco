@@ -404,16 +404,19 @@ def create_thermal_output_summary(all_original_equipment, all_latest_equipment, 
         original_equipment_df = original_equipment_df.rename(columns={props_dict[equipment_type]["identifier"]: "equipment_name"})
         temp_upgrade_df = upgrades_dict[equipment_type]
         temp_upgrade_df = temp_upgrade_df.rename(columns={"final_equipment_name": "equipment_name"})
-        replaced = list(temp_upgrade_df.loc[temp_upgrade_df["upgrade_type"]=="upgrade"]["equipment_name"].unique())  # list of replaced equipment
-        new = list(temp_upgrade_df.loc[temp_upgrade_df["upgrade_type"]=="new (parallel)"]["equipment_name"].unique())  # list of new equipment
         temp_cost_df = thermal_cost_df.loc[thermal_cost_df.type.str.lower() == equipment_type.lower()]
         temp_cost_df = temp_cost_df.rename(columns={"final_equipment_name": "equipment_name"})
-
         new_df = latest_equipment_df.copy(deep=True)
         new_df = pd.concat([new_df, pd.DataFrame(columns=set(output_cols)-set(new_df.columns))], axis=1)
         new_df.loc[:, "equipment_type"] = equipment_type
         new_df.loc[:, "total_cost_usd"] = 0
         new_df.loc[:, "status"] = EquipmentUpgradeStatusModel.unchanged.value
+        if temp_upgrade_df.empty:
+            replaced = []
+            new = []
+        else:
+            replaced = list(temp_upgrade_df.loc[temp_upgrade_df["upgrade_type"]=="upgrade"]["equipment_name"].unique())  # list of replaced equipment
+            new = list(temp_upgrade_df.loc[temp_upgrade_df["upgrade_type"]=="new (parallel)"]["equipment_name"].unique())  # list of new equipment
         # add upgrade status
         new_df.loc[new_df.equipment_name.isin(replaced), "status"] = EquipmentUpgradeStatusModel.replaced.value
         new_df.loc[new_df.equipment_name.isin(new), "status"] = EquipmentUpgradeStatusModel.new.value
@@ -423,7 +426,6 @@ def create_thermal_output_summary(all_original_equipment, all_latest_equipment, 
         new_df.loc[new_df.index.isin(temp_cost_df.index), "total_cost_usd"] = temp_cost_df.total_cost_usd
         parameter_list = props_dict[equipment_type]["parameter_list"]
         original_equipment_df.set_index("equipment_name", inplace=True)
-
         for i in range(0, len(parameter_list)):
             new_df[f"parameter{i+1}_name"] = parameter_list[i]
             new_df[f"parameter{i+1}_original"] = new_df[parameter_list[i]]
@@ -522,6 +524,8 @@ def create_voltage_output_summary(all_original_equipment, all_latest_equipment, 
         elif equipment_type == "regulator_control":
             new_df, new, setting_changed  = create_regulator_output_summary(temp_upgrade_df, voltage_cost_df, latest_equipment_df, output_cols, equipment_type)
         new_df.set_index("equipment_name", inplace=True)
+        if (new_df.empty) and (original_equipment_df.empty):  # if there are no equipment of this type
+            continue            
         parameter_list = props_dict[equipment_type]["parameter_list"]
         if not original_equipment_df.empty:
             original_equipment_df.set_index("equipment_name", inplace=True)
@@ -1347,6 +1351,7 @@ def determine_available_line_upgrades(line_loading_df):
     """This function creates a dataframe of available line upgrades by dropping duplicates from line dataframe passed.
     """
     property_list =  _extract_specific_model_properties_(model_name=LineCatalogModel, field_type_key="determine_upgrade_option", field_type_value=True)
+    line_loading_df["kV"] = line_loading_df["kV"].round(5)
     if 'line_definition_type' not in line_loading_df.columns:  # add line_definition_type if not present
         line_loading_df = add_info_line_definition_type(line_loading_df)
     if 'line_placement' not in line_loading_df.columns:
@@ -1354,14 +1359,12 @@ def determine_available_line_upgrades(line_loading_df):
             info_dict = determine_line_placement(row)
             for key in info_dict.keys():
                 line_loading_df.at[index, key] = info_dict[key] 
-    line_upgrade_options = line_loading_df[property_list + ['geometry']]
+    line_upgrade_options = line_loading_df[property_list]
     # remove duplicate line upgrade options (that might have a different name, but same parameters)
-    line_upgrade_options = line_upgrade_options.loc[line_upgrade_options.astype(str).drop_duplicates(
-        subset=property_list).index]
+    line_upgrade_options = line_upgrade_options.loc[line_upgrade_options.astype(str).drop_duplicates(subset=property_list).index]
     line_upgrade_options.reset_index(drop=True, inplace=True)
     line_upgrade_options = line_upgrade_options.reset_index().rename(columns={'index': 'name'})
     line_upgrade_options['name'] = 'line_' + line_upgrade_options['name'].astype(str)
-    line_upgrade_options["kV"] = line_upgrade_options["kV"].round(5)
     return line_upgrade_options
 
 
