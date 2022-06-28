@@ -525,7 +525,7 @@ def create_voltage_output_summary(all_original_equipment, all_latest_equipment, 
         if (voltage_upgrade_df.empty) and (original_equipment_df.empty):  # if there are no equipment for voltage controls
             continue 
         if not voltage_upgrade_df.empty:  # if there are voltage upgrades, extract for this equipment type
-            temp_cost_df = voltage_cost_df.loc[voltage_cost_df.type.isin(props_dict[equipment_type]["model"].list())]
+            temp_cost_df = voltage_cost_df.loc[voltage_cost_df.type.isin(props_dict[equipment_type]["model"].list_values())]
             temp_upgrade_df = voltage_upgrade_df.loc[voltage_upgrade_df.equipment_type.str.lower() == props_dict[equipment_type]["upgrades_file_string"].lower()]
         else:
             temp_upgrade_df = pd.DataFrame(columns=voltage_upgrade_df.columns)

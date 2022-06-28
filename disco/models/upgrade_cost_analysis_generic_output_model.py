@@ -154,7 +154,7 @@ class EquipmentTypeUpgradeCostsResultModel(UpgradeParamsBaseModel):
         units="",
         default={},
     )
-    comment: Optional[str] = Field(
+    comment: Optional[Any] = Field(
         title="comment",
         description="Other comments",
         units="",
@@ -439,7 +439,7 @@ class AllUpgradesCostResultSummaryModel(UpgradeParamsBaseModel):
 
 class ExtendedEnum(enum.Enum):
     @classmethod
-    def list(cls):
+    def list_values(cls):
         return list(map(lambda c: c.value, cls))
     
 

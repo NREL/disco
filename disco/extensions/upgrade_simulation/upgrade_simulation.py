@@ -71,9 +71,9 @@ class UpgradeSimulation:
         thermal_upgrades = self.get_thermal_upgrades_directory()
         return os.path.join(thermal_upgrades, "internal_upgrades_technical_catalog.json")
     
-    def get_equipmentwise_upgrade_costs_file(self):
+    def get_equipment_upgrade_costs_file(self):
         upgrade_costs = self.get_upgrade_costs_directory()
-        return os.path.join(upgrade_costs, "equipmentwise_upgrade_costs.json")
+        return os.path.join(upgrade_costs, "equipment_upgrade_costs.json")
     
     def get_voltage_upgrade_costs_file(self):
         upgrade_costs = self.get_upgrade_costs_directory()
@@ -161,8 +161,8 @@ class UpgradeSimulation:
             output_json_thermal_upgrades_filepath=self.get_thermal_upgrades_json_file(),
             output_json_voltage_upgrades_filepath=self.get_voltage_upgrades_json_file(),
             cost_database_filepath=cost_database_filepath,
-            equipmentwise_cost_output_filepath=self.get_equipmentwise_upgrade_costs_file(),
-            total_cost_output_filepath=self.get_total_upgrade_costs_file(),
+            output_equipment_upgrade_costs_filepath=self.get_equipment_upgrade_costs_file(),
+            output_total_upgrade_costs_filepath=self.get_total_upgrade_costs_file(),
             overall_output_summary_filepath=self.get_overall_output_summary_file(),
             feeder_stats_json_file = self.get_feeder_stats_json_file()
         )

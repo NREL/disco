@@ -1,6 +1,6 @@
 import logging
 import pandas as pd
-import ast
+import numpy as np
 
 from jade.utils.timing_utils import track_timing, Timer
 from jade.utils.utils import load_data, dump_data
@@ -31,8 +31,8 @@ def compute_all_costs(
     output_json_thermal_upgrades_filepath,
     output_json_voltage_upgrades_filepath,
     cost_database_filepath,
-    equipmentwise_cost_output_filepath,
-    total_cost_output_filepath,
+    output_equipment_upgrade_costs_filepath,
+    output_total_upgrade_costs_filepath,
     overall_output_summary_filepath,
     feeder_stats_json_file,
 ):
@@ -98,10 +98,10 @@ def compute_all_costs(
     thermal_cost_df = thermal_cost_df.loc[thermal_cost_df["count"] != 0]
     total_cost_df = get_total_costs(thermal_cost_df, voltage_cost_df)
     equipment_costs = AllEquipmentUpgradeCostsResultModel(thermal=thermal_cost_df.to_dict('records'), voltage=voltage_cost_df.to_dict('records'))
-    dump_data(equipment_costs.dict(by_alias=True), equipmentwise_cost_output_filepath, indent=2)
+    dump_data(equipment_costs.dict(by_alias=True), output_equipment_upgrade_costs_filepath, indent=2)
     total_cost_df["name"] = job_name
     m = [TotalUpgradeCostsResultModel(**x) for x in total_cost_df.to_dict(orient="records")]
-    dump_data({"total_upgrade_costs": total_cost_df.to_dict('records')}, total_cost_output_filepath, indent=2)
+    dump_data({"total_upgrade_costs": total_cost_df.to_dict('records')}, output_total_upgrade_costs_filepath, indent=2)
     feeder_stats = load_data(feeder_stats_json_file)
     output_summary = create_overall_output_file(upgrades_dict={"transformer": xfmr_upgrades_df, "line": line_upgrades_df, "voltage": voltage_upgrades_df},
                                                 costs_dict={"thermal": thermal_cost_df, "voltage": voltage_cost_df}, feeder_stats=feeder_stats)
@@ -164,12 +164,16 @@ def compute_transformer_costs(xfmr_upgrades_df, xfmr_cost_database, **kwargs):
         else:  # if costs are not present for this transformer, then choose closest rated_kVA
             # (or whatever backup deciding property is passed) (ignore other properties)
             closest = xfmr_cost_database.loc[abs(xfmr_cost_database[backup_deciding_property] -
-                                                 row[backup_deciding_property]).idxmin()]
+                                                 row[backup_deciding_property]).idxmin()].copy()
             row[output_cost_field] = closest["cost"]
             row[output_count_field] = 1
-            comment_string = f"Transformer {row['final_equipment_name']}: Exact cost not available. " \
-                             f"Unit cost for transformer with these parameters used " \
-                             f"(based on closest {backup_deciding_property}:  {dict(closest)}"
+            for key, value in closest.items():  # make it json serializable
+                if isinstance(value, np.int64):
+                    closest[key] = int(value)
+            comment_string = {"text": f"Transformer {row['final_equipment_name']}: Exact cost not available. " \
+                                      f"Unit cost for transformer with these parameters used " \
+                                      f"(based on closest {backup_deciding_property}", 
+                             "params": dict(closest)}
             logger.debug(comment_string)
             row["comment"] = comment_string
         # add transformer fixed costs, if given in database. (depending on upgrade type)
@@ -301,11 +305,16 @@ def compute_line_costs(line_upgrades_df, line_cost_database, **kwargs):
         else:  # if costs are not present for this transformer, then choose closest ampere_rating
             # (or whatever backup deciding property is passed) (ignore other properties)
             closest = line_cost_database.loc[abs(line_cost_database[backup_deciding_property] -
-                                                 row[backup_deciding_property]).idxmin()]
+                                                 row[backup_deciding_property]).idxmin()].copy()
             row[output_cost_field] = closest["cost_per_m"] * line_length_m
-            comment_string = f"Line {row['final_equipment_name']}: Exact cost not available. " \
-                             f"Unit cost for line with these parameters used " \
-                             f"(based on closest {backup_deciding_property}: {dict(closest)}"
+            for key, value in closest.items():  # make it json serializable
+                if isinstance(value, np.int64):
+                    closest[key] = int(value)
+            comment_string = {"text": f"Line {row['final_equipment_name']}: Exact cost not available. " \
+                                      f"Unit cost for line with these parameters used " \
+                                      f"(based on closest {backup_deciding_property}.",
+                             "params": dict(closest)}
+            
             logger.debug(comment_string)
             row["comment"] = comment_string
             row[output_count_field] = 1
@@ -358,7 +367,7 @@ def compute_capcontrol_cost(voltage_upgrades_df, controls_cost_database, keyword
     output_count_field = "count"
     output_columns_list = ["type", output_count_field, output_cost_field, "comment"]
 
-    type_rows = CapacitorControllerResultTypeModel.list()  # from enum
+    type_rows = CapacitorControllerResultTypeModel.list_values()  # from enum
     capcontrol_upgrade_fields = {"add_new_cap_controller": "new_controller_added",
                          "change_cap_control": "controller_settings_modified"}
     cost_database_fields = {"add_new_cap_controller": "Add new capacitor controller",
@@ -499,12 +508,17 @@ def compute_voltage_regcontrol_cost(voltage_upgrades_df, vreg_control_cost_datab
                 output_row[output_count_field] = 1
             else:  # if costs are not present for this transformer, then choose from other xfmr database rated_kVA
                 backup_deciding_property = "rated_kVA"
-                closest = vreg_xfmr_cost_database.loc[abs(vreg_xfmr_cost_database[backup_deciding_property] - added_xfmr_details[backup_deciding_property]).idxmin()]
+                closest = vreg_xfmr_cost_database.loc[abs(vreg_xfmr_cost_database[backup_deciding_property] - added_xfmr_details[backup_deciding_property]).idxmin()].copy()
                 output_row[output_cost_field] = closest["cost"]
                 output_row[output_count_field] = 1
-                comment_string = f"Transformer {added_xfmr_details['name']}: Exact cost not available. " \
-                                f"Unit cost for transformer with these parameters used " \
-                                f"(based on closest {backup_deciding_property}:  {dict(closest)}"
+                for key, value in closest.items():  # make it json serializable
+                    if isinstance(value, np.int64):
+                        closest[key] = int(value)
+                comment_string =  {"text": f"Transformer {added_xfmr_details['name']}: Exact cost not available. " \
+                                           f"Unit cost for transformer with these parameters used " \
+                                           f"(based on closest {backup_deciding_property}", 
+                                  "params": dict(closest)}
+                                  
                 logger.debug(comment_string)
                 output_row["comment"] = comment_string
             if row[upgrade_fields_dict["at_substation"]]:
