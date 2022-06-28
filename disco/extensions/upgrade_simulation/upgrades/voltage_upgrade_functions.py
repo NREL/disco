@@ -399,10 +399,10 @@ def compute_voltage_violation_severity(voltage_upper_limit, voltage_lower_limit,
     """
     bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
         voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, raise_exception=False, **kwargs)
-    deviation_severity = bus_voltages_df['Min voltage_deviation'].sum() + bus_voltages_df['Max voltage_deviation'].sum()
+    deviation_severity = bus_voltages_df['min_voltage_deviation'].sum() + bus_voltages_df['max_voltage_deviation'].sum()
     undervoltage_bus_list = list(
-        bus_voltages_df.loc[bus_voltages_df['Undervoltage violation'] == True]['name'].unique())
-    overvoltage_bus_list = list(bus_voltages_df.loc[bus_voltages_df['Overvoltage violation'] == True]['name'].unique())
+        bus_voltages_df.loc[bus_voltages_df['undervoltage_violation'] == True]['name'].unique())
+    overvoltage_bus_list = list(bus_voltages_df.loc[bus_voltages_df['overvoltage_violation'] == True]['name'].unique())
     buses_with_violations = undervoltage_bus_list + overvoltage_bus_list
     objective_function = len(buses_with_violations) * deviation_severity
     severity_dict = {'deviation_severity': deviation_severity,
@@ -1876,7 +1876,7 @@ def get_graph_edges_dataframe(attr_fields):
     all_xfmrs_df['bus1'] = all_xfmrs_df['bus_names_only'].str[0].str.lower()
     all_xfmrs_df['bus2'] = all_xfmrs_df['bus_names_only'].str[-1].str.lower()
     all_xfmrs_df['equipment_type'] = 'transformer'
-    all_edges_df = all_lines_df[chosen_fields].append(all_xfmrs_df[chosen_fields])
+    all_edges_df = pd.concat([all_lines_df[chosen_fields], all_xfmrs_df[chosen_fields]])
     return all_edges_df
 
 

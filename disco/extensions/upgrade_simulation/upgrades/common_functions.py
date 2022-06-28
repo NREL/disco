@@ -335,8 +335,8 @@ def combine_equipment_health_stats(xfmr_loading_df, line_loading_df, bus_voltage
                                  ['name', 'phases', 'windings', 'conns', 'kV', 'kVA', 'amp_limit_per_phase','max_amp_loading', 
                                   'max_per_unit_loading', 'status']  )
     voltage_properties = kwargs.get("voltage_properties", 
-                                    ['name', 'Max per unit voltage', 'Min per unit voltage',  'Overvoltage violation', 
-                                     'Max voltage_deviation', 'Undervoltage violation', 'Min voltage_deviation'])
+                                    ['name', 'max_per_unit_voltage', 'min_per_unit_voltage',  'overvoltage_violation', 
+                                     'max_voltage_deviation', 'undervoltage_violation', 'min_voltage_deviation'])
     capacitors_df = kwargs.get("capacitors_df", pd.DataFrame())
     regcontrols_df = kwargs.get("regcontrols_df", pd.DataFrame())
     capacitor_properties = kwargs.get("capacitor_properties", 
@@ -404,26 +404,29 @@ def create_thermal_output_summary(all_original_equipment, all_latest_equipment, 
         original_equipment_df = original_equipment_df.rename(columns={props_dict[equipment_type]["identifier"]: "equipment_name"})
         temp_upgrade_df = upgrades_dict[equipment_type]
         temp_upgrade_df = temp_upgrade_df.rename(columns={"final_equipment_name": "equipment_name"})
-        temp_cost_df = thermal_cost_df.loc[thermal_cost_df.type.str.lower() == equipment_type.lower()]
-        temp_cost_df = temp_cost_df.rename(columns={"final_equipment_name": "equipment_name"})
+        if (temp_upgrade_df.empty) and (original_equipment_df.empty):  # if there are no equipment for voltage controls
+            continue 
         new_df = latest_equipment_df.copy(deep=True)
         new_df = pd.concat([new_df, pd.DataFrame(columns=set(output_cols)-set(new_df.columns))], axis=1)
         new_df.loc[:, "equipment_type"] = equipment_type
         new_df.loc[:, "total_cost_usd"] = 0
         new_df.loc[:, "status"] = EquipmentUpgradeStatusModel.unchanged.value
-        if temp_upgrade_df.empty:
-            replaced = []
-            new = []
-        else:
+        
+        if not temp_upgrade_df.empty:
+            temp_cost_df = thermal_cost_df.loc[thermal_cost_df.type.str.lower() == equipment_type.lower()]
+            temp_cost_df = temp_cost_df.rename(columns={"final_equipment_name": "equipment_name"})
             replaced = list(temp_upgrade_df.loc[temp_upgrade_df["upgrade_type"]=="upgrade"]["equipment_name"].unique())  # list of replaced equipment
-            new = list(temp_upgrade_df.loc[temp_upgrade_df["upgrade_type"]=="new (parallel)"]["equipment_name"].unique())  # list of new equipment
-        # add upgrade status
-        new_df.loc[new_df.equipment_name.isin(replaced), "status"] = EquipmentUpgradeStatusModel.replaced.value
-        new_df.loc[new_df.equipment_name.isin(new), "status"] = EquipmentUpgradeStatusModel.new.value
-        # add cost
-        temp_cost_df.set_index("equipment_name", inplace=True)
-        new_df.set_index("equipment_name", inplace=True)
-        new_df.loc[new_df.index.isin(temp_cost_df.index), "total_cost_usd"] = temp_cost_df.total_cost_usd
+            new = list(temp_upgrade_df.loc[temp_upgrade_df["upgrade_type"]=="new_parallel"]["equipment_name"].unique())  # list of new equipment
+            # add upgrade status
+            new_df.loc[new_df.equipment_name.isin(replaced), "status"] = EquipmentUpgradeStatusModel.replaced.value
+            new_df.loc[new_df.equipment_name.isin(new), "status"] = EquipmentUpgradeStatusModel.new.value
+            # add cost
+            temp_cost_df.set_index("equipment_name", inplace=True)
+            new_df.set_index("equipment_name", inplace=True)
+            new_df.loc[new_df.index.isin(temp_cost_df.index), "total_cost_usd"] = temp_cost_df.total_cost_usd
+        else:
+            new = []
+            replaced = []
         parameter_list = props_dict[equipment_type]["parameter_list"]
         original_equipment_df.set_index("equipment_name", inplace=True)
         for i in range(0, len(parameter_list)):
@@ -440,11 +443,19 @@ def create_thermal_output_summary(all_original_equipment, all_latest_equipment, 
     return new_thermal_df
 
 
-def create_capacitor_output_summary(temp_upgrade_df, voltage_cost_df, latest_equipment_df, output_cols, equipment_type):
+def create_capacitor_output_summary(temp_upgrade_df, temp_cost_df, latest_equipment_df, output_cols, equipment_type):
+    # create new dataframe
+    new_df = latest_equipment_df.copy(deep=True)
+    new_df = pd.concat([new_df, pd.DataFrame(columns=set(output_cols)-set(new_df.columns))], axis=1)
+    new_df.loc[:, "equipment_type"] = equipment_type
+    new_df.loc[:, "total_cost_usd"] = 0
+    new_df.loc[:, "status"] = EquipmentUpgradeStatusModel.unchanged.value
+    
+    if temp_upgrade_df.empty:  # if there are no upgrades of this equipment type
+        return new_df, [], []
+    
     new = list(temp_upgrade_df.loc[temp_upgrade_df["new_controller_added"]]["equipment_name"].unique())  # list of new equipment
     setting_changed = list(temp_upgrade_df.loc[temp_upgrade_df["controller_settings_modified"]]["equipment_name"].unique())  # list of setting_changed equipment
-    temp_cost_df = voltage_cost_df.loc[voltage_cost_df.type.isin(CapacitorControllerResultTypeModel.list())]
-    temp_cost_df = voltage_cost_df.rename(columns={"final_equipment_name": "equipment_name"})
     # get unit cost
     unit_cost_calc = temp_cost_df.loc[temp_cost_df.type == CapacitorControllerResultTypeModel.change_cap_control.value]
     if not unit_cost_calc.empty:
@@ -456,12 +467,6 @@ def create_capacitor_output_summary(temp_upgrade_df, voltage_cost_df, latest_equ
         add_new_unit_cost = (unit_cost_calc["total_cost_usd"] / unit_cost_calc["count"]).values[0]
     else:
         add_new_unit_cost = 0
-    # create new dataframe
-    new_df = latest_equipment_df.copy(deep=True)
-    new_df = pd.concat([new_df, pd.DataFrame(columns=set(output_cols)-set(new_df.columns))], axis=1)
-    new_df.loc[:, "equipment_type"] = equipment_type
-    new_df.loc[:, "total_cost_usd"] = 0
-    new_df.loc[:, "status"] = EquipmentUpgradeStatusModel.unchanged.value
     # add upgrade status and cost
     new_df.loc[new_df.equipment_name.isin(setting_changed), "status"] = EquipmentUpgradeStatusModel.setting_changed.value
     new_df.loc[new_df.equipment_name.isin(setting_changed), "total_cost_usd"] = setting_changed_unit_cost
@@ -470,19 +475,19 @@ def create_capacitor_output_summary(temp_upgrade_df, voltage_cost_df, latest_equ
     return new_df, new, setting_changed 
 
 
-def create_regulator_output_summary(temp_upgrade_df, voltage_cost_df, latest_equipment_df, output_cols, equipment_type):    
-    new = list(temp_upgrade_df.loc[temp_upgrade_df["new_controller_added"]]["equipment_name"].unique())  # list of new equipment
-    setting_changed = list(temp_upgrade_df.loc[temp_upgrade_df["controller_settings_modified"]]["equipment_name"].unique())  # list of setting_changed equipment
+def create_regulator_output_summary(temp_upgrade_df, temp_cost_df, latest_equipment_df, output_cols, equipment_type):    
     # create new dataframe
     new_df = latest_equipment_df.copy(deep=True)
     new_df = pd.concat([new_df, pd.DataFrame(columns=set(output_cols)-set(new_df.columns))], axis=1)
     new_df.loc[:, "equipment_type"] = equipment_type
     new_df.loc[:, "total_cost_usd"] = 0
     new_df.loc[:, "status"] = EquipmentUpgradeStatusModel.unchanged.value
+    if temp_upgrade_df.empty:  # if there are no upgrades of this equipment type
+        return new_df, [], []
     
+    new = list(temp_upgrade_df.loc[temp_upgrade_df["new_controller_added"]]["equipment_name"].unique())  # list of new equipment
+    setting_changed = list(temp_upgrade_df.loc[temp_upgrade_df["controller_settings_modified"]]["equipment_name"].unique())  # list of setting_changed equipment
     # get unit cost            
-    temp_cost_df = voltage_cost_df.loc[voltage_cost_df.type.isin(VoltageRegulatorResultTypeModel.list())]
-    temp_cost_df = voltage_cost_df.rename(columns={"final_equipment_name": "equipment_name"})
     unit_cost_calc = temp_cost_df.loc[temp_cost_df.type == VoltageRegulatorResultTypeModel.add_new_reg_control.value]
     if not unit_cost_calc.empty:
         new_vreg_unit_cost = (unit_cost_calc["total_cost_usd"] / unit_cost_calc["count"]).values[0]
@@ -517,15 +522,23 @@ def create_voltage_output_summary(all_original_equipment, all_latest_equipment, 
         latest_equipment_df = latest_equipment_df.rename(columns={props_dict[equipment_type]["identifier"]: "equipment_name"})
         original_equipment_df = pd.DataFrame(all_original_equipment[equipment_type])
         original_equipment_df = original_equipment_df.rename(columns={props_dict[equipment_type]["identifier"]: "equipment_name"})
-        temp_upgrade_df = voltage_upgrade_df.loc[voltage_upgrade_df.equipment_type.str.lower() == props_dict[equipment_type]["upgrades_file_string"].lower()]
-        temp_upgrade_df = temp_upgrade_df.rename(columns={"name": "equipment_name"})
+        if (voltage_upgrade_df.empty) and (original_equipment_df.empty):  # if there are no equipment for voltage controls
+            continue 
+        if not voltage_upgrade_df.empty:  # if there are voltage upgrades, extract for this equipment type
+            temp_cost_df = voltage_cost_df.loc[voltage_cost_df.type.isin(props_dict[equipment_type]["model"].list())]
+            temp_upgrade_df = voltage_upgrade_df.loc[voltage_upgrade_df.equipment_type.str.lower() == props_dict[equipment_type]["upgrades_file_string"].lower()]
+        else:
+            temp_upgrade_df = pd.DataFrame(columns=voltage_upgrade_df.columns)
+            temp_cost_df = pd.DataFrame(columns=voltage_cost_df.columns)
+        temp_upgrade_df = temp_upgrade_df.rename(columns={"name": "equipment_name"}) 
+        temp_cost_df = temp_cost_df.rename(columns={"final_equipment_name": "equipment_name"})
         if equipment_type == "capacitor_control":
-            new_df, new, setting_changed = create_capacitor_output_summary(temp_upgrade_df, voltage_cost_df, latest_equipment_df, output_cols, equipment_type)
+            new_df, new, setting_changed = create_capacitor_output_summary(temp_upgrade_df, temp_cost_df, latest_equipment_df, output_cols, equipment_type)
         elif equipment_type == "regulator_control":
-            new_df, new, setting_changed  = create_regulator_output_summary(temp_upgrade_df, voltage_cost_df, latest_equipment_df, output_cols, equipment_type)
-        new_df.set_index("equipment_name", inplace=True)
-        if (new_df.empty) and (original_equipment_df.empty):  # if there are no equipment of this type
+            new_df, new, setting_changed  = create_regulator_output_summary(temp_upgrade_df, temp_cost_df, latest_equipment_df, output_cols, equipment_type)
+        if new_df.empty:  # if there are no equipment of this type
             continue            
+        new_df.set_index("equipment_name", inplace=True)
         parameter_list = props_dict[equipment_type]["parameter_list"]
         if not original_equipment_df.empty:
             original_equipment_df.set_index("equipment_name", inplace=True)
@@ -536,7 +549,6 @@ def create_voltage_output_summary(all_original_equipment, all_latest_equipment, 
             new_df.loc[new_df.index.isin(new), f"parameter{i+1}_original"] = None # new equipment original rating is None
             if not original_equipment_df.empty:
                 new_df.loc[new_df.index.isin(setting_changed), f"parameter{i+1}_original"] = original_equipment_df.loc[original_equipment_df.index.isin(setting_changed)][parameter_list[i]]
-
         new_df.reset_index(inplace=True)
         new_df = new_df[output_cols]
         new_voltage_df = pd.concat([new_voltage_df, new_df])
@@ -552,8 +564,10 @@ def create_overall_output_file(feeder_stats, upgrades_dict, costs_dict, **kwargs
     voltage_equipment_type_list = kwargs.get("voltage_equipment_type_list", ["capacitor_control", "regulator_control"])
     props_dict = {"transformer": {"identifier": "name", "parameter_list": ["kVA"], },
                  "line": {"identifier": "name", "parameter_list": ["normamps"], },
-                 "capacitor_control": {"identifier": "capacitor_name", "parameter_list": ["ONsetting", "OFFsetting", "Delay"], "upgrades_file_string": "capacitor", },
-                 "regulator_control": {"identifier": "name", "parameter_list": ["vreg", "band", "delay"], "upgrades_file_string": "regcontrol", }, 
+                 "capacitor_control": {"identifier": "capacitor_name", "parameter_list": ["ONsetting", "OFFsetting", "Delay"], "upgrades_file_string": "capacitor", 
+                                       "model": CapacitorControllerResultTypeModel},
+                 "regulator_control": {"identifier": "name", "parameter_list": ["vreg", "band", "delay"], "upgrades_file_string": "regcontrol", 
+                                       "model": VoltageRegulatorResultTypeModel}, 
     }
     thermal_cost_df = costs_dict["thermal"]
     thermal_cost_df = pd.concat([thermal_cost_df.drop(['equipment_parameters'], axis=1), thermal_cost_df['equipment_parameters'].apply(pd.Series)], axis=1)
@@ -1224,7 +1238,7 @@ def get_bus_voltages(voltage_upper_limit, voltage_lower_limit, raise_exception=T
                 bus_voltages_df.set_index("name", inplace=True)
                 comparison_dict[pv_field+"_"+str(multiplier_name)] = bus_voltages_df
         # compare all dataframe, and create one that contains all worst loading conditions (across all multiplier conditions)
-        deciding_column_dict = {"Max per unit voltage": "max", "Min per unit voltage": "min"}
+        deciding_column_dict = {"max_per_unit_voltage": "max", "min_per_unit_voltage": "min"}
         bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = compare_multiple_dataframes_voltage(comparison_dict=comparison_dict, 
                                                                                                                                   deciding_column_dict=deciding_column_dict,
                                                                                                                                   voltage_upper_limit=voltage_upper_limit,
@@ -1252,30 +1266,30 @@ def get_bus_voltages_instance(voltage_upper_limit, voltage_lower_limit, raise_ex
             "voltages": dss.Bus.puVmagAngle()[::2],
             # "kvbase": dss.Bus.kVBase(),
         }
-        data_dict["Max per unit voltage"] = max(data_dict["voltages"])
-        data_dict["Min per unit voltage"] = min(data_dict["voltages"])
-        data_dict['Phase imbalance'] = data_dict["Max per unit voltage"] - data_dict["Min per unit voltage"]
+        data_dict["max_per_unit_voltage"] = max(data_dict["voltages"])
+        data_dict["min_per_unit_voltage"] = min(data_dict["voltages"])
+        data_dict['phase_imbalance'] = data_dict["max_per_unit_voltage"] - data_dict["min_per_unit_voltage"]
 
         # check for overvoltage violation
-        if data_dict["Max per unit voltage"] > voltage_upper_limit:
-            data_dict['Overvoltage violation'] = True
-            data_dict["Max voltage_deviation"] = data_dict["Max per unit voltage"] - voltage_upper_limit
+        if data_dict["max_per_unit_voltage"] > voltage_upper_limit:
+            data_dict['overvoltage_violation'] = True
+            data_dict["max_voltage_deviation"] = data_dict["max_per_unit_voltage"] - voltage_upper_limit
         else:
-            data_dict['Overvoltage violation'] = False
-            data_dict["Max voltage_deviation"] = 0.0
+            data_dict['overvoltage_violation'] = False
+            data_dict["max_voltage_deviation"] = 0.0
 
         # check for undervoltage violation
-        if data_dict["Min per unit voltage"] < voltage_lower_limit:
-            data_dict['Undervoltage violation'] = True
-            data_dict["Min voltage_deviation"] = voltage_lower_limit - data_dict["Min per unit voltage"]
+        if data_dict["min_per_unit_voltage"] < voltage_lower_limit:
+            data_dict['undervoltage_violation'] = True
+            data_dict["min_voltage_deviation"] = voltage_lower_limit - data_dict["min_per_unit_voltage"]
         else:
-            data_dict['Undervoltage violation'] = False
-            data_dict["Min voltage_deviation"] = 0.0
+            data_dict['undervoltage_violation'] = False
+            data_dict["min_voltage_deviation"] = 0.0
         all_dict[data_dict["name"]] = data_dict
 
     all_df = pd.DataFrame.from_dict(all_dict, orient='index').reset_index(drop=True)
-    undervoltage_bus_list = list(all_df.loc[all_df['Undervoltage violation'] == True]['name'].unique())
-    overvoltage_bus_list = list(all_df.loc[all_df['Overvoltage violation'] == True]['name'].unique())
+    undervoltage_bus_list = list(all_df.loc[all_df['undervoltage_violation'] == True]['name'].unique())
+    overvoltage_bus_list = list(all_df.loc[all_df['overvoltage_violation'] == True]['name'].unique())
     buses_with_violations = list(set(undervoltage_bus_list + overvoltage_bus_list))
     return all_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations
 
@@ -1318,31 +1332,31 @@ def compare_multiple_dataframes_voltage(comparison_dict, deciding_column_dict, v
 def get_voltage_violations(voltage_upper_limit, voltage_lower_limit, bus_voltages_df):
     """Function to determine voltage violations
     """
-    bus_voltages_df['Overvoltage violation'] = False
-    bus_voltages_df['Undervoltage violation'] = False
-    bus_voltages_df['Max voltage_deviation'] = 0.0
-    bus_voltages_df['Min voltage_deviation'] = 0.0
+    bus_voltages_df['overvoltage_violation'] = False
+    bus_voltages_df['undervoltage_violation'] = False
+    bus_voltages_df['max_voltage_deviation'] = 0.0
+    bus_voltages_df['min_voltage_deviation'] = 0.0
     
     for index, row in bus_voltages_df.iterrows():
         # check for overvoltage violation
-        if row["Max per unit voltage"] > voltage_upper_limit:
-            bus_voltages_df.at[index, 'Overvoltage violation'] = True
-            bus_voltages_df.at[index, "Max voltage_deviation"] = row["Max per unit voltage"] - voltage_upper_limit
+        if row["max_per_unit_voltage"] > voltage_upper_limit:
+            bus_voltages_df.at[index, 'overvoltage_violation'] = True
+            bus_voltages_df.at[index, "max_voltage_deviation"] = row["max_per_unit_voltage"] - voltage_upper_limit
         else:
-            bus_voltages_df.at[index, 'Overvoltage violation'] = False
-            bus_voltages_df.at[index, "Max voltage_deviation"] = 0.0
+            bus_voltages_df.at[index, 'overvoltage_violation'] = False
+            bus_voltages_df.at[index, "max_voltage_deviation"] = 0.0
 
         # check for undervoltage violation
-        if row["Min per unit voltage"] < voltage_lower_limit:
-            bus_voltages_df.at[index, 'Undervoltage violation'] = True
-            bus_voltages_df.at[index, "Min voltage_deviation"] = voltage_lower_limit - row["Min per unit voltage"]
+        if row["min_per_unit_voltage"] < voltage_lower_limit:
+            bus_voltages_df.at[index, 'undervoltage_violation'] = True
+            bus_voltages_df.at[index, "min_voltage_deviation"] = voltage_lower_limit - row["min_per_unit_voltage"]
         else:
-            bus_voltages_df.at[index, 'Undervoltage violation'] = False
-            bus_voltages_df.at[index, "Min voltage_deviation"] = 0.0
+            bus_voltages_df.at[index, 'undervoltage_violation'] = False
+            bus_voltages_df.at[index, "min_voltage_deviation"] = 0.0
     
     bus_voltages_df.reset_index(inplace=True)
-    undervoltage_bus_list = list(bus_voltages_df.loc[bus_voltages_df['Undervoltage violation'] == True]['name'].unique())
-    overvoltage_bus_list = list(bus_voltages_df.loc[bus_voltages_df['Overvoltage violation'] == True]['name'].unique())
+    undervoltage_bus_list = list(bus_voltages_df.loc[bus_voltages_df['undervoltage_violation'] == True]['name'].unique())
+    overvoltage_bus_list = list(bus_voltages_df.loc[bus_voltages_df['overvoltage_violation'] == True]['name'].unique())
     buses_with_violations = list(set(undervoltage_bus_list + overvoltage_bus_list))
     return bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations
             

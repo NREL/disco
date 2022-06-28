@@ -90,6 +90,6 @@ def verify_upgrade_results(output_dir):
     import pandas as pd
     df = pd.DataFrame(viol)
     # no thermal violations are present after thermal upgrades
-    assert not df.loc[(df["upgrade_type"] == "Thermal") & (df["stage"] == "Final")]["thermal_violations_present"].any()
+    assert not df.loc[(df["upgrade_type"] == "thermal") & (df["stage"] == "final")]["thermal_violations_present"].any()
     # no voltage violations are present after voltage upgrades
-    assert not df.loc[(df["upgrade_type"] == "Voltage") & (df["stage"] == "Final")]["voltage_violations_present"].any()
+    assert not df.loc[(df["upgrade_type"] == "voltage") & (df["stage"] == "final")]["voltage_violations_present"].any()

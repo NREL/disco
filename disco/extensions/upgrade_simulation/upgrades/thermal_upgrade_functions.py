@@ -115,7 +115,7 @@ def correct_line_violations(line_loading_df, line_design_pu, line_upgrade_option
         index_names = ["original_equipment_name", "parameter_type"]
         if upgrades_dict:  # if dictionary is not empty
             line_upgrades_df = create_dataframe_from_nested_dict(user_dict=upgrades_dict, index_names=index_names)
-        line_upgrades_df = line_upgrades_df.append(pd.DataFrame(upgrades_dict_parallel))
+        line_upgrades_df = pd.concat([line_upgrades_df, pd.DataFrame(upgrades_dict_parallel)])
         line_upgrades_df.rename(columns={"name": "final_equipment_name"}, inplace=True)
         line_upgrades_df = line_upgrades_df.set_index(
             ["equipment_type", "upgrade_type", "parameter_type", "action", "final_equipment_name",
@@ -168,7 +168,7 @@ def identify_parallel_lines(options, object_row, parallel_lines_limit, **kwargs)
         temp_dict["length"] = object_row["length"]
         temp_dict.update({"equipment_type": "Line",
                           "original_equipment_name": object_row["name"],
-                          "upgrade_type": "new (parallel)",
+                          "upgrade_type": "new_parallel",
                           "parameter_type": "new_equipment",
                           "action": "add"})
         # # if too much info, can remove this metrics from output. For now, these are included.
@@ -350,7 +350,7 @@ def correct_xfmr_violations(xfmr_loading_df, xfmr_design_pu, xfmr_upgrade_option
         index_names = ["original_equipment_name", "parameter_type"]
         if upgrades_dict:  # if dictionary is not empty
             xfmr_upgrades_df = create_dataframe_from_nested_dict(user_dict=upgrades_dict, index_names=index_names)
-        xfmr_upgrades_df = xfmr_upgrades_df.append(pd.DataFrame(upgrades_dict_parallel))
+        xfmr_upgrades_df = pd.concat([xfmr_upgrades_df, pd.DataFrame(upgrades_dict_parallel)])
         xfmr_upgrades_df.rename(columns={"name": "final_equipment_name"}, inplace=True)
         xfmr_upgrades_df = xfmr_upgrades_df.set_index(
             ["equipment_type", "upgrade_type", "parameter_type", "action", "final_equipment_name",
@@ -409,7 +409,7 @@ def identify_parallel_xfmrs(upgrade_options, object_row, parallel_transformer_li
         temp_dict.update(chosen_option.to_dict())
         temp_dict.update({"equipment_type": equipment_type,
                         "original_equipment_name": object_row["name"],
-                        "upgrade_type": "new (parallel)",
+                        "upgrade_type": "new_parallel",
                         "parameter_type": "new_equipment",
                         "action": "add"})
         command_string = define_xfmr_object(xfmr_name=new_name, xfmr_info_series=chosen_option, action_type="New",

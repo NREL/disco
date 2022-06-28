@@ -111,20 +111,20 @@ def determine_voltage_upgrades(
         feeder_stats = load_data(feeder_stats_json_file)
     else:
         feeder_stats = {}
-    feeder_stats["stage_results"].append( get_upgrade_stage_stats(dss, upgrade_stage="Initial", upgrade_type="voltage", xfmr_loading_df=initial_xfmr_loading_df, line_loading_df=initial_line_loading_df, 
+    feeder_stats["stage_results"].append( get_upgrade_stage_stats(dss, upgrade_stage="initial", upgrade_type="voltage", xfmr_loading_df=initial_xfmr_loading_df, line_loading_df=initial_line_loading_df, 
                                         bus_voltages_df=initial_bus_voltages_df, regcontrols_df=orig_regcontrols_df, capacitors_df=orig_capacitors_df) )
     dump_data(feeder_stats, feeder_stats_json_file, indent=2)
     scenario = get_scenario_name(enable_pydss_solve, pydss_volt_var_model)
     initial_results = UpgradeViolationResultModel(
         name = job_name, 
         scenario = scenario,
-        stage = "Initial",
-        upgrade_type = "Voltage",
+        stage = "initial",
+        upgrade_type = "voltage",
         simulation_time_s = 0.0,
         thermal_violations_present = (len(initial_overloaded_xfmr_list) + len(initial_overloaded_line_list)) > 0,
         voltage_violations_present = (len(initial_undervoltage_bus_list) + len(initial_overvoltage_bus_list)) > 0,
-        max_bus_voltage = initial_bus_voltages_df['Max per unit voltage'].max(),
-        min_bus_voltage = initial_bus_voltages_df['Min per unit voltage'].min(),
+        max_bus_voltage = initial_bus_voltages_df['max_per_unit_voltage'].max(),
+        min_bus_voltage = initial_bus_voltages_df['min_per_unit_voltage'].min(),
         num_voltage_violation_buses = len(initial_undervoltage_bus_list) + len(initial_overvoltage_bus_list),
         num_overvoltage_violation_buses = len(initial_overvoltage_bus_list),
         voltage_upper_limit = voltage_upper_limit,
@@ -268,7 +268,7 @@ def determine_voltage_upgrades(
         feeder_stats = load_data(feeder_stats_json_file)
     else:
         feeder_stats = {}
-    feeder_stats["stage_results"].append( get_upgrade_stage_stats(dss, upgrade_stage="Final", upgrade_type="voltage", xfmr_loading_df=xfmr_loading_df, line_loading_df=line_loading_df, 
+    feeder_stats["stage_results"].append( get_upgrade_stage_stats(dss, upgrade_stage="final", upgrade_type="voltage", xfmr_loading_df=xfmr_loading_df, line_loading_df=line_loading_df, 
                                         bus_voltages_df=bus_voltages_df, regcontrols_df=new_regcontrols_df, capacitors_df=new_capacitors_df) )
     dump_data(feeder_stats, feeder_stats_json_file, indent=2) 
     end_time = time.time()
@@ -278,13 +278,13 @@ def determine_voltage_upgrades(
     final_results = UpgradeViolationResultModel(
         name = job_name, 
         scenario = scenario,
-        stage = "Final",
-        upgrade_type = "Voltage",
+        stage = "final",
+        upgrade_type = "voltage",
         simulation_time_s = simulation_time,
         thermal_violations_present = (len(overloaded_xfmr_list) + len(overloaded_line_list)) > 0,
         voltage_violations_present = (len(undervoltage_bus_list) + len(overvoltage_bus_list)) > 0,
-        max_bus_voltage = bus_voltages_df['Max per unit voltage'].max(),
-        min_bus_voltage = bus_voltages_df['Min per unit voltage'].min(),
+        max_bus_voltage = bus_voltages_df['max_per_unit_voltage'].max(),
+        min_bus_voltage = bus_voltages_df['min_per_unit_voltage'].min(),
         num_voltage_violation_buses = len(undervoltage_bus_list) + len(overvoltage_bus_list),
         num_overvoltage_violation_buses = len(overvoltage_bus_list),
         voltage_upper_limit = voltage_upper_limit,

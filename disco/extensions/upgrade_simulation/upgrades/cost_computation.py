@@ -80,7 +80,7 @@ def compute_all_costs(
     else:
         line_cost_df = pd.DataFrame(columns=output_columns).astype({"count": int, "total_cost_usd": float})
 
-    thermal_cost_df = xfmr_cost_df.append(line_cost_df)
+    thermal_cost_df = pd.concat([xfmr_cost_df, line_cost_df])
 
     if not voltage_upgrades_df.empty:
         # compute voltage upgrade costs
@@ -89,7 +89,7 @@ def compute_all_costs(
         reg_cost_df = compute_voltage_regcontrol_cost(voltage_upgrades_df=voltage_upgrades_df,
                                                     vreg_control_cost_database=controls_cost_database, 
                                                     vreg_xfmr_cost_database=voltage_regulators_cost_database, xfmr_cost_database=xfmr_cost_database)
-        voltage_cost_df = cap_cost_df.append(reg_cost_df)
+        voltage_cost_df = pd.concat([cap_cost_df, reg_cost_df])
         voltage_cost_df["name"] = job_name
     else:
         voltage_cost_df = pd.DataFrame(columns=output_columns).astype({"count": int, "total_cost_usd": float})
@@ -111,11 +111,11 @@ def compute_all_costs(
 
 def compute_transformer_costs(xfmr_upgrades_df, xfmr_cost_database, **kwargs):
     """This function computes the transformer costs.
-    -Unit equipment cost for new (parallel) and "upgrade" transformers are the same in the database.
+    -Unit equipment cost for new_parallel and "upgrade" transformers are the same in the database.
     The difference would be the fixed costs added (if present in misc_database)
     -For transformers that are of action "upgrade":
     transformers of old rating are removed, and that of upgraded rating is added.
-    -For transformers that are of action "new (parallel)":
+    -For transformers that are of action "new_parallel":
     A new transformer is placed in parallel with the existing transformer
     -These are the properties considered while choosing unit cost:
     ["rated_kVA", "phases", "primary_kV", "secondary_kV", "primary_connection_type", "secondary_connection_type",
@@ -141,7 +141,7 @@ def compute_transformer_costs(xfmr_upgrades_df, xfmr_cost_database, **kwargs):
     backup_deciding_property = kwargs.get("backup_deciding_property", "rated_kVA")
     misc_database = kwargs.get("misc_database", None)
     # choose which properties are to be saved
-    upgrade_type_list = ["upgrade", "new (parallel)"]
+    upgrade_type_list = ["upgrade", "new_parallel"]
     added_xfmr_df = xfmr_upgrades_df.loc[(xfmr_upgrades_df["upgrade_type"].isin(upgrade_type_list)) & (xfmr_upgrades_df["action"] == "add")]
     computed_cost = []
     for index, row in added_xfmr_df.iterrows():
@@ -182,7 +182,7 @@ def compute_transformer_costs(xfmr_upgrades_df, xfmr_cost_database, **kwargs):
                 field_name = misc_xfmr_fields["replace"]
                 fixed_cost = misc_database.loc[misc_database["description"] == field_name]
             # if equipment is new, and misc database contains fixed cost for adding new xfmr
-            elif row["upgrade_type"].lower() == "new (parallel)" and \
+            elif row["upgrade_type"].lower() == "new_parallel" and \
                     ((misc_database["description"] == misc_xfmr_fields["new"]).any()):
                 field_name = misc_xfmr_fields["new"]
                 fixed_cost = misc_database.loc[misc_database["description"] == field_name]
@@ -242,10 +242,10 @@ def reformat_xfmr_upgrades_file(xfmr_upgrades_df):
 
 def compute_line_costs(line_upgrades_df, line_cost_database, **kwargs):
     """This function computes the line costs.
-    -Unit equipment cost for new (parallel) and "upgrade" line are the not same in the database.
+    -Unit equipment cost for new_parallel and "upgrade" line are the not same in the database.
     There are different costs given for reconductored and new lines
     -For lines that are of action "upgrade": "reconductored" line unit costs need to be used
-    -For lines that are of action "new (parallel)": "new" line unit costs need to be used
+    -For lines that are of action "new_parallel": "new" line unit costs need to be used
     -Upgraded lines and new lines run along existing circuit, so length is the same for both
     -These are the properties considered while choosing unit cost:
     ["phases", "voltage_kV", "ampere_rating", "line_placement", "description" (i.e. whether new or reconductored)]
@@ -270,13 +270,13 @@ def compute_line_costs(line_upgrades_df, line_cost_database, **kwargs):
     output_columns_list = ["type", output_count_field, output_cost_field, "comment", "equipment_parameters"]
     backup_deciding_property = kwargs.get("backup_deciding_property", "ampere_rating")
     # choose which properties are to be saved
-    upgrade_type_list = ["upgrade", "new (parallel)"]
+    upgrade_type_list = ["upgrade", "new_parallel"]
     added_line_df = line_upgrades_df.loc[(line_upgrades_df["upgrade_type"].isin(upgrade_type_list)) & (line_upgrades_df["action"] == "add")]
     computed_cost = []
     for index, row in added_line_df.iterrows():
         if row["upgrade_type"] == "upgrade":
             description = "reconductored_line"
-        elif row["upgrade_type"] == "new (parallel)":
+        elif row["upgrade_type"] == "new_parallel":
             description = "new_line"
         else:
             # if anything else, by default, use new_line prices
@@ -521,7 +521,7 @@ def compute_voltage_regcontrol_cost(voltage_upgrades_df, vreg_control_cost_datab
 def get_total_costs(thermal_cost_df, voltage_cost_df):
     """This function combines voltage and thermal upgrades costs into one file.
     """
-    total_cost_df = thermal_cost_df.append(voltage_cost_df)
+    total_cost_df = pd.concat([thermal_cost_df, voltage_cost_df])
     total_cost_df = total_cost_df.groupby('type').sum()
     total_cost_df.reset_index(inplace=True)
     return total_cost_df
