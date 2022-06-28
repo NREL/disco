@@ -6,7 +6,7 @@
     "transformer_design_pu": 0.75,
     "voltage_upper_limit": 1.05,
     "voltage_lower_limit": 0.95,
-    "read_external_catalog": false,
+    "read_external_catalog": true,
     "external_catalog": "./disco/extensions/upgrade_simulation/upgrades/smartds_upgrades_technical_catalog.json",
 	"create_plots": true
   },

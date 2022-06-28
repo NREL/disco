@@ -630,16 +630,23 @@ def ensure_line_config_exists(chosen_option, new_config_type, external_upgrades_
             raise UpgradesExternalCatalogRequired(f"External upgrades technical catalog not available to determine line config type")
         external_config_df = pd.DataFrame(external_upgrades_technical_catalog[new_config_type])
         if external_config_df["name"].str.lower().isin([new_config_name]).any():
-            config_definition_df = external_config_df.loc[external_config_df["name"] == new_config_name]
-            config_definition_dict = dict(config_definition_df.iloc[0])
+            config_definition_df = external_config_df.loc[external_config_df["name"] == new_config_name].copy()
+            if len(config_definition_df) == 1:  # if there is only one definition of that config name
+                config_definition_dict = dict(config_definition_df.iloc[0])  
+            else:   # if there is more than one definition of that config name
+                config_definition_df["temp_deviation"] = abs(config_definition_df["normamps"] - chosen_option["normamps"])
+                config_definition_dict = dict(config_definition_df.loc[config_definition_df["temp_deviation"].idxmin()])
+                config_definition_dict.pop("temp_deviation")
             if config_definition_dict["normamps"] != chosen_option["normamps"]:
-                logger.warning(f"Mismatch between noramps for linecode {new_config_name} and chosen upgrade option normamps: {chosen_option['name']}")
+                logger.warning(f"Mismatch between noramps for linecode {new_config_name} ({config_definition_dict['normamps']}A) "
+                               f"and chosen upgrade option normamps ({chosen_option['normamps']}A): {chosen_option['name']}")
             # check format of certain fields, and prepare data to write opendss definition
             matrix_fields = [s for s in config_definition_dict.keys() if 'matrix' in s]
             for field in matrix_fields:
                 config_definition_dict[field] = str(config_definition_dict[field]).replace("'","")
                 config_definition_dict[field] = config_definition_dict[field].replace("[","(")
                 config_definition_dict[field] = config_definition_dict[field].replace("]",")")
+            config_definition_dict["equipment_type"] = new_config_type
             command_string = create_opendss_definition(config_definition_dict=config_definition_dict)
         else:
             raise UpgradesExternalCatalogMissingObjectDefinition(
