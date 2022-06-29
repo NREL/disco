@@ -1,13 +1,10 @@
 import enum
 import logging
-from typing import Any
-from pathlib import Path
-from typing import List, Optional, Set, Dict
+from typing import List, Optional, Set, Dict, Any
+from pydantic import Field
 
-from pydantic import BaseModel, Field, root_validator, validator
-
-from disco.models.upgrade_cost_analysis_generic_input_model import UpgradeParamsBaseModel, CommonLineParameters, \
-    CommonTransformerParameters
+from disco.models.upgrade_cost_analysis_equipment_model import UpgradeParamsBaseModel, ExtraLineParams, ExtraTransformerParams
+from disco.models.upgrade_cost_analysis_generic_input_model import OpenDSSLineModel, OpenDSSTransformerModel
 
 logger = logging.getLogger(__name__)
 
@@ -208,7 +205,7 @@ class VoltageUpgradesTechnicalResultModel(UpgradeParamsBaseModel):
     ) 
        
 
-class LineUpgradesTechnicalResultModel(CommonLineParameters):
+class LineUpgradesTechnicalResultModel(OpenDSSLineModel, ExtraLineParams):
     """Line Upgrades Output Details model"""
     equipment_type: str = Field(
          title="equipment_type",
@@ -234,49 +231,9 @@ class LineUpgradesTechnicalResultModel(CommonLineParameters):
          title="original_equipment_name",
         description="original_equipment_name"
     )
-    Switch: bool = Field(
-         title="Switch",
-        description="Switch"
-    )
-    kV: float = Field(
-         title="kV",
-        description="kV. This is not a direct OpenDSS object property."
-    )
-    phases: int = Field(
-         title="phases",
-        description="phases"
-    )
-    line_placement: str = Field(
-         title="line_placement",
-        description="line_placement"
-    )
-    line_definition_type: str = Field(
-         title="line_definition_type",
-        description="line_definition_type"
-    )
-    linecode: str = Field(
-         title="linecode",
-        description="linecode"
-    )
-    spacing: Any = Field(
-         title="spacing",
-        description="spacing"
-    )
-    h: float = Field(
-         title="h",
-        description="h"
-    )
-    geometry: Any = Field(
-         title="geometry",
-        description="geometry"
-    )
-    length: float = Field(
-         title="length",
-        description="length"
-    )
+
     
-    
-class TransformerUpgradesTechnicalResultModel(CommonTransformerParameters):
+class TransformerUpgradesTechnicalResultModel(OpenDSSTransformerModel, ExtraTransformerParams):
     """Transformer Upgrades Output Details model"""
     equipment_type: str = Field(
          title="equipment_type",
@@ -302,50 +259,7 @@ class TransformerUpgradesTechnicalResultModel(CommonTransformerParameters):
          title="original_equipment_name",
         description="original_equipment_name"
     )
-    buses: Any = Field(
-        title="buses",
-        description="buses",
-    )
-    max_amp_loading: float = Field(
-        title="max_amp_loading",
-        description="max_amp_loading. This is a computed field, not a direct OpenDSS object property.",
-    )
-    max_per_unit_loading: float = Field(
-        title="max_per_unit_loading",
-        description="max_per_unit_loading. This is a computed field, not a direct OpenDSS object property.",
-    )
-    required_design_amp: float = Field(
-        title="required_design_amp",
-        description="required_design_amp. This is a computed field, not a direct OpenDSS object property.",
-    )
-    Ratings: Any = Field(
-        title="Ratings",
-        description="Ratings",
-    )
-    Seasons: Any = Field(
-        title="Seasons",
-        description="Seasons",
-    )
-    WdgCurrents: Any = Field(
-        title="WdgCurrents",
-        description="WdgCurrents",
-    )
-    repair: Any = Field(
-        title="repair",
-        description="repair",
-    )
-    like: Any = Field(
-        title="like",
-        description="like",
-    )
-    enabled: Any = Field(
-        title="enabled",
-        description="enabled",
-    )
-    status: Any = Field(
-        title="status",
-        description="status. Possible values are overloaded, unloaded, normal. This is a computed field, not a direct OpenDSS object property.",
-    )
+
     
 class AllUpgradesTechnicalResultModel(UpgradeParamsBaseModel):
     """Contains All Upgrades Output Details. Read in as input for cost computation"""
@@ -443,13 +357,13 @@ class ExtendedEnum(enum.Enum):
         return list(map(lambda c: c.value, cls))
     
 
-class CapacitorControllerResultTypeModel(ExtendedEnum):
+class CapacitorControllerResultType(ExtendedEnum):
     """Possible values for capacitor upgrade type"""
     add_new_cap_controller = "Capacitor controller"
     change_cap_control = "Capacitor controller setting change"
    
  
-class VoltageRegulatorResultTypeModel(ExtendedEnum):
+class VoltageRegulatorResultType(ExtendedEnum):
     """Possible values for voltage regulator upgrade type"""
     add_new_reg_control = "In-line voltage regulator"
     change_reg_control = "In-line voltage regulator control setting change"

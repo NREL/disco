@@ -1616,14 +1616,14 @@ def disable_previous_clustering_option(cluster_group_info_dict):
 
 def plot_heatmap_distmatrix(square_array, fig_folder):
     # TODO THIS FUNCTION is not used
-    plt.figure(figsize=(7, 7))
-    plt.clf()
+    fig = plt.figure(figsize=(7, 7))
     ax = sns.heatmap(square_array, linewidth=0.5)
     title = "Distance matrix of nodes with violations"
     plt.title(title)
     title = title.lower()
     title = title.replace(" ", "_")
     plt.savefig(os.path.join(fig_folder, title+".pdf"))
+    plt.close(fig)
 
 
 def plot_feeder(fig_folder, title, circuit_source=None, enable_detailed=False):
@@ -1634,8 +1634,7 @@ def plot_feeder(fig_folder, title, circuit_source=None, enable_detailed=False):
     nodes_list = G.nodes()
     Un_G = G.to_undirected()
 
-    plt.figure(figsize=(40, 40), dpi=10)
-    plt.clf()
+    fig = plt.figure(figsize=(40, 40), dpi=10)
     nx.draw_networkx_edges(Un_G, pos=position_dict, alpha=1.0, width=0.3)
     default_node_size = 2
     default_node_color = 'black'
@@ -1675,6 +1674,7 @@ def plot_feeder(fig_folder, title, circuit_source=None, enable_detailed=False):
     title = title.lower()
     title = title.replace(" ", "_")
     plt.savefig(os.path.join(fig_folder, title+".pdf"))
+    plt.close(fig)
     return
 
 
@@ -1689,8 +1689,7 @@ def plot_voltage_violations(fig_folder, title, buses_with_violations, circuit_so
     nodes_list = G.nodes()
     Un_G = G.to_undirected()
 
-    plt.figure(figsize=(40, 40), dpi=10)
-    plt.clf()
+    fig = plt.figure(figsize=(40, 40), dpi=10)
     nx.draw_networkx_edges(Un_G, pos=position_dict, alpha=1.0, width=0.3)
     nx.draw_networkx_nodes(Un_G, pos=position_dict, alpha=1.0, node_size=default_node_size, node_color=default_node_color)
     
@@ -1733,6 +1732,7 @@ def plot_voltage_violations(fig_folder, title, buses_with_violations, circuit_so
     title = title.lower()
     title = title.replace(" ", "_")
     plt.savefig(os.path.join(fig_folder, title+".pdf"))
+    plt.close()
     return
 
 
@@ -1746,8 +1746,7 @@ def plot_thermal_violations(fig_folder, title, equipment_with_violations, circui
     # nodes_list = G.nodes()
     # edges_list = G.edges()
     Un_G = G.to_undirected()
-    plt.figure(figsize=(40, 40), dpi=10)
-    plt.clf()
+    fig = plt.figure(figsize=(40, 40), dpi=10)
     nx.draw_networkx_edges(Un_G, pos=position_dict, alpha=1.0, width=0.3)
     nx.draw_networkx_nodes(Un_G, pos=position_dict, alpha=1.0, node_size=default_node_size, node_color=default_node_color)
     
@@ -1795,6 +1794,7 @@ def plot_thermal_violations(fig_folder, title, equipment_with_violations, circui
     title = title.replace(" ", "_")
     # plt.axis("off")
     plt.savefig(os.path.join(fig_folder, title+".pdf"))
+    plt.close(fig)
     return
 
 
@@ -1808,8 +1808,7 @@ def plot_created_clusters(fig_folder, clusters_dict, circuit_source=None):
     position_dict = nx.get_node_attributes(G, 'pos')
     Un_G = G.to_undirected()
     
-    plt.figure(figsize=(40, 40), dpi=10)
-    plt.clf()
+    fig = plt.figure(figsize=(40, 40), dpi=10)
     nx.draw_networkx_edges(Un_G, pos=position_dict, alpha=1.0, width=0.3)
     nx.draw_networkx_nodes(Un_G, pos=position_dict, alpha=1.0, node_size=default_node_size, node_color=default_node_color)
     if circuit_source is not None:
@@ -1840,6 +1839,7 @@ def plot_created_clusters(fig_folder, clusters_dict, circuit_source=None):
     title = title.lower()
     title = title.replace(" ", "_")
     plt.savefig(os.path.join(fig_folder, title+".pdf"))
+    plt.close(fig)
     return
 
     

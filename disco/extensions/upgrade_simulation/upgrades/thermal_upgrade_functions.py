@@ -99,7 +99,7 @@ def correct_line_violations(line_loading_df, line_design_pu, line_upgrade_option
                     circuit_solve_and_check(raise_exception=True, **kwargs)
                 commands_list = commands_list + temp_commands_list
             # if higher upgrade is not available or chosen line upgrade rating is much higher than required,
-            # dont oversize. Instead, place lines in parallel
+            # dont oversize. Instead, place lines in parallelma
             else:
                 external_upgrades_technical_catalog = kwargs.get("external_upgrades_technical_catalog", None)
                 parallel_line_commands, temp_upgrades_dict_parallel = identify_parallel_lines(options=options, object_row=row,
@@ -378,6 +378,8 @@ def identify_parallel_xfmrs(upgrade_options, object_row, parallel_transformer_li
     -------
 
     """
+    output_fields = list(TransformerUpgradesTechnicalResultModel.schema(True).get("properties").keys())
+    temp_output_fields = set(output_fields) - {"final_equipment_name"}
     equipment_type = "Transformer"
     commands_list = []
     upgrades_dict_parallel = {}
@@ -417,5 +419,7 @@ def identify_parallel_xfmrs(upgrade_options, object_row, parallel_transformer_li
         commands_list.append(command_string)
         temp_dict.pop("choose_parallel_metric")
         temp_dict.pop("num_parallel_raw")
+        missing_fields = list(set(temp_output_fields).difference(temp_dict.keys()))  # find missing fields in temp_dict
+        temp_dict.update(object_row[missing_fields].to_dict())
         upgrades_dict_parallel.append(temp_dict)
     return commands_list, upgrades_dict_parallel

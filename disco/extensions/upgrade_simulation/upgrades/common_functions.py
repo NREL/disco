@@ -25,10 +25,10 @@ from disco.models.upgrade_cost_analysis_generic_input_model import (
     _extract_specific_model_properties_, 
     LineCodeCatalogModel, 
     LineCatalogModel, 
-    TransformerCatalogModel
+    TransformerCatalogModel, LineModel, TransformerModel
 )
 from disco.models.upgrade_cost_analysis_generic_output_model import UpgradesCostResultSummaryModel, \
-    CapacitorControllerResultTypeModel,  VoltageRegulatorResultTypeModel, EquipmentUpgradeStatusModel
+    CapacitorControllerResultType,  VoltageRegulatorResultType, EquipmentUpgradeStatusModel
 
 logger = logging.getLogger(__name__)
 
@@ -290,11 +290,10 @@ def get_feeder_stats(dss):
     if len(load_df) > 0:
         load_kw = load_df['kW'].sum()
         load_kVABase = load_df['kVABase'].sum()
-    pv_df = dss.utils.pvsystems_to_dataframe()
-    if len(pv_df) > 0:
+    if dss.PVsystems.Count() > 0:
+        pv_df = dss.utils.pvsystems_to_dataframe()
         pv_kw = pv_df['kW'].sum()
         pv_kVARated = pv_df['kVARated'].sum()
-        
     data_dict = {
     'total_load(kVABase)': load_kVABase,
     'total_load(kW)': load_kw,
@@ -457,12 +456,12 @@ def create_capacitor_output_summary(temp_upgrade_df, temp_cost_df, latest_equipm
     new = list(temp_upgrade_df.loc[temp_upgrade_df["new_controller_added"]]["equipment_name"].unique())  # list of new equipment
     setting_changed = list(temp_upgrade_df.loc[temp_upgrade_df["controller_settings_modified"]]["equipment_name"].unique())  # list of setting_changed equipment
     # get unit cost
-    unit_cost_calc = temp_cost_df.loc[temp_cost_df.type == CapacitorControllerResultTypeModel.change_cap_control.value]
+    unit_cost_calc = temp_cost_df.loc[temp_cost_df.type == CapacitorControllerResultType.change_cap_control.value]
     if not unit_cost_calc.empty:
         setting_changed_unit_cost = (unit_cost_calc["total_cost_usd"] / unit_cost_calc["count"]).values[0]
     else: 
         setting_changed_unit_cost = 0
-    unit_cost_calc = temp_cost_df.loc[temp_cost_df.type == CapacitorControllerResultTypeModel.add_new_cap_controller.value]
+    unit_cost_calc = temp_cost_df.loc[temp_cost_df.type == CapacitorControllerResultType.add_new_cap_controller.value]
     if not unit_cost_calc.empty:
         add_new_unit_cost = (unit_cost_calc["total_cost_usd"] / unit_cost_calc["count"]).values[0]
     else:
@@ -488,19 +487,19 @@ def create_regulator_output_summary(temp_upgrade_df, temp_cost_df, latest_equipm
     new = list(temp_upgrade_df.loc[temp_upgrade_df["new_controller_added"]]["equipment_name"].unique())  # list of new equipment
     setting_changed = list(temp_upgrade_df.loc[temp_upgrade_df["controller_settings_modified"]]["equipment_name"].unique())  # list of setting_changed equipment
     # get unit cost            
-    unit_cost_calc = temp_cost_df.loc[temp_cost_df.type == VoltageRegulatorResultTypeModel.add_new_reg_control.value]
+    unit_cost_calc = temp_cost_df.loc[temp_cost_df.type == VoltageRegulatorResultType.add_new_reg_control.value]
     if not unit_cost_calc.empty:
         new_vreg_unit_cost = (unit_cost_calc["total_cost_usd"] / unit_cost_calc["count"]).values[0]
         new_df.loc[(new_df.equipment_name.isin(new)) & (new_df.at_substation_xfmr_flag == False), "total_cost_usd"] = new_vreg_unit_cost
-    unit_cost_calc = temp_cost_df.loc[temp_cost_df.type == VoltageRegulatorResultTypeModel.change_reg_control.value]
+    unit_cost_calc = temp_cost_df.loc[temp_cost_df.type == VoltageRegulatorResultType.change_reg_control.value]
     if not unit_cost_calc.empty:
         vreg_setting_changed_unit_cost = (unit_cost_calc["total_cost_usd"] / unit_cost_calc["count"]).values[0]
         new_df.loc[(new_df.equipment_name.isin(setting_changed)) & (new_df.at_substation_xfmr_flag == False), "total_cost_usd"] = vreg_setting_changed_unit_cost
-    unit_cost_calc = temp_cost_df.loc[temp_cost_df.type == VoltageRegulatorResultTypeModel.add_substation_ltc.value]
+    unit_cost_calc = temp_cost_df.loc[temp_cost_df.type == VoltageRegulatorResultType.add_substation_ltc.value]
     if not unit_cost_calc.empty:
         new_ltc_unit_cost = (unit_cost_calc["total_cost_usd"] / unit_cost_calc["count"]).values[0]
         new_df.loc[(new_df.equipment_name.isin(new)) & (new_df.at_substation_xfmr_flag), "total_cost_usd"] = new_ltc_unit_cost
-    unit_cost_calc = temp_cost_df.loc[temp_cost_df.type == VoltageRegulatorResultTypeModel.change_ltc_control.value]
+    unit_cost_calc = temp_cost_df.loc[temp_cost_df.type == VoltageRegulatorResultType.change_ltc_control.value]
     if not unit_cost_calc.empty:
         ltc_setting_changed_unit_cost = (unit_cost_calc["total_cost_usd"] / unit_cost_calc["count"]).values[0]
         new_df.loc[(new_df.equipment_name.isin(setting_changed)) & (new_df.at_substation_xfmr_flag), "total_cost_usd"] = ltc_setting_changed_unit_cost
@@ -565,9 +564,9 @@ def create_overall_output_file(feeder_stats, upgrades_dict, costs_dict, **kwargs
     props_dict = {"transformer": {"identifier": "name", "parameter_list": ["kVA"], },
                  "line": {"identifier": "name", "parameter_list": ["normamps"], },
                  "capacitor_control": {"identifier": "capacitor_name", "parameter_list": ["ONsetting", "OFFsetting", "Delay"], "upgrades_file_string": "capacitor", 
-                                       "model": CapacitorControllerResultTypeModel},
+                                       "model": CapacitorControllerResultType},
                  "regulator_control": {"identifier": "name", "parameter_list": ["vreg", "band", "delay"], "upgrades_file_string": "regcontrol", 
-                                       "model": VoltageRegulatorResultTypeModel}, 
+                                       "model": VoltageRegulatorResultType}, 
     }
     thermal_cost_df = costs_dict["thermal"]
     thermal_cost_df = pd.concat([thermal_cost_df.drop(['equipment_parameters'], axis=1), thermal_cost_df['equipment_parameters'].apply(pd.Series)], axis=1)
@@ -1371,7 +1370,8 @@ def get_voltage_violations(voltage_upper_limit, voltage_lower_limit, bus_voltage
 def determine_available_line_upgrades(line_loading_df):
     """This function creates a dataframe of available line upgrades by dropping duplicates from line dataframe passed.
     """
-    property_list =  _extract_specific_model_properties_(model_name=LineCatalogModel, field_type_key="determine_upgrade_option", field_type_value=True)
+    all_property_list = list(LineCatalogModel.schema(True).get("properties").keys())
+    determining_property_list =  _extract_specific_model_properties_(model_name=LineCatalogModel, field_type_key="determine_upgrade_option", field_type_value=True)
     line_loading_df["kV"] = line_loading_df["kV"].round(5)
     if 'line_definition_type' not in line_loading_df.columns:  # add line_definition_type if not present
         line_loading_df = add_info_line_definition_type(line_loading_df)
@@ -1380,25 +1380,28 @@ def determine_available_line_upgrades(line_loading_df):
             info_dict = determine_line_placement(row)
             for key in info_dict.keys():
                 line_loading_df.at[index, key] = info_dict[key] 
-    line_upgrade_options = line_loading_df[property_list]
+    line_upgrade_options = line_loading_df[all_property_list]
     # remove duplicate line upgrade options (that might have a different name, but same parameters)
-    line_upgrade_options = line_upgrade_options.loc[line_upgrade_options.astype(str).drop_duplicates(subset=property_list).index]
+    line_upgrade_options = line_upgrade_options.loc[line_upgrade_options.astype(str).drop_duplicates(subset=determining_property_list, keep="first").index]
     line_upgrade_options.reset_index(drop=True, inplace=True)
-    line_upgrade_options = line_upgrade_options.reset_index().rename(columns={'index': 'name'})
-    line_upgrade_options['name'] = 'line_' + line_upgrade_options['name'].astype(str)
-    return line_upgrade_options
+    if not line_upgrade_options["name"].is_unique:  # if line upgrade option names are not unique, create new names
+        line_upgrade_options = line_upgrade_options.reset_index().rename(columns={'index': 'name'})
+        line_upgrade_options['name'] = 'line_' + line_upgrade_options['name'].astype(str)
+    return line_upgrade_options[all_property_list]
 
 
 def determine_available_xfmr_upgrades(xfmr_loading_df):
     """This function creates a dataframe of available transformer upgrades by dropping duplicates from transformer dataframe passed.
     Input dataframe will need to contain "amp_limit_per_phase" column. So if external catalog is supplied, ensure it contains that column.
     """
-    property_list =  _extract_specific_model_properties_(model_name=TransformerCatalogModel, field_type_key="determine_upgrade_option", field_type_value=True)
-    xfmr_upgrade_options = xfmr_loading_df[property_list]
-    xfmr_upgrade_options = xfmr_upgrade_options.loc[xfmr_upgrade_options.astype(str).drop_duplicates().index]
+    all_property_list = list(TransformerCatalogModel.schema(True).get("properties").keys())
+    determining_property_list =  _extract_specific_model_properties_(model_name=TransformerCatalogModel, field_type_key="determine_upgrade_option", field_type_value=True)
+    xfmr_upgrade_options = xfmr_loading_df[all_property_list]
+    xfmr_upgrade_options = xfmr_upgrade_options.loc[xfmr_upgrade_options.astype(str).drop_duplicates(subset=determining_property_list, keep="first").index]
     xfmr_upgrade_options.reset_index(drop=True, inplace=True)
-    xfmr_upgrade_options = xfmr_upgrade_options.reset_index().rename(columns={'index': 'name'})
-    xfmr_upgrade_options['name'] = 'xfmr_' + xfmr_upgrade_options['name'].astype(str)
+    if not xfmr_upgrade_options["name"].is_unique:  # if xfmr upgrade option names are not unique, create new names
+        xfmr_upgrade_options = xfmr_upgrade_options.reset_index().rename(columns={'index': 'name'})
+        xfmr_upgrade_options['name'] = 'xfmr_' + xfmr_upgrade_options['name'].astype(str)
     return xfmr_upgrade_options
 
 

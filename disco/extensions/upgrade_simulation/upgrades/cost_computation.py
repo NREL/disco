@@ -9,8 +9,8 @@ from .common_functions import create_overall_output_file
 from disco import timer_stats_collector
 from disco.models.upgrade_cost_analysis_generic_input_model import UpgradeCostDatabaseModel
 from disco.models.upgrade_cost_analysis_generic_output_model import AllUpgradesTechnicalResultModel, \
-    AllEquipmentUpgradeCostsResultModel, EquipmentTypeUpgradeCostsResultModel, CapacitorControllerResultTypeModel, \
-        VoltageRegulatorResultTypeModel, TotalUpgradeCostsResultModel, AllUpgradesCostResultSummaryModel
+    AllEquipmentUpgradeCostsResultModel, EquipmentTypeUpgradeCostsResultModel, CapacitorControllerResultType, \
+        VoltageRegulatorResultType, TotalUpgradeCostsResultModel, AllUpgradesCostResultSummaryModel
     
 logger = logging.getLogger(__name__)
 # Dictionary used to convert between different length units and meters, which are used for all the calculations.
@@ -367,7 +367,7 @@ def compute_capcontrol_cost(voltage_upgrades_df, controls_cost_database, keyword
     output_count_field = "count"
     output_columns_list = ["type", output_count_field, output_cost_field, "comment"]
 
-    type_rows = CapacitorControllerResultTypeModel.list_values()  # from enum
+    type_rows = CapacitorControllerResultType.list_values()  # from enum
     capcontrol_upgrade_fields = {"add_new_cap_controller": "new_controller_added",
                          "change_cap_control": "controller_settings_modified"}
     cost_database_fields = {"add_new_cap_controller": "Add new capacitor controller",
@@ -389,7 +389,7 @@ def compute_capcontrol_cost(voltage_upgrades_df, controls_cost_database, keyword
     unit_cost_new_controller = controls_cost_database.loc[controls_cost_database["type"]
                                                           == cost_database_fields["add_new_cap_controller"]]["cost"].values[0]
     total_cost_new_controller = count_new_controller * unit_cost_new_controller
-    cap_cost.append( {"type": CapacitorControllerResultTypeModel.add_new_cap_controller.value,
+    cap_cost.append( {"type": CapacitorControllerResultType.add_new_cap_controller.value,
                  "count": count_new_controller, "total_cost_usd": total_cost_new_controller}
     )
     
@@ -398,7 +398,7 @@ def compute_capcontrol_cost(voltage_upgrades_df, controls_cost_database, keyword
     unit_cost_setting_changes = controls_cost_database.loc[controls_cost_database["type"] ==
                                                            cost_database_fields["change_cap_control"]]["cost"].values[0]
     total_cost_setting_changes = count_setting_changes * unit_cost_setting_changes
-    cap_cost.append( {"type": CapacitorControllerResultTypeModel.change_cap_control.value,
+    cap_cost.append( {"type": CapacitorControllerResultType.change_cap_control.value,
                      "count": count_setting_changes, "total_cost_usd": total_cost_setting_changes}
     )
     cap_cost_df = pd.DataFrame(cap_cost)
@@ -436,7 +436,7 @@ def compute_voltage_regcontrol_cost(voltage_upgrades_df, vreg_control_cost_datab
                             "change_ltc_control": "Change LTC settings",
                             "add_new_transformer": "Add new voltage regulator transformer"}
     
-    type_fields_dict = {i.name: i.value for i in VoltageRegulatorResultTypeModel}
+    type_fields_dict = {i.name: i.value for i in VoltageRegulatorResultType}
     type_rows = list(type_fields_dict.keys())
     
     control_computation_fields = ["add_new_reg_control", "change_reg_control"]
