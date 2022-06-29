@@ -142,6 +142,8 @@ def identify_parallel_lines(options, object_row, parallel_lines_limit, **kwargs)
     -------
 
     """
+    output_fields = list(LineUpgradesTechnicalResultModel.schema(True).get("properties").keys())
+    temp_output_fields = set(output_fields) - {"final_equipment_name"}
     commands_list = []
     temp_dict = {}
     # calculate number of parallel lines needed to carry remaining amperes (in addition to existing line)
@@ -193,6 +195,8 @@ def identify_parallel_lines(options, object_row, parallel_lines_limit, **kwargs)
             commands_list.append(s)
         temp_dict.pop("choose_parallel_metric")
         temp_dict.pop("num_parallel_raw")
+        missing_fields = list(set(temp_output_fields).difference(temp_dict.keys()))  # find missing fields in temp_dict
+        temp_dict.update(object_row[missing_fields].to_dict())
         upgrades_dict_parallel.append(temp_dict)
     return commands_list, upgrades_dict_parallel
 
