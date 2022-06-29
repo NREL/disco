@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from jade.utils.utils import load_data, dump_data
-from disco.models.upgrade_cost_analysis_generic_model import UpgradeCostAnalysisSimulationModel
+from disco.models.upgrade_cost_analysis_generic_input_model import UpgradeCostAnalysisSimulationModel
 
 
 def test_model_load():

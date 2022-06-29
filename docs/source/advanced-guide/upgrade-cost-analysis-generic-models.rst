@@ -9,7 +9,12 @@ UpgradeCostAnalysisSimulationModel
 .. literalinclude:: ../../build/json_schemas/UpgradeCostAnalysisSimulationModel.json
     :language: json
 
-UpgradeSummaryResultsModel
-==========================
-.. literalinclude:: ../../build/json_schemas/UpgradeSummaryResultsModel.json
+UpgradesCostResultSummaryModel
+==============================
+.. literalinclude:: ../../build/json_schemas/UpgradesCostResultSummaryModel.json
+    :language: json
+
+JobUpgradeSummaryOutputModel
+============================
+.. literalinclude:: ../../build/json_schemas/JobUpgradeSummaryOutputModel.json
     :language: json

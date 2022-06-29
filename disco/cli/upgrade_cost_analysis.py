@@ -22,11 +22,11 @@ from disco.cli.make_upgrade_tables import (
 )
 from disco.exceptions import DiscoBaseException, get_error_code_from_exception
 from disco.models.base import OpenDssDeploymentModel
-from disco.models.upgrade_cost_analysis_generic_model import (
-    UpgradeCostAnalysisSimulationModel,
-    UpgradeResultModel,
-    EquipmentTypeUpgradeCostsModel,
-    UpgradeSummaryResultsModel,
+from disco.models.upgrade_cost_analysis_generic_input_model import UpgradeCostAnalysisSimulationModel
+from disco.models.upgrade_cost_analysis_generic_output_model import (
+    UpgradeViolationResultModel,
+    TotalUpgradeCostsResultModel,
+    JobUpgradeSummaryOutputModel,
 )
 from disco.extensions.upgrade_simulation.upgrade_parameters import UpgradeParameters
 from disco.extensions.upgrade_simulation.upgrade_simulation import UpgradeSimulation
@@ -343,9 +343,9 @@ def _aggregate_results(jade_runtime_output, log_file, job_names, fmt):
             # It might seem odd to go from dict to model back to dict, but this validates
             # fields and types.
             for result in summary_table:
-                upgrade_summary_table.append(UpgradeResultModel(**result).dict())
+                upgrade_summary_table.append(UpgradeViolationResultModel(**result).dict())
             for result in costs_table:
-                upgrade_costs_table.append(EquipmentTypeUpgradeCostsModel(**result).dict())
+                upgrade_costs_table.append(TotalUpgradeCostsResultModel(**result).dict())
 
     if upgrade_summary_table:
         if fmt == "csv":
@@ -367,7 +367,7 @@ def _aggregate_results(jade_runtime_output, log_file, job_names, fmt):
 
     if fmt == "json":
         filename = jade_runtime_output / "upgrade_summary.json"
-        dump_data(UpgradeSummaryResultsModel(**output_json).dict(), filename, indent=2)
+        dump_data(JobUpgradeSummaryOutputModel(**output_json).dict(), filename, indent=2)
         logger.info("Output summary data to %s", filename)
 
 

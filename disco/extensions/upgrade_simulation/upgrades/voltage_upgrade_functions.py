@@ -11,7 +11,9 @@ from sklearn.cluster import AgglomerativeClustering
 from .common_functions import *
 from .thermal_upgrade_functions import define_xfmr_object
 from disco import timer_stats_collector
+from disco.models.upgrade_cost_analysis_generic_output_model import VoltageUpgradesTechnicalResultModel
 from jade.utils.timing_utils import track_timing, Timer
+
 
 logger = logging.getLogger(__name__)
 
@@ -335,7 +337,7 @@ def get_capacitor_upgrades(orig_capacitors_df, new_capacitors_df):
         new_capcontrols = {}
     
     final_cap_upgrades = {}
-    processed_outputs = {}
+    processed_outputs = []
     # STEP 1: compare controllers that exist in both: original and new- and get difference
     change = compare_dict(orig_capcontrols, new_capcontrols)
     modified_capacitors = list(change.keys())
@@ -364,18 +366,23 @@ def get_capacitor_upgrades(orig_capacitors_df, new_capacitors_df):
             # if there are new controllers
             elif cap_name in new_addition:
                 final_cap_upgrades["ctrl_added"] = True
-        processed_outputs[final_cap_upgrades["cap_name"]] = {
-            "New controller added": final_cap_upgrades["ctrl_added"],
-            "Controller settings modified": final_cap_upgrades["cap_settings"],
-            "Final Settings": {
-                "capctrl name": final_cap_upgrades["ctrl_name"],
-                "cap kvar": final_cap_upgrades["cap_kvar"],
-                "cap kV": final_cap_upgrades["cap_kv"],
-                "ctrl type": final_cap_upgrades["ctrl_type"],
-                "ON setting (V)": final_cap_upgrades["cap_on"],
-                "OFF setting (V)": final_cap_upgrades["cap_off"]
-            }
-        }
+        processed_outputs.append(
+            VoltageUpgradesTechnicalResultModel(**{
+                "equipment_type": final_cap_upgrades["cap_name"].split(".")[0],
+                "name": final_cap_upgrades["cap_name"].split(".")[1],
+                "new_controller_added": final_cap_upgrades["ctrl_added"],
+                "controller_settings_modified": final_cap_upgrades["cap_settings"],
+                "final_settings": {
+                    "kvar": final_cap_upgrades["cap_kvar"],
+                    "kv": final_cap_upgrades["cap_kv"],
+                    "capcontrol_name": final_cap_upgrades["ctrl_name"],
+                    "capcontrol_type": final_cap_upgrades["ctrl_type"],
+                    "ONsetting": final_cap_upgrades["cap_on"],
+                    "OFFsetting": final_cap_upgrades["cap_off"]
+                     },
+                "new_transformer_added": False,
+                "at_substation": False,
+        }))
     return processed_outputs
 
 
@@ -392,10 +399,10 @@ def compute_voltage_violation_severity(voltage_upper_limit, voltage_lower_limit,
     """
     bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
         voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, raise_exception=False, **kwargs)
-    deviation_severity = bus_voltages_df['Min voltage_deviation'].sum() + bus_voltages_df['Max voltage_deviation'].sum()
+    deviation_severity = bus_voltages_df['min_voltage_deviation'].sum() + bus_voltages_df['max_voltage_deviation'].sum()
     undervoltage_bus_list = list(
-        bus_voltages_df.loc[bus_voltages_df['Undervoltage violation'] == True]['name'].unique())
-    overvoltage_bus_list = list(bus_voltages_df.loc[bus_voltages_df['Overvoltage violation'] == True]['name'].unique())
+        bus_voltages_df.loc[bus_voltages_df['undervoltage_violation'] == True]['name'].unique())
+    overvoltage_bus_list = list(bus_voltages_df.loc[bus_voltages_df['overvoltage_violation'] == True]['name'].unique())
     buses_with_violations = undervoltage_bus_list + overvoltage_bus_list
     objective_function = len(buses_with_violations) * deviation_severity
     severity_dict = {'deviation_severity': deviation_severity,
@@ -594,10 +601,6 @@ def add_new_regcontrol_command(xfmr_info_series, default_regcontrol_settings, no
     # use secondary voltage to define ptratio
     # If the winding is Wye, the line-to-neutral voltage is used to compute PTratio.
     # Else, the line-to-line voltage is used.
-    if type(xfmr_info_series['kVs']) == str:
-        xfmr_info_series['kVs'] = ast.literal_eval(xfmr_info_series['kVs'])
-    if xfmr_info_series['conns'] == str:
-        xfmr_info_series['conns'] = ast.literal_eval(xfmr_info_series['conns'])
     sec_conn = xfmr_info_series['conns'][-1]
     if sec_conn.lower() == 'wye':
         sec_voltage = xfmr_info_series['kVs'][-1] / (math.sqrt(3))
@@ -1561,7 +1564,7 @@ def determine_new_regulator_location(circuit_source, initial_buses_with_violatio
     # Iterate by changing number of clusters to be considered in the network, and perform analysis.
     for option_num in range(1, max_regs + 1, 1):
         cluster_option_name = f"cluster_option_{option_num}"
-        logger.info(f"\nClustering option: num_of_clusters: {option_num}")
+        logger.info(f"Clustering option: num_of_clusters: {option_num}")
 
         temp_dict = cluster_and_place_regulator(G=G, square_distance_df=square_distance_df, deciding_field=deciding_field,
                                                 initial_buses_with_violations=initial_buses_with_violations, num_clusters=option_num,
@@ -1613,13 +1616,14 @@ def disable_previous_clustering_option(cluster_group_info_dict):
 
 def plot_heatmap_distmatrix(square_array, fig_folder):
     # TODO THIS FUNCTION is not used
-    plt.figure(figsize=(7, 7))
+    fig = plt.figure(figsize=(7, 7))
     ax = sns.heatmap(square_array, linewidth=0.5)
     title = "Distance matrix of nodes with violations"
     plt.title(title)
     title = title.lower()
     title = title.replace(" ", "_")
     plt.savefig(os.path.join(fig_folder, title+".pdf"))
+    plt.close(fig)
 
 
 def plot_feeder(fig_folder, title, circuit_source=None, enable_detailed=False):
@@ -1630,9 +1634,7 @@ def plot_feeder(fig_folder, title, circuit_source=None, enable_detailed=False):
     nodes_list = G.nodes()
     Un_G = G.to_undirected()
 
-    plt.figure(figsize=(7, 7))
-    plt.figure(figsize=(40, 40), dpi=10)
-    plt.clf()
+    fig = plt.figure(figsize=(40, 40), dpi=10)
     nx.draw_networkx_edges(Un_G, pos=position_dict, alpha=1.0, width=0.3)
     default_node_size = 2
     default_node_color = 'black'
@@ -1672,6 +1674,7 @@ def plot_feeder(fig_folder, title, circuit_source=None, enable_detailed=False):
     title = title.lower()
     title = title.replace(" ", "_")
     plt.savefig(os.path.join(fig_folder, title+".pdf"))
+    plt.close(fig)
     return
 
 
@@ -1686,9 +1689,7 @@ def plot_voltage_violations(fig_folder, title, buses_with_violations, circuit_so
     nodes_list = G.nodes()
     Un_G = G.to_undirected()
 
-    feeder_fig = plt.figure(figsize=(7, 7))
-    plt.figure(figsize=(40, 40), dpi=10)
-    plt.clf()
+    fig = plt.figure(figsize=(40, 40), dpi=10)
     nx.draw_networkx_edges(Un_G, pos=position_dict, alpha=1.0, width=0.3)
     nx.draw_networkx_nodes(Un_G, pos=position_dict, alpha=1.0, node_size=default_node_size, node_color=default_node_color)
     
@@ -1731,6 +1732,7 @@ def plot_voltage_violations(fig_folder, title, buses_with_violations, circuit_so
     title = title.lower()
     title = title.replace(" ", "_")
     plt.savefig(os.path.join(fig_folder, title+".pdf"))
+    plt.close()
     return
 
 
@@ -1744,9 +1746,7 @@ def plot_thermal_violations(fig_folder, title, equipment_with_violations, circui
     # nodes_list = G.nodes()
     # edges_list = G.edges()
     Un_G = G.to_undirected()
-    feeder_fig = plt.figure(figsize=(7, 7))
-    plt.figure(figsize=(40, 40), dpi=10)
-    plt.clf()
+    fig = plt.figure(figsize=(40, 40), dpi=10)
     nx.draw_networkx_edges(Un_G, pos=position_dict, alpha=1.0, width=0.3)
     nx.draw_networkx_nodes(Un_G, pos=position_dict, alpha=1.0, node_size=default_node_size, node_color=default_node_color)
     
@@ -1777,10 +1777,10 @@ def plot_thermal_violations(fig_folder, title, equipment_with_violations, circui
         elif equipment_name == "Line":
             # line violations are plotted as edges
             line_df = equipment_with_violations["Line"]
-            line_df = line_df.loc[line_df['status'] == 'overloaded']
+            line_df = line_df.loc[line_df['status'] == 'overloaded'].copy()
             if len(line_df) > 0: 
-                line_df['bus1'] = line_df['bus1'].str.split('.', expand=True)[0].str.lower()
-                line_df['bus2'] = line_df['bus2'].str.split('.', expand=True)[0].str.lower()
+                line_df.loc[:, "bus1"] = line_df['bus1'].str.split('.', expand=True)[0].str.lower()
+                line_df.loc[:, "bus2"] = line_df['bus2'].str.split('.', expand=True)[0].str.lower()
                 temp_edgelist = list(zip(line_df.bus1, line_df.bus2))
                 temp_line_nodelist = list(line_df['bus1'].unique()) + list(line_df['bus2'].unique())
                 key = "Violation"
@@ -1794,6 +1794,7 @@ def plot_thermal_violations(fig_folder, title, equipment_with_violations, circui
     title = title.replace(" ", "_")
     # plt.axis("off")
     plt.savefig(os.path.join(fig_folder, title+".pdf"))
+    plt.close(fig)
     return
 
 
@@ -1807,9 +1808,7 @@ def plot_created_clusters(fig_folder, clusters_dict, circuit_source=None):
     position_dict = nx.get_node_attributes(G, 'pos')
     Un_G = G.to_undirected()
     
-    feeder_fig = plt.figure(figsize=(7, 7))
-    plt.figure(figsize=(40, 40), dpi=10)
-    plt.clf()
+    fig = plt.figure(figsize=(40, 40), dpi=10)
     nx.draw_networkx_edges(Un_G, pos=position_dict, alpha=1.0, width=0.3)
     nx.draw_networkx_nodes(Un_G, pos=position_dict, alpha=1.0, node_size=default_node_size, node_color=default_node_color)
     if circuit_source is not None:
@@ -1840,6 +1839,7 @@ def plot_created_clusters(fig_folder, clusters_dict, circuit_source=None):
     title = title.lower()
     title = title.replace(" ", "_")
     plt.savefig(os.path.join(fig_folder, title+".pdf"))
+    plt.close(fig)
     return
 
     
@@ -1876,7 +1876,7 @@ def get_graph_edges_dataframe(attr_fields):
     all_xfmrs_df['bus1'] = all_xfmrs_df['bus_names_only'].str[0].str.lower()
     all_xfmrs_df['bus2'] = all_xfmrs_df['bus_names_only'].str[-1].str.lower()
     all_xfmrs_df['equipment_type'] = 'transformer'
-    all_edges_df = all_lines_df[chosen_fields].append(all_xfmrs_df[chosen_fields])
+    all_edges_df = pd.concat([all_lines_df[chosen_fields], all_xfmrs_df[chosen_fields]])
     return all_edges_df
 
 
@@ -1932,7 +1932,7 @@ def generate_networkx_representation(**kwargs):
     # add edges to graph
     G = add_graph_edges(G=G, edges_df=edges_df, attr_fields=attr_fields, source='bus1', target='bus2')
     create_plot = kwargs.get('create_plot', False)
-    G = correct_node_coordinates(G=G)  # TODO SHERIN CHECK IF THIS WORKS
+    G = correct_node_coordinates(G=G)  # corrects node coordinates 
     return G
 
 
@@ -2012,7 +2012,7 @@ def get_regulator_upgrades(orig_regcontrols_df, new_regcontrols_df, orig_xfmrs_d
         orig_xfmr_info = {}
     
     final_reg_upgrades = {}
-    processed_outputs = {}
+    processed_outputs = []
     # STEP 1: compare controllers that exist in both: original and new
     change = compare_dict(orig_reg_controls, new_reg_controls)
     modified_regulators = list(change.keys())
@@ -2045,7 +2045,6 @@ def get_regulator_upgrades(orig_regcontrols_df, new_regcontrols_df, orig_xfmrs_d
                     else:  # voltage regcontrol is not at substation_xfmr
                         xfmr_df = get_thermal_equipment_info(equipment_type="transformer", compute_loading=False)
                         xfmr_dict = xfmr_df.loc[xfmr_df["name"] == final_reg_upgrades['xfmr_name']].to_dict(orient='records')[0]
-                        xfmr_dict["kVs"] = ast.literal_eval(xfmr_dict["kVs"])
                         
                 elif ctrl_name in new_addition:
                     final_reg_upgrades["reg_added"] = True  # is a new regulator
@@ -2057,22 +2056,24 @@ def get_regulator_upgrades(orig_regcontrols_df, new_regcontrols_df, orig_xfmrs_d
                     else:  # voltage regcontrol is not at substation_xfmr
                         xfmr_df = get_thermal_equipment_info(equipment_type="transformer", compute_loading=False)
                         xfmr_dict = xfmr_df.loc[xfmr_df["name"] == final_reg_upgrades['xfmr_name']].to_dict(orient='records')[0]
-                        xfmr_dict["kVs"] = ast.literal_eval(xfmr_dict["kVs"])
                     # if regulator transformer is not in the original xfmr list, then a new xfmr
                     if final_reg_upgrades["xfmr_name"] not in orig_xfmr_info:
                         final_reg_upgrades["new_xfmr"] = True  # is a new xfmr
-                processed_outputs["RegControl." + final_reg_upgrades["reg_ctrl_name"]] = {
-                    "New controller added": final_reg_upgrades["reg_added"],
-                    "Controller settings modified": final_reg_upgrades["reg_settings"],
-                    "New transformer added": final_reg_upgrades["new_xfmr"],
-                    "At Substation": final_reg_upgrades["at_substation"],
-                    "Final Settings": {
-                        "Reg ctrl V set point": final_reg_upgrades["reg_vsp"],
-                        "Reg ctrl deadband": final_reg_upgrades["reg_band"]
-                    }
-                    }
+                temp = {
+                    "equipment_type": "RegControl",
+                    "name": final_reg_upgrades["reg_ctrl_name"],
+                    "new_controller_added": final_reg_upgrades["reg_added"],
+                    "controller_settings_modified": final_reg_upgrades["reg_settings"],
+                    "new_transformer_added": final_reg_upgrades["new_xfmr"],
+                    "at_substation": final_reg_upgrades["at_substation"],
+                    "final_settings": {
+                        "vreg": final_reg_upgrades["reg_vsp"],
+                        "band": final_reg_upgrades["reg_band"]
+                    }}
                 if subltc_dict is not None:
-                    processed_outputs["RegControl." + final_reg_upgrades["reg_ctrl_name"]]["Final Settings"].update(subltc_dict)
+                    temp["final_settings"].update(subltc_dict)
                 if xfmr_dict is not None:
-                    processed_outputs["RegControl." + final_reg_upgrades["reg_ctrl_name"]]["Final Settings"].update(xfmr_dict)
+                    temp["final_settings"].update(xfmr_dict)
+                m = VoltageUpgradesTechnicalResultModel(**temp)
+                processed_outputs.append(m)    
     return processed_outputs
