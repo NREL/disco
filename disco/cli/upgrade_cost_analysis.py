@@ -22,7 +22,9 @@ from disco.cli.make_upgrade_tables import (
 )
 from disco.exceptions import DiscoBaseException, get_error_code_from_exception
 from disco.models.base import OpenDssDeploymentModel
-from disco.models.upgrade_cost_analysis_generic_input_model import UpgradeCostAnalysisSimulationModel
+from disco.models.upgrade_cost_analysis_generic_input_model import (
+    UpgradeCostAnalysisSimulationModel,
+)
 from disco.models.upgrade_cost_analysis_generic_output_model import (
     UpgradeViolationResultModel,
     TotalUpgradeCostsResultModel,
@@ -101,6 +103,16 @@ def config(upgrades_config_file, config_file, fmt):
     print(f"Created JADE configuration file {config_file}")
 
 
+def _log_level_cb(_, __, level):
+    levels = {
+        "debug": logging.DEBUG,
+        "info": logging.INFO,
+        "warn": logging.WARNING,
+        "error": logging.ERROR,
+    }
+    return levels[level]
+
+
 @click.command()
 @click.argument("config_file", type=click.Path(exists=True))
 @click.option(
@@ -138,9 +150,33 @@ def config(upgrades_config_file, config_file, fmt):
     help="Overwrite output directory if it exists.",
 )
 @click.option(
-    "--verbose", is_flag=True, default=False, show_default=True, help="Enable verbose logging"
+    "-C",
+    "--console-log-level",
+    type=click.Choice(["debug", "info", "warn", "error"]),
+    default="info",
+    show_default=True,
+    help="Console log level",
+    callback=_log_level_cb,
 )
-def run(config_file, aggregate_results, job_name, jade_runtime_output, fmt, force, verbose):
+@click.option(
+    "-F",
+    "--file-log-level",
+    type=click.Choice(["debug", "info", "warn", "error"]),
+    default="info",
+    show_default=True,
+    help="File log level",
+    callback=_log_level_cb,
+)
+def run(
+    config_file,
+    aggregate_results,
+    job_name,
+    jade_runtime_output,
+    fmt,
+    force,
+    console_log_level,
+    file_log_level,
+):
     """Run upgrade cost analysis simulation(s) from a config file."""
     jobs_output_dir = jade_runtime_output / JOBS_OUTPUT_DIR
     jobs_output_dir.mkdir(parents=True, exist_ok=True)
@@ -166,9 +202,14 @@ def run(config_file, aggregate_results, job_name, jade_runtime_output, fmt, forc
         _check_job_dir(jobs_output_dir / job.name, force)
 
     log_file_dir.mkdir(exist_ok=True)
-    level = logging.DEBUG if verbose else logging.INFO
     log_file = log_file_dir / log_filename
-    setup_logging(__name__, log_file, console_level=level, packages=["disco"])
+    setup_logging(
+        __name__,
+        log_file,
+        console_level=console_log_level,
+        file_level=file_log_level,
+        packages=["disco"],
+    )
     logger.info(get_cli_string())
 
     batch_return_code = EXIT_CODE_GOOD
@@ -178,7 +219,7 @@ def run(config_file, aggregate_results, job_name, jade_runtime_output, fmt, forc
         start = time.time()
         ret = EXIT_CODE_GOOD
         try:
-            run_job(job, config, jobs_output_dir, verbose)
+            run_job(job, config, jobs_output_dir, file_log_level)
             all_failed = False
         except DiscoBaseException as exc:
             logger.exception("Unexpected DISCO error in upgrade cost analysis job=%s", job.name)
@@ -233,7 +274,7 @@ def _get_return_code_filename(output_dir, job_name):
     return output_dir / job_name / "return_code"
 
 
-def run_job(job, config, jobs_output_dir, verbose):
+def run_job(job, config, jobs_output_dir, file_log_level):
     job_output_dir = jobs_output_dir / job.name
     job_output_dir.mkdir(exist_ok=True)
     job = UpgradeParameters(
@@ -272,7 +313,7 @@ def run_job(job, config, jobs_output_dir, verbose):
         thermal_config=global_config["thermal_upgrade_params"],
         voltage_config=global_config["voltage_upgrade_params"],
         cost_database_filepath=global_config["upgrade_cost_database"],
-        verbose=verbose,
+        verbose=file_log_level == logging.DEBUG,
     )
 
 
