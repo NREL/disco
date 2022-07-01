@@ -23,7 +23,7 @@ from disco.cli.make_upgrade_tables import (
 from disco.exceptions import DiscoBaseException, get_error_code_from_exception
 from disco.models.base import OpenDssDeploymentModel
 from disco.models.upgrade_cost_analysis_generic_input_model import (
-    UpgradeCostAnalysisSimulationModel,
+    UpgradeCostAnalysisSimulationModel
 )
 from disco.models.upgrade_cost_analysis_generic_output_model import (
     UpgradeViolationResultModel,

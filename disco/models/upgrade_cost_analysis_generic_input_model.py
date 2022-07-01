@@ -1,6 +1,7 @@
-import enum
 from typing import List, Optional, Set, Dict
 from pydantic import BaseModel, Field, root_validator, validator
+
+import pandas as pd
 
 from PyDSS.controllers import PvControllerModel
 
@@ -30,6 +31,126 @@ def get_default_thermal_upgrade_params():
 def get_default_voltage_upgrade_params():
     return _get_default_upgrade_params()["voltage_upgrade_params"]
 
+
+class OpenDSSLineModel(OpenDSSLineParams):
+    bus1: str = Field(
+        title="bus1",
+        description="bus1",
+    )
+    bus2: str = Field(
+        title="bus2",
+        description="bus2",
+    )
+    length: float = Field(
+        title="length",
+        description="length",
+    )
+    enabled: Any = Field(
+        title="enabled",
+        description="enabled",
+    )
+
+
+class LineModel(OpenDSSLineModel, ExtraLineParams):
+    name: str = Field(
+        title="name",
+        description="name. This is not a direct OpenDSS object property.",
+    )
+
+
+class LineCatalogModel(OpenDSSLineParams, ExtraLineParams):
+    """Contains Line information needed for thermal upgrade analysis. Most fields can be directly obtained from the opendss models"""
+    name: str = Field(
+        title="name",
+        description="name. This is not a direct OpenDSS object property.",
+    )
+
+
+class LineCodeCatalogModel(CommonLineParameters):
+    """Contains LineCode information needed for thermal upgrade analysis. Most fields can be directly obtained from the opendss models"""
+    name: str = Field(
+        title="name",
+        description="name",
+    )
+    nphases: int = Field(
+        title="nphases",
+        description="nphases",
+        determine_upgrade_option=True,
+    )
+    Kron: Optional[Any] = Field(
+        title="Kron",
+        description="Kron",
+        default="N",
+        determine_upgrade_option=True,
+    )
+    neutral: float = Field(
+        title="neutral",
+        description="neutral",
+        determine_upgrade_option=True,
+    )
+    like: Optional[Any] = Field(
+        title="like",
+        description="like",
+        default=None,
+    )
+    baseFreq: float = Field(
+        title="basefreq",
+        description="basefreq",
+        determine_upgrade_option=True,
+    )
+
+
+class OpenDSSTransformerModel(CommonTransformerParameters):
+    bus: str = Field(
+        title="bus",
+        description="bus",
+    )
+    buses: Any = Field(
+        title="buses",
+        description="buses",
+    )
+    enabled: Any = Field(
+        title="enabled",
+        description="enabled",
+    )
+
+
+class TransformerModel(OpenDSSTransformerModel, ExtraTransformerParams):
+    name: str = Field(
+        title="name",
+        description="name. This is not a direct OpenDSS object property.",
+    )
+
+
+class TransformerCatalogModel(CommonTransformerParameters, ExtraTransformerParams):
+    """Contains Transformer information needed for thermal upgrade analysis. Most fields can be directly obtained from the opendss models"""
+    name: str = Field(
+        title="name",
+        description="name",
+    )
+class UpgradeTechnicalCatalogModel(UpgradeParamsBaseModel):
+    """Contains Upgrades Technical Catalog needed for thermal upgrade analysis"""
+    line: Optional[List[LineCatalogModel]] = Field(
+        title="line",
+        description="line catalog",
+        default=[]
+    )
+    transformer: Optional[List[TransformerCatalogModel]] = Field(
+        title="transformer",
+        description="transformer catalog",
+        default=[]
+    )
+    linecode: Optional[List[LineCodeCatalogModel]] = Field(
+        title="linecode",
+        description="linecode catalog",
+        default=[]
+    )
+    # TODO not implemented yet. Can be added if lines are defined through linegeometry
+    # geometry: Optional[List[LineGeometryCatalogModel]] = Field(
+    #     title="linegeometry",
+    #     description="linegeometry catalog",
+    #     default=[]
+    # )
 
 
 class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
@@ -98,8 +219,11 @@ class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
 
     @validator("external_catalog")
     def check_catalog(cls, external_catalog, values):
-        if values["read_external_catalog"] and not Path(external_catalog).exists():
-            raise ValueError(f"{external_catalog} does not exist")
+        if values["read_external_catalog"]:
+            if not Path(external_catalog).exists():
+                raise ValueError(f"{external_catalog} does not exist")
+            # Just verify that it constructs the model.
+            UpgradeTechnicalCatalogModel(**load_data(external_catalog))
         return external_catalog
 
     @validator("timepoint_multipliers")
@@ -302,6 +426,8 @@ class UpgradeCostAnalysisSimulationModel(UpgradeParamsBaseModel):
         if calculate_costs:
             if not Path(values["upgrade_cost_database"]).exists():
                 raise ValueError(f"{values['upgrade_cost_database']} does not exist")
+            # Just verify that it constructs the model.
+            load_cost_database(values["upgrade_cost_database"])
         return calculate_costs
 
     @validator("upgrade_order")
@@ -524,130 +650,23 @@ class UpgradeCostDatabaseModel(UpgradeParamsBaseModel):
     )
 
 
-class upgrade_cost_types(enum.Enum):
-    """Possible values for upgrade costs"""
-    TRANSFORMER = "Transformer"
-    LINE = "Line"
-
-
-class OpenDSSLineModel(OpenDSSLineParams):
-    bus1: str = Field(
-        title="bus1",
-        description="bus1",
-    )
-    bus2: str = Field(
-        title="bus2",
-        description="bus2",
-    )
-    length: float = Field(
-        title="length",
-        description="length",
-    )
-    enabled: Any = Field(
-        title="enabled",
-        description="enabled",
-    )
-
-
-class LineModel(OpenDSSLineModel, ExtraLineParams):
-    name: str = Field(
-        title="name",
-        description="name. This is not a direct OpenDSS object property.",
-    )
-  
-
-class LineCatalogModel(OpenDSSLineParams, ExtraLineParams):
-    """Contains Line information needed for thermal upgrade analysis. Most fields can be directly obtained from the opendss models"""
-    name: str = Field(
-        title="name",
-        description="name. This is not a direct OpenDSS object property.",
-    )
+def load_cost_database(filepath):
+    xfmr_cost_database = pd.read_excel(filepath, "transformers")
+    line_cost_database = pd.read_excel(filepath, "lines")
+    controls_cost_database = pd.read_excel(filepath, "control_changes")
+    voltage_regulators_cost_database = pd.read_excel(filepath, "voltage_regulators")
+    misc_database = pd.read_excel(filepath, "misc")
     
-
-class LineCodeCatalogModel(CommonLineParameters):
-    """Contains LineCode information needed for thermal upgrade analysis. Most fields can be directly obtained from the opendss models"""
-    name: str = Field(
-        title="name",
-        description="name",
+    # perform validation of input cost database using pydantic models
+    input_cost_model = UpgradeCostDatabaseModel(transformers=xfmr_cost_database.to_dict(orient="records"), 
+                                                lines=line_cost_database.to_dict(orient="records"), 
+                                                control_changes=controls_cost_database.to_dict(orient="records"), 
+                                                voltage_regulators=voltage_regulators_cost_database.to_dict(orient="records"), 
+                                                misc=misc_database.to_dict(orient="records"))
+    return (
+        xfmr_cost_database,
+        line_cost_database,
+        controls_cost_database,
+        voltage_regulators_cost_database,
+        misc_database,
     )
-    nphases: int = Field(
-        title="nphases",
-        description="nphases",
-        determine_upgrade_option=True,
-    )
-    Kron: Optional[Any] = Field(
-        title="Kron",
-        description="Kron",
-        default="N",
-        determine_upgrade_option=True,
-    )
-    neutral: float = Field(
-        title="neutral",
-        description="neutral",
-        determine_upgrade_option=True,
-    )
-    like: Optional[Any] = Field(
-        title="like",
-        description="like",
-        default=None,
-    )
-    baseFreq: float = Field(
-        title="basefreq",
-        description="basefreq",
-        determine_upgrade_option=True,
-    )
-          
-
-class OpenDSSTransformerModel(CommonTransformerParameters):
-    bus: str = Field(
-        title="bus",
-        description="bus",
-    )
-    buses: Any = Field(
-        title="buses",
-        description="buses",
-    )
-    enabled: Any = Field(
-        title="enabled",
-        description="enabled",
-    )
-    
-
-class TransformerModel(OpenDSSTransformerModel, ExtraTransformerParams):
-    name: str = Field(
-        title="name",
-        description="name. This is not a direct OpenDSS object property.",
-    )
-
-
-class TransformerCatalogModel(CommonTransformerParameters, ExtraTransformerParams):
-    """Contains Transformer information needed for thermal upgrade analysis. Most fields can be directly obtained from the opendss models"""
-    name: str = Field(
-        title="name",
-        description="name",
-    )
-    
-
-class UpgradeTechnicalCatalogModel(UpgradeParamsBaseModel):
-    """Contains Upgrades Technical Catalog needed for thermal upgrade analysis"""
-    line: Optional[List[LineCatalogModel]] = Field(
-        title="line",
-        description="line catalog",
-        default=[]
-    )
-    transformer: Optional[List[TransformerCatalogModel]] = Field(
-        title="transformer",
-        description="transformer catalog",
-        default=[]
-    )
-    linecode: Optional[List[LineCodeCatalogModel]] = Field(
-        title="linecode",
-        description="linecode catalog",
-        default=[]
-    )
-    # TODO not implemented yet. Can be added if lines are defined through linegeometry
-    # geometry: Optional[List[LineGeometryCatalogModel]] = Field(
-    #     title="linegeometry",
-    #     description="linegeometry catalog",
-    #     default=[]
-    # )
