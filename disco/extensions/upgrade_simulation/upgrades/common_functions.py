@@ -622,37 +622,51 @@ def ensure_line_config_exists(chosen_option, new_config_type, external_upgrades_
     """
     existing_config_dict = {"linecode": get_line_code(), "geometry": get_line_geometry()}
     new_config_name = chosen_option[new_config_type].lower()
-    # if linecode or linegeometry is not present in existing network definitions
-    if not existing_config_dict[new_config_type]["name"].str.lower().isin([new_config_name]).any():  
-        # add definition for linecode or linegeometry
-        if external_upgrades_technical_catalog is None:
-            raise UpgradesExternalCatalogRequired(f"External upgrades technical catalog not available to determine line config type")
-        external_config_df = pd.DataFrame(external_upgrades_technical_catalog[new_config_type])
-        if external_config_df["name"].str.lower().isin([new_config_name]).any():
-            config_definition_df = external_config_df.loc[external_config_df["name"] == new_config_name].copy()
-            if len(config_definition_df) == 1:  # if there is only one definition of that config name
-                config_definition_dict = dict(config_definition_df.iloc[0])  
-            else:   # if there is more than one definition of that config name
-                config_definition_df["temp_deviation"] = abs(config_definition_df["normamps"] - chosen_option["normamps"])
-                config_definition_dict = dict(config_definition_df.loc[config_definition_df["temp_deviation"].idxmin()])
-                config_definition_dict.pop("temp_deviation")
-            if config_definition_dict["normamps"] != chosen_option["normamps"]:
-                logger.warning(f"Mismatch between noramps for linecode {new_config_name} ({config_definition_dict['normamps']}A) "
-                               f"and chosen upgrade option normamps ({chosen_option['normamps']}A): {chosen_option['name']}")
-            # check format of certain fields, and prepare data to write opendss definition
-            matrix_fields = [s for s in config_definition_dict.keys() if 'matrix' in s]
-            for field in matrix_fields:
-                config_definition_dict[field] = str(config_definition_dict[field]).replace("'","")
-                config_definition_dict[field] = config_definition_dict[field].replace("[","(")
-                config_definition_dict[field] = config_definition_dict[field].replace("]",")")
-            config_definition_dict["equipment_type"] = new_config_type
-            command_string = create_opendss_definition(config_definition_dict=config_definition_dict)
-        else:
-            raise UpgradesExternalCatalogMissingObjectDefinition(
-                f"{new_config_type} definition for {new_config_name} not found in external catalog."
-            )
+    if existing_config_dict[new_config_type].empty:
+        command_string = add_new_lineconfig_definition(chosen_option, new_config_type, external_upgrades_technical_catalog)
     else:
-        command_string = None   
+        # if linecode or linegeometry is not present in existing network definitions
+        if not existing_config_dict[new_config_type]["name"].str.lower().isin([new_config_name]).any():  
+            command_string = add_new_lineconfig_definition(chosen_option, new_config_type, external_upgrades_technical_catalog)
+        else:
+            command_string = None   
+    return command_string
+
+
+def add_new_lineconfig_definition(chosen_option, new_config_type, external_upgrades_technical_catalog):
+    # add definition for linecode or linegeometry
+    if external_upgrades_technical_catalog is None:
+        raise UpgradesExternalCatalogRequired(f"External upgrades technical catalog not available to determine line config type")
+    external_config_df = pd.DataFrame(external_upgrades_technical_catalog[new_config_type])
+    if external_config_df.empty: 
+        raise UpgradesExternalCatalogMissingObjectDefinition(
+            f"{new_config_type} definition not found in external catalog."
+        )    
+    new_config_name = chosen_option[new_config_type]
+    if external_config_df["name"].str.lower().isin([new_config_name.lower()]).any():
+        config_definition_df = external_config_df.loc[external_config_df["name"].str.lower() == new_config_name.lower()].copy()
+        if len(config_definition_df) == 1:  # if there is only one definition of that config name
+            config_definition_dict = dict(config_definition_df.iloc[0])  
+        else:   # if there is more than one definition of that config name
+            config_definition_df["temp_deviation"] = abs(config_definition_df["normamps"] - chosen_option["normamps"])
+            config_definition_dict = dict(config_definition_df.loc[config_definition_df["temp_deviation"].idxmin()])
+            config_definition_dict.pop("temp_deviation")
+        if config_definition_dict["normamps"] != chosen_option["normamps"]:
+            logger.warning(f"Mismatch between noramps for linecode {new_config_name} ({config_definition_dict['normamps']}A) "
+                            f"and chosen upgrade option normamps ({chosen_option['normamps']}A): {chosen_option['name']}")
+        config_definition_dict["name"] = new_config_name  # to keep same case of config name (for consistency)
+        # check format of certain fields, and prepare data to write opendss definition
+        matrix_fields = [s for s in config_definition_dict.keys() if 'matrix' in s]
+        for field in matrix_fields:
+            config_definition_dict[field] = str(config_definition_dict[field]).replace("'","")
+            config_definition_dict[field] = config_definition_dict[field].replace("[","(")
+            config_definition_dict[field] = config_definition_dict[field].replace("]",")")
+        config_definition_dict["equipment_type"] = new_config_type
+        command_string = create_opendss_definition(config_definition_dict=config_definition_dict)
+    else:
+        raise UpgradesExternalCatalogMissingObjectDefinition(
+            f"{new_config_type} definition for {new_config_name} not found in external catalog."
+        )
     return command_string
 
 

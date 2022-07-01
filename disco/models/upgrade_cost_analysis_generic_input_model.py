@@ -1,5 +1,5 @@
 from typing import List, Optional, Set, Dict
-from pydantic import BaseModel, Field, root_validator, validator
+from pydantic import Field, root_validator, validator
 
 import pandas as pd
 
