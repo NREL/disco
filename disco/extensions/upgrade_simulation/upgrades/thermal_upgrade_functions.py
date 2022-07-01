@@ -158,6 +158,10 @@ def identify_parallel_lines(options, object_row, parallel_lines_limit, **kwargs)
     if num_parallel_lines > parallel_lines_limit:
         raise ExceededParallelLinesLimit(f"Number of parallel lines is greater than limit={parallel_lines_limit}")
     new_config_type = chosen_option["line_definition_type"]
+    external_upgrades_technical_catalog = kwargs.get("external_upgrades_technical_catalog", None)
+    config_command_string = ensure_line_config_exists(chosen_option, new_config_type, external_upgrades_technical_catalog)
+    if config_command_string is not None:  # if new line config definition had to be added
+        commands_list.append(config_command_string)    
     upgrades_dict_parallel = []
     for line_count in range(0, num_parallel_lines):
         curr_time = str(time.time())
@@ -177,13 +181,9 @@ def identify_parallel_lines(options, object_row, parallel_lines_limit, **kwargs)
         # remove_fields = ['num_parallel_raw', 'num_parallel', 'choose_parallel_metric']
         # for x in remove_fields:
         #     temp_dict.pop(x)
-        if (new_config_type == "geometry") or (new_config_type == "linecode"):
-            external_upgrades_technical_catalog = kwargs.get("external_upgrades_technical_catalog", None)
-            command_string = ensure_line_config_exists(chosen_option, new_config_type, external_upgrades_technical_catalog)
-            if command_string is not None:  # if new line config definition had to be added
-                commands_list.append(command_string)   
+        if (new_config_type == "geometry") or (new_config_type == "linecode"):              
             s = f"New Line.{new_name} bus1={object_row['bus1']} bus2={object_row['bus2']} length={object_row['length']} " \
-                f"units={object_row['units']} {new_config_type}={object_row[new_config_type]} " \
+                f"units={object_row['units']} {new_config_type}={chosen_option[new_config_type]} " \
                 f"phases={chosen_option['phases']} normamps={chosen_option['normamps']} enabled=True"
             commands_list.append(s)
         # if line geometry and line code is not available
