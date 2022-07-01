@@ -7,7 +7,7 @@ from jade.utils.utils import load_data, dump_data
 
 from .common_functions import create_overall_output_file
 from disco import timer_stats_collector
-from disco.models.upgrade_cost_analysis_generic_input_model import UpgradeCostDatabaseModel
+from disco.models.upgrade_cost_analysis_generic_input_model import load_cost_database
 from disco.models.upgrade_cost_analysis_generic_output_model import AllUpgradesTechnicalResultModel, \
     AllEquipmentUpgradeCostsResultModel, EquipmentTypeUpgradeCostsResultModel, CapacitorControllerResultType, \
         VoltageRegulatorResultType, TotalUpgradeCostsResultModel, AllUpgradesCostResultSummaryModel
@@ -46,19 +46,13 @@ def compute_all_costs(
     line_upgrades_df = pd.DataFrame(m.dict(by_alias=True)["line"])
     voltage_upgrades_df = pd.DataFrame(m.dict(by_alias=True)["voltage"])
     
-    # unit cost database files
-    xfmr_cost_database = pd.read_excel(cost_database_filepath, "transformers")
-    line_cost_database = pd.read_excel(cost_database_filepath, "lines")
-    controls_cost_database = pd.read_excel(cost_database_filepath, "control_changes")
-    voltage_regulators_cost_database = pd.read_excel(cost_database_filepath, "voltage_regulators")
-    misc_database = pd.read_excel(cost_database_filepath, "misc")
-    
-    # perform validation of input cost database using pydantic models
-    input_cost_model = UpgradeCostDatabaseModel(transformers=xfmr_cost_database.to_dict(orient="records"), 
-                                                lines=line_cost_database.to_dict(orient="records"), 
-                                                control_changes=controls_cost_database.to_dict(orient="records"), 
-                                                voltage_regulators=voltage_regulators_cost_database.to_dict(orient="records"), 
-                                                misc=misc_database.to_dict(orient="records"))
+    (
+        xfmr_cost_database,
+        line_cost_database,
+        controls_cost_database,
+        voltage_regulators_cost_database,
+        misc_database,
+    ) = load_cost_database(cost_database_filepath)
     output_columns = list(EquipmentTypeUpgradeCostsResultModel.schema(True).get("properties").keys())
 
     # reformat data
