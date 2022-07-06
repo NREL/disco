@@ -294,9 +294,9 @@ class UpgradesCostResultSummaryModel(UpgradeParamsBaseModel):
         title="status",
         description="Status",
     )
-    total_cost_usd: str = Field(
-        title="cost",
-        description="",
+    total_cost_usd: float = Field(
+        title="total_cost_usd",
+        description="Total cost in US dollars",
     )
     parameter1_name: str = Field(
         title="parameter1_name",
