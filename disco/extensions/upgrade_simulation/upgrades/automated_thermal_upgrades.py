@@ -145,7 +145,7 @@ def determine_thermal_upgrades(
     )
     temp_results = dict(initial_results)
     output_results = {"violation_summary": [temp_results]}
-    dump_data(output_results, thermal_summary_file, indent=2)
+    dump_data(convert_dict_nan_to_none(output_results), thermal_summary_file, indent=2, allow_nan=False)
     title = "Feeder"
     plot_feeder(fig_folder=thermal_upgrades_directory, title=title, circuit_source=circuit_source, enable_detailed=True)
     # Mitigate thermal violations
@@ -295,4 +295,4 @@ def determine_thermal_upgrades(
     )
     temp_results = dict(final_results)
     output_results["violation_summary"].append(temp_results)
-    dump_data(output_results, thermal_summary_file, indent=2)
+    dump_data(convert_dict_nan_to_none(output_results), thermal_summary_file, indent=2, allow_nan=False)

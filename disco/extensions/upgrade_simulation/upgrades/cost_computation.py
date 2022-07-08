@@ -93,12 +93,12 @@ def compute_all_costs(
     thermal_cost_df = thermal_cost_df.loc[thermal_cost_df["count"] != 0]
     total_cost_df = get_total_costs(thermal_cost_df, voltage_cost_df)
     equipment_costs = AllEquipmentUpgradeCostsResultModel(thermal=thermal_cost_df.to_dict('records'), voltage=voltage_cost_df.to_dict('records'))
-    dump_data(equipment_costs.dict(by_alias=True), 
-              output_equipment_upgrade_costs_filepath, indent=2, cls=ExtendedJSONEncoder)
+    dump_data(convert_dict_nan_to_none(equipment_costs.dict(by_alias=True)), 
+              output_equipment_upgrade_costs_filepath, indent=2, cls=ExtendedJSONEncoder, allow_nan=False)
     total_cost_df["name"] = job_name
     m = [TotalUpgradeCostsResultModel(**x) for x in total_cost_df.to_dict(orient="records")]
-    dump_data({"total_upgrade_costs": total_cost_df.to_dict('records')}, 
-             output_total_upgrade_costs_filepath, indent=2, cls=ExtendedJSONEncoder)
+    dump_data(convert_dict_nan_to_none({"total_upgrade_costs": total_cost_df.to_dict('records')}), 
+             output_total_upgrade_costs_filepath, indent=2, cls=ExtendedJSONEncoder, allow_nan=False)
     feeder_stats = load_data(feeder_stats_json_file)
     output_summary = create_overall_output_file(upgrades_dict={"transformer": xfmr_upgrades_df, "line": line_upgrades_df, "voltage": voltage_upgrades_df},
                                                 costs_dict={"thermal": thermal_cost_df, "voltage": voltage_cost_df}, feeder_stats=feeder_stats)
