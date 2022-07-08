@@ -268,7 +268,7 @@ def convert_dict_nan_to_none(temp):
                 value = df.to_dict() 
             else:
                 continue
-        elif isinstance(value, list) and isinstance(value[0], dict):  # list of dicts
+        elif isinstance(value, list) and bool(value) and isinstance(value[0], dict):  # list of dicts
             df = pd.DataFrame(value)
             if df.isna().values.any():
                 df = df.astype(object).where(df.notna(), None)  # replace NaN with None
