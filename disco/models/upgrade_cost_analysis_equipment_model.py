@@ -3,7 +3,7 @@ import numpy as np
 from typing import Any
 from pathlib import Path
 from typing import Optional
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 
 from jade.utils.utils import load_data
 
@@ -33,12 +33,6 @@ class UpgradeParamsBaseModel(BaseModel):
         """
         return cls(**load_data(filename))
     
-    @validator('*')
-    def change_nan_to_none(cls, v, field):
-        if (field.outer_type_ is float) and (v is not None) and (np.isnan(v)):
-            return None
-        return v
-
 
 class CommonLineParameters(UpgradeParamsBaseModel):
     """This model contains common line parameters that are used in linecode technical catalog, line technical catalog, line output upgrades. 

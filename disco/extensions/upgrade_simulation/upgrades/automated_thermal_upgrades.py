@@ -80,7 +80,8 @@ def determine_thermal_upgrades(
         # reassign from model to dataframes, so datatypes are maintained
         line_upgrade_options = pd.DataFrame.from_dict(input_catalog_model.dict(by_alias=True)["line"])
         xfmr_upgrade_options = pd.DataFrame.from_dict(input_catalog_model.dict(by_alias=True)["transformer"])
-        dump_data(input_catalog_model.dict(by_alias=True), internal_upgrades_technical_catalog_filepath, indent=2)  # write internal catalog to json
+        dump_data(input_catalog_model.dict(by_alias=True), 
+                  internal_upgrades_technical_catalog_filepath, indent=2)  # write internal catalog to json
     (
         initial_bus_voltages_df,
         initial_undervoltage_bus_list,

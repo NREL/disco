@@ -257,6 +257,28 @@ def get_scenario_name(enable_pydss_solve, pydss_volt_var_model):
     return scenario
 
 
+def convert_dict_nan_to_none(temp):
+    """Convert np.nan in dictionary to None.
+    This does change the data type of the field."""
+    for key, value in temp.items():
+        if isinstance(value, dict):
+            df = pd.DataFrame([value])
+            if df.isna().values.any():
+                df = df.astype(object).where(df.notna(), None)  # replace NaN with None
+                value = df.to_dict() 
+            else:
+                continue
+        elif isinstance(value, list) and isinstance(value[0], dict):  # list of dicts
+            df = pd.DataFrame(value)
+            if df.isna().values.any():
+                df = df.astype(object).where(df.notna(), None)  # replace NaN with None
+                value = df.to_dict(orient="records")          
+            else:
+                continue  
+        temp[key] = value
+    return temp
+
+
 @track_timing(timer_stats_collector)
 def change_pv_pctpmpp(dc_ac_ratio):
     """This function changes PV system pctpmpp based on passed dc-ac ratio
