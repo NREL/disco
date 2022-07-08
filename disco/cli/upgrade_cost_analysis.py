@@ -129,9 +129,13 @@ def _log_level_cb(_, __, level):
 )
 @click.option(
     "-o",
+   "--output",
     "--jade-runtime-output",
     default="output",
-    help="Output directory",
+    show_default=True,
+    help="Output directory. If this is an absolute path, all upgraded OpenDSS master files will "
+    "redirect to absolute paths of the original master files. Otherwise, relative paths will be "
+    "used.",
     callback=lambda _, __, x: Path(x),
 )
 @click.option(
@@ -171,20 +175,20 @@ def run(
     config_file,
     aggregate_results,
     job_name,
-    jade_runtime_output,
+    output,
     fmt,
     force,
     console_log_level,
     file_log_level,
 ):
     """Run upgrade cost analysis simulation(s) from a config file."""
-    jobs_output_dir = jade_runtime_output / JOBS_OUTPUT_DIR
+    jobs_output_dir = output / JOBS_OUTPUT_DIR
     jobs_output_dir.mkdir(parents=True, exist_ok=True)
     config = UpgradeCostAnalysisSimulationModel.from_file(config_file)
 
     if job_name is None:
         jobs = config.jobs
-        log_file_dir = jade_runtime_output
+        log_file_dir = output
         log_filename = "run_upgrade_cost_analysis.log"
     else:
         jobs = []
@@ -239,7 +243,7 @@ def run(
 
     if aggregate_results and not all_failed:
         job_names = [x.name for x in jobs]
-        _aggregate_results(jade_runtime_output, log_file, job_names, fmt)
+        _aggregate_results(output, log_file, job_names, fmt)
 
     # This will return an error if any job fails. If the user cares about differentiating
     # passes and failures then they should run the jobs through Jade.
@@ -320,6 +324,7 @@ def run_job(job, config, jobs_output_dir, file_log_level):
 @click.command()
 @click.option(
     "-o",
+    "--output",
     "--jade-runtime-output",
     required=True,
     help="Output directory",
@@ -335,26 +340,25 @@ def run_job(job, config, jobs_output_dir, file_log_level):
 @click.option(
     "--verbose", is_flag=True, default=False, show_default=True, help="Enable verbose logging"
 )
-def aggregate_results(jade_runtime_output, fmt, verbose):
+def aggregate_results(output, fmt, verbose):
     """Aggregate results on a directory of upgrade cost analysis simulations."""
     level = logging.DEBUG if verbose else logging.INFO
-    log_file = jade_runtime_output / "upgrade_cost_analysis_aggregation.log"
+    log_file = output / "upgrade_cost_analysis_aggregation.log"
     setup_logging(__name__, log_file, console_level=level, packages=["disco"])
     logger.info(get_cli_string())
-    jade_config_file = jade_runtime_output / CONFIG_FILE
+    jade_config_file = output / CONFIG_FILE
     if not jade_config_file.exists():
         logger.error("aggregate-results is only supported when run through JADE.")
         sys.exit(1)
 
     job_names = (x["name"] for x in load_data(jade_config_file)["jobs"])
-    _aggregate_results(jade_runtime_output, log_file, job_names, fmt)
+    _aggregate_results(output, log_file, job_names, fmt)
 
 
-def _aggregate_results(jade_runtime_output, log_file, job_names, fmt):
+def _aggregate_results(output, log_file, job_names, fmt):
     upgrade_summary_table = []
     upgrade_costs_table = []
-    job_outputs = []
-    jobs_output_dir = jade_runtime_output / JOBS_OUTPUT_DIR
+    jobs_output_dir = output / JOBS_OUTPUT_DIR
     output_json = {
         "violation_summary": [],
         "upgrade_costs": [],
@@ -390,7 +394,7 @@ def _aggregate_results(jade_runtime_output, log_file, job_names, fmt):
 
     if upgrade_summary_table:
         if fmt == "csv":
-            filename = jade_runtime_output / "upgrade_summary.csv"
+            filename = output / "upgrade_summary.csv"
             serialize_table(upgrade_summary_table, filename)
         else:
             output_json["violation_summary"] += upgrade_summary_table
@@ -399,7 +403,7 @@ def _aggregate_results(jade_runtime_output, log_file, job_names, fmt):
 
     if upgrade_costs_table:
         if fmt == "csv":
-            filename = jade_runtime_output / "total_upgrade_costs.csv"
+            filename = output / "total_upgrade_costs.csv"
             serialize_table(upgrade_costs_table, filename)
         else:
             output_json["upgrade_costs"] += upgrade_costs_table
@@ -407,7 +411,7 @@ def _aggregate_results(jade_runtime_output, log_file, job_names, fmt):
         logger.warning("There were no upgrade_cost results.")
 
     if fmt == "json":
-        filename = jade_runtime_output / "upgrade_summary.json"
+        filename = output / "upgrade_summary.json"
         dump_data(JobUpgradeSummaryOutputModel(**output_json).dict(), filename, indent=2)
         logger.info("Output summary data to %s", filename)
 
