@@ -5,7 +5,7 @@ import numpy as np
 from jade.utils.timing_utils import track_timing, Timer
 from jade.utils.utils import load_data, dump_data
 
-from .common_functions import create_overall_output_file
+from .common_functions import create_overall_output_file, convert_dict_nan_to_none
 from disco import timer_stats_collector
 from disco.utils.custom_encoders import ExtendedJSONEncoder
 from disco.models.upgrade_cost_analysis_generic_input_model import load_cost_database
@@ -103,8 +103,8 @@ def compute_all_costs(
     output_summary = create_overall_output_file(upgrades_dict={"transformer": xfmr_upgrades_df, "line": line_upgrades_df, "voltage": voltage_upgrades_df},
                                                 costs_dict={"thermal": thermal_cost_df, "voltage": voltage_cost_df}, feeder_stats=feeder_stats)
     output_summary_model = AllUpgradesCostResultSummaryModel(equipment=output_summary.to_dict(orient="records"))
-    dump_data(output_summary_model.dict(by_alias=True), 
-              overall_output_summary_filepath, indent=2, cls=ExtendedJSONEncoder) 
+    dump_data(convert_dict_nan_to_none(output_summary_model.dict(by_alias=True)), 
+              overall_output_summary_filepath, indent=2, cls=ExtendedJSONEncoder, allow_nan=False) 
     
 
 def compute_transformer_costs(xfmr_upgrades_df, xfmr_cost_database, **kwargs):
