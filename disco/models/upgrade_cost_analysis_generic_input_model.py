@@ -1,5 +1,5 @@
 from typing import List, Optional, Set, Dict
-from pydantic import Field, root_validator, validator
+from pydantic import Field, root_validator, validator, ValidationError
 
 import pandas as pd
 
@@ -656,13 +656,37 @@ def load_cost_database(filepath):
     controls_cost_database = pd.read_excel(filepath, "control_changes")
     voltage_regulators_cost_database = pd.read_excel(filepath, "voltage_regulators")
     misc_database = pd.read_excel(filepath, "misc")
-    
+
+    transformers = xfmr_cost_database.to_dict(orient="records")
+    lines = line_cost_database.to_dict(orient="records")
+    control_changes = controls_cost_database.to_dict(orient="records")
+    voltage_regulators = voltage_regulators_cost_database.to_dict(orient="records")
+    misc = misc_database.to_dict(orient="records")
+
     # perform validation of input cost database using pydantic models
-    input_cost_model = UpgradeCostDatabaseModel(transformers=xfmr_cost_database.to_dict(orient="records"), 
-                                                lines=line_cost_database.to_dict(orient="records"), 
-                                                control_changes=controls_cost_database.to_dict(orient="records"), 
-                                                voltage_regulators=voltage_regulators_cost_database.to_dict(orient="records"), 
-                                                misc=misc_database.to_dict(orient="records"))
+    # Check the first row of each type to ensure that the columns are correct.
+    # If they aren't, pydantic will print errors for each row.
+    for name, rows, cls in (
+        ("transformers", transformers, TransformerUnitCostModel),
+        ("lines", lines, LineUnitCostModel),
+        ("control_changes", control_changes, ControlUnitCostModel),
+        ("voltage_regulators", voltage_regulators, VRegUnitCostModel),
+        ("misc", misc, MiscUnitCostModel),
+    ):
+        if rows:
+            try:
+                cls(**rows[0])
+            except ValidationError:
+                logger.error("Failed to validate cost database file=%s sheet=%s", filepath, name)
+                raise
+
+    UpgradeCostDatabaseModel(
+        transformers=transformers,
+        lines=lines,
+        control_changes=control_changes,
+        voltage_regulators=voltage_regulators,
+        misc=misc,
+    )
     return (
         xfmr_cost_database,
         line_cost_database,
