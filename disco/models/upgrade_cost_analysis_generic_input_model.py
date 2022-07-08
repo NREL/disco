@@ -510,8 +510,8 @@ class TransformerUnitCostModel(UpgradeParamsBaseModel):
 class LineUnitCostModel(UpgradeParamsBaseModel):
     """Contains Line Unit Cost Database Model"""
     
-    description: str = Field(
-        title="description",
+    upgrade_type: str = Field(
+        title="upgrade_type",
         description="Description of whether this is a new_line or reconductored_line",
     )
     phases: int = Field(
@@ -538,6 +538,10 @@ class LineUnitCostModel(UpgradeParamsBaseModel):
         title="cost_units",
         description="Unit for cost. This should be in USD",
     )
+    name: Optional[str] = Field(
+        title="name",
+        description="Line name. This is an optional parameter, and is not used.",
+    )
     
     @validator("line_placement")
     def check_line_placement(cls, line_placement):
@@ -551,11 +555,11 @@ class LineUnitCostModel(UpgradeParamsBaseModel):
             raise ValueError("Incorrect cost units")
         return cost_units
     
-    @validator("description")
-    def check_line_description(cls, description):
-        if description not in ("new_line", "reconductored_line"):
-            raise ValueError("Incorrect line description")
-        return description
+    @validator("upgrade_type")
+    def check_line_upgrade_type(cls, upgrade_type):
+        if upgrade_type not in ("new_line", "reconductored_line"):
+            raise ValueError("Incorrect line upgrade_type")
+        return upgrade_type
     
         
 class ControlUnitCostModel(UpgradeParamsBaseModel):

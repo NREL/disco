@@ -80,7 +80,8 @@ def determine_thermal_upgrades(
         # reassign from model to dataframes, so datatypes are maintained
         line_upgrade_options = pd.DataFrame.from_dict(input_catalog_model.dict(by_alias=True)["line"])
         xfmr_upgrade_options = pd.DataFrame.from_dict(input_catalog_model.dict(by_alias=True)["transformer"])
-        dump_data(input_catalog_model.dict(by_alias=True), internal_upgrades_technical_catalog_filepath, indent=2)  # write internal catalog to json
+        dump_data(input_catalog_model.dict(by_alias=True), 
+                  internal_upgrades_technical_catalog_filepath, indent=2)  # write internal catalog to json
     (
         initial_bus_voltages_df,
         initial_undervoltage_bus_list,
@@ -144,7 +145,7 @@ def determine_thermal_upgrades(
     )
     temp_results = dict(initial_results)
     output_results = {"violation_summary": [temp_results]}
-    dump_data(output_results, thermal_summary_file, indent=2)
+    dump_data(convert_dict_nan_to_none(output_results), thermal_summary_file, indent=2, allow_nan=False)
     title = "Feeder"
     plot_feeder(fig_folder=thermal_upgrades_directory, title=title, circuit_source=circuit_source, enable_detailed=True)
     # Mitigate thermal violations
@@ -294,4 +295,4 @@ def determine_thermal_upgrades(
     )
     temp_results = dict(final_results)
     output_results["violation_summary"].append(temp_results)
-    dump_data(output_results, thermal_summary_file, indent=2)
+    dump_data(convert_dict_nan_to_none(output_results), thermal_summary_file, indent=2, allow_nan=False)

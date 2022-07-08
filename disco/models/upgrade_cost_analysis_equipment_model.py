@@ -1,4 +1,5 @@
 import logging
+import numpy as np
 from typing import Any
 from pathlib import Path
 from typing import Optional
@@ -31,7 +32,7 @@ class UpgradeParamsBaseModel(BaseModel):
 
         """
         return cls(**load_data(filename))
-
+    
 
 class CommonLineParameters(UpgradeParamsBaseModel):
     """This model contains common line parameters that are used in linecode technical catalog, line technical catalog, line output upgrades. 

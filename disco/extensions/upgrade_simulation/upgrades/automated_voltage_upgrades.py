@@ -139,7 +139,7 @@ def determine_voltage_upgrades(
     )
     temp_results = dict(initial_results)
     output_results = {"violation_summary": [temp_results]}
-    dump_data(output_results, voltage_summary_file, indent=2)
+    dump_data(convert_dict_nan_to_none(output_results), voltage_summary_file, indent=2, allow_nan=False)
     circuit_source = orig_ckt_info["source_bus"]
     bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
                 voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)    
@@ -299,5 +299,5 @@ def determine_voltage_upgrades(
     )
     temp_results = dict(final_results)
     output_results["violation_summary"].append(temp_results)
-    dump_data(output_results, voltage_summary_file, indent=2)
+    dump_data(convert_dict_nan_to_none(output_results), voltage_summary_file, indent=2, allow_nan=False)
     
