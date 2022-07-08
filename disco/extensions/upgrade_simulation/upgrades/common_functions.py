@@ -1,7 +1,5 @@
 import os
-import ast
 import math
-import json
 import logging
 import pathlib
 
@@ -186,15 +184,24 @@ def create_upgraded_master_dss(dss_file_list, upgraded_master_dss_filepath, orig
     """Function to create master dss with redirects to upgrades dss file.
     The redirect paths in this file are:
     * absolute path - to the original master dss file
-    * relative path (relative to theupgraded_master dss file) if upgrades dss file"""
+    * relative path (relative to the upgraded_master dss file) if upgrades dss file"""
     command_list = []
     for filename in dss_file_list:
         if os.path.basename(filename) == original_master_filename:
-            new_filename = os.path.abspath(filename)
+            new_filename = _get_master_dss_filepath(filename, upgraded_master_dss_filepath)
         else:    
             new_filename = os.path.relpath(filename, os.path.dirname(upgraded_master_dss_filepath))
         command_list.append(f"Redirect {new_filename}")
     return command_list
+
+
+def _get_master_dss_filepath(original_master, upgraded_master):
+    if os.path.isabs(upgraded_master):
+        # Here it is not possible to use a relative path in all cases.
+        # The runtime output directory may have a different root than the source files.
+        return os.path.abspath(original_master)
+
+    return os.path.relpath(original_master, os.path.dirname(upgraded_master))
 
 
 def create_dataframe_from_nested_dict(user_dict, index_names):
