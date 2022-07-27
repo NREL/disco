@@ -89,11 +89,9 @@ def determine_thermal_upgrades(
         initial_buses_with_violations,
     ) = get_bus_voltages(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
     
-    thermal_config["param_transformer_upper_limit"] = thermal_config["transformer_upper_limit"]
-    thermal_config["param_line_upper_limit"] = thermal_config["line_upper_limit"]
-    initial_xfmr_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["param_transformer_upper_limit"], 
+    initial_xfmr_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["transformer_upper_limit"], 
                                                          equipment_type="transformer", **simulation_params)
-    initial_line_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["param_line_upper_limit"], 
+    initial_line_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["line_upper_limit"], 
                                                          equipment_type="line", ignore_switch=ignore_switch, **simulation_params)
     
     initial_overloaded_xfmr_list = list(initial_xfmr_loading_df.loc[initial_xfmr_loading_df["status"] == 
@@ -142,9 +140,9 @@ def determine_thermal_upgrades(
         max_line_loading=initial_line_loading_df['max_per_unit_loading'].max(),
         max_transformer_loading=initial_xfmr_loading_df['max_per_unit_loading'].max(),
         num_line_violations=len(initial_overloaded_line_list),
-        line_upper_limit=thermal_config['param_line_upper_limit'],
+        line_upper_limit=thermal_config['line_upper_limit'],
         num_transformer_violations=len(initial_overloaded_xfmr_list),
-        transformer_upper_limit=thermal_config['param_transformer_upper_limit']
+        transformer_upper_limit=thermal_config['transformer_upper_limit']
     )
     temp_results = convert_dict_nan_to_none(dict(initial_results))
     if os.path.exists(overall_output_summary_filepath):
@@ -155,11 +153,6 @@ def determine_thermal_upgrades(
     dump_data(overall_outputs, overall_output_summary_filepath, indent=2, allow_nan=False)
     title = "Feeder"
     plot_feeder(fig_folder=thermal_upgrades_directory, title=title, circuit_source=circuit_source, enable_detailed=True)
-    # if there are voltage violations, then reduce thermal violation threshold since resolving voltage violations could increase thermal loading slightly
-    # this avoids thermal violations from being introduced after voltage violations are resolved
-    if len(initial_buses_with_violations) > 0:  
-        thermal_config["transformer_upper_limit"] = thermal_config["param_transformer_upper_limit"] - 0.025 
-        thermal_config["line_upper_limit"] = thermal_config["param_line_upper_limit"] - 0.025
     # Mitigate thermal violations
     iteration_counter = 0
     # if number of violations is very high,  limit it to a small number
@@ -249,9 +242,9 @@ def determine_thermal_upgrades(
     reload_dss_circuit(dss_file_list=[upgraded_master_dss_filepath], commands_list=None, **simulation_params,)
     bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(voltage_upper_limit=voltage_upper_limit, 
                                                                                                            voltage_lower_limit=voltage_lower_limit, **simulation_params)
-    xfmr_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["param_transformer_upper_limit"], 
+    xfmr_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["transformer_upper_limit"], 
                                                 equipment_type="transformer", **simulation_params)
-    line_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["param_line_upper_limit"], 
+    line_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["line_upper_limit"], 
                                                 equipment_type="line", ignore_switch=ignore_switch, **simulation_params)
     overloaded_xfmr_list = list(xfmr_loading_df.loc[xfmr_loading_df["status"] == "overloaded"]["name"].unique())
     overloaded_line_list = list(line_loading_df.loc[line_loading_df["status"] == "overloaded"]["name"].unique())
@@ -301,9 +294,9 @@ def determine_thermal_upgrades(
         max_line_loading=line_loading_df['max_per_unit_loading'].max(),
         max_transformer_loading=xfmr_loading_df['max_per_unit_loading'].max(),
         num_line_violations=len(overloaded_line_list),
-        line_upper_limit=thermal_config['param_line_upper_limit'],
+        line_upper_limit=thermal_config['line_upper_limit'],
         num_transformer_violations=len(overloaded_xfmr_list),
-        transformer_upper_limit=thermal_config['param_transformer_upper_limit'],
+        transformer_upper_limit=thermal_config['transformer_upper_limit'],
     )
     temp_results = dict(final_results)
     temp_results = convert_dict_nan_to_none(temp_results)
