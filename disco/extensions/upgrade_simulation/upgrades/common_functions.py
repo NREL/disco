@@ -813,7 +813,7 @@ def get_all_transformer_info_instance(upper_limit=None, compute_loading=True):
     all_df["name"] = all_df.index.str.split(".").str[1]
     all_df["equipment_type"] = all_df.index.str.split(".").str[0]
     # extract only enabled lines
-    all_df = all_df.loc[all_df["enabled"]]
+    all_df = all_df.loc[all_df["enabled"] == True]
     all_df["conn"] = all_df["conn"].str.strip()  # remove trailing space from conn field
     # define empty new columns
     all_df['bus_names_only'] = None
