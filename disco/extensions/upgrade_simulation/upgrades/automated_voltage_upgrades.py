@@ -30,12 +30,11 @@ def determine_voltage_upgrades(
     thermal_upgrades_dss_filepath,
     voltage_upgrades_dss_filepath,
     upgraded_master_dss_filepath,
-    voltage_summary_file,
     output_json_voltage_upgrades_filepath,
     feeder_stats_json_file,
     voltage_upgrades_directory,
+    overall_output_summary_filepath,
     dc_ac_ratio,
-    output_folder,
     ignore_switch=True,
     verbose=False
 ):
@@ -110,7 +109,7 @@ def determine_voltage_upgrades(
     if os.path.exists(feeder_stats_json_file):
         feeder_stats = load_data(feeder_stats_json_file)
     else:
-        feeder_stats = {}
+        feeder_stats = {"stage_results": []}
     feeder_stats["stage_results"].append( get_upgrade_stage_stats(dss, upgrade_stage="initial", upgrade_type="voltage", xfmr_loading_df=initial_xfmr_loading_df, line_loading_df=initial_line_loading_df, 
                                         bus_voltages_df=initial_bus_voltages_df, regcontrols_df=orig_regcontrols_df, capacitors_df=orig_capacitors_df) )
     dump_data(feeder_stats, feeder_stats_json_file, indent=2)
@@ -137,9 +136,13 @@ def determine_voltage_upgrades(
         num_transformer_violations = len(initial_overloaded_xfmr_list),
         transformer_upper_limit = thermal_config['transformer_upper_limit'] 
     )
-    temp_results = dict(initial_results)
-    output_results = {"violation_summary": [temp_results]}
-    dump_data(convert_dict_nan_to_none(output_results), voltage_summary_file, indent=2, allow_nan=False)
+    temp_results = convert_dict_nan_to_none(dict(initial_results))
+    if os.path.exists(overall_output_summary_filepath):
+        overall_outputs = load_data(overall_output_summary_filepath)
+        overall_outputs["violation_summary"].append(temp_results)
+    else:
+        overall_outputs = {"violation_summary": [temp_results]}
+    dump_data(overall_outputs, overall_output_summary_filepath, indent=2, allow_nan=False)
     circuit_source = orig_ckt_info["source_bus"]
     bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
                 voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)    
@@ -297,7 +300,11 @@ def determine_voltage_upgrades(
         num_transformer_violations = len(overloaded_xfmr_list),
         transformer_upper_limit = thermal_config['transformer_upper_limit']
     )
-    temp_results = dict(final_results)
-    output_results["violation_summary"].append(temp_results)
-    dump_data(convert_dict_nan_to_none(output_results), voltage_summary_file, indent=2, allow_nan=False)
+    temp_results = convert_dict_nan_to_none(dict(final_results))
+    if os.path.exists(overall_output_summary_filepath):
+        overall_outputs = load_data(overall_output_summary_filepath)
+        overall_outputs["violation_summary"].append(temp_results)
+    else:
+        overall_outputs = {"violation_summary": [temp_results]}
+    dump_data(overall_outputs, overall_output_summary_filepath, indent=2, allow_nan=False)
     

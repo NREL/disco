@@ -421,6 +421,18 @@ def get_circuit_info():
     return data_dict
 
 
+def summarize_upgrades_outputs(overall_outputs):
+    """This function creates summary of upgrades and costs results"""
+    summary = {"results": {}}
+    violation_summary = pd.DataFrame(overall_outputs["violation_summary"])
+    thermal_violations = sum(violation_summary.loc[(violation_summary["stage"] == "final") & (violation_summary["upgrade_type"] == "thermal")][["num_line_violations", "num_transformer_violations"]].sum())
+    voltage_violations = sum(violation_summary.loc[(violation_summary["stage"] == "final") & (violation_summary["upgrade_type"] == "voltage")][["num_voltage_violation_buses"]].sum())
+    summary["results"]["num_violations"] = thermal_violations + voltage_violations
+    
+    summary["results"]["total_cost_usd"] = pd.DataFrame(overall_outputs["costs_per_equipment"])["total_cost_usd"].sum()
+    return summary
+
+
 def create_thermal_output_summary(all_original_equipment, all_latest_equipment, thermal_equipment_type_list,
                                     props_dict, thermal_cost_df, upgrades_dict, output_cols):
     """This function creates the thermal output summary file"""

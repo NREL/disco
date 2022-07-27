@@ -129,12 +129,12 @@ class UpgradeSimulation:
             thermal_config=thermal_config,
             pydss_volt_var_model=pydss_controller_model,
             internal_upgrades_technical_catalog_filepath=self.internal_upgrades_technical_catalog_filepath(),
-            thermal_summary_file=self.get_thermal_summary_json_file(),
             thermal_upgrades_dss_filepath=self.get_thermal_upgrades_dss_file(),
             upgraded_master_dss_filepath=self.get_upgraded_master_dss_file(),
             output_json_thermal_upgrades_filepath=self.get_thermal_upgrades_json_file(),
             feeder_stats_json_file = self.get_feeder_stats_json_file(),
             thermal_upgrades_directory=self.get_thermal_upgrades_directory(),
+            overall_output_summary_filepath=self.get_overall_output_summary_file(),
             dc_ac_ratio=dc_ac_ratio,
             verbose=verbose
         )
@@ -148,12 +148,11 @@ class UpgradeSimulation:
             thermal_upgrades_dss_filepath=self.get_thermal_upgrades_dss_file(),
             voltage_upgrades_dss_filepath=self.get_voltage_upgrades_dss_file(),
             upgraded_master_dss_filepath=self.get_upgraded_master_dss_file(),
-            voltage_summary_file=self.get_voltage_summary_json_file(),
             output_json_voltage_upgrades_filepath = self.get_voltage_upgrades_json_file(),
             feeder_stats_json_file = self.get_feeder_stats_json_file(),
             voltage_upgrades_directory=self.get_voltage_upgrades_directory(),
+            overall_output_summary_filepath=self.get_overall_output_summary_file(),
             dc_ac_ratio=dc_ac_ratio,
-            output_folder=self.job_output,
             verbose=verbose
         )
         compute_all_costs(
