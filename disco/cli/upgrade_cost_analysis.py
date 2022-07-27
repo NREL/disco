@@ -360,16 +360,18 @@ def _aggregate_results(output, log_file, job_names, fmt):
     upgrade_costs_table = []
     jobs_output_dir = output / JOBS_OUTPUT_DIR
     output_json = {
+        "results": [],
+        "costs_per_equipment": [],
         "violation_summary": [],
-        "upgrade_costs": [],
+        "equipment": [],
         "outputs": {"log_file": str(log_file), "jobs": []},
     }
 
     for name in job_names:
         job_path = jobs_output_dir / name
         job_info = JobInfo(name)
-        summary_table = get_upgrade_summary_table(job_path, job_info)
-        costs_table = get_total_upgrade_costs_table(job_path, job_info)
+        violation_summary_table = get_upgrade_summary_table(job_path, job_info)
+        costs_per_equipment_table = get_total_upgrade_costs_table(job_path, job_info)
         return_code = (
             0 if name == AGGREGATION_JOB_NAME else _read_job_return_code(jobs_output_dir, name)
         )
@@ -382,14 +384,14 @@ def _aggregate_results(output, log_file, job_names, fmt):
         if name != AGGREGATION_JOB_NAME:
             _delete_job_return_code_file(jobs_output_dir, name)
         if fmt == "csv":
-            upgrade_summary_table += summary_table
-            upgrade_costs_table += costs_table
+            upgrade_summary_table += violation_summary_table
+            upgrade_costs_table += costs_per_equipment_table
         else:
             # It might seem odd to go from dict to model back to dict, but this validates
             # fields and types.
-            for result in summary_table:
+            for result in violation_summary_table:
                 upgrade_summary_table.append(UpgradeViolationResultModel(**result).dict())
-            for result in costs_table:
+            for result in costs_per_equipment_table:
                 upgrade_costs_table.append(TotalUpgradeCostsResultModel(**result).dict())
 
     if upgrade_summary_table:

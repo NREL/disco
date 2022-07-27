@@ -86,7 +86,7 @@ def get_upgrade_summary_table(job_path, job_info):
         except pd.errors.EmptyDataError:
             logger.exception("Failed to parse upgrade summary file - '%s'", upgrade_summary_file)
             return []
-        
+        breakpoint()
         summary_result = []
         records = df.to_dict("records")
         for record in records:
@@ -98,8 +98,13 @@ def get_upgrade_summary_table(job_path, job_info):
 
     upgrade_summary = []
 
-    thermal_upgrade_summary_file = job_path / "ThermalUpgrades" / "thermal_violation_summary.json"
-    upgrade_summary.extend(_get_upgrade_summary("thermal", thermal_upgrade_summary_file))
+    overall_output_summary_file = job_path / "overall_output_summary.json"
+    if not overall_output_summary_file.exists():
+            return []
+    with open(overall_output_summary_file) as json_file:
+        overall_output_summary = json.load(json_file)
+    breakpoint()
+    upgrade_summary.extend(_get_upgrade_summary("thermal", overall_output_summary))
 
     voltage_upgrade_summary_file = job_path / "VoltageUpgrades" / "voltage_violation_summary.json"
     upgrade_summary.extend(_get_upgrade_summary("voltage", voltage_upgrade_summary_file))
