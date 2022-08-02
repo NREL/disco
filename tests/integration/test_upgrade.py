@@ -9,7 +9,6 @@ from tests.common import *
 
 def test_upgrade(cleanup):
     transform_cmd = f"{TRANSFORM_MODEL}  tests/data/smart-ds/substations upgrade -x -F -o {MODELS_DIR}"
-    breakpoint()
     config_cmd = f"{CONFIG_JOBS} upgrade {MODELS_DIR} -c {CONFIG_FILE}"
     submit_cmd = f"{SUBMIT_JOBS} {CONFIG_FILE} --output={OUTPUT}"
 
