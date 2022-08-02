@@ -19,7 +19,7 @@ UPGRADES_RESULTS_FILE = "upgrade_summary.json"
 def test_generic_upgrade_jade_workflow(cleanup):
     test_upgrade_file = setup_models()
     try:
-        for fmt in ("csv", "json"):
+        for fmt in ("json",):
             if Path(OUTPUT).exists():
                 shutil.rmtree(OUTPUT)
             config_cmd = f"disco upgrade-cost-analysis config {test_upgrade_file} -c {CONFIG_FILE} --fmt={fmt}"

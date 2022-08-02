@@ -82,8 +82,7 @@ Run post-processing to aggregate upgrade cost analysis results and create analys
 
     $ disco-internal make-upgrade-tables output
 
-If everything succeeds, it produces two aggregated tables: ``upgrade_summary.csv`` and
-``total_upgrade_costs.csv``. 
+If everything succeeds, it produces aggregated json file: ``upgrade_summary.json``
 
 
 Pipeline Workflow

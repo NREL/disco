@@ -21,8 +21,7 @@ POSTPROCESS_RESULTS = [
     "thermal_metrics_table.csv",
     "voltage_metrics_table.csv"
 ]
-TOTAL_UPGRADE_COSTS = "total_upgrade_costs.csv"
-UPGRADE_SUMMARY = "upgrade_summary.csv"
+UPGRADE_SUMMARY = "upgrade_summary.json"
 
 
 def find_non_base_case_job(jobs):

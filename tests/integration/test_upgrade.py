@@ -9,6 +9,7 @@ from tests.common import *
 
 def test_upgrade(cleanup):
     transform_cmd = f"{TRANSFORM_MODEL}  tests/data/smart-ds/substations upgrade -x -F -o {MODELS_DIR}"
+    breakpoint()
     config_cmd = f"{CONFIG_JOBS} upgrade {MODELS_DIR} -c {CONFIG_FILE}"
     submit_cmd = f"{SUBMIT_JOBS} {CONFIG_FILE} --output={OUTPUT}"
 
@@ -25,7 +26,7 @@ def test_upgrade(cleanup):
     # Run postprocess for aggregration
     postprocess_cmd = f"disco-internal make-upgrade-tables {OUTPUT}"
     assert run_command(postprocess_cmd) == 0
-    for name in [TOTAL_UPGRADE_COSTS, UPGRADE_SUMMARY]:
+    for name in [UPGRADE_SUMMARY]:
         filename = os.path.join(OUTPUT, name)
         assert os.path.exists(filename)
 
