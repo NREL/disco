@@ -4,8 +4,9 @@ import sys
 import time
 from collections import namedtuple
 from pathlib import Path
-
+import json
 import click
+import pandas as pd
 
 from jade.common import CONFIG_FILE, JOBS_OUTPUT_DIR
 from jade.extensions.generic_command import GenericCommandConfiguration
@@ -15,19 +16,13 @@ from jade.result import ResultsSummary
 from jade.utils.utils import get_cli_string, load_data, dump_data
 
 from disco.common import EXIT_CODE_GOOD, EXIT_CODE_GENERIC_ERROR
-from disco.cli.make_upgrade_tables import (
-    get_upgrade_summary_table,
-    get_total_upgrade_costs_table,
-    serialize_table,
-)
+from disco.cli.make_upgrade_tables import get_upgrade_tables, combine_job_outputs
 from disco.exceptions import DiscoBaseException, get_error_code_from_exception
 from disco.models.base import OpenDssDeploymentModel
 from disco.models.upgrade_cost_analysis_generic_input_model import (
     UpgradeCostAnalysisSimulationModel
 )
 from disco.models.upgrade_cost_analysis_generic_output_model import (
-    UpgradeViolationResultModel,
-    TotalUpgradeCostsResultModel,
     JobUpgradeSummaryOutputModel,
 )
 from disco.extensions.upgrade_simulation.upgrade_parameters import UpgradeParameters
@@ -356,8 +351,6 @@ def aggregate_results(output, fmt, verbose):
 
 
 def _aggregate_results(output, log_file, job_names, fmt):
-    upgrade_summary_table = []
-    upgrade_costs_table = []
     jobs_output_dir = output / JOBS_OUTPUT_DIR
     output_json = {
         "results": [],
@@ -366,12 +359,23 @@ def _aggregate_results(output, log_file, job_names, fmt):
         "equipment": [],
         "outputs": {"log_file": str(log_file), "jobs": []},
     }
-
+    empty_tables = {"results": [], 'costs_per_equipment': [], 'violation_summary': [], 'equipment': []}
     for name in job_names:
         job_path = jobs_output_dir / name
         job_info = JobInfo(name)
-        violation_summary_table = get_upgrade_summary_table(job_path, job_info)
-        costs_per_equipment_table = get_total_upgrade_costs_table(job_path, job_info)
+        job_keyword = "name"
+        job_name = getattr(job_info, job_keyword)
+        overall_output_summary_file = job_path / "overall_output_summary.json"
+        if not overall_output_summary_file.exists():
+           tables = empty_tables
+        try:
+            with open(overall_output_summary_file) as json_file:
+                data = json.load(json_file)
+        except pd.errors.EmptyDataError:
+            logger.exception("Failed to parse overall output summary file - '%s'", overall_output_summary_file)
+            tables = empty_tables
+
+        tables = get_upgrade_tables(data, job_keyword, job_name)  # data with added job name in all records
         return_code = (
             0 if name == AGGREGATION_JOB_NAME else _read_job_return_code(jobs_output_dir, name)
         )
@@ -383,39 +387,19 @@ def _aggregate_results(output, log_file, job_names, fmt):
         output_json["outputs"]["jobs"].append(outputs)
         if name != AGGREGATION_JOB_NAME:
             _delete_job_return_code_file(jobs_output_dir, name)
-        if fmt == "csv":
-            upgrade_summary_table += violation_summary_table
-            upgrade_costs_table += costs_per_equipment_table
-        else:
-            # It might seem odd to go from dict to model back to dict, but this validates
-            # fields and types.
-            for result in violation_summary_table:
-                upgrade_summary_table.append(UpgradeViolationResultModel(**result).dict())
-            for result in costs_per_equipment_table:
-                upgrade_costs_table.append(TotalUpgradeCostsResultModel(**result).dict())
+       
 
-    if upgrade_summary_table:
-        if fmt == "csv":
-            filename = output / "upgrade_summary.csv"
-            serialize_table(upgrade_summary_table, filename)
-        else:
-            output_json["violation_summary"] += upgrade_summary_table
-    else:
-        logger.warning("There were no upgrade_summary results.")
-
-    if upgrade_costs_table:
-        if fmt == "csv":
-            filename = output / "total_upgrade_costs.csv"
-            serialize_table(upgrade_costs_table, filename)
-        else:
-            output_json["upgrade_costs"] += upgrade_costs_table
-    else:
-        logger.warning("There were no upgrade_cost results.")
-
+        output_json = combine_job_outputs(output_json, tables)
+        
+    for key in output_json: 
+        if not output_json[key]:
+            logger.warning("There were no %s results.", key)
     if fmt == "json":
         filename = output / "upgrade_summary.json"
         dump_data(JobUpgradeSummaryOutputModel(**output_json).dict(), filename, indent=2)
         logger.info("Output summary data to %s", filename)
+    # elif fmt == "csv":
+        
 
 
 @click.group()

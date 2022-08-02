@@ -185,14 +185,14 @@ def identify_parallel_lines(options, object_row, parallel_lines_limit, **kwargs)
         if (new_config_type == "geometry") or (new_config_type == "linecode"):              
             s = f"New Line.{new_name} bus1={object_row['bus1']} bus2={object_row['bus2']} length={object_row['length']} " \
                 f"units={object_row['units']} {new_config_type}={chosen_option[new_config_type]} " \
-                f"phases={chosen_option['phases']} normamps={chosen_option['normamps']} enabled=True"
+                f"phases={chosen_option['phases']} normamps={chosen_option['normamps']} enabled=Yes"
             commands_list.append(s)
         # if line geometry and line code is not available
         # TODO decide what other parameters need to be defined when linecode or geometry is not present
         else:
             s = f"New Line.{object_row['name']} bus1={object_row['bus1']} bus2={object_row['bus2']} length={object_row['length']} " \
                 f"units={object_row['units']} phases={chosen_option['phases']} " \
-                f"normamps={chosen_option['normamps']} enabled=True"
+                f"normamps={chosen_option['normamps']} enabled=Yes"
             commands_list.append(s)
         temp_dict.pop("choose_parallel_metric")
         temp_dict.pop("num_parallel_raw")

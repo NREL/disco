@@ -813,7 +813,7 @@ def get_all_transformer_info_instance(upper_limit=None, compute_loading=True):
     all_df["name"] = all_df.index.str.split(".").str[1]
     all_df["equipment_type"] = all_df.index.str.split(".").str[0]
     # extract only enabled lines
-    all_df = all_df.loc[all_df["enabled"] == True]
+    all_df = all_df.loc[all_df["enabled"] == "Yes"]
     all_df["conn"] = all_df["conn"].str.strip()  # remove trailing space from conn field
     # define empty new columns
     all_df['bus_names_only'] = None
@@ -827,7 +827,10 @@ def get_all_transformer_info_instance(upper_limit=None, compute_loading=True):
     for index, row in all_df.iterrows():
         all_df.at[index, "kVs"] = [float(a) for a in row["kVs"]]
         all_df.at[index, "kVAs"] = [float(a) for a in row["kVAs"]]
-        all_df.at[index, "Xscarray"] = [float(a) for a in row["Xscarray"]]
+        try:
+            all_df.at[index, "Xscarray"] = [float(a) for a in row["Xscarray"]]  # before opendssdirect version 0.7.0
+        except ValueError:
+            all_df.at[index, "Xscarray"] = [float(a) for a in row["Xscarray"][0].split(" ")]  # in opendssdirect version 0.7.0
         all_df.at[index, "%Rs"] = [float(a) for a in row["%Rs"]]
         all_df.at[index, "taps"] = [float(a) for a in row["taps"]]
         all_df.at[index, "bus_names_only"] = [a.split(".")[0].lower() for a in row["buses"]]
@@ -915,7 +918,7 @@ def get_all_line_info_instance(upper_limit=None, compute_loading=True, ignore_sw
     all_df["name"] = all_df.index.str.split(".").str[1]
     all_df["equipment_type"] = all_df.index.str.split(".").str[0]
     # extract only enabled lines
-    all_df = all_df.loc[all_df["enabled"] == True]
+    all_df = all_df.loc[all_df["enabled"] == "Yes"]
     all_df = add_info_line_definition_type(all_df)
     # define empty new columns
     all_df["kV"] = np.nan
@@ -963,10 +966,10 @@ def get_all_line_info_instance(upper_limit=None, compute_loading=True, ignore_sw
     all_df = all_df.reset_index(drop=True).set_index('name')
     all_df["kV"] = all_df["kV"].round(5)
     # add units to switch length (needed to plot graph). By default, length of switch is taken as max
-    all_df.loc[(all_df.units == 'none') & (all_df.Switch == True), 'units'] = 'm'
+    all_df.loc[(all_df.units == 'none') & (all_df.Switch == "Yes"), 'units'] = 'm'
     # if switch is to be ignored
     if ignore_switch:
-        all_df = all_df.loc[all_df['Switch'] == False]
+        all_df = all_df.loc[all_df['Switch'] == "No"]
     return all_df.reset_index()
 
 
@@ -1094,7 +1097,7 @@ def get_regcontrol_info(correct_PT_ratio=False, nominal_voltage=None):
         if sub_xfmr_present and (row["transformer"] == sub_xfmr_name):  # if reg control is at substation xfmr
             all_df.at[index, 'at_substation_xfmr_flag'] = True
     all_df = all_df.reset_index(drop=True).set_index('name')        
-    all_df = all_df.loc[all_df['enabled'] == True]
+    all_df = all_df.loc[all_df['enabled'] == "Yes"]
     return all_df.reset_index()
 
 
@@ -1166,7 +1169,7 @@ def get_cap_control_info():
         return pd.DataFrame(columns=capcontrol_columns)
     all_df["name"] = all_df.index.str.split(".").str[1]
     all_df["equipment_type"] = all_df.index.str.split(".").str[0]
-    float_columns = ["CTPhase", "CTratio", "DeadTime", "Delay", "DelayOFF", "OFFsetting", "ONsetting", "PTratio",
+    float_columns = ["CTratio", "DeadTime", "Delay", "DelayOFF", "OFFsetting", "ONsetting", "PTratio",
                      "Vmax", "Vmin"]
     all_df[float_columns] = all_df[float_columns].astype(float)
     all_df = all_df.reset_index(drop=True).set_index("name")
@@ -1623,9 +1626,9 @@ def apply_uniform_timepoint_multipliers(multiplier_name, field, **kwargs):
     bool
     """
     if field == "with_pv":
-        check_dss_run_command("BatchEdit PVSystem..* Enabled=True")
+        check_dss_run_command("BatchEdit PVSystem..* Enabled=Yes")
     elif field == "without_pv":    
-        check_dss_run_command("BatchEdit PVSystem..* Enabled=False")
+        check_dss_run_command("BatchEdit PVSystem..* Enabled=No")
     else:
         raise Exception(f"Unknown parameter {field} passed in uniform timepoint multiplier dict."
                         f"Acceptable values are 'with_pv', 'without_pv'")
