@@ -15,7 +15,7 @@ from jade.common import CONFIG_FILE, JOBS_OUTPUT_DIR
 from jade.loggers import setup_logging
 from jade.jobs.job_configuration_factory import create_config_from_file
 from jade.jobs.results_aggregator import ResultsAggregator
-from jade.utils.utils import dump_data
+from jade.utils.utils import load_data, dump_data
 
 from disco.models.upgrade_cost_analysis_generic_output_model import (
     UpgradeViolationResultModel,
@@ -84,8 +84,7 @@ def parse_job_results(job, output_path):
     if not overall_output_summary_file.exists():
         return empty_tables
     try:
-        with open(overall_output_summary_file) as json_file:
-            data = json.load(json_file)
+        data = load_data(overall_output_summary_file)
     except pd.errors.EmptyDataError:
         logger.exception("Failed to parse overall output summary file - '%s'", overall_output_summary_file)
         return empty_tables

@@ -363,14 +363,12 @@ def _aggregate_results(output, log_file, job_names, fmt):
     for name in job_names:
         job_path = jobs_output_dir / name
         job_info = JobInfo(name)
-        job_keyword = "name"
-        job_name = getattr(job_info, job_keyword)
+        job_name = getattr(job_info, "name")
         overall_output_summary_file = job_path / "overall_output_summary.json"
         if not overall_output_summary_file.exists():
            tables = empty_tables
         try:
-            with open(overall_output_summary_file) as json_file:
-                data = json.load(json_file)
+            data = load_data(overall_output_summary_file)
         except pd.errors.EmptyDataError:
             logger.exception("Failed to parse overall output summary file - '%s'", overall_output_summary_file)
             tables = empty_tables
