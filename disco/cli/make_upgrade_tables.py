@@ -79,15 +79,8 @@ def parse_job_results(job, output_path):
         sample=deployment.project_data["sample"],
         penetration_level=deployment.project_data["penetration_level"],
     )
-    empty_tables = {"results": [], 'costs_per_equipment': [], 'violation_summary': [], 'equipment': []}
     overall_output_summary_file = job_path / "overall_output_summary.json"
-    if not overall_output_summary_file.exists():
-        return empty_tables
-    try:
-        data = load_data(overall_output_summary_file)
-    except pd.errors.EmptyDataError:
-        logger.exception("Failed to parse overall output summary file - '%s'", overall_output_summary_file)
-        return empty_tables
+    data = load_data(overall_output_summary_file)
     tables = get_upgrade_tables(data, job_keyword="name", job_name=job_info.name)
     return tables
 

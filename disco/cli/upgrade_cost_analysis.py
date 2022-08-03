@@ -359,39 +359,34 @@ def _aggregate_results(output, log_file, job_names, fmt):
         "equipment": [],
         "outputs": {"log_file": str(log_file), "jobs": []},
     }
-    empty_tables = {"results": [], 'costs_per_equipment': [], 'violation_summary': [], 'equipment': []}
+    logger.info("Start result aggregation.")
     for name in job_names:
+        if name == AGGREGATION_JOB_NAME:
+            continue
         job_path = jobs_output_dir / name
         job_info = JobInfo(name)
         job_name = getattr(job_info, "name")
         overall_output_summary_file = job_path / "overall_output_summary.json"
-        if not overall_output_summary_file.exists():
-           tables = empty_tables
-        try:
-            data = load_data(overall_output_summary_file)
-        except pd.errors.EmptyDataError:
-            logger.exception("Failed to parse overall output summary file - '%s'", overall_output_summary_file)
-            tables = empty_tables
-
-        tables = get_upgrade_tables(data, job_keyword, job_name)  # data with added job name in all records
         return_code = (
-            0 if name == AGGREGATION_JOB_NAME else _read_job_return_code(jobs_output_dir, name)
+            _read_job_return_code(jobs_output_dir, name)
         )
+        _delete_job_return_code_file(jobs_output_dir, name)
+        if return_code != 0:
+            logger.info("Skip failed job %s", name)
+            continue
+        data = load_data(overall_output_summary_file)
+        tables = get_upgrade_tables(data, "name", job_name)  # data with added job name in all records
         outputs = {
             "upgraded_opendss_model_file": str(jobs_output_dir / name / "upgraded_master.dss"),
             "return_code": return_code,
             "feeder_stats": str(jobs_output_dir / name / "feeder_stats.json"),
         }
         output_json["outputs"]["jobs"].append(outputs)
-        if name != AGGREGATION_JOB_NAME:
-            _delete_job_return_code_file(jobs_output_dir, name)
-       
-
         output_json = combine_job_outputs(output_json, tables)
         
     for key in output_json: 
         if not output_json[key]:
-            logger.warning("There were no %s results.", key)
+            logger.warning("There were no aggregated %s results.", key)
     if fmt == "json":
         filename = output / "upgrade_summary.json"
         dump_data(JobUpgradeSummaryOutputModel(**output_json).dict(), filename, indent=2)
