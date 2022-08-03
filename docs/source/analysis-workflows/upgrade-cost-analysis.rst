@@ -45,7 +45,7 @@ Here are optional parameters that you can customize in the same file:
 .. code-block::
 
     [thermal_upgrade_params]
-    parallel_transformer_limit = 4
+    parallel_transformers_limit = 4
     parallel_lines_limit = 4
     upgrade_iteration_threshold = 5
     timepoint_multipliers = {}

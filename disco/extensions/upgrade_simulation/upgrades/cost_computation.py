@@ -517,6 +517,8 @@ def compute_voltage_regcontrol_cost(voltage_upgrades_df, vreg_control_cost_datab
             else:  # if costs are not present for this transformer, then choose from other xfmr database rated_kVA
                 backup_deciding_property = "rated_kVA"
                 closest = vreg_xfmr_cost_database.loc[abs(vreg_xfmr_cost_database[backup_deciding_property] - added_xfmr_details[backup_deciding_property]).idxmin()].copy()
+                if isinstance(closest, pd.DataFrame):
+                    closest = closest.iloc[0]
                 output_row[output_cost_field] = closest["cost"]
                 output_row[output_count_field] = 1
                 for key, value in closest.items():  # make it json serializable

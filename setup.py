@@ -67,7 +67,7 @@ install_requires = [
     "filelock",
     "matplotlib",
     "networkx",
-    "opendssdirect.py>=0.6.0",
+    "opendssdirect.py>=0.7.0",
     "openpyxl",
     "pandas",
     "pydantic>=1.6.0",

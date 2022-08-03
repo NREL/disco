@@ -260,7 +260,7 @@ def define_xfmr_object(xfmr_name, xfmr_info_series, action_type, buses_list=None
 
 @track_timing(timer_stats_collector)
 def correct_xfmr_violations(xfmr_loading_df, xfmr_design_pu, xfmr_upgrade_options,
-                            parallel_transformer_limit, **kwargs):
+                            parallel_transformers_limit, **kwargs):
     """This function determines transformer upgrades to correct transformer violations.
     It also updates the opendss model with upgrades.
 
@@ -269,7 +269,7 @@ def correct_xfmr_violations(xfmr_loading_df, xfmr_design_pu, xfmr_upgrade_option
     xfmr_loading_df
     xfmr_design_pu
     xfmr_upgrade_options
-    parallel_transformer_limit
+    parallel_transformers_limit
 
     Returns
     -------
@@ -344,7 +344,7 @@ def correct_xfmr_violations(xfmr_loading_df, xfmr_design_pu, xfmr_upgrade_option
             # dont oversize. Instead, place equipment in parallel
             else:
                 parallel_xfmr_commands, temp_upgrades_dict_parallel = identify_parallel_xfmrs(upgrade_options=options, object_row=row,
-                                                                                         parallel_transformer_limit=parallel_transformer_limit)
+                                                                                         parallel_transformers_limit=parallel_transformers_limit)
                 # run command for all new parallel equipment added, that resolves overloading for one equipment
                 for command_item in parallel_xfmr_commands:
                     check_dss_run_command(command_item)
@@ -370,14 +370,14 @@ def correct_xfmr_violations(xfmr_loading_df, xfmr_design_pu, xfmr_upgrade_option
 
 
 @track_timing(timer_stats_collector)
-def identify_parallel_xfmrs(upgrade_options, object_row, parallel_transformer_limit):
+def identify_parallel_xfmrs(upgrade_options, object_row, parallel_transformers_limit):
     """This function identifies parallel transformer solutions, when a direct upgrade solution is not available from catalogue
 
     Parameters
     ----------
     options
     row
-    parallel_transformer_limit
+    parallel_transformers_limit
 
     Returns
     -------
@@ -393,7 +393,7 @@ def identify_parallel_xfmrs(upgrade_options, object_row, parallel_transformer_li
                                    object_row["amp_limit_per_phase"]) / upgrade_options["amp_limit_per_phase"]
     upgrade_options["num_parallel"] = upgrade_options["num_parallel_raw"].apply(np.ceil)
     upgrade_options["choose_parallel_metric"] = upgrade_options["num_parallel"] - upgrade_options["num_parallel_raw"]
-    upgrade_options = upgrade_options.loc[upgrade_options["num_parallel"] <= parallel_transformer_limit]
+    upgrade_options = upgrade_options.loc[upgrade_options["num_parallel"] <= parallel_transformers_limit]
     if len(upgrade_options) == 0:
         raise ExceededParallelTransformersLimit(f"Number of parallel transformers is greater than limit!")
     # choose option that has the least value of this metric- since that represents the per unit oversizing
