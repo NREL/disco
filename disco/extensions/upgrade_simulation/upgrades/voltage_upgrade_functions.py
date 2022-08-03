@@ -60,7 +60,7 @@ def edit_capacitor_settings_for_convergence(voltage_config=None, control_command
 
     new_control_command = control_command
     control_command = control_command.replace('New', 'Edit')
-    control_command = re.sub("enabled=True", "enabled=False", control_command)
+    control_command = re.sub("enabled=Yes", "enabled=No", control_command)
     check_dss_run_command(control_command)  # disable and run previous control command
 
     new_control_command = re.sub("DeadTime=\d+", 'DeadTime=' +
@@ -94,7 +94,7 @@ def correct_capacitor_parameters(default_capacitor_settings, orig_capacitors_df,
                                  f"PTphase={default_capacitor_settings['PTphase']} " \
                                  f"Delay={default_capacitor_settings['capONdelay']} " \
                                  f"DelayOFF={default_capacitor_settings['capOFFdelay']} " \
-                                 f"DeadTime={default_capacitor_settings['capdeadtime']} enabled=True"
+                                 f"DeadTime={default_capacitor_settings['capdeadtime']} enabled=Yes"
     # Correct settings of those cap banks for which cap control object is available
     capacitors_commands_list = []
     capcontrol_present_df = orig_capacitors_df.loc[orig_capacitors_df['capcontrol_present'] == 'capcontrol']
@@ -423,7 +423,7 @@ def correct_regcontrol_parameters(orig_regcontrols_df, **kwargs):
     list
     """
     # correct regcontrol parameters settings
-    default_regcontrol_command = " enabled=True"
+    default_regcontrol_command = " enabled=Yes"
     orig_string = ' !original, corrected PTratio only'
     regcontrols_commands_list = []
     for index, row in orig_regcontrols_df.iterrows():
@@ -619,13 +619,13 @@ def add_new_regcontrol_command(xfmr_info_series, default_regcontrol_settings, no
     temp_df = get_regcontrol_info()
     if not temp_df.empty:
         enabled_regcontrol_exists = len(
-            temp_df.loc[(temp_df['name'] == regcontrol_info_series['regcontrol_name']) & (temp_df['enabled'] == True)]) > 0
+            temp_df.loc[(temp_df['name'] == regcontrol_info_series['regcontrol_name']) & (temp_df['enabled'] == "Yes")]) > 0
         if enabled_regcontrol_exists:
             logger.debug(f"Enabled regcontrol already exists: {regcontrol_info_series['name']}")
             return None
     if not temp_df.empty:
         disabled_regcontrol_exists = len(
-            temp_df.loc[(temp_df['name'] == regcontrol_info_series['regcontrol_name']) & (temp_df['enabled'] == False)]) > 0
+            temp_df.loc[(temp_df['name'] == regcontrol_info_series['regcontrol_name']) & (temp_df['enabled'] == "No")]) > 0
         if disabled_regcontrol_exists:
             action_type = 'Edit'
     new_regcontrol_command = define_regcontrol_object(regcontrol_name=regcontrol_info_series['regcontrol_name'],
@@ -663,7 +663,7 @@ def define_regcontrol_object(regcontrol_name, action_type, regcontrol_info_serie
     for property_name in general_property_list:
         temp_s = f" {property_name}={regcontrol_info_series[property_name]}"
         command_string = command_string + temp_s
-    command_string = command_string + " enabled=True"
+    command_string = command_string + " enabled=Yes"
     return command_string
 
 
@@ -969,7 +969,7 @@ def add_new_node_and_xfmr(node, circuit_source, xfmr_conn_type=None, action_type
                                   f"windings=2 buses=({chosen_line_info['bus1']}, {new_node}) " \
                                   f"conns=({xfmr_conn_type},{xfmr_conn_type}) kvs=({kV_DT},{kV_DT}) " \
                                   f"kvas=({kVA},{kVA}) xhl=0.001 wdg=1 %r=0.001 wdg=2 %r=0.001 Maxtap=1.1 Mintap=0.9 " \
-                                  f"enabled=True"
+                                  f"enabled=Yes"
         property_list = ["phases", "windings", "buses", "conns", "kvs", "kvas", "xhl", "%Rs", "Maxtap", "Mintap"]
         edit_line_command_string = f"Edit Line.{chosen_line_info['name']} bus1={new_node}"
 
@@ -1008,7 +1008,7 @@ def add_new_node_and_xfmr(node, circuit_source, xfmr_conn_type=None, action_type
         new_xfmr_command_string = f"{action_type} Transformer.{xfmr_name} phases={chosen_line_info['phases']} " \
                                   f"windings=2 buses=({new_node},{chosen_line_info['bus2']}) " \
                                   f"conns=({xfmr_conn_type},{xfmr_conn_type}) kvs=({kV_DT},{kV_DT}) kvas=({kVA},{kVA}) xhl=0.001 " \
-                                  f"wdg=1 %r=0.001 wdg=2 %r=0.001 Maxtap=1.1 Mintap=0.9 enabled=True"
+                                  f"wdg=1 %r=0.001 wdg=2 %r=0.001 Maxtap=1.1 Mintap=0.9 enabled=Yes"
         edit_line_command_string = f"Edit Line.{chosen_line_info['name']} bus2={new_node}"
 
     check_dss_run_command(edit_line_command_string)
@@ -1058,7 +1058,7 @@ def disable_new_xfmr_and_edit_line(transformer_name_to_disable, line_name_to_mod
     xfmr_sec_bus = chosen_xfmr['buses'][1]  # contains terminal information as well
 
     # disable xfmr and edit xfmr buses to be the same (primary bus). (This is because primary bus was the new node)
-    command_string = f"Edit Transformer.{transformer_name_to_disable} enabled=False"
+    command_string = f"Edit Transformer.{transformer_name_to_disable} enabled=No"
     check_dss_run_command(command_string)
     commands_list.append(command_string)
     command_string = f"Edit Transformer.{transformer_name_to_disable} buses=({xfmr_prim_bus}, {xfmr_prim_bus})"
@@ -1102,7 +1102,7 @@ def add_new_regcontrol_at_node(node, default_regcontrol_settings, nominal_voltag
     regcontrols_df = get_regcontrol_info()
     enabled_regcontrol_exists = False
     if not regcontrols_df.empty: 
-        enabled_regcontrols_df = regcontrols_df.loc[regcontrols_df['enabled'] == True]
+        enabled_regcontrols_df = regcontrols_df.loc[regcontrols_df['enabled'] == "Yes"]
         enabled_regcontrol_exists = len(enabled_regcontrols_df.loc[(enabled_regcontrols_df['transformer_bus1'] == node) | (
                                         enabled_regcontrols_df['transformer_bus2'] == node)]) > 0
     if enabled_regcontrol_exists:
@@ -1192,8 +1192,8 @@ def test_new_regulator_placement_on_common_nodes(voltage_upper_limit, voltage_lo
         # if enabled transformer is already present at this node, skip.
         # These pre-existing xfmrs will be "primary to secondary DTs" which we do not want to control.
         # Regulators are primarily in line and not on individual distribution transformers
-        if len(all_xfmr_df[(all_xfmr_df["primary_bus"].str.lower() == node.lower()) & (all_xfmr_df["enabled"] == True)]) or \
-            len(all_xfmr_df[(all_xfmr_df["secondary_bus"].str.lower() == node.lower()) & (all_xfmr_df["enabled"] == True)]):
+        if len(all_xfmr_df[(all_xfmr_df["primary_bus"].str.lower() == node.lower()) & (all_xfmr_df["enabled"] == "Yes")]) or \
+            len(all_xfmr_df[(all_xfmr_df["secondary_bus"].str.lower() == node.lower()) & (all_xfmr_df["enabled"] == "Yes")]):
             logger.debug("Distribution transformer already exists on this node. Skip.")
             continue
         # add new transformer at this node
@@ -1608,7 +1608,7 @@ def disable_previous_clustering_option(cluster_group_info_dict):
         if cluster_group_info_dict[cluster_id] is None:
             return
         command_list = cluster_group_info_dict[cluster_id]['disable_new_devices_command_list']
-        command_list.append(f"Edit regcontrol.{cluster_group_info_dict[cluster_id]['new_regcontrol_name']} enabled=False")  # disabling regcontrol command does not exist in the previous list
+        command_list.append(f"Edit regcontrol.{cluster_group_info_dict[cluster_id]['new_regcontrol_name']} enabled=No")  # disabling regcontrol command does not exist in the previous list
         dss_run_command_list(command_list)  # runs each command in this list, in opendss
         dss_solve_and_check(raise_exception=True)
     return
@@ -1653,7 +1653,7 @@ def plot_feeder(fig_folder, title, circuit_source=None, enable_detailed=False):
             NodeLegend["Capacitor"] = list(cap_df['bus1'].str.split(".").str[0].unique())
         reg_df =  get_regcontrol_info()
         if not reg_df.empty:
-            reg_df = reg_df.loc[reg_df.enabled == True]
+            reg_df = reg_df.loc[reg_df.enabled == "Yes"]
         if not reg_df.empty:
             NodeLegend["Voltage Regulator"] = list(reg_df['transformer_bus1'].unique())
     colored_nodelist = []
@@ -1707,7 +1707,7 @@ def plot_voltage_violations(fig_folder, title, buses_with_violations, circuit_so
             NodeLegend["Capacitor"] = list(cap_df['bus1'].str.split(".").str[0].unique())
         reg_df =  get_regcontrol_info()
         if not reg_df.empty:
-            reg_df = reg_df.loc[reg_df.enabled == True]
+            reg_df = reg_df.loc[reg_df.enabled == "Yes"]
         if not reg_df.empty:
             NodeLegend["Voltage Regulator"] = list(reg_df['transformer_bus1'].unique())
                            
@@ -2023,7 +2023,7 @@ def get_regulator_upgrades(orig_regcontrols_df, new_regcontrols_df, orig_xfmrs_d
     # if there are any upgrades & enabled, only then write to the file
     if reg_upgrades:
         for ctrl_name in reg_upgrades:
-            if new_reg_controls[ctrl_name]['enabled'] == True:
+            if new_reg_controls[ctrl_name]['enabled'] == "Yes":
                 final_reg_upgrades["reg_settings"] = True  # settings are changed
                 final_reg_upgrades["reg_ctrl_name"] = ctrl_name.lower()
                 final_reg_upgrades["reg_vsp"] = float(new_reg_controls[ctrl_name]["vreg"])

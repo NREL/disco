@@ -342,6 +342,17 @@ class UpgradesCostResultSummaryModel(UpgradeParamsBaseModel):
     )    
 
 
+class ResultSummaryModel(UpgradeParamsBaseModel):
+    """Contains final results summary"""
+    total_cost: str = Field(
+        title="equipment_type",
+        description="Type of equipment",
+    )
+    equipment_name: str = Field(
+        title="equipment_name",
+        description="Name of equipment",
+    )
+
 class AllUpgradesCostResultSummaryModel(UpgradeParamsBaseModel):
     """Contains All Equipment output"""
     equipment: List[UpgradesCostResultSummaryModel] = Field(
@@ -415,16 +426,23 @@ class UpgradeSimulationOutputModel(UpgradeParamsBaseModel):
 
 class JobUpgradeSummaryOutputModel(UpgradeParamsBaseModel):
     """Contains results from all jobs in the simulation."""
-
-    violation_summary: List[UpgradeViolationResultModel] = Field(
-        title="upgrade_summary",
-        description="Contains thermal or voltage upgrade results for each job",
-    )
-    upgrade_costs: List[TotalUpgradeCostsResultModel] = Field(
-        title="total_upgrade_costs",
-        description="Contains upgrade cost information for each jobs",
+    results: List = Field(
+        title="results",
+        description="Results summary for each job",
     )
     outputs: UpgradeSimulationOutputModel = Field(
         title="outputs",
         description="Outputs for each job in the simulation.",
+    )
+    violation_summary: List[UpgradeViolationResultModel] = Field(
+        title="upgrade_summary",
+        description="Contains thermal or voltage upgrade results for each job",
+    )
+    costs_per_equipment: List[TotalUpgradeCostsResultModel] = Field(
+        title="costs_per_equipment",
+        description="Contains upgrade cost information for each job by equipment type",
+    )    
+    equipment: List = Field(
+        title="equipment",
+        description="Contains equipment information for each job",
     )

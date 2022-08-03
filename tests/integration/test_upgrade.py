@@ -25,7 +25,7 @@ def test_upgrade(cleanup):
     # Run postprocess for aggregration
     postprocess_cmd = f"disco-internal make-upgrade-tables {OUTPUT}"
     assert run_command(postprocess_cmd) == 0
-    for name in [TOTAL_UPGRADE_COSTS, UPGRADE_SUMMARY]:
+    for name in [UPGRADE_SUMMARY]:
         filename = os.path.join(OUTPUT, name)
         assert os.path.exists(filename)
 

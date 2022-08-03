@@ -27,12 +27,12 @@ def determine_thermal_upgrades(
     pydss_volt_var_model,
     thermal_config,
     internal_upgrades_technical_catalog_filepath,
-    thermal_summary_file,
     thermal_upgrades_dss_filepath,
     upgraded_master_dss_filepath,
     output_json_thermal_upgrades_filepath,
     feeder_stats_json_file,
     thermal_upgrades_directory,
+    overall_output_summary_filepath,
     dc_ac_ratio,
     ignore_switch=True,
     verbose=False
@@ -88,6 +88,7 @@ def determine_thermal_upgrades(
         initial_overvoltage_bus_list,
         initial_buses_with_violations,
     ) = get_bus_voltages(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
+    
     initial_xfmr_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["transformer_upper_limit"], 
                                                          equipment_type="transformer", **simulation_params)
     initial_line_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["line_upper_limit"], 
@@ -143,9 +144,13 @@ def determine_thermal_upgrades(
         num_transformer_violations=len(initial_overloaded_xfmr_list),
         transformer_upper_limit=thermal_config['transformer_upper_limit']
     )
-    temp_results = dict(initial_results)
-    output_results = {"violation_summary": [temp_results]}
-    dump_data(convert_dict_nan_to_none(output_results), thermal_summary_file, indent=2, allow_nan=False)
+    temp_results = convert_dict_nan_to_none(dict(initial_results))
+    if os.path.exists(overall_output_summary_filepath):
+        overall_outputs = load_data(overall_output_summary_filepath)
+        overall_outputs["violation_summary"].append(temp_results)
+    else:
+        overall_outputs = {"violation_summary": [temp_results]}
+    dump_data(overall_outputs, overall_output_summary_filepath, indent=2, allow_nan=False)
     title = "Feeder"
     plot_feeder(fig_folder=thermal_upgrades_directory, title=title, circuit_source=circuit_source, enable_detailed=True)
     # Mitigate thermal violations
@@ -192,7 +197,7 @@ def determine_thermal_upgrades(
                 xfmr_loading_df=xfmr_loading_df,
                 xfmr_design_pu=thermal_config["transformer_design_pu"],
                 xfmr_upgrade_options=xfmr_upgrade_options.copy(deep=True),
-                parallel_transformer_limit=thermal_config["parallel_transformer_limit"])
+                parallel_transformers_limit=thermal_config["parallel_transformers_limit"])
             logger.info(f"Iteration_{iteration_counter}: Corrected xfmr violations.")
             commands_list = commands_list + xfmr_commands_list
             xfmr_upgrades_df = pd.concat([xfmr_upgrades_df, temp_xfmr_upgrades_df])
@@ -294,5 +299,10 @@ def determine_thermal_upgrades(
         transformer_upper_limit=thermal_config['transformer_upper_limit'],
     )
     temp_results = dict(final_results)
-    output_results["violation_summary"].append(temp_results)
-    dump_data(convert_dict_nan_to_none(output_results), thermal_summary_file, indent=2, allow_nan=False)
+    temp_results = convert_dict_nan_to_none(temp_results)
+    if os.path.exists(overall_output_summary_filepath):
+        overall_outputs = load_data(overall_output_summary_filepath)
+        overall_outputs["violation_summary"].append(temp_results)
+    else:
+        overall_outputs = {"violation_summary": [temp_results]}
+    dump_data(overall_outputs, overall_output_summary_filepath, indent=2, allow_nan=False)

@@ -15,7 +15,12 @@ from jade.common import CONFIG_FILE, JOBS_OUTPUT_DIR
 from jade.loggers import setup_logging
 from jade.jobs.job_configuration_factory import create_config_from_file
 from jade.jobs.results_aggregator import ResultsAggregator
+from jade.utils.utils import load_data, dump_data
 
+from disco.models.upgrade_cost_analysis_generic_output_model import (
+    UpgradeViolationResultModel,
+    TotalUpgradeCostsResultModel,
+)
 from disco.pipelines.utils import ensure_jade_pipeline_output_dir
 
 logger = logging.getLogger(__name__)
@@ -41,16 +46,26 @@ def parse_batch_results(output_dir):
             continue
         jobs.append(job)
 
-    upgrade_summary_table = []
-    total_upgrade_costs_table = []
+    output_json = {
+        "results": [],
+        "costs_per_equipment": [],
+        "violation_summary": [],
+        "equipment": [],
+    }
 
     with ProcessPoolExecutor() as executor:
-        for result in executor.map(parse_job_results, jobs, itertools.repeat(output_path)):
-            upgrade_summary_table += result[0]
-            total_upgrade_costs_table += result[1]
+        for tables in executor.map(parse_job_results, jobs, itertools.repeat(output_path)):
+            output_json = combine_job_outputs(output_json, tables)
 
-    serialize_table(upgrade_summary_table, output_path / "upgrade_summary.csv")
-    serialize_table(total_upgrade_costs_table, output_path / "total_upgrade_costs.csv")
+    for key in output_json: 
+        if not output_json[key]:
+            logger.warning("There were no %s results.", key)
+    
+    filename = output_path / "upgrade_summary.json"
+    dump_data(output_json, filename, indent=2)
+    logger.info("Output summary data to %s", filename)
+    # serialize_table(upgrade_summary_table, output_path / "upgrade_summary.csv")
+    # serialize_table(total_upgrade_costs_table, output_path / "total_upgrade_costs.csv")
 
 
 def parse_job_results(job, output_path):
@@ -64,69 +79,40 @@ def parse_job_results(job, output_path):
         sample=deployment.project_data["sample"],
         penetration_level=deployment.project_data["penetration_level"],
     )
-    upgrade_summary_table = get_upgrade_summary_table(job_path, job_info)
-    total_upgrade_costs_table = get_total_upgrade_costs_table(job_path, job_info)
-    
-    return (
-        upgrade_summary_table,
-        total_upgrade_costs_table
-    )
+    overall_output_summary_file = job_path / "overall_output_summary.json"
+    data = load_data(overall_output_summary_file)
+    tables = get_upgrade_tables(data, job_keyword="name", job_name=job_info.name)
+    return tables
 
 
-def get_upgrade_summary_table(job_path, job_info):
-
-    def _get_upgrade_summary(upgrade_type, upgrade_summary_file):
-        if not upgrade_summary_file.exists():
-            return []
-        
-        try:
-            with open(upgrade_summary_file) as json_file:
-                data = json.load(json_file)
-            df = pd.DataFrame(data["violation_summary"])
-        except pd.errors.EmptyDataError:
-            logger.exception("Failed to parse upgrade summary file - '%s'", upgrade_summary_file)
-            return []
-        
-        summary_result = []
-        records = df.to_dict("records")
-        for record in records:
-            data = job_info._asdict()
-            data.update({"upgrade_type": upgrade_type})
-            data.update(record)
-            summary_result.append(data)
-        return summary_result
-
-    upgrade_summary = []
-
-    thermal_upgrade_summary_file = job_path / "ThermalUpgrades" / "thermal_violation_summary.json"
-    upgrade_summary.extend(_get_upgrade_summary("thermal", thermal_upgrade_summary_file))
-
-    voltage_upgrade_summary_file = job_path / "VoltageUpgrades" / "voltage_violation_summary.json"
-    upgrade_summary.extend(_get_upgrade_summary("voltage", voltage_upgrade_summary_file))
-
-    return upgrade_summary
+def get_upgrade_tables(data, job_keyword, job_name):
+    tables = {}
+    # attach job name to all dicts 
+    for key, value in data.items():
+        # the key "results" is a dict, but all others are lists of dict
+        if key == "results":
+            all_results_table = []
+            value.update({job_keyword: job_name})
+            all_results_table.append(value)
+            tables[key] = all_results_table
+        else:
+            temp = pd.DataFrame(data[key])
+            temp[job_keyword] = job_name
+            records = temp.to_dict("records")
+            tables[key] = records
+    return tables
 
 
-def get_total_upgrade_costs_table(job_path, job_info):
-    total_upgrade_costs_file = job_path / "UpgradeCosts" / "total_upgrade_costs.json"
-    if not total_upgrade_costs_file.exists():
-        return []
-    
-    try:
-        with open(total_upgrade_costs_file) as json_file:
-            data = json.load(json_file)
-        df = pd.DataFrame(data["total_upgrade_costs"])
-    except pd.errors.EmptyDataError:
-        logger.exception("Failed to parse total upgrade costs file - '%s'", total_upgrade_costs_file)
-        return []
-    
-    total_upgrade_costs = []
-    data = df.to_dict("records")
-    for item in data:
-        record = job_info._asdict()
-        record.update(item)
-        total_upgrade_costs.append(record)
-    return total_upgrade_costs
+def combine_job_outputs(output_json, tables):    
+    # It might seem odd to go from dict to model back to dict, but this validates
+    # fields and types.
+    for record in tables["violation_summary"]:
+        output_json["violation_summary"].append(UpgradeViolationResultModel(**record).dict())
+    for record in tables["costs_per_equipment"]:
+        output_json["costs_per_equipment"].append(TotalUpgradeCostsResultModel(**record).dict())
+    output_json["equipment"] += tables["equipment"]
+    output_json["results"] += tables["results"]
+    return output_json
 
 
 def serialize_table(table, filename):

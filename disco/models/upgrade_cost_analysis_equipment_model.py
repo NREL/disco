@@ -188,7 +188,7 @@ class OpenDSSLineParams(CommonLineParameters):
         determine_upgrade_option=True,
         deciding_property=True,
     )
-    Switch: bool = Field(
+    Switch: str = Field(
         title="Switch",
         description="Flag that determines whether line is switch or not.",
         determine_upgrade_option=True,

@@ -45,7 +45,7 @@ Here are optional parameters that you can customize in the same file:
 .. code-block::
 
     [thermal_upgrade_params]
-    parallel_transformer_limit = 4
+    parallel_transformers_limit = 4
     parallel_lines_limit = 4
     upgrade_iteration_threshold = 5
     timepoint_multipliers = {}
@@ -82,8 +82,7 @@ Run post-processing to aggregate upgrade cost analysis results and create analys
 
     $ disco-internal make-upgrade-tables output
 
-If everything succeeds, it produces two aggregated tables: ``upgrade_summary.csv`` and
-``total_upgrade_costs.csv``. 
+If everything succeeds, it produces aggregated json file: ``upgrade_summary.json``
 
 
 Pipeline Workflow

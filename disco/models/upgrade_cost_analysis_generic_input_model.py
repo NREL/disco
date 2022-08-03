@@ -194,8 +194,8 @@ class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
     create_plots: Optional[bool] = Field(
         title="create_plots", description="Flag to enable or disable figure creation", default=True
     )
-    parallel_transformer_limit: Optional[int] = Field(
-        title="parallel_transformer_limit", description="Parallel transformer limit", default=4
+    parallel_transformers_limit: Optional[int] = Field(
+        title="parallel_transformers_limit", description="Parallel transformer limit", default=4
     )
     parallel_lines_limit: Optional[int] = Field(
         title="parallel_lines_limit", description="Parallel lines limit", default=4
@@ -424,6 +424,8 @@ class UpgradeCostAnalysisSimulationModel(UpgradeParamsBaseModel):
     @validator("calculate_costs")
     def check_database(cls, calculate_costs, values):
         if calculate_costs:
+            if "upgrade_cost_database" not in values:
+                return calculate_costs
             if not Path(values["upgrade_cost_database"]).exists():
                 raise ValueError(f"{values['upgrade_cost_database']} does not exist")
             # Just verify that it constructs the model.
