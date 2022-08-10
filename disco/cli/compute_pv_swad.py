@@ -89,8 +89,8 @@ def compute_weighted_average_pv_distance(load_info, option="size"):
 def collect_weighted_average_pv_distance(filename: Path, option):
     orig = os.getcwd()
     try:
-        reply = dss.utils.run_command(f"compile {filename}")
-        if reply != "":
+        reply = dss.Text.Command(f"compile {filename}")
+        if reply is not None:
             logger.error("Failed to compile OpenDSS model %s: %s", filename, reply)
             sys.exit(1)
 

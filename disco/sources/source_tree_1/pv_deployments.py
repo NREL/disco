@@ -116,10 +116,10 @@ class PVDSSInstance:
 
     def load_feeder(self) -> None:
         """OpenDSS redirect master DSS file"""
-        dss.run_command("Clear")
+        dss.Text.Command("Clear")
         logger.info("OpenDSS loads feeder - %s", self.master_file)
-        r = dss.run_command(f"Redirect {self.master_file}")
-        if r != "":
+        r = dss.Text.Command(f"Redirect '{self.master_file}'")
+        if r is not None:
             logger.exception("OpenDSSError: %s. Feeder: %s", str(r), self.master_file)
             raise
 
