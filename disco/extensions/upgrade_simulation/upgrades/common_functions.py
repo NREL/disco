@@ -57,8 +57,8 @@ def reload_dss_circuit(dss_file_list, commands_list=None,  **kwargs):
     if dss_file_list is None:
         raise Exception("No OpenDSS files have been passed to be loaded.")
     for dss_file in dss_file_list:
-        logger.info(f"Redirecting {dss_file}.")
-        check_dss_run_command(f"Redirect {dss_file}")
+        logger.info(f"Redirecting '{dss_file}'.")
+        check_dss_run_command(f"Redirect '{dss_file}'")
     dc_ac_ratio = kwargs.get('dc_ac_ratio', None)
     if dc_ac_ratio is not None:
         change_pv_pctpmpp(dc_ac_ratio=dc_ac_ratio)
@@ -810,6 +810,10 @@ def get_all_transformer_info_instance(upper_limit=None, compute_loading=True):
     DataFrame
     """
     all_df = dss.utils.class_to_dataframe("transformer")
+    flag = any(ele in ["Yes", "No"] for ele in all_df.enabled.unique())
+    if not flag:
+        raise OpenDssCompileError(f"Unexpected values {all_df.enabled.unique()} received for 'enabled' transformer "
+                                  "property. Check OpenDSS version")
     if len(all_df) == 0:
         return pd.DataFrame()
     all_df["name"] = all_df.index.str.split(".").str[1]
@@ -917,6 +921,10 @@ def get_all_line_info_instance(upper_limit=None, compute_loading=True, ignore_sw
     all_df = dss.utils.class_to_dataframe("line")
     if len(all_df) == 0:
         return pd.DataFrame()
+    flag = any(ele in ["Yes", "No"] for ele in all_df.enabled.unique())
+    if not flag:
+        raise OpenDssCompileError(f"Unexpected values {all_df.enabled.unique()} received for 'enabled' line "
+                                  "property. Check OpenDSS version")
     all_df["name"] = all_df.index.str.split(".").str[1]
     all_df["equipment_type"] = all_df.index.str.split(".").str[0]
     # extract only enabled lines
@@ -1059,6 +1067,10 @@ def get_regcontrol_info(correct_PT_ratio=False, nominal_voltage=None):
     all_df = dss.utils.class_to_dataframe("regcontrol")
     if len(all_df) == 0:
         return pd.DataFrame()
+    flag = any(ele in ["Yes", "No"] for ele in all_df.enabled.unique())
+    if not flag:
+        raise OpenDssCompileError(f"Unexpected values {all_df.enabled.unique()} received for 'enabled' regcontrol "
+                                  "property. Check OpenDSS version")
     all_df["name"] = all_df.index.str.split(".").str[1]
     all_df["equipment_type"] = all_df.index.str.split(".").str[0]
     float_columns = ['winding', 'vreg', 'band', 'ptratio', 'delay']
@@ -1123,6 +1135,10 @@ def get_capacitor_info(nominal_voltage=None, correct_PT_ratio=False):
     all_df = dss.utils.class_to_dataframe("capacitor")
     if len(all_df) == 0:
         return pd.DataFrame()
+    flag = any(ele in ["Yes", "No"] for ele in all_df.enabled.unique())
+    if not flag:
+        raise OpenDssCompileError(f"Unexpected values {all_df.enabled.unique()} received for 'enabled' capacitor "
+                                  "property. Check OpenDSS version")
     all_df["capacitor_name"] = all_df.index.str.split(".").str[1]
     all_df["equipment_type"] = all_df.index.str.split(".").str[0]
     float_columns = ["phases", "kv"]
@@ -1169,6 +1185,10 @@ def get_cap_control_info():
     if len(all_df) == 0:
         capcontrol_columns = ['name', 'capacitor', 'type', 'equipment_type']
         return pd.DataFrame(columns=capcontrol_columns)
+    flag = any(ele in ["Yes", "No"] for ele in all_df.enabled.unique())
+    if not flag:
+        raise OpenDssCompileError(f"Unexpected values {all_df.enabled.unique()} received for 'enabled' capcontrol "
+                                  "property. Check OpenDSS version")
     all_df["name"] = all_df.index.str.split(".").str[1]
     all_df["equipment_type"] = all_df.index.str.split(".").str[0]
     float_columns = ["CTratio", "DeadTime", "Delay", "DelayOFF", "OFFsetting", "ONsetting", "PTratio",
@@ -1265,8 +1285,8 @@ def check_dss_run_command(command_string):
 
     """
     logger.debug(f"Running DSS command: {command_string}")
-    result = dss.run_command(f"{command_string}")
-    if result != "":
+    result = dss.Text.Command(f"{command_string}")
+    if result is not None:
         raise OpenDssCompileError(f"OpenDSS run_command failed with message: {result}. \nCommand: {command_string}")
 
 
