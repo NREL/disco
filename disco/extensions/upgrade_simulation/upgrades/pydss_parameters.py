@@ -17,7 +17,7 @@ def define_initial_pydss_settings(**kwargs):
         error_tolerance=0.0001,
         simulation_type=SimulationType.SNAPSHOT,
     )
-    dss.utils.run_command("Set ControlMode={}".format(settings.control_mode.value))
+    dss.Text.Command("Set ControlMode={}".format(settings.control_mode.value))
     dss.Solution.MaxControlIterations(settings.max_control_iterations)
     # we dont need to define controller everytime we solve the circuit, unless we're reloading the circuit
     controller = CircuitElementController(
