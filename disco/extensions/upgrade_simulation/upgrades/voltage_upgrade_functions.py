@@ -619,13 +619,13 @@ def add_new_regcontrol_command(xfmr_info_series, default_regcontrol_settings, no
     temp_df = get_regcontrol_info()
     if not temp_df.empty:
         enabled_regcontrol_exists = len(
-            temp_df.loc[(temp_df['name'] == regcontrol_info_series['regcontrol_name']) & (temp_df['enabled'] == "Yes")]) > 0
+            temp_df.loc[(temp_df['name'] == regcontrol_info_series['regcontrol_name']) & (temp_df['enabled'].str.lower() == "yes")]) > 0
         if enabled_regcontrol_exists:
             logger.debug(f"Enabled regcontrol already exists: {regcontrol_info_series['name']}")
             return None
     if not temp_df.empty:
         disabled_regcontrol_exists = len(
-            temp_df.loc[(temp_df['name'] == regcontrol_info_series['regcontrol_name']) & (temp_df['enabled'] == "No")]) > 0
+            temp_df.loc[(temp_df['name'] == regcontrol_info_series['regcontrol_name']) & (temp_df['enabled'].str.lower() == "no")]) > 0
         if disabled_regcontrol_exists:
             action_type = 'Edit'
     new_regcontrol_command = define_regcontrol_object(regcontrol_name=regcontrol_info_series['regcontrol_name'],
@@ -1102,7 +1102,7 @@ def add_new_regcontrol_at_node(node, default_regcontrol_settings, nominal_voltag
     regcontrols_df = get_regcontrol_info()
     enabled_regcontrol_exists = False
     if not regcontrols_df.empty: 
-        enabled_regcontrols_df = regcontrols_df.loc[regcontrols_df['enabled'] == "Yes"]
+        enabled_regcontrols_df = regcontrols_df.loc[regcontrols_df['enabled'].str.lower() == "yes"]
         enabled_regcontrol_exists = len(enabled_regcontrols_df.loc[(enabled_regcontrols_df['transformer_bus1'] == node) | (
                                         enabled_regcontrols_df['transformer_bus2'] == node)]) > 0
     if enabled_regcontrol_exists:
@@ -1192,8 +1192,8 @@ def test_new_regulator_placement_on_common_nodes(voltage_upper_limit, voltage_lo
         # if enabled transformer is already present at this node, skip.
         # These pre-existing xfmrs will be "primary to secondary DTs" which we do not want to control.
         # Regulators are primarily in line and not on individual distribution transformers
-        if len(all_xfmr_df[(all_xfmr_df["primary_bus"].str.lower() == node.lower()) & (all_xfmr_df["enabled"] == "Yes")]) or \
-            len(all_xfmr_df[(all_xfmr_df["secondary_bus"].str.lower() == node.lower()) & (all_xfmr_df["enabled"] == "Yes")]):
+        if len(all_xfmr_df[(all_xfmr_df["primary_bus"].str.lower() == node.lower()) & (all_xfmr_df["enabled"].str.lower() == "yes")]) or \
+            len(all_xfmr_df[(all_xfmr_df["secondary_bus"].str.lower() == node.lower()) & (all_xfmr_df["enabled"].str.lower() == "yes")]):
             logger.debug("Distribution transformer already exists on this node. Skip.")
             continue
         # add new transformer at this node
@@ -1653,7 +1653,7 @@ def plot_feeder(fig_folder, title, circuit_source=None, enable_detailed=False):
             NodeLegend["Capacitor"] = list(cap_df['bus1'].str.split(".").str[0].unique())
         reg_df =  get_regcontrol_info()
         if not reg_df.empty:
-            reg_df = reg_df.loc[reg_df.enabled == "Yes"]
+            reg_df = reg_df.loc[reg_df.enabled.str.lower() == "yes"]
         if not reg_df.empty:
             NodeLegend["Voltage Regulator"] = list(reg_df['transformer_bus1'].unique())
     colored_nodelist = []
@@ -1707,7 +1707,7 @@ def plot_voltage_violations(fig_folder, title, buses_with_violations, circuit_so
             NodeLegend["Capacitor"] = list(cap_df['bus1'].str.split(".").str[0].unique())
         reg_df =  get_regcontrol_info()
         if not reg_df.empty:
-            reg_df = reg_df.loc[reg_df.enabled == "Yes"]
+            reg_df = reg_df.loc[reg_df.enabled.str.lower() == "yes"]
         if not reg_df.empty:
             NodeLegend["Voltage Regulator"] = list(reg_df['transformer_bus1'].unique())
                            
