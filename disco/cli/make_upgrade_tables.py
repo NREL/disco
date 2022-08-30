@@ -85,7 +85,7 @@ def parse_job_results(job, output_path):
     return tables
 
 
-def get_upgrade_tables(data, job_keyword, job_name):
+def get_upgrade_tables(data):
     tables = {}
     # the key "results" is a dict, but all others are lists of dict
     # so convert "results" dict to list

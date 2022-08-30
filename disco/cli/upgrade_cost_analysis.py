@@ -375,7 +375,7 @@ def _aggregate_results(output, log_file, job_names, fmt):
             logger.info("Skip failed job %s", name)
             continue
         data = load_data(overall_output_summary_file)
-        tables = get_upgrade_tables(data, "name", job_name)  # data with added job name in all records
+        tables = get_upgrade_tables(data)
         outputs = {
             "upgraded_opendss_model_file": str(jobs_output_dir / name / "upgraded_master.dss"),
             "return_code": return_code,
