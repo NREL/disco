@@ -101,7 +101,7 @@ def compute_all_costs(
     total_costs_per_equipment = convert_dict_nan_to_none({"costs_per_equipment": total_cost_df.to_dict('records')})
     feeder_stats = load_data(feeder_stats_json_file)
     output_summary = create_overall_output_file(upgrades_dict={"transformer": xfmr_upgrades_df, "line": line_upgrades_df, "voltage": voltage_upgrades_df},
-                                                costs_dict={"thermal": thermal_cost_df, "voltage": voltage_cost_df}, feeder_stats=feeder_stats)
+                                                costs_dict={"thermal": thermal_cost_df, "voltage": voltage_cost_df}, feeder_stats=feeder_stats, job_name=job_name)
     output_summary_model = AllUpgradesCostResultSummaryModel(equipment=output_summary.to_dict(orient="records"))
     output_summary = convert_dict_nan_to_none(output_summary_model.dict(by_alias=True))
     if os.path.exists(overall_output_summary_filepath):
@@ -110,7 +110,7 @@ def compute_all_costs(
     else:
         overall_outputs = total_costs_per_equipment
     overall_outputs.update(output_summary)  
-    overall_outputs.update(summarize_upgrades_outputs(overall_outputs))
+    overall_outputs.update(summarize_upgrades_outputs(overall_outputs, job_name=job_name))
     desired_order_list = ["results", "costs_per_equipment", "violation_summary", "equipment"]
     reordered_dict = {k: overall_outputs[k] for k in desired_order_list}
     dump_data(reordered_dict, overall_output_summary_filepath, indent=2, cls=ExtendedJSONEncoder, allow_nan=False) 

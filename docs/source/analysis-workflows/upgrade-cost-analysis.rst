@@ -55,8 +55,8 @@ Here are optional parameters that you can customize in the same file:
     reg_control_bands = [1, 2]
     reg_v_delta = 0.5
     max_regulators = 4
-    place_new_regulators = false
-    use_ltc_placement = false
+    place_new_regulators = true
+    use_ltc_placement = true
     timepoint_multipliers = {}
     capacitor_action_flag = true
     existing_regulator_sweep_action = true

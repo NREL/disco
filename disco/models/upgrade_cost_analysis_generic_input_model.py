@@ -291,12 +291,12 @@ class VoltageUpgradeParamsModel(UpgradeParamsBaseModel):
     place_new_regulators: bool = Field(
         title="place_new_regulators",
         description="Flag to enable or disable new regulator placement",
-        default=False,
+        default=True,
     )
     use_ltc_placement: bool = Field(
         title="use_ltc_placement",
         description="Flag to enable or disable substation LTC upgrades module",
-        default=False,
+        default=True,
     )
     timepoint_multipliers: dict = Field(
         title="timepoint_multipliers",

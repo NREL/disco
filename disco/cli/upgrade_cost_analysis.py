@@ -366,7 +366,7 @@ def _aggregate_results(output, log_file, job_names, fmt):
         job_path = jobs_output_dir / name
         job_info = JobInfo(name)
         job_name = getattr(job_info, "name")
-        overall_output_summary_file = job_path / "overall_output_summary.json"
+        overall_output_summary_file = job_path / "output.json"
         return_code = (
             _read_job_return_code(jobs_output_dir, name)
         )
