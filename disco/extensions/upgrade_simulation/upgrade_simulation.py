@@ -84,7 +84,7 @@ class UpgradeSimulation:
         return os.path.join(upgrade_costs, "total_upgrade_costs.json")
     
     def get_overall_output_summary_file(self):
-        return os.path.join(self.job_output, "overall_output_summary.json")
+        return os.path.join(self.job_output, "output.json")
     
     @staticmethod
     def generate_command(job, output, config_file, verbose=False):

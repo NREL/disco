@@ -421,9 +421,10 @@ def get_circuit_info():
     return data_dict
 
 
-def summarize_upgrades_outputs(overall_outputs):
+def summarize_upgrades_outputs(overall_outputs, **kwargs):
     """This function creates summary of upgrades and costs results"""
     summary = {"results": {}}
+    summary["results"]["name"] = kwargs.get("job_name", None)
     violation_summary = pd.DataFrame(overall_outputs["violation_summary"])
     thermal_violations = sum(violation_summary.loc[(violation_summary["stage"] == "final") & (violation_summary["upgrade_type"] == "thermal")][["num_line_violations", "num_transformer_violations"]].sum())
     voltage_violations = sum(violation_summary.loc[(violation_summary["stage"] == "final") & (violation_summary["upgrade_type"] == "voltage")][["num_voltage_violation_buses"]].sum())
@@ -627,7 +628,9 @@ def create_overall_output_file(feeder_stats, upgrades_dict, costs_dict, **kwargs
     
     voltage_summary_df = create_voltage_output_summary(all_original_equipment, all_latest_equipment, voltage_equipment_type_list,
                                                         props_dict, voltage_cost_df, upgrades_dict, output_cols)
-    return pd.concat([thermal_summary_df, voltage_summary_df])
+    combined_df = pd.concat([thermal_summary_df, voltage_summary_df])
+    combined_df["name"] = kwargs.get("job_name", None)
+    return combined_df
 
 
 def create_opendss_definition(config_definition_dict, action_type="New", property_list=None):

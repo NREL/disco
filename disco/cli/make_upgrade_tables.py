@@ -79,27 +79,21 @@ def parse_job_results(job, output_path):
         sample=deployment.project_data["sample"],
         penetration_level=deployment.project_data["penetration_level"],
     )
-    overall_output_summary_file = job_path / "overall_output_summary.json"
+    overall_output_summary_file = job_path / "output.json"
     data = load_data(overall_output_summary_file)
-    tables = get_upgrade_tables(data, job_keyword="name", job_name=job_info.name)
+    tables = get_upgrade_tables(data)
     return tables
 
 
-def get_upgrade_tables(data, job_keyword, job_name):
+def get_upgrade_tables(data):
     tables = {}
-    # attach job name to all dicts 
+    # the key "results" is a dict, but all others are lists of dict
+    # so convert "results" dict to list
     for key, value in data.items():
-        # the key "results" is a dict, but all others are lists of dict
         if key == "results":
-            all_results_table = []
-            value.update({job_keyword: job_name})
-            all_results_table.append(value)
-            tables[key] = all_results_table
+            tables[key] = [value]
         else:
-            temp = pd.DataFrame(data[key])
-            temp[job_keyword] = job_name
-            records = temp.to_dict("records")
-            tables[key] = records
+            tables[key] = value
     return tables
 
 

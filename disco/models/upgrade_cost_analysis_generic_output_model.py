@@ -14,7 +14,7 @@ class UpgradeViolationResultModel(UpgradeParamsBaseModel):
 
     name: str = Field(
         title="name",
-        description="Job name that produced the result",
+        description="Job name",
     )
     scenario: str = Field(
         title="scenario",
@@ -282,6 +282,10 @@ class AllUpgradesTechnicalResultModel(UpgradeParamsBaseModel):
 
 class UpgradesCostResultSummaryModel(UpgradeParamsBaseModel):
     """Contains individual equipment output"""
+    name: str = Field(
+        title="name",
+        description="Job name",
+    )
     equipment_type: str = Field(
         title="equipment_type",
         description="Type of equipment",
