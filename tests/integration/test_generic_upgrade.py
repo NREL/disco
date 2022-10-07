@@ -10,9 +10,9 @@ from jade.utils.utils import load_data, dump_data
 
 from tests.common import *
 
-BASE_CONFIG_FILE = Path("tests") / "data" / "upgrade_cost_analysis_generic.json"
-TEST_UPGRADES_CONFIG_FILE_1 = Path("tests") / "data" / "test_upgrade_cost_analysis_generic.json"
-TEST_UPGRADES_CONFIG_FILE_2 = Path("tests") / "data" / "test_upgrade_cost_analysis_generic_vreg.json"
+TEST_UPGRADES_CONFIG_FILE_0 = Path("tests") / "data" / "upgrade_cost_analysis_generic_internal.json"
+TEST_UPGRADES_CONFIG_FILE_1 = Path("tests") / "data" / "upgrade_cost_analysis_generic.json"
+TEST_UPGRADES_CONFIG_FILE_2 = Path("tests") / "data" / "upgrade_cost_analysis_generic_vreg.json"
 UPGRADES_RESULTS_FILE = "upgrade_summary.json"
 
 
@@ -33,14 +33,22 @@ def test_generic_upgrade_jade_workflow(cleanup):
         
 
 def test_upgrades(cleanup):
+    """Test for generic upgrades"""
+    
     run_cmd = f"disco upgrade-cost-analysis run {TEST_UPGRADES_CONFIG_FILE_1} -o {OUTPUT}"
     assert run_command(run_cmd) == 0
     verify_upgrade_results(OUTPUT)
     run_cmd = f"disco upgrade-cost-analysis run {TEST_UPGRADES_CONFIG_FILE_2} -o {OUTPUT}"
     assert run_command(run_cmd) == 0
     verify_upgrade_results(OUTPUT)
+    run_cmd = f"disco upgrade-cost-analysis run {TEST_UPGRADES_CONFIG_FILE_0} -o {OUTPUT}"
+    assert run_command(run_cmd) == 0
+    verify_upgrade_results(OUTPUT)
+
 
 def test_generic_upgrade_standalone_workflow(cleanup):
+    """Additional test for generic upgrades, where data in generic-models is transformed first."""
+    
     test_upgrade_file = setup_models()
     try:
         if Path(OUTPUT).exists():
@@ -60,7 +68,7 @@ def setup_models():
     config_cmd = f"{CONFIG_JOBS} upgrade {MODELS_DIR} -c {CONFIG_FILE}"
     assert run_command(config_cmd) == 0
     disco_config = load_data(CONFIG_FILE)
-    upgrades_config = load_data(BASE_CONFIG_FILE)
+    upgrades_config = load_data(TEST_UPGRADES_CONFIG_FILE_0)
     model = upgrades_config["jobs"][0]
     upgrades_config["jobs"].clear()
 

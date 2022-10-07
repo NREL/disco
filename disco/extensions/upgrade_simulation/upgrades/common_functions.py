@@ -482,7 +482,7 @@ def create_thermal_output_summary(all_original_equipment, all_latest_equipment, 
         new_df.reset_index(inplace=True)
         new_df = new_df[output_cols]
         new_thermal_df = pd.concat([new_thermal_df, new_df])
-    new_thermal_df = new_thermal_df.replace(np.NaN, None)
+    new_thermal_df = new_thermal_df.replace({np.NaN: None})
     return new_thermal_df
 
 

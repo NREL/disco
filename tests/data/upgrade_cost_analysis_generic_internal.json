@@ -1,0 +1,47 @@
+{
+  "thermal_upgrade_params": {
+    "transformer_upper_limit": 1.25,
+    "line_upper_limit": 1.25,
+    "line_design_pu": 0.75,
+    "transformer_design_pu": 0.75,
+    "voltage_upper_limit": 1.05,
+    "voltage_lower_limit": 0.95,
+    "read_external_catalog": false,
+    "external_catalog": ""
+  },
+  "voltage_upgrade_params": {
+    "initial_upper_limit": 1.05,
+    "initial_lower_limit": 0.95,
+    "final_upper_limit": 1.05,
+    "final_lower_limit": 0.95,
+    "nominal_voltage": 120,
+    "capacitor_sweep_voltage_gap": 1,
+    "reg_control_bands": [
+      1,
+      2
+    ],
+    "reg_v_delta": 0.5,
+    "max_regulators": 4,
+    "place_new_regulators": false,
+    "use_ltc_placement": false
+  },
+  "enable_pydss_controllers": false,
+  "include_pf1": true,
+  "upgrade_cost_database": "./disco/extensions/upgrade_simulation/upgrades/Generic_DISCO_cost_database_v2.xlsx",
+  "jobs": [
+    {
+      "model_type": "UpgradeCostAnalysisGenericModel",
+      "name": "p1uhs21_1247__p1udt5257__close__1__5",
+      "opendss_model_file": "tests/data/generic-models/p1uhs21_1247/p1udt5257/PVDeployments/p1uhs21_1247__p1udt5257__close__1__5.dss",
+      "blocked_by": [],
+      "estimated_run_minutes": null
+    },
+    {
+      "model_type": "UpgradeCostAnalysisGenericModel",
+      "name": "p1uhs21_1247__p1udt5257__close__1__15",
+      "opendss_model_file": "tests/data/generic-models/p1uhs21_1247/p1udt5257/PVDeployments/p1uhs21_1247__p1udt5257__close__1__15.dss",
+      "blocked_by": [],
+      "estimated_run_minutes": null
+    }
+  ]
+}
