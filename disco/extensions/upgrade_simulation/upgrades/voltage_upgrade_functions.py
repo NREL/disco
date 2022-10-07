@@ -944,17 +944,30 @@ def add_new_node_and_xfmr(node, circuit_source, xfmr_conn_type=None, action_type
     # For substation LTC, substation transformer will be placed at first bus of line (i.e. before the line)
     # make bus1 of line as regcontrol node
     if substation_node_flag:
-        chosen_line_info = all_lines_df.loc[all_lines_df["bus1_name"] == node].iloc[0]
-        new_node = "newnode_" + chosen_line_info["bus2"]  # contains terminal information too
-        new_node_name = "newnode_" + chosen_line_info["bus2_name"]
+        # lines in opendss aren't directional, so it may be connected to bus 1 or two
+        if sum(all_lines_df["bus1_name"] == node)>0:
+            feed_in_bus_name = "bus1_name"
+            feed_in_bus = "bus1"
+            second_bus = "bus2"
+            second_bus_name = "bus2_name"
+        else:
+            feed_in_bus_name = "bus2_name"
+            feed_in_bus = "bus2"
+            second_bus = "bus1"
+            second_bus_name = "bus1_name"
+
+        chosen_line_info = all_lines_df.loc[all_lines_df[feed_in_bus_name] == node].iloc[0]
+        new_node = "newnode_" + chosen_line_info[second_bus]  # contains terminal information too
+        new_node_name = "newnode_" + chosen_line_info[second_bus_name]
+            
         curr_time = str(time.time())
         # this is added to name to ensure it is unique
         time_stamp = curr_time.split(".")[0] + "_" + curr_time.split(".")[1]
         xfmr_name = "New_xfmr_" + node + time_stamp
-        dss.Circuit.SetActiveBus(chosen_line_info["bus1_name"])
+        dss.Circuit.SetActiveBus(chosen_line_info[feed_in_bus_name])
         x = dss.Bus.X()
         y = dss.Bus.Y()
-        dss.Circuit.SetActiveBus(chosen_line_info["bus2_name"])
+        dss.Circuit.SetActiveBus(chosen_line_info[second_bus_name])
         kV_node = dss.Bus.kVBase()
         if chosen_line_info["phases"] > 1:
             kV_DT = kV_node * math.sqrt(3)  # L-L voltage
@@ -966,7 +979,7 @@ def add_new_node_and_xfmr(node, circuit_source, xfmr_conn_type=None, action_type
         if xfmr_conn_type is None:
             raise Exception("Transformer winding connection type (wye or delta) should be passed as parameter for adding new substation transformer")
         new_xfmr_command_string = f"{action_type} Transformer.{xfmr_name} phases={chosen_line_info['phases']} " \
-                                  f"windings=2 buses=({chosen_line_info['bus1']}, {new_node}) " \
+                                  f"windings=2 buses=({chosen_line_info[feed_in_bus]}, {new_node}) " \
                                   f"conns=({xfmr_conn_type},{xfmr_conn_type}) kvs=({kV_DT},{kV_DT}) " \
                                   f"kvas=({kVA},{kVA}) xhl=0.001 wdg=1 %r=0.001 wdg=2 %r=0.001 Maxtap=1.1 Mintap=0.9 " \
                                   f"enabled=Yes"
