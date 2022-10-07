@@ -546,7 +546,7 @@ def get_total_costs(thermal_cost_df, voltage_cost_df):
     """This function combines voltage and thermal upgrades costs into one file.
     """
     total_cost_df = pd.concat([thermal_cost_df, voltage_cost_df])
-    total_cost_df = total_cost_df.groupby('type').sum()
+    total_cost_df = total_cost_df.groupby('type').sum(numeric_only=True)
     total_cost_df.reset_index(inplace=True)
     return total_cost_df
 
