@@ -450,10 +450,10 @@ def create_thermal_output_summary(all_original_equipment, all_latest_equipment, 
         if (temp_upgrade_df.empty) and (original_equipment_df.empty):  # if there are no equipment for voltage controls
             continue 
         new_df = latest_equipment_df.copy(deep=True)
-        new_df = pd.concat([new_df, pd.DataFrame(columns=set(output_cols)-set(new_df.columns))], axis=1)
-        new_df.loc[:, "equipment_type"] = equipment_type
-        new_df.loc[:, "total_cost_usd"] = 0
-        new_df.loc[:, "status"] = EquipmentUpgradeStatusModel.unchanged.value
+        new_df = pd.concat([new_df, pd.DataFrame(columns=list(set(output_cols)-set(new_df.columns)))], axis=1)
+        new_df["equipment_type"] = equipment_type
+        new_df["total_cost_usd"] = 0
+        new_df["status"] = EquipmentUpgradeStatusModel.unchanged.value
         
         if not temp_upgrade_df.empty:
             temp_cost_df = thermal_cost_df.loc[thermal_cost_df.type.str.lower() == equipment_type.lower()]
@@ -482,17 +482,17 @@ def create_thermal_output_summary(all_original_equipment, all_latest_equipment, 
         new_df.reset_index(inplace=True)
         new_df = new_df[output_cols]
         new_thermal_df = pd.concat([new_thermal_df, new_df])
-    new_thermal_df = new_thermal_df.replace(np.NaN, None)
+    new_thermal_df = new_thermal_df.replace({np.NaN: None})
     return new_thermal_df
 
 
 def create_capacitor_output_summary(temp_upgrade_df, temp_cost_df, latest_equipment_df, output_cols, equipment_type):
     # create new dataframe
     new_df = latest_equipment_df.copy(deep=True)
-    new_df = pd.concat([new_df, pd.DataFrame(columns=set(output_cols)-set(new_df.columns))], axis=1)
-    new_df.loc[:, "equipment_type"] = equipment_type
-    new_df.loc[:, "total_cost_usd"] = 0
-    new_df.loc[:, "status"] = EquipmentUpgradeStatusModel.unchanged.value
+    new_df = pd.concat([new_df, pd.DataFrame(columns=list(set(output_cols)-set(new_df.columns)))], axis=1)
+    new_df["equipment_type"] = equipment_type
+    new_df["total_cost_usd"] = 0
+    new_df["status"] = EquipmentUpgradeStatusModel.unchanged.value
     
     if temp_upgrade_df.empty:  # if there are no upgrades of this equipment type
         return new_df, [], []
@@ -521,10 +521,10 @@ def create_capacitor_output_summary(temp_upgrade_df, temp_cost_df, latest_equipm
 def create_regulator_output_summary(temp_upgrade_df, temp_cost_df, latest_equipment_df, output_cols, equipment_type):    
     # create new dataframe
     new_df = latest_equipment_df.copy(deep=True)
-    new_df = pd.concat([new_df, pd.DataFrame(columns=set(output_cols)-set(new_df.columns))], axis=1)
-    new_df.loc[:, "equipment_type"] = equipment_type
-    new_df.loc[:, "total_cost_usd"] = 0
-    new_df.loc[:, "status"] = EquipmentUpgradeStatusModel.unchanged.value
+    new_df = pd.concat([new_df, pd.DataFrame(columns=list(set(output_cols)-set(new_df.columns)))], axis=1)
+    new_df["equipment_type"] = equipment_type
+    new_df["total_cost_usd"] = 0
+    new_df["status"] = EquipmentUpgradeStatusModel.unchanged.value
     if temp_upgrade_df.empty:  # if there are no upgrades of this equipment type
         return new_df, [], []
     

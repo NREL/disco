@@ -69,7 +69,7 @@ install_requires = [
     "networkx",
     "opendssdirect.py>=0.7.0",
     "openpyxl",
-    "pandas",
+    "pandas==1.5.*",
     "pydantic>=1.6.0",
     "seaborn",
     "sklearn",
