@@ -192,7 +192,6 @@ def determine_voltage_upgrades(
         # Writing out the results before adding new devices
         logger.info("Write upgrades to dss file, before adding new devices.")
         write_text_file(string_list=dss_commands_list, text_file_path=voltage_upgrades_dss_filepath)
-
         # Use this block for adding a substation LTC, correcting its settings and running a sub LTC settings sweep.
         comparison_dict = {"before_addition_of_new_device": compute_voltage_violation_severity(
             voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)}
@@ -219,7 +218,6 @@ def determine_voltage_upgrades(
                         f"number of buses with violations is {len(initial_buses_with_violations)}")
             logger.info("So disable option for addition of new regulators")
             voltage_config["place_new_regulators"] = False
-
         if voltage_config["place_new_regulators"] and (len(buses_with_violations) > 0):
             new_reg_results_dict = determine_new_regulator_upgrades(voltage_config=voltage_config, buses_with_violations=buses_with_violations, 
                                              voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, 

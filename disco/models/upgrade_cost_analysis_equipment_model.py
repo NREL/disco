@@ -2,8 +2,8 @@ import logging
 import numpy as np
 from typing import Any
 from pathlib import Path
-from typing import Optional
-from pydantic import BaseModel, Field
+from typing import Optional, List
+from pydantic import BaseModel, Field, validator
 
 from jade.utils.utils import load_data
 
@@ -67,17 +67,17 @@ class CommonLineParameters(UpgradeParamsBaseModel):
         description="c0",
         determine_upgrade_option=True,
     )
-    rmatrix: Any = Field(
+    rmatrix: List[str] = Field(
         title="rmatrix",
         description="rmatrix. If provided, should be a list.",
         determine_upgrade_option=True,
     )
-    xmatrix: Any = Field(
+    xmatrix: List[str] = Field(
         title="xmatrix",
         description="xmatrix. If provided, should be a list.",
         determine_upgrade_option=True,
     )
-    cmatrix: Any = Field(
+    cmatrix: List[str] = Field(
         title="cmatrix",
         description="cmatrix. If provided, should be a list.",
         determine_upgrade_option=True,
@@ -200,6 +200,12 @@ class OpenDSSLineParams(CommonLineParameters):
         determine_upgrade_option=True,
     )
     
+    @validator("Switch")
+    def check_switch_property(cls, Switch):
+        if Switch not in ("Yes", "No"):
+            raise ValueError("Incorrect Switch type.")
+        return Switch
+    
 
 class ExtraLineParams(BaseModel):
     line_definition_type: str = Field(
@@ -210,7 +216,7 @@ class ExtraLineParams(BaseModel):
     )
     kV: float = Field(
         title="kV",
-        description="kV. This is not a direct OpenDSS object property.",
+        description="Line-to-Neutral kV. This is not a direct OpenDSS object property.",
         determine_upgrade_option=True,
         deciding_property=True,
     )
@@ -219,13 +225,25 @@ class ExtraLineParams(BaseModel):
         description="h. This is not a direct opendss line property, and is added as a new field. A value is available if line is defined as a line geometry.",
         determine_upgrade_option=True,
     )
-    line_placement: Any = Field(
+    line_placement: str = Field(
         title="line_placement",
         description="line_placement. This is a new field, not a direct OpenDSS object property.",
         determine_upgrade_option=True,
         deciding_property=True,
     )
     
+    @validator("line_definition_type")
+    def check_line_definition_type(cls, line_definition_type):
+        if line_definition_type not in ("linecode", "geometry"):
+            raise ValueError("Incorrect Line definition type. Acceptable value: linecode, geometry.")
+        return line_definition_type
+    
+    # @validator("line_placement")
+    # def check_line_placement(cls, line_placement):
+    #     if line_placement not in ("underground", "overhead"):
+    #         raise ValueError(f"Incorrect Line placement type: {line_placement}. Acceptable values: overhead, underground.")
+    #     return line_placement
+
 
 class CommonTransformerParameters(UpgradeParamsBaseModel):
     """This model contains common transformer parameters which are inherited by transformer catalog, and transformer upgrade output."""
@@ -284,24 +302,24 @@ class CommonTransformerParameters(UpgradeParamsBaseModel):
         description="Xneut",
         determine_upgrade_option=True,
     )
-    conns: Any = Field(
+    conns: List[str] = Field(
         title="conns",
         description="conns. This needs to be passed as a list.",
         determine_upgrade_option=True,
         deciding_property=True,
     )
-    kVs: Any = Field(
+    kVs: List[float] = Field(
         title="kVs",
         description="kVs. This needs to be passed as a list.",
         determine_upgrade_option=True,
         deciding_property=True,
     )   
-    kVAs: Any = Field(
+    kVAs: List[float] = Field(
         title="kVAs",
         description="kVAs. This needs to be passed as a list.",
         determine_upgrade_option=True,
     )
-    taps: Any = Field(
+    taps: List[float] = Field(
         title="taps",
         description="taps. This needs to be passed as a list.",
         determine_upgrade_option=True,
@@ -321,7 +339,7 @@ class CommonTransformerParameters(UpgradeParamsBaseModel):
         description="XLT",
         determine_upgrade_option=True,
     )
-    Xscarray: Any = Field(
+    Xscarray: List[float] = Field(
         title="Xscarray",
         description="Xscarray",
         determine_upgrade_option=True,
@@ -421,7 +439,7 @@ class CommonTransformerParameters(UpgradeParamsBaseModel):
         determine_upgrade_option=True,
         write_property=True,
     )
-    pctRs: Any = Field(
+    pctRs: List[float] = Field(
         title="%Rs",
         description="%Rs. If present, should be a list.",
         alias="%Rs",

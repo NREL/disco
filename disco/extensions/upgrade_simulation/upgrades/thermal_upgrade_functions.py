@@ -37,6 +37,8 @@ def correct_line_violations(line_loading_df, line_design_pu, line_upgrade_option
     overloaded_loading_df = line_loading_df.loc[line_loading_df["status"] == "overloaded"].copy()
     overloaded_loading_df["required_design_amp"] = overloaded_loading_df["max_amp_loading"] / line_design_pu
     deciding_property_list =  _extract_specific_model_properties_(model_name=LineCatalogModel, field_type_key="deciding_property", field_type_value=True)
+    line_upgrade_options["kV"] = line_upgrade_options["kV"].round(2)
+    overloaded_loading_df["kV"] = overloaded_loading_df["kV"].round(2)
     line_upgrade_options.set_index(deciding_property_list, inplace=True)
     line_upgrade_options = line_upgrade_options.sort_index(level=0)
     overloaded_loading_df.set_index(deciding_property_list, inplace=True)    
@@ -47,7 +49,10 @@ def correct_line_violations(line_loading_df, line_design_pu, line_upgrade_option
         # iterate over each overloaded line to find a solution
         for index, row in overloaded_loading_df.iterrows():
             logger.debug(row["name"])
-            options = line_upgrade_options.loc[index]
+            try:
+                options = line_upgrade_options.loc[index]
+            except KeyError:
+                raise ValueError(f"Line of parameters {deciding_property_list}: {index} not found in catalog.")
             if isinstance(options, pd.Series):  # if only one option is present, it is returned as series
                 options = pd.DataFrame([options])  # convert to required DataFrame format
                 options = options.rename_axis(deciding_property_list)  # assign names to the index
@@ -286,6 +291,11 @@ def correct_xfmr_violations(xfmr_loading_df, xfmr_design_pu, xfmr_upgrade_option
     overloaded_loading_df["required_design_amp"] = overloaded_loading_df["max_amp_loading"] / xfmr_design_pu
     # list of properties based on which upgrade is chosen
     deciding_property_list =  _extract_specific_model_properties_(model_name=TransformerCatalogModel, field_type_key="deciding_property", field_type_value=True)
+    # round to same precision for upgrade options, and overloaded equipment
+    xfmr_upgrade_options["kV"] = xfmr_upgrade_options["kV"].round(2)
+    overloaded_loading_df["kV"] = overloaded_loading_df["kV"].round(2)
+    xfmr_upgrade_options["kVs"] = xfmr_upgrade_options["kVs"].apply(lambda x: [round(a, 2) for a in x])
+    overloaded_loading_df["kVs"] = overloaded_loading_df["kVs"].apply(lambda x: [round(a, 2) for a in x])
     # convert lists to string type (so they can be set as dataframe index later)
     xfmr_upgrade_options[['conns', 'kVs']] = xfmr_upgrade_options[['conns', 'kVs']].astype(str)
     overloaded_loading_df[['conns', 'kVs']] = overloaded_loading_df[['conns', 'kVs']].astype(str)
@@ -299,7 +309,10 @@ def correct_xfmr_violations(xfmr_loading_df, xfmr_design_pu, xfmr_upgrade_option
         xfmr_upgrades_df = pd.DataFrame()
         # iterate over each overloaded line to find a solution
         for index, row in overloaded_loading_df.iterrows():
-            options = xfmr_upgrade_options.loc[index]
+            try:
+                options = xfmr_upgrade_options.loc[index]
+            except KeyError:
+                raise ValueError(f"Transformer of parameters {deciding_property_list}: {index} not found in catalog.")
             if isinstance(options, pd.Series):  # if only one option is present, it is returned as series
                 options = pd.DataFrame([options])  # convert to required DataFrame format
                 options = options.rename_axis(deciding_property_list)  # assign names to the index

@@ -548,7 +548,7 @@ class LineUnitCostModel(UpgradeParamsBaseModel):
     @validator("line_placement")
     def check_line_placement(cls, line_placement):
         if line_placement not in ("underground", "overhead"):
-            raise ValueError("Incorrect Line placement type.")
+            raise ValueError("Incorrect Line placement type. Acceptable value: overhead, underground.")
         return line_placement
     
     @validator("cost_units")

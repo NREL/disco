@@ -898,9 +898,9 @@ def add_info_line_definition_type(all_df):
 
 
 def determine_line_placement(line_series):
-    """ Distinguish between overhead and underground cables
-        currently there is no way to distinguish directy using opendssdirect/pydss etc.
-        It is done here using property 'height' parameter and if string present in name
+    """ Distinguish between overhead and underground cables.
+        Latest opendss version has property "LineType"
+        If that is not available, it is determined using property 'height' parameter and if string present in name
 
     Parameters
     ----------
@@ -912,22 +912,29 @@ def determine_line_placement(line_series):
     """
     info_dict = {}
     info_dict["line_placement"] = None
-    if line_series["line_definition_type"] == "geometry":
-            dss.Circuit.SetActiveClass("linegeometry")
-            dss.ActiveClass.Name(line_series["geometry"])
-            h = float(dss.Properties.Value("h"))
-            info_dict["h"] = 0
-            if h >= 0:
-                info_dict["line_placement"] = "overhead"
-            else:
-                info_dict["line_placement"] = "underground"
+    
+    if ("LineType" in line_series) and (line_series["LineType"] in ["oh", "ug"]):
+        if line_series["LineType"] == "oh":
+            info_dict["line_placement"] = "overhead"
+        else:
+            info_dict["line_placement"] = "underground"
+    
+    elif line_series["line_definition_type"] == "geometry":
+        dss.Circuit.SetActiveClass("linegeometry")
+        dss.ActiveClass.Name(line_series["geometry"])
+        h = float(dss.Properties.Value("h"))
+        info_dict["h"] = 0
+        if h >= 0:
+            info_dict["line_placement"] = "overhead"
+        else:
+            info_dict["line_placement"] = "underground"
     else:
-        if ("oh" in line_series["geometry"].lower()) or ("oh" in line_series["linecode"].lower()):
+        if ("oh" in line_series["geometry"].lower()) or ("oh" in line_series["linecode"].lower()) :
             info_dict["line_placement"] = "overhead"
         elif ("ug" in line_series["geometry"].lower()) or ("ug" in line_series["linecode"].lower()):
             info_dict["line_placement"] = "underground"
         else:
-            info_dict["line_placement"] = None
+            info_dict["line_placement"] = "overhead"  # default is taken as overhead
     return info_dict
 
 

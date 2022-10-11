@@ -907,7 +907,11 @@ def determine_new_regulator_upgrades(voltage_config, buses_with_violations, volt
         best_setting_so_far = "after_addition_new_regcontrol"
     else: 
         new_reg_upgrade_commands = []
-        dss_commands_list = list(set(dss_commands_list) - set(regcontrol_settings_commands_list) - set(regcontrol_cluster_commands))
+        remove_commands_list = regcontrol_settings_commands_list + regcontrol_cluster_commands
+        if remove_commands_list:
+            for x in dss_commands_list:
+                if x in remove_commands_list:
+                    dss_commands_list.remove(x)
         reload_dss_circuit(dss_file_list=dss_file_list, commands_list=dss_commands_list, **kwargs)
         comparison_dict["disabled_new_regcontrol"] = compute_voltage_violation_severity(
                                                         voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
@@ -1188,7 +1192,6 @@ def test_new_regulator_placement_on_common_nodes(voltage_upper_limit, voltage_lo
 
     """
     intra_cluster_group_severity_dict = {}
-
     for node in common_upstream_nodes_list:
         new_xfmr_added_dict = None
         new_regcontrol_dict = None
@@ -1543,6 +1546,9 @@ def cluster_and_place_regulator(G, square_distance_df, initial_buses_with_violat
                                                                                    voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, 
                                                                                    default_regcontrol_settings=default_regcontrol_settings,
                                                                                    circuit_source=circuit_source, deciding_field=deciding_field, **kwargs)
+        if cluster_group_info_dict[cluster_id] == None:
+            logger.debug("There is no common node on which regulator can be placed (for this cluster group)")
+            return cluster_group_info_dict         
         cluster_group_info_dict[cluster_id].update({"buses_list": buses_list,})
         # determine voltage violations after changes
         bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(

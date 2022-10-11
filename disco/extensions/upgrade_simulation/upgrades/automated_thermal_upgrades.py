@@ -74,7 +74,8 @@ def determine_thermal_upgrades(
         line_upgrade_options = determine_available_line_upgrades(orig_lines_df)
         xfmr_upgrade_options = determine_available_xfmr_upgrades(orig_xfmrs_df)
         internal_upgrades_technical_catalog = {"line": line_upgrade_options.to_dict('records'), "transformer": xfmr_upgrade_options.to_dict('records'),
-                                               "linecode": orig_linecode_df.to_dict('records')}
+                                               "linecode": orig_linecode_df.to_dict('records'), }
+                                            #    "geometry": orig_linecode_df.to_dict('records')}
         # validate internal upgrades catalog
         input_catalog_model = UpgradeTechnicalCatalogModel(**internal_upgrades_technical_catalog)
         # reassign from model to dataframes, so datatypes are maintained
