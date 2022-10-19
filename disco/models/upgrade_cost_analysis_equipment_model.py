@@ -41,61 +41,72 @@ class CommonLineParameters(UpgradeParamsBaseModel):
         title="r1",
         description="r1",
         determine_upgrade_option=True,
+        symmetrical_impedance_property=True,
     )
     x1: Any = Field(
         title="x1",
         description="x1",
         determine_upgrade_option=True,
+        symmetrical_impedance_property=True,
     )
     r0: Any = Field(
         title="r0",
         description="r0",
         determine_upgrade_option=True,
+        symmetrical_impedance_property=True,
     )
     x0: Any = Field(
         title="x0",
         description="x0",
         determine_upgrade_option=True,
+        symmetrical_impedance_property=True,
     )
     C1: Any = Field(
         title="c1",
         description="c1",
         determine_upgrade_option=True,
+        symmetrical_impedance_property=True,
     )
     C0: Any = Field(
         title="c0",
         description="c0",
         determine_upgrade_option=True,
+        symmetrical_impedance_property=True,
     )
     rmatrix: List[str] = Field(
         title="rmatrix",
         description="rmatrix. If provided, should be a list.",
         determine_upgrade_option=True,
+        matrix_impedance_property=True,
     )
     xmatrix: List[str] = Field(
         title="xmatrix",
         description="xmatrix. If provided, should be a list.",
         determine_upgrade_option=True,
+        matrix_impedance_property=True,
     )
     cmatrix: List[str] = Field(
         title="cmatrix",
         description="cmatrix. If provided, should be a list.",
         determine_upgrade_option=True,
+        matrix_impedance_property=True,
     )
     Rg: float = Field(
         title="Rg",
         description="Rg",
         determine_upgrade_option=True,
+        matrix_impedance_property=True,
     )
     Xg: float = Field(
         title="Xg",
         description="Xg",
         determine_upgrade_option=True,
+        matrix_impedance_property=True,
     )
     rho: float = Field(
         title="rho",
         description="rho",
-        determine_upgrade_option=True,
+        matrix_impedance_property=True,
     )
     B1: Any = Field(
         title="B1",
@@ -210,7 +221,7 @@ class OpenDSSLineParams(CommonLineParameters):
 class ExtraLineParams(BaseModel):
     line_definition_type: str = Field(
         title="line_definition_type",
-        description="This indicates if the line is defined by using linecodes or line geometry. Possible values are linecode, geometry."
+        description="This indicates if the line is defined by using linecodes or line geometry. Possible values are linecode, geometry or be left empty."
                     "This is a computed field, not a direct OpenDSS object property",
         determine_upgrade_option=True,
     )
@@ -234,15 +245,15 @@ class ExtraLineParams(BaseModel):
     
     @validator("line_definition_type")
     def check_line_definition_type(cls, line_definition_type):
-        if line_definition_type not in ("linecode", "geometry"):
-            raise ValueError("Incorrect Line definition type. Acceptable value: linecode, geometry.")
+        if line_definition_type not in ("linecode", "geometry", ""):
+            raise ValueError("Incorrect Line definition type. Acceptable values: linecode, geometry or be left empty.")
         return line_definition_type
     
-    # @validator("line_placement")
-    # def check_line_placement(cls, line_placement):
-    #     if line_placement not in ("underground", "overhead"):
-    #         raise ValueError(f"Incorrect Line placement type: {line_placement}. Acceptable values: overhead, underground.")
-    #     return line_placement
+    @validator("line_placement")
+    def check_line_placement(cls, line_placement):
+        if line_placement not in ("underground", "overhead"):
+            raise ValueError(f"Incorrect Line placement type: {line_placement}. Acceptable values: overhead, underground.")
+        return line_placement
 
 
 class CommonTransformerParameters(UpgradeParamsBaseModel):

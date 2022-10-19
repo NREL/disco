@@ -98,6 +98,120 @@ class LineCodeCatalogModel(CommonLineParameters):
         description="basefreq",
         determine_upgrade_option=True,
     )
+    
+
+class LineGeometryCatalogModel(UpgradeParamsBaseModel):
+    """Contains LineGeometry information needed for thermal upgrade analysis. Most fields can be directly obtained from the opendss models"""
+    name: str = Field(
+        title="name",
+        description="name",
+    )
+    equipment_type: str = Field(
+        title="equipment_type",
+        description="equipment_type",
+        determine_upgrade_option=True,
+    )
+    nconds: int = Field(
+        title="nconds",
+        description="nconds",
+        determine_upgrade_option=True,
+    )
+    nphases: int = Field(
+        title="nphases",
+        description="nphases",
+        determine_upgrade_option=True,
+    )
+    cond: int = Field(
+        title="cond",
+        description="cond",
+        determine_upgrade_option=True,
+    )
+    wire: str = Field(
+        title="wire",
+        description="wire",
+        determine_upgrade_option=True,
+    )
+    x: List[float] = Field(
+        title="x",
+        description="x",
+        determine_upgrade_option=True,
+    )
+    h: List[float] = Field(
+        title="h",
+        description="h",
+        determine_upgrade_option=True,
+    )
+    units: List[str] = Field(
+        title="units",
+        description="units",
+        determine_upgrade_option=True,
+    )
+    normamps: float = Field(
+        title="normamps",
+        description="normamps",
+        determine_upgrade_option=True,
+    )
+    emergamps: float = Field(
+        title="emergamps",
+        description="emergamps",
+        determine_upgrade_option=True,
+    )
+    reduce: str = Field(
+        title="reduce",
+        description="reduce",
+        determine_upgrade_option=True,
+    )
+    spacing: Optional[Any] = Field(
+        title="spacing",
+        description="spacing",
+    )
+    wires: List[str] = Field(
+        title="wires",
+        description="wires",
+        determine_upgrade_option=True,
+    )
+    cncable: str = Field(
+        title="cncable",
+        description="cncable",
+        determine_upgrade_option=True,
+    )
+    tscable: str = Field(
+        title="tscable",
+        description="tscable",
+        determine_upgrade_option=True,
+    )
+    cncables: List[str] = Field(
+        title="cncables",
+        description="cncables",
+        determine_upgrade_option=True,
+    )
+    tscables: List[str] = Field(
+        title="tscables",
+        description="tscables",
+        determine_upgrade_option=True,
+    )
+    Seasons: int = Field(
+        title="Seasons",
+        description="Seasons",
+    )
+    Ratings: Any = Field(
+        title="Ratings",
+        description="Ratings",
+    )
+    LineType: str = Field(
+        title="LineType",
+        description="LineType",
+        determine_upgrade_option=True,
+    )
+    like: Any = Field(
+        title="like",
+        description="like",
+    )
+    LineType: str = Field(
+        title="LineType",
+        description="LineType",
+        determine_upgrade_option=True,
+    )
 
 
 class OpenDSSTransformerModel(CommonTransformerParameters):
@@ -145,12 +259,11 @@ class UpgradeTechnicalCatalogModel(UpgradeParamsBaseModel):
         description="linecode catalog",
         default=[]
     )
-    # TODO not implemented yet. Can be added if lines are defined through linegeometry
-    # geometry: Optional[List[LineGeometryCatalogModel]] = Field(
-    #     title="linegeometry",
-    #     description="linegeometry catalog",
-    #     default=[]
-    # )
+    geometry: Optional[List[LineGeometryCatalogModel]] = Field(
+        title="linegeometry",
+        description="linegeometry catalog",
+        default=[]
+    )
 
 
 class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
@@ -548,7 +661,7 @@ class LineUnitCostModel(UpgradeParamsBaseModel):
     @validator("line_placement")
     def check_line_placement(cls, line_placement):
         if line_placement not in ("underground", "overhead"):
-            raise ValueError("Incorrect Line placement type. Acceptable value: overhead, underground.")
+            raise ValueError("Incorrect Line placement type. Acceptable values: overhead, underground.")
         return line_placement
     
     @validator("cost_units")

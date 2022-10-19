@@ -194,7 +194,7 @@ All the equipment in this database will be considered as available options while
 If this file is not provided, a technical database will be automatically generated from the given feeder model. 
 This would provide the thermal upgrades module with a limited set of upgrade options.
 Refer to this `sample technical equipment catalog
-<https://github.com/NREL/disco/blob/main/disco/extensions/upgrade_simulation/upgrades/smartds_upgrades_technical_catalog.json>`_
+<https://github.com/NREL/disco/blob/main/disco/extensions/upgrade_simulation/upgrades/technical_catalog.json>`_
 for more information.
 
 

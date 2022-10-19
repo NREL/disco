@@ -23,7 +23,7 @@ from disco.models.upgrade_cost_analysis_generic_input_model import (
     _extract_specific_model_properties_, 
     LineCodeCatalogModel, 
     LineCatalogModel, 
-    TransformerCatalogModel, LineModel, TransformerModel
+    TransformerCatalogModel, LineGeometryCatalogModel
 )
 from disco.models.upgrade_cost_analysis_generic_output_model import UpgradesCostResultSummaryModel, \
     CapacitorControllerResultType,  VoltageRegulatorResultType, EquipmentUpgradeStatusModel
@@ -36,6 +36,8 @@ DSS_LINE_FLOAT_FIELDS =  _extract_specific_model_properties_(model_name=LineCata
 DSS_LINE_INT_FIELDS = _extract_specific_model_properties_(model_name=LineCatalogModel, field_type_key="type", field_type_value="integer")
 DSS_LINECODE_FLOAT_FIELDS =  _extract_specific_model_properties_(model_name=LineCodeCatalogModel, field_type_key="type", field_type_value="number")
 DSS_LINECODE_INT_FIELDS =  _extract_specific_model_properties_(model_name=LineCodeCatalogModel, field_type_key="type", field_type_value="integer")
+DSS_LINEGEOMETRY_FLOAT_FIELDS =  _extract_specific_model_properties_(model_name=LineGeometryCatalogModel, field_type_key="type", field_type_value="number")
+DSS_LINEGEOMETRY_INT_FIELDS =  _extract_specific_model_properties_(model_name=LineGeometryCatalogModel, field_type_key="type", field_type_value="integer")
 
 
 @track_timing(timer_stats_collector)
@@ -668,6 +670,7 @@ def ensure_line_config_exists(chosen_option, new_config_type, external_upgrades_
     """
     existing_config_dict = {"linecode": get_line_code(), "geometry": get_line_geometry()}
     new_config_name = chosen_option[new_config_type].lower()
+    # if there are no existing config definitions
     if existing_config_dict[new_config_type].empty:
         command_string = add_new_lineconfig_definition(chosen_option, new_config_type, external_upgrades_technical_catalog)
     else:
@@ -683,20 +686,27 @@ def add_new_lineconfig_definition(chosen_option, new_config_type, external_upgra
     # add definition for linecode or linegeometry
     if external_upgrades_technical_catalog is None:
         raise UpgradesExternalCatalogRequired(f"External upgrades technical catalog not available to determine line config type")
+    if (new_config_type not in external_upgrades_technical_catalog):
+        raise UpgradesExternalCatalogMissingObjectDefinition(
+            f"{new_config_type} definitions not found in external catalog."
+            f" Please check catalog, and add {new_config_type} definitions in it.")
     external_config_df = pd.DataFrame(external_upgrades_technical_catalog[new_config_type])
     if external_config_df.empty: 
         raise UpgradesExternalCatalogMissingObjectDefinition(
-            f"{new_config_type} definition not found in external catalog."
-        )    
+            f"{new_config_type} definitions not found in external catalog." 
+            f" Please check catalog, and add {new_config_type} definitions in it.")
     new_config_name = chosen_option[new_config_type]
     if external_config_df["name"].str.lower().isin([new_config_name.lower()]).any():
         config_definition_df = external_config_df.loc[external_config_df["name"].str.lower() == new_config_name.lower()].copy()
         if len(config_definition_df) == 1:  # if there is only one definition of that config name
             config_definition_dict = dict(config_definition_df.iloc[0])  
-        else:   # if there is more than one definition of that config name
+        elif len(config_definition_df) > 1:   # if there is more than one definition of that config name
             config_definition_df["temp_deviation"] = abs(config_definition_df["normamps"] - chosen_option["normamps"])
             config_definition_dict = dict(config_definition_df.loc[config_definition_df["temp_deviation"].idxmin()])
             config_definition_dict.pop("temp_deviation")
+        else:  # if definition not found
+            raise UpgradesExternalCatalogMissingObjectDefinition(
+                f"{new_config_name} definition of {new_config_type} type {new_config_type} not found in external catalog.")
         if config_definition_dict["normamps"] != chosen_option["normamps"]:
             logger.warning(f"Mismatch between noramps for linecode {new_config_name} ({config_definition_dict['normamps']}A) "
                             f"and chosen upgrade option normamps ({chosen_option['normamps']}A): {chosen_option['name']}")
@@ -1228,6 +1238,9 @@ def get_line_geometry():
     all_df['name'] = all_df.index.str.split('.').str[1]
     all_df['equipment_type'] = all_df.index.str.split('.').str[0]
     all_df.reset_index(inplace=True, drop=True)
+    all_df[DSS_LINEGEOMETRY_FLOAT_FIELDS] = all_df[DSS_LINEGEOMETRY_FLOAT_FIELDS].astype("float")
+    all_df[DSS_LINEGEOMETRY_INT_FIELDS] = all_df[DSS_LINEGEOMETRY_INT_FIELDS].astype("int")
+    all_df = all_df[list(LineGeometryCatalogModel.schema(True).get("properties").keys())]
     return all_df
 
 

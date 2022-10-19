@@ -56,7 +56,6 @@ def compute_all_costs(
         misc_database,
     ) = load_cost_database(cost_database_filepath)
     output_columns = list(EquipmentTypeUpgradeCostsResultModel.schema(True).get("properties").keys())
-
     # reformat data
     if not xfmr_upgrades_df.empty:
         xfmr_upgrades_df, xfmr_cost_database = reformat_xfmr_files(
@@ -282,6 +281,7 @@ def compute_line_costs(line_upgrades_df, line_cost_database, **kwargs):
     backup_deciding_property = kwargs.get("backup_deciding_property", "ampere_rating")
     # choose which properties are to be saved
     upgrade_type_list = ["upgrade", "new_parallel"]
+    
     added_line_df = line_upgrades_df.loc[(line_upgrades_df["upgrade_type"].isin(upgrade_type_list)) & (line_upgrades_df["action"] == "add")]
     computed_cost = []
     for index, row in added_line_df.iterrows():

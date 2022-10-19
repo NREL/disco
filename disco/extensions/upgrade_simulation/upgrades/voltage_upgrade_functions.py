@@ -1546,7 +1546,7 @@ def cluster_and_place_regulator(G, square_distance_df, initial_buses_with_violat
                                                                                    voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, 
                                                                                    default_regcontrol_settings=default_regcontrol_settings,
                                                                                    circuit_source=circuit_source, deciding_field=deciding_field, **kwargs)
-        if cluster_group_info_dict[cluster_id] == None:
+        if cluster_group_info_dict[cluster_id] is None:
             logger.debug("There is no common node on which regulator can be placed (for this cluster group)")
             return cluster_group_info_dict         
         cluster_group_info_dict[cluster_id].update({"buses_list": buses_list,})
