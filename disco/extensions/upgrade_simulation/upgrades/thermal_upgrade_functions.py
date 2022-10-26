@@ -58,6 +58,7 @@ def correct_line_violations(line_loading_df, line_design_pu, line_upgrade_option
                 options = pd.DataFrame([options])  # convert to required DataFrame format
                 options = options.rename_axis(deciding_property_list)  # assign names to the index
             options = options.reset_index().sort_values("normamps")
+            # breakpoint()
             if row["max_per_unit_loading"] > extreme_loading_threshold:  # i.e. equipment is very overloaded, then oversize more to avoid multiple upgrade iterations
                 row["required_design_amp"] = row["required_design_amp"] * (row["max_per_unit_loading"] * 0.5)
             chosen_option = options.loc[options["normamps"] >= row["required_design_amp"]].sort_values("normamps")
@@ -198,7 +199,7 @@ def identify_parallel_lines(options, object_row, parallel_lines_limit, **kwargs)
         else:
             command_string = define_line_object(line_name=new_name, chosen_option=chosen_option.copy(deep=True), action_type="New", 
                                bus1=object_row['bus1'], bus2=object_row['bus2'], length=object_row['length'],
-                               units=object_row['units'])
+                               original_units=object_row['units'])
             chosen_option
             commands_list.append(command_string)
         temp_dict.pop("choose_parallel_metric")
@@ -217,9 +218,17 @@ def define_line_object(line_name, chosen_option, action_type, **kwargs):
         bus1 = kwargs.get("bus1", None)
         bus2 = kwargs.get("bus2", None)
         length = kwargs.get("length", None)
-        units = kwargs.get("units", None)
-        if bus1 is None or bus2 is None or length is None or units is None:
+        original_units = kwargs.get("original_units", None)
+        if bus1 is None or bus2 is None or length is None or original_units is None:
             raise ValueError(f"Bus and length information is needed when defining a new line object.")
+        if original_units != chosen_option["units"]:  # if units are different
+            # keep units of chosen option because impedances are defined in this unit
+            units = chosen_option["units"]  
+            # change length to be reflected in the new units
+            length = convert_length_units(length, unit_in=original_units, unit_out=chosen_option["units"])
+        else:
+            units = original_units
+            
         command_string = command_string + f" bus1={bus1} bus2={bus2} length={length} " \
                          f"units={units} phases={chosen_option['phases']}"
     # Impedances may be specified by symmetrical component values or by matrix values

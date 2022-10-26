@@ -172,11 +172,11 @@ def determine_thermal_upgrades(
         iteration_counter < max_upgrade_iteration):
         line_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["line_upper_limit"], 
                                                     equipment_type="line", ignore_switch=ignore_switch, **simulation_params)
+        # breakpoint()
         overloaded_line_list = list(line_loading_df.loc[line_loading_df["status"] == "overloaded"]["name"].unique())
         logger.info(f"Iteration_{iteration_counter}: Determined line loadings.")
         logger.info(f"Iteration_{iteration_counter}: Number of line violations: {len(overloaded_line_list)}")
         before_upgrade_num_line_violations = len(overloaded_line_list)
-        
         if len(overloaded_line_list) > 0:            
             line_commands_list, temp_line_upgrades_df = correct_line_violations(
                 line_loading_df=line_loading_df,
@@ -187,7 +187,6 @@ def determine_thermal_upgrades(
             logger.info(f"Iteration_{iteration_counter}: Corrected line violations.")
             commands_list = commands_list + line_commands_list
             line_upgrades_df = pd.concat([line_upgrades_df, temp_line_upgrades_df])
-
         xfmr_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["transformer_upper_limit"], 
                                                     equipment_type="transformer", **simulation_params)
         overloaded_xfmr_list = list(xfmr_loading_df.loc[xfmr_loading_df["status"] == "overloaded"]["name"].unique())
@@ -224,17 +223,18 @@ def determine_thermal_upgrades(
             raise UpgradesInvalidViolationIncrease(f"Xfmr violations increased from {before_upgrade_num_xfmr_violations} to {len(overloaded_xfmr_list)} "
                 f"during upgrade process")
 
-        num_violations_curr_itr = len(overloaded_xfmr_list) + len(overloaded_line_list)
-        logger.info(f"Iteration_{iteration_counter}: Number of devices with violations after upgrades in this iteration: {num_violations_curr_itr}")
+        logger.info(f"Iteration_{iteration_counter}: Number of devices with violations after this iteration: Transformers:{len(overloaded_xfmr_list)}, Lines: {len(overloaded_line_list)}")
         iteration_counter += 1
         if iteration_counter > max_upgrade_iteration:
             logger.info(f"Max iterations limit reached, quitting algorithm. This means all thermal violations were not resolved with these limited iterations."
                         f"You can increase the Iteration limit in the thermal_config['upgrade_iteration_threshold']")
             break
-
+        # breakpoint()
     if iteration_counter > 1:
         logger.info(f"Multiple iterations ({iteration_counter}) were needed to resolve thermal violations."
                     f"This indicates that feeder was extremely overloaded to start with.")
+    # breakpoint()
+    
     if any("new " in string.lower() for string in commands_list):  # if new equipment is added.
         commands_list.append("CalcVoltageBases")
     commands_list.append("Solve")

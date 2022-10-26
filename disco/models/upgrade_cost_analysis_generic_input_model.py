@@ -242,6 +242,8 @@ class TransformerCatalogModel(CommonTransformerParameters, ExtraTransformerParam
         title="name",
         description="name",
     )
+
+
 class UpgradeTechnicalCatalogModel(UpgradeParamsBaseModel):
     """Contains Upgrades Technical Catalog needed for thermal upgrade analysis"""
     line: Optional[List[LineCatalogModel]] = Field(

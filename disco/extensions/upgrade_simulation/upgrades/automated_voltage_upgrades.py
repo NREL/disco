@@ -146,6 +146,8 @@ def determine_voltage_upgrades(
     circuit_source = orig_ckt_info["source_bus"]
     bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
                 voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)    
+    logger.info(f"Number of overvoltage violations: {len(overvoltage_bus_list)}")
+    logger.info(f"Number of undervoltage violations: {len(undervoltage_bus_list)}")
     # if there are no buses with violations based on initial check, don't get into upgrade process
     # directly go to end of file
     if len(buses_with_violations) <= 0:

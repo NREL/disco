@@ -21,19 +21,19 @@ from disco.exceptions import (
 )
 from disco.models.upgrade_cost_analysis_generic_input_model import (
     _extract_specific_model_properties_, 
-    LineCodeCatalogModel, 
-    LineCatalogModel, 
-    TransformerCatalogModel, LineGeometryCatalogModel
+    LineCodeCatalogModel, LineGeometryCatalogModel,
+    LineModel, LineCatalogModel,
+    TransformerModel, TransformerCatalogModel,
 )
 from disco.models.upgrade_cost_analysis_generic_output_model import UpgradesCostResultSummaryModel, \
     CapacitorControllerResultType,  VoltageRegulatorResultType, EquipmentUpgradeStatusModel
 
 logger = logging.getLogger(__name__)
 
-DSS_XFMR_FLOAT_FIELDS = _extract_specific_model_properties_(model_name=TransformerCatalogModel, field_type_key="type", field_type_value="number")
-DSS_XFMR_INT_FIELDS = _extract_specific_model_properties_(model_name=TransformerCatalogModel, field_type_key="type", field_type_value="integer")
-DSS_LINE_FLOAT_FIELDS =  _extract_specific_model_properties_(model_name=LineCatalogModel, field_type_key="type", field_type_value="number")
-DSS_LINE_INT_FIELDS = _extract_specific_model_properties_(model_name=LineCatalogModel, field_type_key="type", field_type_value="integer")
+DSS_XFMR_FLOAT_FIELDS = _extract_specific_model_properties_(model_name=TransformerModel, field_type_key="type", field_type_value="number")
+DSS_XFMR_INT_FIELDS = _extract_specific_model_properties_(model_name=TransformerModel, field_type_key="type", field_type_value="integer")
+DSS_LINE_FLOAT_FIELDS =  _extract_specific_model_properties_(model_name=LineModel, field_type_key="type", field_type_value="number")
+DSS_LINE_INT_FIELDS = _extract_specific_model_properties_(model_name=LineModel, field_type_key="type", field_type_value="integer")
 DSS_LINECODE_FLOAT_FIELDS =  _extract_specific_model_properties_(model_name=LineCodeCatalogModel, field_type_key="type", field_type_value="number")
 DSS_LINECODE_INT_FIELDS =  _extract_specific_model_properties_(model_name=LineCodeCatalogModel, field_type_key="type", field_type_value="integer")
 DSS_LINEGEOMETRY_FLOAT_FIELDS =  _extract_specific_model_properties_(model_name=LineGeometryCatalogModel, field_type_key="type", field_type_value="number")
@@ -244,6 +244,13 @@ def get_dictionary_of_duplicates(df, subset, index_field):
     tuple_list = df.groupby(subset).apply(lambda x: tuple(x.index)).tolist()
     mapping_dict = {v: tup[0] for tup in tuple_list for v in tup}
     return mapping_dict
+
+
+def convert_length_units(val, unit_in, unit_out):
+    """Length unit converter"""
+    LENGTH_CONVERSION = {'mm': 0.001, 'cm': 0.01, 'm': 1.0, 'km': 1000., "mi": 1609.34, "kft": 304.8, 
+          "ft": 0.3048,  "in": 0.0254,}
+    return val*LENGTH_CONVERSION[unit_in]/LENGTH_CONVERSION[unit_out]
 
 
 def get_scenario_name(enable_pydss_solve, pydss_volt_var_model):
@@ -909,8 +916,14 @@ def add_info_line_definition_type(all_df):
 
 def determine_line_placement(line_series):
     """ Distinguish between overhead and underground cables.
-        Latest opendss version has property "LineType"
-        If that is not available, it is determined using property 'height' parameter and if string present in name
+    Latest opendss version has property "LineType"
+    line_placement is determined via:
+    1. "LineType" property
+    2. height property if defined as line geometry
+    # line_placement determined via height takes precedence over linetype property
+    # this is because if linetype property is not defined in opendss definition, then default: oh is assigned
+    
+    If line_placement is still not available, it is determined using presence of string "oh" or "ug" in name
 
     Parameters
     ----------
@@ -922,29 +935,37 @@ def determine_line_placement(line_series):
     """
     info_dict = {}
     info_dict["line_placement"] = None
-    
+    line_placement = None
+    # use linetype property to determine line_placement
     if ("LineType" in line_series) and (line_series["LineType"] in ["oh", "ug"]):
         if line_series["LineType"] == "oh":
-            info_dict["line_placement"] = "overhead"
+            linetype_placement = "overhead"
         else:
-            info_dict["line_placement"] = "underground"
-    
-    elif line_series["line_definition_type"] == "geometry":
+            linetype_placement = "underground"
+    line_placement = linetype_placement
+    if line_series["line_definition_type"] == "geometry":
+        # use height property to determine line_placement
         dss.Circuit.SetActiveClass("linegeometry")
         dss.ActiveClass.Name(line_series["geometry"])
         h = float(dss.Properties.Value("h"))
         info_dict["h"] = 0
         if h >= 0:
-            info_dict["line_placement"] = "overhead"
+            geom_placement = "overhead"
         else:
-            info_dict["line_placement"] = "underground"
-    else:
+            geom_placement = "underground"
+        # line_placement determined via height takes precedence over linetype property
+        # this is because if linetype property is not defined in opendss definition, then default: oh is assigned
+        if linetype_placement != geom_placement:
+            line_placement = geom_placement 
+    # if line_placement is still None, then use line name to determine line placement
+    if line_placement is None:
         if ("oh" in line_series["geometry"].lower()) or ("oh" in line_series["linecode"].lower()) :
-            info_dict["line_placement"] = "overhead"
+            line_placement = "overhead"
         elif ("ug" in line_series["geometry"].lower()) or ("ug" in line_series["linecode"].lower()):
-            info_dict["line_placement"] = "underground"
+            line_placement = "underground"
         else:
-            info_dict["line_placement"] = "overhead"  # default is taken as overhead
+            line_placement = "overhead"  # default is taken as overhead
+    info_dict["line_placement"] = line_placement
     return info_dict
 
 
@@ -958,7 +979,7 @@ def get_all_line_info_instance(upper_limit=None, compute_loading=True, ignore_sw
     all_df = dss.utils.class_to_dataframe("line")
     if len(all_df) == 0:
         return pd.DataFrame()
-    check_enabled_property(all_df, element_name="line")    
+    check_enabled_property(all_df, element_name="line")
     all_df["name"] = all_df.index.str.split(".").str[1]
     all_df["equipment_type"] = all_df.index.str.split(".").str[0]
     # extract only enabled lines
@@ -990,6 +1011,11 @@ def get_all_line_info_instance(upper_limit=None, compute_loading=True, ignore_sw
         placement_dict = determine_line_placement(row)
         for key in placement_dict.keys():
             all_df.at[index, key] = placement_dict[key] 
+        if row["units"] == "none":
+            # breakpoint()
+            # TODO is there a mapping available
+            # all_df.at[index, "units"] = dss.Lines.Units()
+            all_df.at[index, "units"] = "m"
         # if line loading is to be computed
         if compute_loading:
             if upper_limit is None:
@@ -1011,6 +1037,7 @@ def get_all_line_info_instance(upper_limit=None, compute_loading=True, ignore_sw
     all_df["kV"] = all_df["kV"].round(5)
     # add units to switch length (needed to plot graph). By default, length of switch is taken as max
     check_switch_property(all_df)
+    # breakpoint()
     all_df.loc[(all_df.units == 'none') & (all_df.Switch.str.lower() == "yes"), 'units'] = 'm'
     # if switch is to be ignored
     if ignore_switch:
@@ -1179,7 +1206,6 @@ def get_capacitor_info(nominal_voltage=None, correct_PT_ratio=False):
                                   'equipment_type': 'capcontrol_present'}, inplace=True)
     capcontrol_df = capcontrol_df.set_index("capacitor_name")
     # with capacitor name as index, concatenate capacitor information with cap controls
-    # TODO are any other checks needed before concatenating dataframes? i.e. if capacitor is not present
     all_df = pd.concat([all_df, capcontrol_df], axis=1)
     all_df.index.name = 'capacitor_name'
     all_df = all_df.reset_index().set_index('capacitor_name')
@@ -1212,14 +1238,18 @@ def get_cap_control_info():
     """
     all_df = dss.utils.class_to_dataframe("capcontrol")
     if len(all_df) == 0:
-        capcontrol_columns = ['name', 'capacitor', 'type', 'equipment_type']
+        capcontrol_columns = ["name",  "equipment_type", "element", "terminal", "capacitor", 
+                              "type", "PTratio", "CTratio", "ONsetting", "OFFsetting", "Delay", 
+                              "VoltOverride", "Vmax", "Vmin", "DelayOFF", "DeadTime", "CTPhase", 
+                              "PTPhase", "VBus", "EventLog", "UserModel", "UserData", "pctMinkvar", 
+                              "Reset", "basefreq", "enabled", "like"]
         return pd.DataFrame(columns=capcontrol_columns)
     check_enabled_property(all_df, element_name="capcontrol")
     all_df["name"] = all_df.index.str.split(".").str[1]
     all_df["equipment_type"] = all_df.index.str.split(".").str[0]
-    float_columns = ["CTratio", "DeadTime", "Delay", "DelayOFF", "OFFsetting", "ONsetting", "PTratio",
-                     "Vmax", "Vmin"]
-    all_df[float_columns] = all_df[float_columns].astype(float)
+    CAPCONTROL_FLOAT_FIELDS = ["CTratio", "DeadTime", "Delay", "DelayOFF", "OFFsetting", "ONsetting", "PTratio",
+                              "Vmax", "Vmin"]
+    all_df[CAPCONTROL_FLOAT_FIELDS] = all_df[CAPCONTROL_FLOAT_FIELDS].astype(float)
     all_df = all_df.reset_index(drop=True).set_index("name")
     return all_df.reset_index()
 
@@ -1548,7 +1578,10 @@ def get_bus_coordinates():
         bus_dict['x_coordinate'] = dss.Bus.X()
         bus_dict['y_coordinate'] = dss.Bus.Y()
         buses_list.append(bus_dict)
-    return pd.DataFrame(buses_list)
+    bus_coordinates_df = pd.DataFrame(buses_list)
+    if all(bus_coordinates_df["x_coordinate"].unique() == [0]) and all( bus_coordinates_df["y_coordinate"].unique() == [0]):
+        logger.info("Buscoordinates not provided for feeder model.")
+    return bus_coordinates_df
 
 
 def convert_summary_dict_to_df(summary_dict):
@@ -1561,7 +1594,7 @@ def filter_dictionary(dict_data, wanted_keys):
     return {k: dict_data.get(k, None) for k in wanted_keys}
 
 
-def compare_dict(old, new):
+def compare_dict(old, new, properties_to_check=None):
     """function to compare two dictionaries with same format. 
     Only compares common elements present in both original and new dictionaries
     
@@ -1569,9 +1602,19 @@ def compare_dict(old, new):
     field_list = []
     change = {}
     sharedKeys = set(old.keys()).intersection(new.keys())
+    if not sharedKeys:  # if there are no shared keys, then exit function
+        return change
+    all_properties = old[list(sharedKeys)[0]].keys()
+    if properties_to_check is None:
+        # get all properties from first element of dictionary
+        properties_to_check = all_properties
+    else:
+        properties_to_check = list(set(all_properties) & set(properties_to_check))
     for key in sharedKeys:
         change_flag = False
-        for sub_field in old[key]:
+        for sub_field in properties_to_check:
+            if pd.isna(old[key][sub_field]) and pd.isna(new[key][sub_field]):
+                continue
             if old[key][sub_field] != new[key][sub_field]:
                 change_flag = True
                 field_list.append(sub_field)

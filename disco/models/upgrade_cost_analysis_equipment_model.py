@@ -221,7 +221,7 @@ class OpenDSSLineParams(CommonLineParameters):
 class ExtraLineParams(BaseModel):
     line_definition_type: str = Field(
         title="line_definition_type",
-        description="This indicates if the line is defined by using linecodes or line geometry. Possible values are linecode, geometry or be left empty."
+        description="This indicates if the line is defined by using linecodes or line geometry. Possible values are linecode, geometry or line_definition."
                     "This is a computed field, not a direct OpenDSS object property",
         determine_upgrade_option=True,
     )
@@ -245,8 +245,8 @@ class ExtraLineParams(BaseModel):
     
     @validator("line_definition_type")
     def check_line_definition_type(cls, line_definition_type):
-        if line_definition_type not in ("linecode", "geometry", ""):
-            raise ValueError("Incorrect Line definition type. Acceptable values: linecode, geometry or be left empty.")
+        if line_definition_type not in ("linecode", "geometry", "line_definition"):
+            raise ValueError(f"Incorrect Line definition type: {line_definition_type}. Acceptable values: linecode, geometry or line_definition.")
         return line_definition_type
     
     @validator("line_placement")

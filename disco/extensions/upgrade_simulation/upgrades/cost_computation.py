@@ -6,7 +6,8 @@ import numpy as np
 from jade.utils.timing_utils import track_timing, Timer
 from jade.utils.utils import load_data, dump_data
 
-from .common_functions import create_overall_output_file, convert_dict_nan_to_none, summarize_upgrades_outputs
+from .common_functions import create_overall_output_file, convert_dict_nan_to_none, summarize_upgrades_outputs, \
+    convert_length_units
 from disco import timer_stats_collector
 from disco.utils.custom_encoders import ExtendedJSONEncoder
 from disco.models.upgrade_cost_analysis_generic_input_model import load_cost_database
@@ -300,6 +301,8 @@ def compute_line_costs(line_upgrades_df, line_cost_database, **kwargs):
                                            (line_cost_database["upgrade_type"] == upgrade_type)
                                            ]["cost_per_m"]
         # convert line length to metres
+        # breakpoint()
+        line_length_m = convert_length_units(length=row["length"], unit_in=row["units"], unit_out="m")
         line_length_m = row["length"] * LENGTH_CONVERSION_TO_METRE[row["units"]]
         params_dict = dict(row[['final_equipment_name'] + deciding_columns])
         row["equipment_parameters"] = params_dict

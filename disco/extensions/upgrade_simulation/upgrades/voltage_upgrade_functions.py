@@ -101,7 +101,7 @@ def correct_capacitor_parameters(default_capacitor_settings, orig_capacitors_df,
     for index, row in capcontrol_present_df.iterrows():
         # if capcontrol is present, change to voltage controlled and apply default settings. (this also adds re-computed PTratio)
         if (row["capcontrol_type"].lower() != "voltage"):
-            logger.info(f"Capacitor control changed to voltage controlled for {row['capcontrol_name']}")
+            logger.info(f"Existing control changed to voltage controlled for {row['capcontrol_name']}")
             command_string = f"Edit CapControl.{row['capcontrol_name']} PTRatio={row['PTratio']} " \
                              f"{default_capcontrol_command}"
             check_dss_run_command(command_string)
@@ -116,7 +116,7 @@ def correct_capacitor_parameters(default_capacitor_settings, orig_capacitors_df,
         # if it is already voltage controlled, modify PT ratio if new is different after re-computation
         if (row["capcontrol_type"].lower() == "voltage") and (round(row['PTratio'], 2) != round(row['old_PTratio'], 2)):
             orig_string = ' !original, corrected PTratio only'
-            logger.info(f"PT ratio corrected for capcontrol {row['capcontrol_name']}.")
+            logger.info(f"PT ratio corrected for existing voltage controlled capcontrol {row['capcontrol_name']}.")
             command_string = f"Edit CapControl.{row['capcontrol_name']} PTRatio={row['PTratio']}" + orig_string
             check_dss_run_command(command_string)
             # this does not change original settings, so should not cause convergence
@@ -128,7 +128,7 @@ def correct_capacitor_parameters(default_capacitor_settings, orig_capacitors_df,
     lines_df['bus1_extract'] = lines_df['bus1'].str.split(".").str[0]
     no_capcontrol_present_df = orig_capacitors_df.loc[orig_capacitors_df['capcontrol_present'] != 'capcontrol']
     for index, row in no_capcontrol_present_df.iterrows():
-        logger.info(f"Capacitor control (voltage controlled) added for {row['capcontrol_name']}.")
+        logger.info(f"New capacitor control (voltage controlled) added for {row['capacitor_name']}.")
         capcontrol_name = "capcontrol" + row['capacitor_name']
         # extract line name that has the same bus as capacitor
         line_name = lines_df.loc[lines_df['bus1_extract'] == row['bus1']]['name'].values[0]
@@ -293,7 +293,6 @@ def determine_capacitor_upgrades(voltage_upper_limit, voltage_lower_limit, defau
     
     capacitor_dss_commands = []
     logger.info("Capacitors are present in the network. Perform capacitor bank control modifications.")
-    # correct cap control parameters: change to voltage controlled, correct PT ratio. Add cap control if not present
     capcontrol_parameter_commands_list = correct_capacitor_parameters(
         default_capacitor_settings=default_capacitor_settings, orig_capacitors_df=orig_capacitors_df,
         nominal_voltage=voltage_config['nominal_voltage'], **kwargs)
@@ -338,12 +337,23 @@ def get_capacitor_upgrades(orig_capacitors_df, new_capacitors_df):
     
     final_cap_upgrades = {}
     processed_outputs = []
-    # STEP 1: compare controllers that exist in both: original and new- and get difference
-    change = compare_dict(orig_capcontrols, new_capcontrols)
+    # STEP 1: account for any new controllers added (which are not there in original)
+    change = compare_dict(orig_capcontrols, new_capcontrols, properties_to_check=["capcontrol_present", "capcontrol_name"])
+    new_addition = list(change.keys())    
+    
+    # STEP 2: compare controllers that exist in both: original and new- and get difference
+    properties_to_check = ['capacitor_name', 'phases', 'kvar', 'kv', 'conn',
+       'normamps', 'emergamps', 'basefreq', 'equipment_type', 
+       'capcontrol_name', 'capcontrol_type', 'PTratio', 'CTratio', 'ONsetting', 'OFFsetting',
+       'Delay', 'Vmax', 'Vmin', 'DelayOFF', 'DeadTime',
+       'basefreq', 'enabled', 'capcontrol_present', 'old_PTratio']
+    change = compare_dict(orig_capcontrols, new_capcontrols, properties_to_check)
     modified_capacitors = list(change.keys())
-    # STEP 2: account for any new controllers added (which are not there in original)
-    new_addition = list(set(new_capcontrols.keys()) -
-                        (set(orig_capcontrols.keys()) & set(new_capcontrols.keys())))
+    # remove any new addition capcontrols capacitors from modified list
+    modified_capacitors = list(set(modified_capacitors) - set(new_addition))
+    # # this checks for addition of new capacitors - can be used if needed in future
+    # new_addition = list(set(new_capcontrols.keys()) -
+    #                     (set(orig_capcontrols.keys()) & set(new_capcontrols.keys())))
     cap_upgrades = [*modified_capacitors, *new_addition]  # combining these two lists to get upgraded capacitors
     if cap_upgrades:
         for cap_name in cap_upgrades:
@@ -908,7 +918,9 @@ def determine_new_regulator_upgrades(voltage_config, buses_with_violations, volt
     else: 
         new_reg_upgrade_commands = []
         remove_commands_list = regcontrol_settings_commands_list + regcontrol_cluster_commands
+        # breakpoint()  # TODO Dan's comment: You would need to build a temporary list of the names or indices to remove and then iterate over that to perform the removals.
         if remove_commands_list:
+            remove_indices = []
             for x in dss_commands_list:
                 if x in remove_commands_list:
                     dss_commands_list.remove(x)
@@ -1571,7 +1583,7 @@ def determine_new_regulator_location(circuit_source, initial_buses_with_violatio
     create_plots = kwargs.get("create_plots", False)
 
     # prepare for clustering
-    G = generate_networkx_representation(create_plot=False)
+    G = generate_networkx_representation()
     upper_triang_paths_dict = get_upper_triangular_dist(G=G, buses_with_violations=initial_buses_with_violations)
     square_distance_df = get_full_distance_df(upper_triang_paths_dict=upper_triang_paths_dict)
     # if create_plots:
@@ -1649,6 +1661,11 @@ def plot_feeder(fig_folder, title, circuit_source=None, enable_detailed=False):
     """Function to plot feeder network.
     """
     G = generate_networkx_representation()
+    bus_coordinates_df = get_bus_coordinates()
+    incomplete_flag = check_buscoordinates_completeness(bus_coordinates_df)  # check if sufficient buscoordinates data is available
+    if incomplete_flag:  # feeder cannot be plotted if sufficient buscoordinates data is unavailable
+        logger.warning(f"Unable to plot {title} because feeder model bus coordinates are not provided.")
+        return
     position_dict = nx.get_node_attributes(G, 'pos')
     nodes_list = G.nodes()
     Un_G = G.to_undirected()
@@ -1704,6 +1721,11 @@ def plot_voltage_violations(fig_folder, title, buses_with_violations, circuit_so
     default_node_size = 2
     default_node_color = 'black'
     G = generate_networkx_representation()
+    bus_coordinates_df = get_bus_coordinates()
+    incomplete_flag = check_buscoordinates_completeness(bus_coordinates_df)  # check if sufficient buscoordinates data is available
+    if incomplete_flag:  # feeder cannot be plotted if sufficient buscoordinates data is unavailable
+        logger.warning(f"Unable to plot {title} because feeder model bus coordinates are not provided.")
+        return
     position_dict = nx.get_node_attributes(G, 'pos')
     nodes_list = G.nodes()
     Un_G = G.to_undirected()
@@ -1761,6 +1783,11 @@ def plot_thermal_violations(fig_folder, title, equipment_with_violations, circui
     default_node_size = 2
     default_node_color = 'black'
     G = generate_networkx_representation()
+    bus_coordinates_df = get_bus_coordinates()
+    incomplete_flag = check_buscoordinates_completeness(bus_coordinates_df)  # check if sufficient buscoordinates data is available
+    if incomplete_flag:  # feeder cannot be plotted if sufficient buscoordinates data is unavailable
+        logger.warning(f"Unable to plot {title} because feeder model bus coordinates are not provided.")
+        return
     position_dict = nx.get_node_attributes(G, 'pos')
     # nodes_list = G.nodes()
     # edges_list = G.edges()
@@ -1824,6 +1851,11 @@ def plot_created_clusters(fig_folder, clusters_dict, circuit_source=None):
     default_node_size = 2
     default_node_color = 'black'
     G = generate_networkx_representation()
+    bus_coordinates_df = get_bus_coordinates()
+    incomplete_flag = check_buscoordinates_completeness(bus_coordinates_df)  # check if sufficient buscoordinates data is available
+    if incomplete_flag:  # feeder cannot be plotted if sufficient buscoordinates data is unavailable
+        logger.warning(f"Unable to plot {title} because feeder model bus coordinates are not provided.")
+        return
     position_dict = nx.get_node_attributes(G, 'pos')
     Un_G = G.to_undirected()
     
@@ -1860,8 +1892,6 @@ def plot_created_clusters(fig_folder, clusters_dict, circuit_source=None):
     plt.savefig(os.path.join(fig_folder, title+".pdf"))
     plt.close(fig)
     return
-
-    
 
 
 def add_graph_bus_nodes(G, bus_coordinates_df):
@@ -1932,7 +1962,7 @@ def searchDictKey(dct, value):
     return [key for key in dct if (dct[key] == value)]
 
 
-def generate_networkx_representation(**kwargs):
+def generate_networkx_representation():
     """This function generates a networkx graph of the circuit
 
     Parameters
@@ -1950,9 +1980,26 @@ def generate_networkx_representation(**kwargs):
     edges_df = get_graph_edges_dataframe(attr_fields=attr_fields)  # get edges dataframe (from lines and transformers)
     # add edges to graph
     G = add_graph_edges(G=G, edges_df=edges_df, attr_fields=attr_fields, source='bus1', target='bus2')
-    create_plot = kwargs.get('create_plot', False)
-    G = correct_node_coordinates(G=G)  # corrects node coordinates 
+    incomplete_flag = check_buscoordinates_completeness(bus_coordinates_df, verbose=True)  # check if sufficient buscoordinates data is available
+    if not incomplete_flag:
+        G, commands_list = correct_node_coordinates(G=G)  # corrects node coordinates 
+        # TODO should we print to a new buscoords file?
+        if commands_list:
+            print("Print buscoords")
     return G
+
+
+def check_buscoordinates_completeness(bus_coordinates_df, verbose=False):
+    """This function checks if complete bus coordinates are present. This is needed to plot feeder figures.
+    """
+    # if coordinates for a buses are [0,0], then it is considered incomplete/unavailable data
+    percent_missing = len(bus_coordinates_df.loc[(bus_coordinates_df["x_coordinate"] == 0) & (bus_coordinates_df["y_coordinate"] == 0)]) * 100 / len(bus_coordinates_df)
+    incomplete_flag = percent_missing > 25
+    # if buscoordinates data is incomplete, log the completeness of data
+    if incomplete_flag:
+        if verbose:
+            logger.warning(f"Buscoordinates missing for {percent_missing:.2f}% of buses in feeder model. Please verify accurate buscoordinates.dss is present, to plot figures.")
+    return incomplete_flag
 
 
 def correct_node_coordinates(G):
@@ -1968,6 +2015,7 @@ def correct_node_coordinates(G):
     """
     position_dict = nx.get_node_attributes(G, 'pos')
     missing_coords_nodes = searchDictKey(position_dict, [0, 0])  # get list of nodes with missing coordinates ([0,0])
+    commands_list = []
 
     # iterate over all nodes with missing coordinates
     for missing_node in missing_coords_nodes:
@@ -1978,27 +2026,28 @@ def correct_node_coordinates(G):
         if len(parent_node) != 0:  # parent node exists
             reference_coord = position_dict[parent_node[0]]
             if set(reference_coord) == {0}:  # if parent node also has [0,0] coordinates
-                ancestors_list = G.ancestors(missing_node)  # find list of ancestors, and iterate over them
+                ancestors_list = list(nx.ancestors(G, missing_node))  # find list of ancestors, and iterate over them
                 for ancestor in ancestors_list:
                     reference_coord = position_dict[ancestor]
                     # once an ancestor with non zero coordinates is found, stop iteration
                     if set(reference_coord) != {0}:
                         break
             nx.set_node_attributes(G, {missing_node: reference_coord}, name="pos")  # assign coordinates
-            
+            commands_list.append("{} {} {}".format(missing_node, reference_coord[0], reference_coord[1]))
         elif len(child_node) != 0:  # child node exists
             reference_coord = position_dict[child_node[0]]
             if set(reference_coord) == {0}:  # if child node also has [0,0] coordinates
-                successors_list = nx.dfs_successors(G, missing_node)
+                successors_list = list(nx.dfs_successors(G, missing_node))   # find list of successors, and iterate over them
                 for successor in successors_list:
                     reference_coord = position_dict[successor]
                     # once a node with non zero coordinates is found, stop iteration
                     if set(reference_coord) != {0}:
                         break
             nx.set_node_attributes(G, {missing_node: reference_coord}, name="pos")  # assign coordinates
+            commands_list.append("{} {} {}".format(missing_node, reference_coord[0], reference_coord[1]))
         else:  # if there are no parent or child nodes
             continue  # can't correct coordinates cause no parent or child nodes found.
-    return G
+    return G, commands_list
 
 
 def check_substation_LTC(new_ckt_info, xfmr_name):

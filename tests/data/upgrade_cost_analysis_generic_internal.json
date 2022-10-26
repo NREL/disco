@@ -7,7 +7,8 @@
     "voltage_upper_limit": 1.05,
     "voltage_lower_limit": 0.95,
     "read_external_catalog": false,
-    "external_catalog": ""
+    "external_catalog": "",
+	"create_plots": true
   },
   "voltage_upgrade_params": {
     "initial_upper_limit": 1.05,
@@ -22,8 +23,11 @@
     ],
     "reg_v_delta": 0.5,
     "max_regulators": 4,
-    "place_new_regulators": false,
-    "use_ltc_placement": false
+	"use_ltc_placement": true,
+    "place_new_regulators": true,
+	"capacitor_action_flag": true,
+	"existing_regulator_sweep_action": true,
+	"create_plots": true
   },
   "enable_pydss_controllers": false,
   "include_pf1": true,
@@ -31,14 +35,14 @@
   "jobs": [
     {
       "model_type": "UpgradeCostAnalysisGenericModel",
-      "name": "p1uhs21_1247__p1udt5257__close__1__5",
+      "name": "p1uhs21_1247__p1udt5257__close__1__5_internal",
       "opendss_model_file": "tests/data/generic-models/p1uhs21_1247/p1udt5257/PVDeployments/p1uhs21_1247__p1udt5257__close__1__5.dss",
       "blocked_by": [],
       "estimated_run_minutes": null
     },
     {
       "model_type": "UpgradeCostAnalysisGenericModel",
-      "name": "p1uhs21_1247__p1udt5257__close__1__15",
+      "name": "p1uhs21_1247__p1udt5257__close__1__15_internal",
       "opendss_model_file": "tests/data/generic-models/p1uhs21_1247/p1udt5257/PVDeployments/p1uhs21_1247__p1udt5257__close__1__15.dss",
       "blocked_by": [],
       "estimated_run_minutes": null
