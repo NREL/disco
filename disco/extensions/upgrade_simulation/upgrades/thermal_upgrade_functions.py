@@ -163,7 +163,8 @@ def identify_parallel_lines(options, object_row, parallel_lines_limit, **kwargs)
     chosen_option = chosen_option.iloc[0]  # choose lowest available option
     num_parallel_lines = int(chosen_option["num_parallel"])
     if num_parallel_lines > parallel_lines_limit:
-        raise ExceededParallelLinesLimit(f"Number of parallel lines is greater than limit={parallel_lines_limit}")
+        raise ExceededParallelLinesLimit(f"Number of parallel lines required is {num_parallel_lines}, which exceeds limit of {parallel_lines_limit}."
+                                          f" Increase parameter parallel_lines_limit in input config or ensure higher sized equipment is present in technical catalog.")
     new_config_type = chosen_option["line_definition_type"]
     external_upgrades_technical_catalog = kwargs.get("external_upgrades_technical_catalog", None)
     upgrades_dict_parallel = []
@@ -459,9 +460,11 @@ def identify_parallel_xfmrs(upgrade_options, object_row, parallel_transformers_l
                                    object_row["amp_limit_per_phase"]) / upgrade_options["amp_limit_per_phase"]
     upgrade_options["num_parallel"] = upgrade_options["num_parallel_raw"].apply(np.ceil)
     upgrade_options["choose_parallel_metric"] = upgrade_options["num_parallel"] - upgrade_options["num_parallel_raw"]
+    n = upgrade_options['num_parallel'].min()
     upgrade_options = upgrade_options.loc[upgrade_options["num_parallel"] <= parallel_transformers_limit]
     if len(upgrade_options) == 0:
-        raise ExceededParallelTransformersLimit(f"Number of parallel transformers is greater than limit!")
+        raise ExceededParallelTransformersLimit(f"Number of parallel transformers required is {int(n)}, which exceeds limit of {parallel_transformers_limit}."
+                                                f" Increase parameter parallel_transformers_limit in input config or ensure higher sized equipment is present in technical catalog.")
     # choose option that has the least value of this metric- since that represents the per unit oversizing
     chosen_option = upgrade_options.loc[upgrade_options["choose_parallel_metric"].idxmin()].copy()
     chosen_option["conns"] = ast.literal_eval(chosen_option["conns"])

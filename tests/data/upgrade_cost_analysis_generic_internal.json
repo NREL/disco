@@ -85,7 +85,7 @@
 	{
       "model_type": "UpgradeCostAnalysisGenericModel",
       "name": "123Bus",
-      "opendss_model_file": "./tests/data/upgrade-models/123Bus/Run_IEEE123Bus.dss",
+      "opendss_model_file": "./tests/data/upgrade-models/123Bus/Run_IEEE123Bus.DSS",
       "blocked_by": [],
       "estimated_run_minutes": null
     }

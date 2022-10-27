@@ -13,6 +13,7 @@ from tests.common import *
 TEST_UPGRADES_CONFIG_FILE_0 = Path("tests") / "data" / "upgrade_cost_analysis_generic_internal.json"
 TEST_UPGRADES_CONFIG_FILE_1 = Path("tests") / "data" / "upgrade_cost_analysis_generic.json"
 TEST_UPGRADES_CONFIG_FILE_2 = Path("tests") / "data" / "upgrade_cost_analysis_generic_vreg.json"
+TEST_UPGRADES_CONFIG_FILE_3 = Path("tests") / "data" / "upgrade_cost_analysis_generic_UO.json"
 UPGRADES_RESULTS_FILE = "upgrade_summary.json"
 
 
@@ -35,13 +36,16 @@ def test_generic_upgrade_jade_workflow(cleanup):
 def test_upgrades(cleanup):
     """Test for generic upgrades"""
     
+    run_cmd = f"disco upgrade-cost-analysis run {TEST_UPGRADES_CONFIG_FILE_0} -o {OUTPUT}"
+    assert run_command(run_cmd) == 0
+    verify_upgrade_results(OUTPUT)
     run_cmd = f"disco upgrade-cost-analysis run {TEST_UPGRADES_CONFIG_FILE_1} -o {OUTPUT}"
     assert run_command(run_cmd) == 0
     verify_upgrade_results(OUTPUT)
     run_cmd = f"disco upgrade-cost-analysis run {TEST_UPGRADES_CONFIG_FILE_2} -o {OUTPUT}"
     assert run_command(run_cmd) == 0
     verify_upgrade_results(OUTPUT)
-    run_cmd = f"disco upgrade-cost-analysis run {TEST_UPGRADES_CONFIG_FILE_0} -o {OUTPUT}"
+    run_cmd = f"disco upgrade-cost-analysis run {TEST_UPGRADES_CONFIG_FILE_3} -o {OUTPUT}"
     assert run_command(run_cmd) == 0
     verify_upgrade_results(OUTPUT)
 
