@@ -80,11 +80,11 @@ def determine_thermal_upgrades(
                                                }
         # validate internal upgrades catalog
         input_catalog_model = UpgradeTechnicalCatalogModel(**internal_upgrades_technical_catalog)
+        dump_data(input_catalog_model.dict(by_alias=True), 
+                  internal_upgrades_technical_catalog_filepath, indent=2)  # write internal catalog to json
         # reassign from model to dataframes, so datatypes are maintained
         line_upgrade_options = pd.DataFrame.from_dict(input_catalog_model.dict(by_alias=True)["line"])
         xfmr_upgrade_options = pd.DataFrame.from_dict(input_catalog_model.dict(by_alias=True)["transformer"])
-        dump_data(input_catalog_model.dict(by_alias=True), 
-                  internal_upgrades_technical_catalog_filepath, indent=2)  # write internal catalog to json
     (
         initial_bus_voltages_df,
         initial_undervoltage_bus_list,
@@ -122,7 +122,18 @@ def determine_thermal_upgrades(
     else:
         upgrade_status = "Thermal Upgrades not Required"  # status - whether upgrades done or not
     logger.info(upgrade_status)
-
+    # breakpoint
+    # extreme_ov = (voltage_upper_limit - initial_bus_voltages_df['max_per_unit_voltage'].max()) * 100 / voltage_upper_limit >=  3
+    # extreme_uv = (initial_bus_voltages_df['min_per_unit_voltage'].min() - voltage_lower_limit) * 100 / voltage_lower_limit >=  3
+    # logger.info(f"Changed thermal limits cause voltage violations are extreme, and might cause overloading later. So thermal limits are decreased."")
+    # if extreme_uv or extreme uv:
+    # # get max deviation to determine how much to change the loading threshold
+    # v_deviation = max((voltage_upper_limit - initial_bus_voltages_df['max_per_unit_voltage'].max()) * 100, (initial_bus_voltages_df['min_per_unit_voltage'].min() - voltage_lower_limit) * 100)
+    # 
+    # thermal_config['initial_transformer_upper_limit'] = thermal_config['transformer_upper_limit']
+    # thermal_config['initial_line_upper_limit'] = thermal_config['line_upper_limit']
+    # thermal_config['transformer_upper_limit'] = thermal_config['initial_transformer_upper_limit'] - 0.25
+    # thermal_config['line_upper_limit'] = thermal_config['initial_line_upper_limit'] - 0.25
     scenario = get_scenario_name(enable_pydss_solve, pydss_volt_var_model)
     initial_results = UpgradeViolationResultModel(
         name=job_name,
@@ -172,7 +183,6 @@ def determine_thermal_upgrades(
         iteration_counter < max_upgrade_iteration):
         line_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["line_upper_limit"], 
                                                     equipment_type="line", ignore_switch=ignore_switch, **simulation_params)
-        # breakpoint()
         overloaded_line_list = list(line_loading_df.loc[line_loading_df["status"] == "overloaded"]["name"].unique())
         logger.info(f"Iteration_{iteration_counter}: Determined line loadings.")
         logger.info(f"Iteration_{iteration_counter}: Number of line violations: {len(overloaded_line_list)}")
@@ -229,11 +239,9 @@ def determine_thermal_upgrades(
             logger.info(f"Max iterations limit reached, quitting algorithm. This means all thermal violations were not resolved with these limited iterations."
                         f"You can increase the Iteration limit in the thermal_config['upgrade_iteration_threshold']")
             break
-        # breakpoint()
     if iteration_counter > 1:
         logger.info(f"Multiple iterations ({iteration_counter}) were needed to resolve thermal violations."
                     f"This indicates that feeder was extremely overloaded to start with.")
-    # breakpoint()
     
     if any("new " in string.lower() for string in commands_list):  # if new equipment is added.
         commands_list.append("CalcVoltageBases")

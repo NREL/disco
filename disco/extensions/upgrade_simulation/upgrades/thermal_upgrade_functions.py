@@ -58,7 +58,6 @@ def correct_line_violations(line_loading_df, line_design_pu, line_upgrade_option
                 options = pd.DataFrame([options])  # convert to required DataFrame format
                 options = options.rename_axis(deciding_property_list)  # assign names to the index
             options = options.reset_index().sort_values("normamps")
-            # breakpoint()
             if row["max_per_unit_loading"] > extreme_loading_threshold:  # i.e. equipment is very overloaded, then oversize more to avoid multiple upgrade iterations
                 row["required_design_amp"] = row["required_design_amp"] * (row["max_per_unit_loading"] * 0.5)
             chosen_option = options.loc[options["normamps"] >= row["required_design_amp"]].sort_values("normamps")
@@ -193,7 +192,7 @@ def identify_parallel_lines(options, object_row, parallel_lines_limit, **kwargs)
                 commands_list.append(config_command_string)          
             command_string = f"New Line.{new_name} bus1={object_row['bus1']} bus2={object_row['bus2']} length={object_row['length']} " \
                     f"units={object_row['units']} {new_config_type}={chosen_option[new_config_type]} " \
-                    f"phases={chosen_option['phases']} normamps={chosen_option['normamps']} enable=Yes"
+                    f"phases={chosen_option['phases']} normamps={chosen_option['normamps']} enabled=Yes"
             commands_list.append(command_string)
         # if line geometry and line code is not available, add impedance properties directly
         else:
@@ -229,8 +228,8 @@ def define_line_object(line_name, chosen_option, action_type, **kwargs):
         else:
             units = original_units
             
-        command_string = command_string + f" bus1={bus1} bus2={bus2} length={length} " \
-                         f"units={units} phases={chosen_option['phases']}"
+        command_string = command_string + f" bus1={bus1} bus2={bus2} Length={length} " \
+                         f"Units={units} phases={chosen_option['phases']}"
     # Impedances may be specified by symmetrical component values or by matrix values
     # (refer OpenDSS manual for more information on these parameters)
     matrix_impedance_prop = _extract_specific_model_properties_(model_name=LineCatalogModel, field_type_key="matrix_impedance_property", field_type_value=True)
@@ -256,7 +255,7 @@ def define_line_object(line_name, chosen_option, action_type, **kwargs):
                 command_string = command_string + temp_s
             else:
                 break
-    command_string = command_string + " enable=True"
+    command_string = command_string + " enabled=Yes"
     return command_string
 
 
@@ -312,7 +311,7 @@ def define_xfmr_object(xfmr_name, xfmr_info_series, action_type, buses_list=None
     for property_name in general_property_list:
         temp_s = f" {property_name}={xfmr_info_series[property_name]}"
         command_string = command_string + temp_s
-    command_string = command_string + " enable=True"
+    command_string = command_string + " enabled=Yes"
     return command_string
 
 

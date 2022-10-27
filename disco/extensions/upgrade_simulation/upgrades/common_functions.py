@@ -38,7 +38,9 @@ DSS_LINECODE_FLOAT_FIELDS =  _extract_specific_model_properties_(model_name=Line
 DSS_LINECODE_INT_FIELDS =  _extract_specific_model_properties_(model_name=LineCodeCatalogModel, field_type_key="type", field_type_value="integer")
 DSS_LINEGEOMETRY_FLOAT_FIELDS =  _extract_specific_model_properties_(model_name=LineGeometryCatalogModel, field_type_key="type", field_type_value="number")
 DSS_LINEGEOMETRY_INT_FIELDS =  _extract_specific_model_properties_(model_name=LineGeometryCatalogModel, field_type_key="type", field_type_value="integer")
-
+DSS_UNIT_CONFIG = {1: "mi", 2: "kft", 3: "m", 4: "Ft", 5: "in", 6: "cm",
+                    0: "none"  # 0 maps to none, which means impedance units and line length units match
+                    }
 
 @track_timing(timer_stats_collector)
 def reload_dss_circuit(dss_file_list, commands_list=None,  **kwargs):
@@ -71,12 +73,13 @@ def reload_dss_circuit(dss_file_list, commands_list=None,  **kwargs):
             if "new " in command_string.lower():
                 check_dss_run_command("CalcVoltageBases")
     enable_pydss_solve = kwargs.get("enable_pydss_solve", False)
+    raise_exception = kwargs.get("raise_exception", True)
     if enable_pydss_solve:
         pydss_params = define_initial_pydss_settings(**kwargs)
-        circuit_solve_and_check(raise_exception=True, **pydss_params)
+        circuit_solve_and_check(raise_exception=raise_exception, **pydss_params)
         return pydss_params
     else:
-        circuit_solve_and_check(raise_exception=True)
+        circuit_solve_and_check(raise_exception=raise_exception)
         return kwargs
 
 
@@ -246,11 +249,11 @@ def get_dictionary_of_duplicates(df, subset, index_field):
     return mapping_dict
 
 
-def convert_length_units(val, unit_in, unit_out):
+def convert_length_units(length, unit_in, unit_out):
     """Length unit converter"""
     LENGTH_CONVERSION = {'mm': 0.001, 'cm': 0.01, 'm': 1.0, 'km': 1000., "mi": 1609.34, "kft": 304.8, 
           "ft": 0.3048,  "in": 0.0254,}
-    return val*LENGTH_CONVERSION[unit_in]/LENGTH_CONVERSION[unit_out]
+    return length*LENGTH_CONVERSION[unit_in]/LENGTH_CONVERSION[unit_out]
 
 
 def get_scenario_name(enable_pydss_solve, pydss_volt_var_model):
@@ -970,7 +973,11 @@ def determine_line_placement(line_series):
 
 
 def get_all_line_info_instance(upper_limit=None, compute_loading=True, ignore_switch=True):
-    """This collects line information
+    """This collects line information.
+    
+    dss.Lines.Units() gives an integer. It can be mapped as below:
+    units_config = ["none", "mi", "kft", "km", "m", "Ft", "in", "cm"]  # Units key for lines taken from OpenDSS
+    units_config[dss.Lines.Units() - 1]
 
     Returns
     -------
@@ -1012,10 +1019,16 @@ def get_all_line_info_instance(upper_limit=None, compute_loading=True, ignore_sw
         for key in placement_dict.keys():
             all_df.at[index, key] = placement_dict[key] 
         if row["units"] == "none":
-            # breakpoint()
-            # TODO is there a mapping available
-            # all_df.at[index, "units"] = dss.Lines.Units()
-            all_df.at[index, "units"] = "m"
+            # possible unit values: {none | mi|kft|km|m|Ft|in|cm } Default is None - assumes length units match impedance units.
+            # if units match, then it returns none: in this case, assign value from other lines present in dataframe
+            if dss.Lines.Units() != 0:
+                all_df.at[index, "units"] = DSS_UNIT_CONFIG[dss.Lines.Units()]
+            else:
+                def_unit = all_df.units.unique()[0]
+                if def_unit != "none":
+                    all_df.at[index, "units"] = def_unit
+                else:
+                    all_df.at[index, "units"] = "m"  # if a unit was not found, assign default of m
         # if line loading is to be computed
         if compute_loading:
             if upper_limit is None:
@@ -1037,7 +1050,6 @@ def get_all_line_info_instance(upper_limit=None, compute_loading=True, ignore_sw
     all_df["kV"] = all_df["kV"].round(5)
     # add units to switch length (needed to plot graph). By default, length of switch is taken as max
     check_switch_property(all_df)
-    # breakpoint()
     all_df.loc[(all_df.units == 'none') & (all_df.Switch.str.lower() == "yes"), 'units'] = 'm'
     # if switch is to be ignored
     if ignore_switch:

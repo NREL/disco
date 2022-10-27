@@ -16,17 +16,7 @@ from disco.models.upgrade_cost_analysis_generic_output_model import AllUpgradesT
         VoltageRegulatorResultType, TotalUpgradeCostsResultModel, AllUpgradesCostResultSummaryModel
     
 logger = logging.getLogger(__name__)
-# Dictionary used to convert between different length units and meters, which are used for all the calculations.
-# OpenDSS can output results in any of these lengths.
-LENGTH_CONVERSION_TO_METRE = {
-    "mi": 1609.34,
-    "kft": 304.8,
-    "km": 1000,
-    "ft": 0.3048,
-    "in": 0.0254,
-    "cm": 0.01,
-    "m": 1,
-}
+
 
 @track_timing(timer_stats_collector)
 def compute_all_costs(
@@ -300,10 +290,9 @@ def compute_line_costs(line_upgrades_df, line_cost_database, **kwargs):
                                            (line_cost_database["line_placement"] == row["line_placement"]) &
                                            (line_cost_database["upgrade_type"] == upgrade_type)
                                            ]["cost_per_m"]
+        # OpenDSS can output results in any of these lengths.
         # convert line length to metres
-        # breakpoint()
         line_length_m = convert_length_units(length=row["length"], unit_in=row["units"], unit_out="m")
-        line_length_m = row["length"] * LENGTH_CONVERSION_TO_METRE[row["units"]]
         params_dict = dict(row[['final_equipment_name'] + deciding_columns])
         row["equipment_parameters"] = params_dict
         row["type"] = "Line"

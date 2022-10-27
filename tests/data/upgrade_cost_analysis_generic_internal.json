@@ -46,6 +46,48 @@
       "opendss_model_file": "tests/data/generic-models/p1uhs21_1247/p1udt5257/PVDeployments/p1uhs21_1247__p1udt5257__close__1__15.dss",
       "blocked_by": [],
       "estimated_run_minutes": null
+    },
+	{
+      "model_type": "UpgradeCostAnalysisGenericModel",
+      "name": "J1",
+      "opendss_model_file": "./tests/data/upgrade-models/J1/Master_withPV.dss",
+      "blocked_by": [],
+      "estimated_run_minutes": null
+    },
+	{
+      "model_type": "UpgradeCostAnalysisGenericModel",
+      "name": "K1",
+      "opendss_model_file": "./tests/data/upgrade-models/K1/Master_NoPV.dss",
+      "blocked_by": [],
+      "estimated_run_minutes": null
+    },
+	{
+      "model_type": "UpgradeCostAnalysisGenericModel",
+      "name": "M1",
+      "opendss_model_file": "./tests/data/upgrade-models/M1/Master_NoPV.dss",
+      "blocked_by": [],
+      "estimated_run_minutes": null
+    },
+	{
+      "model_type": "UpgradeCostAnalysisGenericModel",
+      "name": "M1_nobuscoords",
+      "opendss_model_file": "./tests/data/upgrade-models/M1/Master_NoPV_nobuscoords.dss",
+      "blocked_by": [],
+      "estimated_run_minutes": null
+    },
+	{
+      "model_type": "UpgradeCostAnalysisGenericModel",
+      "name": "LVTestCaseNorthAmerican",
+      "opendss_model_file": "./tests/data/upgrade-models/LVTestCaseNorthAmerican/Master.dss",
+      "blocked_by": [],
+      "estimated_run_minutes": null
+    },
+	{
+      "model_type": "UpgradeCostAnalysisGenericModel",
+      "name": "123Bus",
+      "opendss_model_file": "./tests/data/upgrade-models/123Bus/Run_IEEE123Bus.dss",
+      "blocked_by": [],
+      "estimated_run_minutes": null
     }
   ]
 }
