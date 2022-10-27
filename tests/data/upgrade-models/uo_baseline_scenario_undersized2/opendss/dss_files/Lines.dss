@@ -1,0 +1,50 @@
+New Line.11abf04c-1002-4d48-9f1d-edb4872cf9c3 Units=km Length=0.6477 bus1=source.1.2.3 bus2=6398a8fa-be81-4773-a837-6cb0c35ad1a4.1.2.3 switch=n enabled=y phases=3 geometry=Geometry_1
+
+New Line.upgrade_1 Units=km Length=0.6477 normamps=660.0 emergamps=990.0 bus1=source.1.2.3 bus2=6398a8fa-be81-4773-a837-6cb0c35ad1a4.1.2.3 phases=3 rmatrix=(0.18024994258403487 |0.059753852724671576 0.1767027732975058 |0.057304313935620646 0.05580656704852428 0.1724694615761973) xmatrix=(0.4572691973176711 |0.20787070144200032 0.4918886857372827 |0.1790324762594257 0.24724285037968674 0.535450360667721) cmatrix=(12.84672980918245 |-3.93117936998818 13.436700620979392 |-1.8495063525046693 -4.463270565493152 11.604893945635578) switch=n enabled=y
+
+New Line.17f547a3-aad9-4cc3-98be-327aefe6a1d6 Units=km Length=0.40965120000000005 bus1=6398a8fa-be81-4773-a837-6cb0c35ad1a4.1.2.3 bus2=38c748dc-7e65-4798-9c57-7a5ad07a8830.1.2.3 switch=n enabled=y phases=3 geometry=Geometry_1
+
+New Line.36fd2f4e-8305-4f45-ae4a-5a7a3cc95013 Units=km Length=0.118872 bus1=6398a8fa-be81-4773-a837-6cb0c35ad1a4.1.2.3 bus2=4deadac5-3035-4051-91fd-f5910c93cd75.1.2.3 switch=n enabled=y phases=3 geometry=Geometry_1
+
+New Line.16e5aef9-56d0-478e-a9b2-903c7e6f7222 Units=km Length=0.6071616000000001 bus1=4deadac5-3035-4051-91fd-f5910c93cd75.1.2.3 bus2=7bba9925-4f7c-4f0d-9b94-d0b8298962ea.1.2.3 switch=n enabled=y phases=3 geometry=Geometry_1
+
+New Line.1324f2a2-4fc9-4020-b144-b027f2633991 Units=km Length=0.19263360000000002 bus1=38c748dc-7e65-4798-9c57-7a5ad07a8830.1.2.3 bus2=df21bd3d-f2a5-40df-a41b-54c8d73829a5.1.2.3 switch=n enabled=y phases=3 geometry=Geometry_1
+
+New Line.f912d33f-f017-4ba5-b2fd-2ed2eec38b71 Units=km Length=0.3706368 bus1=df21bd3d-f2a5-40df-a41b-54c8d73829a5.1.2.3 bus2=2796b96e-5bc0-4890-9bb0-bcf7b5baf9c7.1.2.3 switch=n enabled=y phases=3 geometry=Geometry_1
+
+New Line.5b3d3f0c-0c14-4c3d-9080-0fb5bbea5470 Units=km Length=0.1972056 bus1=2796b96e-5bc0-4890-9bb0-bcf7b5baf9c7.1.2.3 bus2=258aad84-ed22-48ee-995a-4c5869ae9274.1.2.3 switch=n enabled=y phases=3 geometry=Geometry_1
+
+New Line.6cdda038-b853-4a8e-bf6d-304c49d93688 Units=km Length=0.024384 bus1=df21bd3d-f2a5-40df-a41b-54c8d73829a5.1.2.3 bus2=3ad29eb4-60b2-4050-a87c-dcd858184622.1.2.3 switch=n enabled=y phases=3 geometry=Geometry_1
+
+New Line.f2d0448f-aab3-4da0-8aca-17564c8e3a58 Units=km Length=0.055778400000000006 bus1=df21bd3d-f2a5-40df-a41b-54c8d73829a5.1.2.3 bus2=44963046-644a-4c03-b81c-f65d80475015.1.2.3 switch=n enabled=y phases=3 geometry=Geometry_1
+
+New Line.59f65367-c852-40ab-9d7f-dc30822570f7 Units=km Length=0.2154936 bus1=b1003fd0-cd27-4de5-9851-f14382846fc4.1.2.3 bus2=53c917d8-b04d-4110-bdd9-cbf044e6a1fa.1.2.3 switch=n enabled=y phases=3 geometry=Geometry_2
+
+New Line.10e9de09-902c-4373-8fa3-06a3e19e8b38 Units=km Length=0.0935736 bus1=4deadac5-3035-4051-91fd-f5910c93cd75.1.2.3 bus2=38a42375-ff02-497e-90ef-c5d9eb78850e.1.2.3 switch=n enabled=y phases=3 geometry=Geometry_1
+
+New Line.de88d8f3-d596-4088-8ee7-d96326ab083c Units=km Length=0.077724 bus1=4deadac5-3035-4051-91fd-f5910c93cd75.1.2.3 bus2=753b77b9-b88b-443f-9c3b-3cd977bb3558.1.2.3 switch=n enabled=y phases=3 geometry=Geometry_1
+
+New Line.44c05d80-7a90-4229-94f7-0ef2787b2cc7 Units=km Length=0.1801368 bus1=14080f48-4e0d-4ca6-9ed2-7db253f920f4.1.2.3 bus2=9d037967-7ac1-4296-8f87-2d4a842d7a87.1.2.3 switch=n enabled=y phases=3 geometry=Geometry_2
+
+New Line.40c59858-58c3-4b8c-8521-f7a251f06740 Units=km Length=0.0795528 bus1=7bba9925-4f7c-4f0d-9b94-d0b8298962ea.1.2.3 bus2=e4bcf9d6-e0b7-421c-91d4-554d06c69364.1.2.3 switch=n enabled=y phases=3 geometry=Geometry_1
+
+New Line.96ac00ff-1369-472b-b8cd-d8721355f4c5 Units=km Length=0.1328928 bus1=2796b96e-5bc0-4890-9bb0-bcf7b5baf9c7.1.2.3 bus2=40867501-5a41-4626-a9d4-be5444a5b575.1.2.3 switch=n enabled=y phases=3 geometry=Geometry_1
+
+New Line.e2dcff78-1f88-496b-9111-66ea2cc6c889 Units=km Length=0.0493776 bus1=2796b96e-5bc0-4890-9bb0-bcf7b5baf9c7.1.2.3 bus2=18fe5a25-2547-4c32-a225-8bd455e93c9b.1.2.3 switch=n enabled=y phases=3 geometry=Geometry_1
+
+New Line.9e3fff1f-2625-4f3f-b510-f4e51683c941 Units=km Length=0.0694944 bus1=258aad84-ed22-48ee-995a-4c5869ae9274.1.2.3 bus2=67b07fac-6666-4954-98b8-3e08b0896646.1.2.3 switch=n enabled=y phases=3 geometry=Geometry_1
+
+New Line.a0ba7300-0264-4450-8a1b-6f8045ee7cfe Units=km Length=0.11125200000000002 bus1=ed866262-f11e-4ea7-b5f9-eecfea8ecbaf.1.2.3 bus2=14072af7-3121-4e3d-b85f-c79868702ec9.1.2.3 switch=n enabled=y phases=3 geometry=Geometry_2
+
+New Line.bf23c675-d787-4994-803b-18d8d4900699 Units=km Length=0.15880080000000002 bus1=ed866262-f11e-4ea7-b5f9-eecfea8ecbaf.1.2.3 bus2=db52eea7-f395-4fb1-999d-47c82333a4a7.1.2.3 switch=n enabled=y phases=3 geometry=Geometry_2
+
+New Line.bbb1f6a0-394e-4b38-bd51-1fa8f70d89dd Units=km Length=0.09692640000000001 bus1=ed866262-f11e-4ea7-b5f9-eecfea8ecbaf.1.2.3 bus2=be6e5e58-e73e-4172-a939-250c6a7a3c2c.1.2.3 switch=n enabled=y phases=3 geometry=Geometry_2
+
+New Line.68c17aed-1c16-4a75-b0a7-7cf2db5d605d Units=km Length=0.17983200000000002 bus1=ed866262-f11e-4ea7-b5f9-eecfea8ecbaf.1.2.3 bus2=3d1aa47d-69dd-4200-ab34-9b6244ad82d7.1.2.3 switch=n enabled=y phases=3 geometry=Geometry_2
+
+New Line.db1a87fb-d770-4939-b747-7cadf1f304f8 Units=km Length=0.039014400000000005 bus1=7bba9925-4f7c-4f0d-9b94-d0b8298962ea.1.2.3 bus2=194f2b59-5877-4485-85b9-bd0ac6f75e25.1.2.3 switch=n enabled=y phases=3 geometry=Geometry_1
+
+New Line.bfdf4e28-5baf-4d54-9d0a-5a7dc3fbd4f3 Units=km Length=0.0697992 bus1=258aad84-ed22-48ee-995a-4c5869ae9274.1.2.3 bus2=b9ac3056-629d-40cc-b520-cfe15eb7296c.1.2.3 switch=n enabled=y phases=3 geometry=Geometry_1
+
+
+
