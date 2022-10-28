@@ -79,6 +79,8 @@ def reload_dss_circuit(dss_file_list, commands_list=None,  **kwargs):
         circuit_solve_and_check(raise_exception=raise_exception, **pydss_params)
         return pydss_params
     else:
+        max_control_iterations = 50
+        dss.Solution.MaxControlIterations(max_control_iterations)
         circuit_solve_and_check(raise_exception=raise_exception)
         return kwargs
 
@@ -170,7 +172,7 @@ def dss_run_command_list(command_list):
     return
 
 
-def write_text_file(string_list, text_file_path):
+def write_text_file(string_list, text_file_path, **kwargs):
     """This function writes the string contents of a list to a text file
 
     Parameters
@@ -182,7 +184,9 @@ def write_text_file(string_list, text_file_path):
     -------
 
     """
-    pathlib.Path(text_file_path).write_text("\n".join(string_list))
+    num_new_lines = kwargs.get("num_new_lines", 2)
+    breaks = "\n"*num_new_lines
+    pathlib.Path(text_file_path).write_text(breaks.join(string_list))
 
 
 def create_upgraded_master_dss(dss_file_list, upgraded_master_dss_filepath, original_master_filename="master.dss"):
@@ -1074,7 +1078,7 @@ def compare_multiple_dataframes(comparison_dict, deciding_column_name, compariso
     else:
         raise Exception(f"Unknown comparison type {comparison_type} passed.")
     final_list = []
-    for index, label in label_df.iteritems():  # index is element name
+    for index, label in label_df.items():  # index is element name
         temp_dict = dict(comparison_dict[label].loc[index])
         temp_dict.update({"name": index})
         final_list.append(temp_dict)
@@ -1121,10 +1125,9 @@ def get_thermal_equipment_info(compute_loading, equipment_type, upper_limit=None
         # compare all dataframe, and create one that contains all worst loading conditions (across all multiplier conditions)
         loading_df = compare_multiple_dataframes(comparison_dict, deciding_column_name, comparison_type="max")
     else:
-        raise Exception(f"Undefined multiplier_type {multiplier_type} passed.")    
+        raise Exception(f"Undefined multiplier_type {multiplier_type} passed.")   
     return loading_df
     
-
 
 def get_regcontrol_info(correct_PT_ratio=False, nominal_voltage=None):
     """This collects enabled regulator control information.
@@ -1387,7 +1390,6 @@ def get_bus_voltages(voltage_upper_limit, voltage_lower_limit, raise_exception=T
             logger.debug(pv_field)
             for multiplier_name in timepoint_multipliers["load_multipliers"][pv_field]:
                 logger.debug("Multipler name: %s", multiplier_name)
-                
                 # this changes the dss network load and pv
                 apply_uniform_timepoint_multipliers(multiplier_name=multiplier_name, field=pv_field, **kwargs)
                 bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages_instance(

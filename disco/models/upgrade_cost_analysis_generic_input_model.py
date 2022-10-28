@@ -320,7 +320,7 @@ class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
     )
     timepoint_multipliers: Optional[Dict] = Field(
         title="timepoint_multipliers",
-        description='Dictionary to provide timepoint multipliers. example: timepoint_multipliers={"load_multipliers": {"with_pv": [0.1], "without_pv": [0.3]}}',
+        description='Dictionary to provide timepoint multipliers. example: timepoint_multipliers={"load_multipliers": {"with_pv": [1.2], "without_pv": [0.6]}}',
     )
 
     @validator("voltage_lower_limit")
@@ -331,6 +331,24 @@ class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
                 f"voltage_upper_limit={upper} must be greater than voltage_lower_limit={voltage_lower_limit}"
             )
         return voltage_lower_limit
+    
+    @validator("line_design_pu")
+    def check_line_design_pu(cls, line_design_pu, values):
+        upper = values["line_upper_limit"]
+        if line_design_pu >= upper:
+            raise ValueError(
+                f"line_design_pu={line_design_pu} must be lesser than line_upper_limit={upper}"
+            )
+        return line_design_pu
+
+    @validator("transformer_design_pu")
+    def check_transformer_design_pu(cls, transformer_design_pu, values):
+        upper = values["transformer_upper_limit"]
+        if transformer_design_pu >= upper:
+            raise ValueError(
+                f"transformer_design_pu={transformer_design_pu} must be lesser than transformer_upper_limit={upper}"
+            )
+        return transformer_design_pu
 
     @validator("external_catalog")
     def check_catalog(cls, external_catalog, values):
@@ -347,9 +365,9 @@ class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
             return timepoint_multipliers
         if "load_multipliers" not in timepoint_multipliers:
             raise ValueError("load_multipliers must be defined in timepoint_multipliers")
-        if "with_pv" not in timepoint_multipliers and "without_pv" not in timepoint_multipliers:
+        if ("with_pv" not in timepoint_multipliers["load_multipliers"]) and ("without_pv" not in timepoint_multipliers["load_multipliers"]):
             raise ValueError(
-                "Either 'with_pv' or 'without_pv' must be defined in timepoint_multipliers"
+                'Either "with_pv" or "without_pv" must be defined in timepoint_multipliers["load_multipliers"]'
             )
         return timepoint_multipliers
 
@@ -415,7 +433,7 @@ class VoltageUpgradeParamsModel(UpgradeParamsBaseModel):
     )
     timepoint_multipliers: dict = Field(
         title="timepoint_multipliers",
-        description="Dictionary containing timepoint multipliers. Format: {'load_multipliers': {'with_pv': [1.2, 1], 'without_pv': [0.3]}}",
+        description='Dictionary to provide timepoint multipliers. example: timepoint_multipliers={"load_multipliers": {"with_pv": [1.2], "without_pv": [0.6]}}',
         default=None,
     )
     capacitor_action_flag: bool = Field(
@@ -428,6 +446,36 @@ class VoltageUpgradeParamsModel(UpgradeParamsBaseModel):
         description="Flag to enable or disable existing regulator controls settings sweep module",
         default=True,
     )
+    
+    @validator("initial_lower_limit")
+    def check_initial_voltage_lower_limits(cls, initial_lower_limit, values):
+        upper = values["initial_upper_limit"]
+        if upper <= initial_lower_limit:
+            raise ValueError(
+                f"initial_upper_limit={upper} must be greater than initial_lower_limit={initial_lower_limit}"
+            )
+        return initial_lower_limit
+    
+    @validator("final_lower_limit")
+    def check_final_voltage_lower_limits(cls, final_lower_limit, values):
+        upper = values["final_upper_limit"]
+        if upper <= final_lower_limit:
+            raise ValueError(
+                f"final_upper_limit={upper} must be greater than final_lower_limit={final_lower_limit}"
+            )
+        return final_lower_limit
+    
+    @validator("timepoint_multipliers")
+    def check_timepoint_multipliers(cls, timepoint_multipliers):
+        if timepoint_multipliers is None:
+            return timepoint_multipliers
+        if "load_multipliers" not in timepoint_multipliers:
+            raise ValueError("load_multipliers must be defined in timepoint_multipliers")
+        if ("with_pv" not in timepoint_multipliers["load_multipliers"]) and ("without_pv" not in timepoint_multipliers["load_multipliers"]):
+            raise ValueError(
+                'Either "with_pv" or "without_pv" must be defined in timepoint_multipliers["load_multipliers"]'
+            )
+        return timepoint_multipliers
 
 
 class UpgradeCostAnalysisGenericModel(BaseAnalysisModel):

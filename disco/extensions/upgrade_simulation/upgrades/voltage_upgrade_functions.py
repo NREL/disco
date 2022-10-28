@@ -116,13 +116,13 @@ def correct_capacitor_parameters(default_capacitor_settings, orig_capacitors_df,
             
     # if there are capacitors without cap control, add a voltage-controlled cap control
     lines_df = get_thermal_equipment_info(compute_loading=False, equipment_type="line")
-    lines_df['bus1_extract'] = lines_df['bus1'].str.split(".").str[0]
+    lines_df['bus1_name_only'] = lines_df['bus1'].str.split(".").str[0]
+    lines_df['bus2_name_only'] = lines_df['bus2'].str.split(".").str[0]
     no_capcontrol_present_df = orig_capacitors_df.loc[orig_capacitors_df['capcontrol_present'] != 'capcontrol']
     for index, row in no_capcontrol_present_df.iterrows():
         logger.info(f"New capacitor control (voltage controlled) added for {row['capacitor_name']}.")
         capcontrol_name = "capcontrol" + row['capacitor_name']
-        # extract line name that has the same bus as capacitor
-        line_name = lines_df.loc[lines_df['bus1_extract'] == row['bus1']]['name'].values[0]
+        line_name = find_line_connected_to_capacitor(capacitor_row=row, lines_df=lines_df)
         default_pt_ratio = (row['kv'] * 1000) / nominal_voltage
         command_string = f"New CapControl.{capcontrol_name} element=Line.{line_name} " \
                          f"terminal={default_capacitor_settings['terminal']} capacitor={row['capacitor_name']} " \
@@ -136,6 +136,40 @@ def correct_capacitor_parameters(default_capacitor_settings, orig_capacitors_df,
             circuit_solve_and_check(raise_exception=True, **kwargs)
         capacitors_commands_list.append(command_string)
     return capacitors_commands_list
+
+
+def find_line_connected_to_capacitor(capacitor_row, lines_df):
+    """Extract line name that has the same bus as capacitor
+    
+    First look at bus1 of lines.  If line bus1 names dont match, try looking at line bus2.
+    After this, if a line is still not found, check feeder model to ensure network is connected.
+    
+    If capacitor phases < 3, then first try locating lines with bus name information. 
+    If multiple lines are found, then search with bus connectivity information as well.
+    
+    For 3ph capacitors, it is assumed that it is connected to 3ph line.
+    """
+    cap_bus_name = capacitor_row["bus1"].split(".")[0]  # to get just bus name (e.g., extract b83 from b83.1)
+    if capacitor_row["phases"] <= 3:  
+        bus_identifier = "bus1"
+        df = lines_df.loc[lines_df[f"{bus_identifier}_name_only"] == cap_bus_name]
+        if df.empty:
+            bus_identifier = "bus2"
+            df = lines_df.loc[lines_df[f"{bus_identifier}_name_only"] == cap_bus_name]
+        if df.empty:  # if a line is still not found, check feeder model to ensure network is connected
+            raise Exception(f"Line not found at capacitor bus {capacitor_row['bus1']}. Check feeder model.")
+        # if there are more than one lines connected to the bus, could be 1ph, so look for exact bus connection
+        if len(df) > 1:
+            df = df.loc[df[bus_identifier].str.contains(capacitor_row["bus1"])]
+        line_name = df["name"].values[0]
+    else:   # if 3ph capacitor, then assumed that it is connected to 3ph line
+        df = lines_df.loc[lines_df['bus1_name_only'] == capacitor_row['bus1']]
+        if df.empty:  # if line bus1 names dont match, try looking at line bus2
+            df = lines_df.loc[lines_df['bus2_name_only'] == capacitor_row['bus1']]
+        if df.empty:  # if a line is still not found, check feeder model to ensure network is connected
+            raise Exception(f"Line not found at capacitor bus {capacitor_row['bus1']}. Check feeder model.")
+        line_name = df['name'].values[0]
+    return line_name
 
 
 @track_timing(timer_stats_collector)
@@ -713,7 +747,6 @@ def sweep_and_choose_regcontrol_setting(voltage_config, initial_regcontrols_df, 
         regcontrol_sweep_df=regcontrol_sweep_df, initial_regcontrols_df=initial_regcontrols_df,
         exclude_sub_ltc=exclude_sub_ltc, only_sub_ltc=only_sub_ltc, deciding_field=deciding_field, **kwargs)
     reg_sweep_commands_list = reg_sweep_commands_list + regcontrol_settings_commands_list
-
     if (fig_folder is not None) and create_plots and (title is not None):
         bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
             voltage_upper_limit=upper_limit, voltage_lower_limit=lower_limit, **kwargs)
@@ -746,6 +779,7 @@ def determine_substation_ltc_upgrades(voltage_upper_limit, voltage_lower_limit, 
             len(orig_regcontrols_df.loc[orig_regcontrols_df['at_substation_xfmr_flag'] == True]) > 0)
     # if there is no substation transformer in the network
     if orig_ckt_info['substation_xfmr'] is None:
+        logger.info("Substation transformer does not exist. So adding transformer and regcontrol on it.")
         # check add substation transformer and add ltc reg control on it
         new_subxfmr_added_dict = add_new_node_and_xfmr(action_type='New', node=circuit_source, circuit_source=circuit_source, 
                                                     xfmr_conn_type="wye" ,**kwargs)
@@ -775,12 +809,13 @@ def determine_substation_ltc_upgrades(voltage_upper_limit, voltage_lower_limit, 
             upper_limit=voltage_upper_limit, lower_limit=voltage_lower_limit, exclude_sub_ltc=False,
             only_sub_ltc=True, dss_file_list=dss_file_list,
             previous_dss_commands_list=all_commands_list + add_subxfmr_commands + add_subltc_commands, **kwargs)
-        
         circuit_solve_and_check(raise_exception=True, **kwargs)
         subltc_upgrade_commands = add_subxfmr_commands + add_subltc_commands + subltc_control_settings_commands_list
         all_commands_list = all_commands_list + subltc_upgrade_commands
     # if substation transformer is present but there are no regulator controls on the subltc
     elif (orig_ckt_info['substation_xfmr'] is not None) and (not subltc_present_flag):
+        logger.info("Substation transformer exists, but there are no regulator controls on it. Adding..")
+        
         new_subltc_added_dict = add_new_regcontrol_command(
             xfmr_info_series=pd.Series(updated_ckt_info['substation_xfmr']),
             default_regcontrol_settings=default_subltc_settings,
@@ -806,6 +841,7 @@ def determine_substation_ltc_upgrades(voltage_upper_limit, voltage_lower_limit, 
         all_commands_list = all_commands_list + subltc_upgrade_commands
     # if substation transformer, and reg controls are both present
     else:
+        logger.info("Substation transformer and regcontrol exists on it.")
         initial_sub_regcontrols_df = get_regcontrol_info(correct_PT_ratio=True,
                                                             nominal_voltage=voltage_config["nominal_voltage"])
         # sweep through settings and identify best setting
@@ -818,6 +854,7 @@ def determine_substation_ltc_upgrades(voltage_upper_limit, voltage_lower_limit, 
         subltc_upgrade_commands = subltc_control_settings_commands_list
         all_commands_list = all_commands_list + subltc_upgrade_commands
     
+    reload_dss_circuit(dss_file_list=dss_file_list, commands_list=all_commands_list, calcvoltagebases=True, **kwargs)
     # determine voltage violations after changes
     bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
         voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
@@ -888,6 +925,12 @@ def determine_new_regulator_upgrades(voltage_config, buses_with_violations, volt
                                                                     deciding_field=deciding_field,
                                                                     fig_folder=fig_folder, **kwargs)
                 
+    if not regcontrol_cluster_commands:  # if there are no regcontrol commands
+        reload_dss_circuit(dss_file_list=dss_file_list, commands_list=previous_dss_commands_list, **kwargs)
+        comparison_dict["after_addition_new_regcontrol"] = compute_voltage_violation_severity(
+            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
+        return {"new_reg_upgrade_commands": [], "comparison_dict": comparison_dict, "best_setting_so_far": best_setting_so_far}
+
     reg_upgrade_commands = get_newly_added_regulator_settings(dss_file_list, previous_dss_commands_list, regcontrol_cluster_commands, voltage_lower_limit, voltage_upper_limit,
                                        voltage_config, deciding_field, **kwargs)
     dss_commands_list = previous_dss_commands_list + reg_upgrade_commands
@@ -938,7 +981,9 @@ def get_newly_added_regulator_settings(dss_file_list, previous_dss_commands_list
             else:
                 continue        
         # control iterations are exceeded
-        check_dss_run_command("Set MaxControlIter=30")
+        increase_control_iterations = dss.Solution.MaxControlIterations() + 50
+        logger.info(f"Increased MaxControlIterations from {dss.Solution.MaxControlIterations()} to {increase_control_iterations}")
+        dss.Solution.MaxControlIterations(increase_control_iterations)
         # The usual reason for exceeding MaxControlIterations is conflicting controls i.e., one or more RegControl devices are oscillating between taps
         # so try increasing band of reg control
         new_voltage_config = voltage_config.copy()

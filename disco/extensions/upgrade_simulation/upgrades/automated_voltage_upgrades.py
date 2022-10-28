@@ -163,17 +163,30 @@ def determine_voltage_upgrades(
         voltage_lower_limit = voltage_config["final_lower_limit"]
         upgrade_status = 'Voltage Upgrades Required'  # status - whether voltage upgrades done or not
         logger.info("Voltage Upgrades Required.")
+        comparison_dict = {"original": compute_voltage_violation_severity(
+            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)}
+        best_setting_so_far = "original"
         # start with capacitors
         if voltage_config["capacitor_action_flag"] and len(orig_capacitors_df) > 0:
             capacitor_dss_commands = determine_capacitor_upgrades(voltage_upper_limit, voltage_lower_limit, default_capacitor_settings, orig_capacitors_df, 
                                                                   voltage_config, deciding_field, fig_folder=os.path.join(voltage_upgrades_directory, "interim"), 
                                                                   create_plots=create_plots, circuit_source=circuit_source,**simulation_params)
-            dss_commands_list = dss_commands_list + capacitor_dss_commands
+           
             bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
-                voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)    
+                voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)   
+            
+            if (len(buses_with_violations) > 0):
+                # if violations increased after capacitor modifications, remove the capacitor changes.
+                comparison_dict["after_capacitor_modifications"] = compute_voltage_violation_severity(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
+                if comparison_dict["after_capacitor_modifications"][deciding_field] < comparison_dict[best_setting_so_far][deciding_field]:
+                    best_setting_so_far = "after_capacitor_modifications"
+                    dss_commands_list = dss_commands_list + capacitor_dss_commands
+                else:
+                    reload_dss_circuit(dss_file_list=initial_dss_file_list, commands_list=dss_commands_list, **simulation_params)
+                    bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
+                                    voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)   
         else:
             logger.info("No capacitor banks exist in the system")
-        
         # next: existing regulators
         # Do a settings sweep of existing reg control devices (other than sub LTC) after correcting their other parameters such as ratios etc
         if voltage_config["existing_regulator_sweep_action"] and (len(orig_regcontrols_df) > 0) and (len(buses_with_violations) > 0):
@@ -195,8 +208,8 @@ def determine_voltage_upgrades(
         logger.info("Write upgrades to dss file, before adding new devices.")
         write_text_file(string_list=dss_commands_list, text_file_path=voltage_upgrades_dss_filepath)
         # Use this block for adding a substation LTC, correcting its settings and running a sub LTC settings sweep.
-        comparison_dict = {"before_addition_of_new_device": compute_voltage_violation_severity(
-            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)}
+        comparison_dict["before_addition_of_new_device"]= compute_voltage_violation_severity(
+            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
         best_setting_so_far = "before_addition_of_new_device"
         if (voltage_config['use_ltc_placement']) and (len(buses_with_violations) > 0):
             subltc_results_dict = determine_substation_ltc_upgrades(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, 

@@ -14,6 +14,7 @@ TEST_UPGRADES_CONFIG_FILE_0 = Path("tests") / "data" / "upgrade_cost_analysis_ge
 TEST_UPGRADES_CONFIG_FILE_1 = Path("tests") / "data" / "upgrade_cost_analysis_generic.json"
 TEST_UPGRADES_CONFIG_FILE_2 = Path("tests") / "data" / "upgrade_cost_analysis_generic_vreg.json"
 TEST_UPGRADES_CONFIG_FILE_3 = Path("tests") / "data" / "upgrade_cost_analysis_generic_UO.json"
+TEST_UPGRADES_CONFIG_FILE_4 = Path("tests") / "data" / "upgrade_cost_analysis_generic_mult.json"
 UPGRADES_RESULTS_FILE = "upgrade_summary.json"
 
 
@@ -48,7 +49,9 @@ def test_upgrades(cleanup):
     run_cmd = f"disco upgrade-cost-analysis run {TEST_UPGRADES_CONFIG_FILE_3} -o {OUTPUT}"
     assert run_command(run_cmd) == 0
     verify_upgrade_results(OUTPUT)
-
+    run_cmd = f"disco upgrade-cost-analysis run {TEST_UPGRADES_CONFIG_FILE_4} -o {OUTPUT}"
+    assert run_command(run_cmd) == 0
+    verify_upgrade_results(OUTPUT)
 
 def test_generic_upgrade_standalone_workflow(cleanup):
     """Additional test for generic upgrades, where data in generic-models is transformed first."""

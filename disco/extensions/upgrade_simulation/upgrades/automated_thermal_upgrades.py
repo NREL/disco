@@ -85,6 +85,9 @@ def determine_thermal_upgrades(
         # reassign from model to dataframes, so datatypes are maintained
         line_upgrade_options = pd.DataFrame.from_dict(input_catalog_model.dict(by_alias=True)["line"])
         xfmr_upgrade_options = pd.DataFrame.from_dict(input_catalog_model.dict(by_alias=True)["transformer"])
+    # get these feeder details before running powerflow
+    feeder_stats = {"feeder_metadata": {}, "stage_results": []}
+    feeder_stats["feeder_metadata"].update(get_feeder_stats(dss))
     (
         initial_bus_voltages_df,
         initial_undervoltage_bus_list,
@@ -105,8 +108,6 @@ def determine_thermal_upgrades(
     circuit_source = orig_ckt_info['source_bus']
     orig_regcontrols_df = get_regcontrol_info(correct_PT_ratio=False)
     orig_capacitors_df = get_capacitor_info(correct_PT_ratio=False)
-    feeder_stats = {"feeder_metadata": {}, "stage_results": []}
-    feeder_stats["feeder_metadata"].update(get_feeder_stats(dss))
     feeder_stats["stage_results"].append(get_upgrade_stage_stats(dss, upgrade_stage="initial", upgrade_type="thermal", xfmr_loading_df=initial_xfmr_loading_df, line_loading_df=initial_line_loading_df, 
                                         bus_voltages_df=initial_bus_voltages_df, capacitors_df=orig_capacitors_df, regcontrols_df=orig_regcontrols_df) )
     dump_data(feeder_stats, feeder_stats_json_file, indent=2)   # save feeder stats
@@ -122,18 +123,6 @@ def determine_thermal_upgrades(
     else:
         upgrade_status = "Thermal Upgrades not Required"  # status - whether upgrades done or not
     logger.info(upgrade_status)
-    # breakpoint
-    # extreme_ov = (voltage_upper_limit - initial_bus_voltages_df['max_per_unit_voltage'].max()) * 100 / voltage_upper_limit >=  3
-    # extreme_uv = (initial_bus_voltages_df['min_per_unit_voltage'].min() - voltage_lower_limit) * 100 / voltage_lower_limit >=  3
-    # logger.info(f"Changed thermal limits cause voltage violations are extreme, and might cause overloading later. So thermal limits are decreased."")
-    # if extreme_uv or extreme uv:
-    # # get max deviation to determine how much to change the loading threshold
-    # v_deviation = max((voltage_upper_limit - initial_bus_voltages_df['max_per_unit_voltage'].max()) * 100, (initial_bus_voltages_df['min_per_unit_voltage'].min() - voltage_lower_limit) * 100)
-    # 
-    # thermal_config['initial_transformer_upper_limit'] = thermal_config['transformer_upper_limit']
-    # thermal_config['initial_line_upper_limit'] = thermal_config['line_upper_limit']
-    # thermal_config['transformer_upper_limit'] = thermal_config['initial_transformer_upper_limit'] - 0.25
-    # thermal_config['line_upper_limit'] = thermal_config['initial_line_upper_limit'] - 0.25
     scenario = get_scenario_name(enable_pydss_solve, pydss_volt_var_model)
     initial_results = UpgradeViolationResultModel(
         name=job_name,
