@@ -942,11 +942,9 @@ def determine_new_regulator_upgrades(voltage_config, buses_with_violations, volt
     else: 
         new_reg_upgrade_commands = []
         remove_commands_list = reg_upgrade_commands
-        # TODO: better to build a temporary list of the names or indices to remove and then iterate over that to perform the removals.
         if remove_commands_list:
-            for x in dss_commands_list:
-                if x in remove_commands_list:
-                    dss_commands_list.remove(x)
+            dss_commands_list = [i for i in dss_commands_list if i not in remove_commands_list]
+
         reload_dss_circuit(dss_file_list=dss_file_list, commands_list=dss_commands_list, **kwargs)
         comparison_dict["disabled_new_regcontrol"] = compute_voltage_violation_severity(
                                                         voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
@@ -977,13 +975,13 @@ def get_newly_added_regulator_settings(dss_file_list, previous_dss_commands_list
         temp = []
         for command in regcontrol_cluster_commands:  # extract only new addition commands
             if "edit regcontrol." not in command.lower():
-                temp.append(command)
-            else:
-                continue        
+                temp.append(command)        
         # control iterations are exceeded
-        increase_control_iterations = dss.Solution.MaxControlIterations() + 50
+        max_control_iterations = kwargs.get("max_control_iterations", dss.Solution.MaxControlIterations())  # get setting
+        increase_control_iterations = max_control_iterations + 50  # here iterations are increased by 50, to reach a solution
         logger.info(f"Increased MaxControlIterations from {dss.Solution.MaxControlIterations()} to {increase_control_iterations}")
         dss.Solution.MaxControlIterations(increase_control_iterations)
+        kwargs["max_control_iterations"] = max_control_iterations
         # The usual reason for exceeding MaxControlIterations is conflicting controls i.e., one or more RegControl devices are oscillating between taps
         # so try increasing band of reg control
         new_voltage_config = voltage_config.copy()
@@ -1710,8 +1708,8 @@ def plot_feeder(fig_folder, title, circuit_source=None, enable_detailed=False):
     """
     G = generate_networkx_representation()
     bus_coordinates_df = get_bus_coordinates()
-    incomplete_flag = check_buscoordinates_completeness(bus_coordinates_df)  # check if sufficient buscoordinates data is available
-    if incomplete_flag:  # feeder cannot be plotted if sufficient buscoordinates data is unavailable
+    complete_flag = check_buscoordinates_completeness(bus_coordinates_df)  # check if sufficient buscoordinates data is available
+    if not complete_flag:  # feeder cannot be plotted if sufficient buscoordinates data is unavailable
         logger.warning(f"Unable to plot {title} because feeder model bus coordinates are not provided.")
         return
     position_dict = nx.get_node_attributes(G, 'pos')
@@ -1770,8 +1768,8 @@ def plot_voltage_violations(fig_folder, title, buses_with_violations, circuit_so
     default_node_color = 'black'
     G = generate_networkx_representation()
     bus_coordinates_df = get_bus_coordinates()
-    incomplete_flag = check_buscoordinates_completeness(bus_coordinates_df)  # check if sufficient buscoordinates data is available
-    if incomplete_flag:  # feeder cannot be plotted if sufficient buscoordinates data is unavailable
+    complete_flag = check_buscoordinates_completeness(bus_coordinates_df)  # check if sufficient buscoordinates data is available
+    if not complete_flag:  # feeder cannot be plotted if sufficient buscoordinates data is unavailable
         logger.warning(f"Unable to plot {title} because feeder model bus coordinates are not provided.")
         return
     position_dict = nx.get_node_attributes(G, 'pos')
@@ -1832,8 +1830,8 @@ def plot_thermal_violations(fig_folder, title, equipment_with_violations, circui
     default_node_color = 'black'
     G = generate_networkx_representation()
     bus_coordinates_df = get_bus_coordinates()
-    incomplete_flag = check_buscoordinates_completeness(bus_coordinates_df)  # check if sufficient buscoordinates data is available
-    if incomplete_flag:  # feeder cannot be plotted if sufficient buscoordinates data is unavailable
+    complete_flag = check_buscoordinates_completeness(bus_coordinates_df)  # check if sufficient buscoordinates data is available
+    if not complete_flag:  # feeder cannot be plotted if sufficient buscoordinates data is unavailable
         logger.warning(f"Unable to plot {title} because feeder model bus coordinates are not provided.")
         return
     position_dict = nx.get_node_attributes(G, 'pos')
@@ -1900,8 +1898,8 @@ def plot_created_clusters(fig_folder, clusters_dict, circuit_source=None):
     default_node_color = 'black'
     G = generate_networkx_representation()
     bus_coordinates_df = get_bus_coordinates()
-    incomplete_flag = check_buscoordinates_completeness(bus_coordinates_df)  # check if sufficient buscoordinates data is available
-    if incomplete_flag:  # feeder cannot be plotted if sufficient buscoordinates data is unavailable
+    complete_flag = check_buscoordinates_completeness(bus_coordinates_df)  # check if sufficient buscoordinates data is available
+    if not complete_flag:  # feeder cannot be plotted if sufficient buscoordinates data is unavailable
         logger.warning(f"Unable to plot {title} because feeder model bus coordinates are not provided.")
         return
     position_dict = nx.get_node_attributes(G, 'pos')
@@ -2027,8 +2025,8 @@ def generate_networkx_representation():
     edges_df = get_graph_edges_dataframe(attr_fields=attr_fields)  # get edges dataframe (from lines and transformers)
     # add edges to graph
     G = add_graph_edges(G=G, edges_df=edges_df, attr_fields=attr_fields, source='bus1', target='bus2')
-    incomplete_flag = check_buscoordinates_completeness(bus_coordinates_df, verbose=True)  # check if sufficient buscoordinates data is available
-    if not incomplete_flag:
+    complete_flag = check_buscoordinates_completeness(bus_coordinates_df, verbose=True)  # check if sufficient buscoordinates data is available
+    if complete_flag:
         # these new buscoords could be written out to a file after correction
         G, commands_list = correct_node_coordinates(G=G)  # corrects node coordinates 
     return G
@@ -2039,12 +2037,12 @@ def check_buscoordinates_completeness(bus_coordinates_df, verbose=False):
     """
     # if coordinates for a buses are [0,0], then it is considered incomplete/unavailable data
     percent_missing = len(bus_coordinates_df.loc[(bus_coordinates_df["x_coordinate"] == 0) & (bus_coordinates_df["y_coordinate"] == 0)]) * 100 / len(bus_coordinates_df)
-    incomplete_flag = percent_missing > 25
+    complete_flag = percent_missing <= 25
     # if buscoordinates data is incomplete, log the completeness of data
-    if incomplete_flag:
+    if not complete_flag:
         if verbose:
             logger.warning(f"Buscoordinates missing for {percent_missing:.2f}% of buses in feeder model. Please verify accurate buscoordinates.dss is present, to plot figures.")
-    return incomplete_flag
+    return complete_flag
 
 
 def correct_node_coordinates(G):

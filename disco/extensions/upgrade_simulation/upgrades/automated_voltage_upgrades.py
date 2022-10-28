@@ -73,7 +73,7 @@ def determine_voltage_upgrades(
         raise Exception(f"AutomatedThermalUpgrade did not produce thermal upgrades dss file")
     
     initial_simulation_params = {"enable_pydss_solve": enable_pydss_solve, "pydss_volt_var_model": pydss_volt_var_model,
-                                 "dc_ac_ratio": dc_ac_ratio}
+                                 "dc_ac_ratio": dc_ac_ratio, "max_control_iterations": voltage_config["max_control_iterations"]}
     initial_dss_file_list = [master_path, thermal_upgrades_dss_filepath]
     simulation_params = reload_dss_circuit(dss_file_list=initial_dss_file_list, commands_list=None, **initial_simulation_params)
     simulation_params.update({"timepoint_multipliers": timepoint_multipliers, "multiplier_type": multiplier_type})
@@ -249,6 +249,7 @@ def determine_voltage_upgrades(
             bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
                 voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)           
 
+    dss_commands_list.append(f"Set MaxControlIter={simulation_params['max_control_iterations']}")
     if any("new " in string.lower() for string in dss_commands_list):  # if new equipment is added.
         dss_commands_list.append("CalcVoltageBases")
     dss_commands_list.append("Solve")

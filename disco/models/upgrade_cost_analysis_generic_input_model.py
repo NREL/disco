@@ -399,7 +399,9 @@ class VoltageUpgradeParamsModel(UpgradeParamsBaseModel):
 
     # Optional fields
     create_plots: Optional[bool] = Field(
-        title="create_plots", description="Flag to enable or disable figure creation", default=True
+        title="create_plots", 
+        description="Flag to enable or disable figure creation", 
+        default=True
     )
     capacitor_sweep_voltage_gap: float = Field(
         title="capacitor_sweep_voltage_gap",
@@ -446,7 +448,12 @@ class VoltageUpgradeParamsModel(UpgradeParamsBaseModel):
         description="Flag to enable or disable existing regulator controls settings sweep module",
         default=True,
     )
-    
+    max_control_iterations: int = Field(
+        title="max_control_iterations",
+        description="Max control iterations to be set for OpenDSS",
+        default=50,
+    )
+
     @validator("initial_lower_limit")
     def check_initial_voltage_lower_limits(cls, initial_lower_limit, values):
         upper = values["initial_upper_limit"]

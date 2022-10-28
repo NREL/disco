@@ -200,7 +200,6 @@ def identify_parallel_lines(options, object_row, parallel_lines_limit, **kwargs)
             command_string = define_line_object(line_name=new_name, chosen_option=chosen_option.copy(deep=True), action_type="New", 
                                bus1=object_row['bus1'], bus2=object_row['bus2'], length=object_row['length'],
                                original_units=object_row['units'])
-            chosen_option
             commands_list.append(command_string)
         temp_dict.pop("choose_parallel_metric")
         temp_dict.pop("num_parallel_raw")

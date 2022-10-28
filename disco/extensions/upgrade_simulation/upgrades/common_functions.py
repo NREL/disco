@@ -79,8 +79,9 @@ def reload_dss_circuit(dss_file_list, commands_list=None,  **kwargs):
         circuit_solve_and_check(raise_exception=raise_exception, **pydss_params)
         return pydss_params
     else:
-        max_control_iterations = 50
-        dss.Solution.MaxControlIterations(max_control_iterations)
+        max_control_iterations = kwargs.get("max_control_iterations", None)
+        if max_control_iterations is not None:
+            dss.Solution.MaxControlIterations(max_control_iterations)
         circuit_solve_and_check(raise_exception=raise_exception)
         return kwargs
 

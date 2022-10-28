@@ -4,8 +4,8 @@
     "line_upper_limit": 1.25,
     "line_design_pu": 0.75,
     "transformer_design_pu": 0.75,
-    "voltage_upper_limit": 1.058,
-    "voltage_lower_limit": 0.9166,
+    "voltage_upper_limit": 1.05,
+    "voltage_lower_limit": 0.95,
     "read_external_catalog": true,
     "external_catalog": "tests/data/uo_technical_catalog.json",
 	"create_plots": true,
@@ -13,10 +13,10 @@
 	"parallel_lines_limit": 10
   },
   "voltage_upgrade_params": {
-    "initial_upper_limit": 1.058,
-    "initial_lower_limit": 0.9166,
-    "final_upper_limit": 1.058,
-    "final_lower_limit": 0.9166,
+    "initial_upper_limit": 1.05,
+    "initial_lower_limit": 0.95,
+    "final_upper_limit": 1.05,
+    "final_lower_limit": 0.95,
     "nominal_voltage": 120,
     "capacitor_sweep_voltage_gap": 1,
     "reg_control_bands": [
@@ -60,6 +60,13 @@
       "model_type": "UpgradeCostAnalysisGenericModel",
       "name": "load_2.5_scenario",
       "opendss_model_file": "./tests/data/upgrade-models/uo_load_2.5_scenario/opendss/dss_files/Master.dss",
+      "blocked_by": [],
+      "estimated_run_minutes": null
+    },
+	{
+      "model_type": "UpgradeCostAnalysisGenericModel",
+      "name": "load_2_scenario",
+      "opendss_model_file": "./tests/data/upgrade-models/uo_load_2_scenario/opendss/dss_files/Master.dss",
       "blocked_by": [],
       "estimated_run_minutes": null
     }	
