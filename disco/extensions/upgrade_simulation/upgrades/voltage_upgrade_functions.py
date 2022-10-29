@@ -12,6 +12,7 @@ from .common_functions import *
 from .thermal_upgrade_functions import define_xfmr_object
 from disco import timer_stats_collector
 from disco.models.upgrade_cost_analysis_generic_output_model import VoltageUpgradesTechnicalResultModel
+from opendssdirect import DSSException
 from jade.utils.timing_utils import track_timing, Timer
 
 
@@ -969,8 +970,10 @@ def get_newly_added_regulator_settings(dss_file_list, previous_dss_commands_list
             regcontrol_sweep_df=regcontrol_sweep_df, initial_regcontrols_df=regcontrol_df, **kwargs)
         reload_dss_circuit(dss_file_list=dss_file_list, commands_list=previous_dss_commands_list + regcontrol_cluster_commands + regcontrol_settings_commands_list, **kwargs)  # reload circuit after settings sweep
         reg_upgrade_commands = regcontrol_cluster_commands + regcontrol_settings_commands_list
-    except Exception as e:  # if there is an error: dss._cffi_api_util.DSSException: (#485)
-        logger.info(f"First attempt at regulator settings sweep failed with error: {e}.")
+    except DSSException as err:  # if there is an error: dss._cffi_api_util.DSSException: (#485)
+        if err.args[0] != 485:
+            raise
+        logger.info(f"First attempt at regulator settings sweep failed with error: {err}.")
         reload_dss_circuit(dss_file_list=dss_file_list, commands_list=previous_dss_commands_list, **kwargs)  # reload circuit before clustering        
         temp = []
         for command in regcontrol_cluster_commands:  # extract only new addition commands
@@ -1011,7 +1014,9 @@ def get_newly_added_regulator_settings(dss_file_list, previous_dss_commands_list
                     regcontrol_sweep_df=regcontrol_sweep_df, initial_regcontrols_df=regcontrol_df, **kwargs)
                 reg_upgrade_commands =  reg_upgrade_commands + subltc_settings_commands_list
                 
-        except:
+        except DSSException as err:
+            if err.args[0] != 485:
+                raise
             # next try for sub LTC only (if it exists)
             logger.info(f"Control iterations exceeded. Retrying settings sweep for sub LTC with increased band to resolve error.")
             reload_dss_circuit(dss_file_list=dss_file_list, commands_list=previous_dss_commands_list+temp, **kwargs)  # reload circuit before settings edits
