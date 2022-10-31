@@ -1,0 +1,12 @@
+
+Number of overvoltages found: 0
+Number of undervoltages found: 4
+Minimum undervoltage: 0.8234875541723587 pu
+Number of line overloads found: 1
+Maximum line overload: 1.7992933975755274 pu
+Number of transformer overloads found: 3
+Maximum line overload: 9.573788731043923 pu
+Is the feeder a connected graph? YES
+Pass Flag: False 
+More details can be found in CSV files
+--------------------------------

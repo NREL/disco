@@ -21,22 +21,26 @@ from disco.exceptions import (
 )
 from disco.models.upgrade_cost_analysis_generic_input_model import (
     _extract_specific_model_properties_, 
-    LineCodeCatalogModel, 
-    LineCatalogModel, 
-    TransformerCatalogModel, LineModel, TransformerModel
+    LineCodeCatalogModel, LineGeometryCatalogModel,
+    LineModel, LineCatalogModel,
+    TransformerModel, TransformerCatalogModel,
 )
 from disco.models.upgrade_cost_analysis_generic_output_model import UpgradesCostResultSummaryModel, \
     CapacitorControllerResultType,  VoltageRegulatorResultType, EquipmentUpgradeStatusModel
 
 logger = logging.getLogger(__name__)
 
-DSS_XFMR_FLOAT_FIELDS = _extract_specific_model_properties_(model_name=TransformerCatalogModel, field_type_key="type", field_type_value="number")
-DSS_XFMR_INT_FIELDS = _extract_specific_model_properties_(model_name=TransformerCatalogModel, field_type_key="type", field_type_value="integer")
-DSS_LINE_FLOAT_FIELDS =  _extract_specific_model_properties_(model_name=LineCatalogModel, field_type_key="type", field_type_value="number")
-DSS_LINE_INT_FIELDS = _extract_specific_model_properties_(model_name=LineCatalogModel, field_type_key="type", field_type_value="integer")
+DSS_XFMR_FLOAT_FIELDS = _extract_specific_model_properties_(model_name=TransformerModel, field_type_key="type", field_type_value="number")
+DSS_XFMR_INT_FIELDS = _extract_specific_model_properties_(model_name=TransformerModel, field_type_key="type", field_type_value="integer")
+DSS_LINE_FLOAT_FIELDS =  _extract_specific_model_properties_(model_name=LineModel, field_type_key="type", field_type_value="number")
+DSS_LINE_INT_FIELDS = _extract_specific_model_properties_(model_name=LineModel, field_type_key="type", field_type_value="integer")
 DSS_LINECODE_FLOAT_FIELDS =  _extract_specific_model_properties_(model_name=LineCodeCatalogModel, field_type_key="type", field_type_value="number")
 DSS_LINECODE_INT_FIELDS =  _extract_specific_model_properties_(model_name=LineCodeCatalogModel, field_type_key="type", field_type_value="integer")
-
+DSS_LINEGEOMETRY_FLOAT_FIELDS =  _extract_specific_model_properties_(model_name=LineGeometryCatalogModel, field_type_key="type", field_type_value="number")
+DSS_LINEGEOMETRY_INT_FIELDS =  _extract_specific_model_properties_(model_name=LineGeometryCatalogModel, field_type_key="type", field_type_value="integer")
+DSS_UNIT_CONFIG = {1: "mi", 2: "kft", 3: "m", 4: "Ft", 5: "in", 6: "cm",
+                    0: "none"  # 0 maps to none, which means impedance units and line length units match
+                    }
 
 @track_timing(timer_stats_collector)
 def reload_dss_circuit(dss_file_list, commands_list=None,  **kwargs):
@@ -69,12 +73,16 @@ def reload_dss_circuit(dss_file_list, commands_list=None,  **kwargs):
             if "new " in command_string.lower():
                 check_dss_run_command("CalcVoltageBases")
     enable_pydss_solve = kwargs.get("enable_pydss_solve", False)
+    raise_exception = kwargs.get("raise_exception", True)
     if enable_pydss_solve:
         pydss_params = define_initial_pydss_settings(**kwargs)
-        circuit_solve_and_check(raise_exception=True, **pydss_params)
+        circuit_solve_and_check(raise_exception=raise_exception, **pydss_params)
         return pydss_params
     else:
-        circuit_solve_and_check(raise_exception=True)
+        max_control_iterations = kwargs.get("max_control_iterations", None)
+        if max_control_iterations is not None:
+            dss.Solution.MaxControlIterations(max_control_iterations)
+        circuit_solve_and_check(raise_exception=raise_exception)
         return kwargs
 
 
@@ -165,7 +173,7 @@ def dss_run_command_list(command_list):
     return
 
 
-def write_text_file(string_list, text_file_path):
+def write_text_file(string_list, text_file_path, **kwargs):
     """This function writes the string contents of a list to a text file
 
     Parameters
@@ -177,7 +185,9 @@ def write_text_file(string_list, text_file_path):
     -------
 
     """
-    pathlib.Path(text_file_path).write_text("\n".join(string_list))
+    num_new_lines = kwargs.get("num_new_lines", 2)
+    breaks = "\n"*num_new_lines
+    pathlib.Path(text_file_path).write_text(breaks.join(string_list))
 
 
 def create_upgraded_master_dss(dss_file_list, upgraded_master_dss_filepath, original_master_filename="master.dss"):
@@ -242,6 +252,13 @@ def get_dictionary_of_duplicates(df, subset, index_field):
     tuple_list = df.groupby(subset).apply(lambda x: tuple(x.index)).tolist()
     mapping_dict = {v: tup[0] for tup in tuple_list for v in tup}
     return mapping_dict
+
+
+def convert_length_units(length, unit_in, unit_out):
+    """Length unit converter"""
+    LENGTH_CONVERSION = {'mm': 0.001, 'cm': 0.01, 'm': 1.0, 'km': 1000., "mi": 1609.34, "kft": 304.8, 
+          "ft": 0.3048,  "in": 0.0254,}
+    return length*LENGTH_CONVERSION[unit_in]/LENGTH_CONVERSION[unit_out]
 
 
 def get_scenario_name(enable_pydss_solve, pydss_volt_var_model):
@@ -668,6 +685,7 @@ def ensure_line_config_exists(chosen_option, new_config_type, external_upgrades_
     """
     existing_config_dict = {"linecode": get_line_code(), "geometry": get_line_geometry()}
     new_config_name = chosen_option[new_config_type].lower()
+    # if there are no existing config definitions
     if existing_config_dict[new_config_type].empty:
         command_string = add_new_lineconfig_definition(chosen_option, new_config_type, external_upgrades_technical_catalog)
     else:
@@ -683,20 +701,27 @@ def add_new_lineconfig_definition(chosen_option, new_config_type, external_upgra
     # add definition for linecode or linegeometry
     if external_upgrades_technical_catalog is None:
         raise UpgradesExternalCatalogRequired(f"External upgrades technical catalog not available to determine line config type")
+    if (new_config_type not in external_upgrades_technical_catalog):
+        raise UpgradesExternalCatalogMissingObjectDefinition(
+            f"{new_config_type} definitions not found in external catalog."
+            f" Please check catalog, and add {new_config_type} definitions in it.")
     external_config_df = pd.DataFrame(external_upgrades_technical_catalog[new_config_type])
     if external_config_df.empty: 
         raise UpgradesExternalCatalogMissingObjectDefinition(
-            f"{new_config_type} definition not found in external catalog."
-        )    
+            f"{new_config_type} definitions not found in external catalog." 
+            f" Please check catalog, and add {new_config_type} definitions in it.")
     new_config_name = chosen_option[new_config_type]
     if external_config_df["name"].str.lower().isin([new_config_name.lower()]).any():
         config_definition_df = external_config_df.loc[external_config_df["name"].str.lower() == new_config_name.lower()].copy()
         if len(config_definition_df) == 1:  # if there is only one definition of that config name
             config_definition_dict = dict(config_definition_df.iloc[0])  
-        else:   # if there is more than one definition of that config name
+        elif len(config_definition_df) > 1:   # if there is more than one definition of that config name
             config_definition_df["temp_deviation"] = abs(config_definition_df["normamps"] - chosen_option["normamps"])
             config_definition_dict = dict(config_definition_df.loc[config_definition_df["temp_deviation"].idxmin()])
             config_definition_dict.pop("temp_deviation")
+        else:  # if definition not found
+            raise UpgradesExternalCatalogMissingObjectDefinition(
+                f"{new_config_name} definition of {new_config_type} type {new_config_type} not found in external catalog.")
         if config_definition_dict["normamps"] != chosen_option["normamps"]:
             logger.warning(f"Mismatch between noramps for linecode {new_config_name} ({config_definition_dict['normamps']}A) "
                             f"and chosen upgrade option normamps ({chosen_option['normamps']}A): {chosen_option['name']}")
@@ -898,9 +923,15 @@ def add_info_line_definition_type(all_df):
 
 
 def determine_line_placement(line_series):
-    """ Distinguish between overhead and underground cables
-        currently there is no way to distinguish directy using opendssdirect/pydss etc.
-        It is done here using property 'height' parameter and if string present in name
+    """ Distinguish between overhead and underground cables.
+    Latest opendss version has property "LineType"
+    line_placement is determined via:
+    1. "LineType" property
+    2. height property if defined as line geometry
+    # line_placement determined via height takes precedence over linetype property
+    # this is because if linetype property is not defined in opendss definition, then default: oh is assigned
+    
+    If line_placement is still not available, it is determined using presence of string "oh" or "ug" in name
 
     Parameters
     ----------
@@ -912,27 +943,46 @@ def determine_line_placement(line_series):
     """
     info_dict = {}
     info_dict["line_placement"] = None
-    if line_series["line_definition_type"] == "geometry":
-            dss.Circuit.SetActiveClass("linegeometry")
-            dss.ActiveClass.Name(line_series["geometry"])
-            h = float(dss.Properties.Value("h"))
-            info_dict["h"] = 0
-            if h >= 0:
-                info_dict["line_placement"] = "overhead"
-            else:
-                info_dict["line_placement"] = "underground"
-    else:
-        if ("oh" in line_series["geometry"].lower()) or ("oh" in line_series["linecode"].lower()):
-            info_dict["line_placement"] = "overhead"
-        elif ("ug" in line_series["geometry"].lower()) or ("ug" in line_series["linecode"].lower()):
-            info_dict["line_placement"] = "underground"
+    line_placement = None
+    # use linetype property to determine line_placement
+    if ("LineType" in line_series) and (line_series["LineType"] in ["oh", "ug"]):
+        if line_series["LineType"] == "oh":
+            linetype_placement = "overhead"
         else:
-            info_dict["line_placement"] = None
+            linetype_placement = "underground"
+    line_placement = linetype_placement
+    if line_series["line_definition_type"] == "geometry":
+        # use height property to determine line_placement
+        dss.Circuit.SetActiveClass("linegeometry")
+        dss.ActiveClass.Name(line_series["geometry"])
+        h = float(dss.Properties.Value("h"))
+        info_dict["h"] = 0
+        if h >= 0:
+            geom_placement = "overhead"
+        else:
+            geom_placement = "underground"
+        # line_placement determined via height takes precedence over linetype property
+        # this is because if linetype property is not defined in opendss definition, then default: oh is assigned
+        if linetype_placement != geom_placement:
+            line_placement = geom_placement 
+    # if line_placement is still None, then use line name to determine line placement
+    if line_placement is None:
+        if ("oh" in line_series["geometry"].lower()) or ("oh" in line_series["linecode"].lower()) :
+            line_placement = "overhead"
+        elif ("ug" in line_series["geometry"].lower()) or ("ug" in line_series["linecode"].lower()):
+            line_placement = "underground"
+        else:
+            line_placement = "overhead"  # default is taken as overhead
+    info_dict["line_placement"] = line_placement
     return info_dict
 
 
 def get_all_line_info_instance(upper_limit=None, compute_loading=True, ignore_switch=True):
-    """This collects line information
+    """This collects line information.
+    
+    dss.Lines.Units() gives an integer. It can be mapped as below:
+    units_config = ["none", "mi", "kft", "km", "m", "Ft", "in", "cm"]  # Units key for lines taken from OpenDSS
+    units_config[dss.Lines.Units() - 1]
 
     Returns
     -------
@@ -941,7 +991,7 @@ def get_all_line_info_instance(upper_limit=None, compute_loading=True, ignore_sw
     all_df = dss.utils.class_to_dataframe("line")
     if len(all_df) == 0:
         return pd.DataFrame()
-    check_enabled_property(all_df, element_name="line")    
+    check_enabled_property(all_df, element_name="line")
     all_df["name"] = all_df.index.str.split(".").str[1]
     all_df["equipment_type"] = all_df.index.str.split(".").str[0]
     # extract only enabled lines
@@ -973,6 +1023,17 @@ def get_all_line_info_instance(upper_limit=None, compute_loading=True, ignore_sw
         placement_dict = determine_line_placement(row)
         for key in placement_dict.keys():
             all_df.at[index, key] = placement_dict[key] 
+        if row["units"] == "none":
+            # possible unit values: {none | mi|kft|km|m|Ft|in|cm } Default is None - assumes length units match impedance units.
+            # if units match, then it returns none: in this case, assign value from other lines present in dataframe
+            if dss.Lines.Units() != 0:
+                all_df.at[index, "units"] = DSS_UNIT_CONFIG[dss.Lines.Units()]
+            else:
+                def_unit = all_df.units.unique()[0]
+                if def_unit != "none":
+                    all_df.at[index, "units"] = def_unit
+                else:
+                    all_df.at[index, "units"] = "m"  # if a unit was not found, assign default of m
         # if line loading is to be computed
         if compute_loading:
             if upper_limit is None:
@@ -1018,7 +1079,7 @@ def compare_multiple_dataframes(comparison_dict, deciding_column_name, compariso
     else:
         raise Exception(f"Unknown comparison type {comparison_type} passed.")
     final_list = []
-    for index, label in label_df.iteritems():  # index is element name
+    for index, label in label_df.items():  # index is element name
         temp_dict = dict(comparison_dict[label].loc[index])
         temp_dict.update({"name": index})
         final_list.append(temp_dict)
@@ -1065,10 +1126,9 @@ def get_thermal_equipment_info(compute_loading, equipment_type, upper_limit=None
         # compare all dataframe, and create one that contains all worst loading conditions (across all multiplier conditions)
         loading_df = compare_multiple_dataframes(comparison_dict, deciding_column_name, comparison_type="max")
     else:
-        raise Exception(f"Undefined multiplier_type {multiplier_type} passed.")    
+        raise Exception(f"Undefined multiplier_type {multiplier_type} passed.")   
     return loading_df
     
-
 
 def get_regcontrol_info(correct_PT_ratio=False, nominal_voltage=None):
     """This collects enabled regulator control information.
@@ -1162,7 +1222,6 @@ def get_capacitor_info(nominal_voltage=None, correct_PT_ratio=False):
                                   'equipment_type': 'capcontrol_present'}, inplace=True)
     capcontrol_df = capcontrol_df.set_index("capacitor_name")
     # with capacitor name as index, concatenate capacitor information with cap controls
-    # TODO are any other checks needed before concatenating dataframes? i.e. if capacitor is not present
     all_df = pd.concat([all_df, capcontrol_df], axis=1)
     all_df.index.name = 'capacitor_name'
     all_df = all_df.reset_index().set_index('capacitor_name')
@@ -1195,14 +1254,18 @@ def get_cap_control_info():
     """
     all_df = dss.utils.class_to_dataframe("capcontrol")
     if len(all_df) == 0:
-        capcontrol_columns = ['name', 'capacitor', 'type', 'equipment_type']
+        capcontrol_columns = ["name",  "equipment_type", "element", "terminal", "capacitor", 
+                              "type", "PTratio", "CTratio", "ONsetting", "OFFsetting", "Delay", 
+                              "VoltOverride", "Vmax", "Vmin", "DelayOFF", "DeadTime", "CTPhase", 
+                              "PTPhase", "VBus", "EventLog", "UserModel", "UserData", "pctMinkvar", 
+                              "Reset", "basefreq", "enabled", "like"]
         return pd.DataFrame(columns=capcontrol_columns)
     check_enabled_property(all_df, element_name="capcontrol")
     all_df["name"] = all_df.index.str.split(".").str[1]
     all_df["equipment_type"] = all_df.index.str.split(".").str[0]
-    float_columns = ["CTratio", "DeadTime", "Delay", "DelayOFF", "OFFsetting", "ONsetting", "PTratio",
-                     "Vmax", "Vmin"]
-    all_df[float_columns] = all_df[float_columns].astype(float)
+    CAPCONTROL_FLOAT_FIELDS = ["CTratio", "DeadTime", "Delay", "DelayOFF", "OFFsetting", "ONsetting", "PTratio",
+                              "Vmax", "Vmin"]
+    all_df[CAPCONTROL_FLOAT_FIELDS] = all_df[CAPCONTROL_FLOAT_FIELDS].astype(float)
     all_df = all_df.reset_index(drop=True).set_index("name")
     return all_df.reset_index()
 
@@ -1221,6 +1284,9 @@ def get_line_geometry():
     all_df['name'] = all_df.index.str.split('.').str[1]
     all_df['equipment_type'] = all_df.index.str.split('.').str[0]
     all_df.reset_index(inplace=True, drop=True)
+    all_df[DSS_LINEGEOMETRY_FLOAT_FIELDS] = all_df[DSS_LINEGEOMETRY_FLOAT_FIELDS].astype("float")
+    all_df[DSS_LINEGEOMETRY_INT_FIELDS] = all_df[DSS_LINEGEOMETRY_INT_FIELDS].astype("int")
+    all_df = all_df[list(LineGeometryCatalogModel.schema(True).get("properties").keys())]
     return all_df
 
 
@@ -1325,7 +1391,6 @@ def get_bus_voltages(voltage_upper_limit, voltage_lower_limit, raise_exception=T
             logger.debug(pv_field)
             for multiplier_name in timepoint_multipliers["load_multipliers"][pv_field]:
                 logger.debug("Multipler name: %s", multiplier_name)
-                
                 # this changes the dss network load and pv
                 apply_uniform_timepoint_multipliers(multiplier_name=multiplier_name, field=pv_field, **kwargs)
                 bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages_instance(
@@ -1528,7 +1593,10 @@ def get_bus_coordinates():
         bus_dict['x_coordinate'] = dss.Bus.X()
         bus_dict['y_coordinate'] = dss.Bus.Y()
         buses_list.append(bus_dict)
-    return pd.DataFrame(buses_list)
+    bus_coordinates_df = pd.DataFrame(buses_list)
+    if all(bus_coordinates_df["x_coordinate"].unique() == [0]) and all( bus_coordinates_df["y_coordinate"].unique() == [0]):
+        logger.info("Buscoordinates not provided for feeder model.")
+    return bus_coordinates_df
 
 
 def convert_summary_dict_to_df(summary_dict):
@@ -1541,7 +1609,7 @@ def filter_dictionary(dict_data, wanted_keys):
     return {k: dict_data.get(k, None) for k in wanted_keys}
 
 
-def compare_dict(old, new):
+def compare_dict(old, new, properties_to_check=None):
     """function to compare two dictionaries with same format. 
     Only compares common elements present in both original and new dictionaries
     
@@ -1549,9 +1617,19 @@ def compare_dict(old, new):
     field_list = []
     change = {}
     sharedKeys = set(old.keys()).intersection(new.keys())
+    if not sharedKeys:  # if there are no shared keys, then exit function
+        return change
+    all_properties = old[list(sharedKeys)[0]].keys()
+    if properties_to_check is None:
+        # get all properties from first element of dictionary
+        properties_to_check = all_properties
+    else:
+        properties_to_check = list(set(all_properties) & set(properties_to_check))
     for key in sharedKeys:
         change_flag = False
-        for sub_field in old[key]:
+        for sub_field in properties_to_check:
+            if pd.isna(old[key][sub_field]) and pd.isna(new[key][sub_field]):
+                continue
             if old[key][sub_field] != new[key][sub_field]:
                 change_flag = True
                 field_list.append(sub_field)

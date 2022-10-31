@@ -12,6 +12,7 @@ from .common_functions import *
 from .thermal_upgrade_functions import define_xfmr_object
 from disco import timer_stats_collector
 from disco.models.upgrade_cost_analysis_generic_output_model import VoltageUpgradesTechnicalResultModel
+from opendssdirect import DSSException
 from jade.utils.timing_utils import track_timing, Timer
 
 
@@ -26,15 +27,6 @@ NODE_COLORLEGEND = {'Load': {'node_color': 'blue', 'node_size': 20, "alpha": 1, 
                 'Voltage Regulator': {'node_color': 'cyan', 'node_size': 1000, "alpha": 0.75, "label": "Voltage Regulator"},                
                 }
 EDGE_COLORLEGEND = {'Violation': {'edge_color': 'violet', 'edge_size': 75, 'alpha': 0.75, "label": "Line Violation"}}
-LENGTH_CONVERSION_TO_METRE = {
-    "mi": 1609.34,
-    "kft": 304.8,
-    "km": 1000,
-    "ft": 0.3048,
-    "in": 0.0254,
-    "cm": 0.01,
-    "m": 1,
-}
 
 
 def edit_capacitor_settings_for_convergence(voltage_config=None, control_command=''):
@@ -101,7 +93,7 @@ def correct_capacitor_parameters(default_capacitor_settings, orig_capacitors_df,
     for index, row in capcontrol_present_df.iterrows():
         # if capcontrol is present, change to voltage controlled and apply default settings. (this also adds re-computed PTratio)
         if (row["capcontrol_type"].lower() != "voltage"):
-            logger.info(f"Capacitor control changed to voltage controlled for {row['capcontrol_name']}")
+            logger.info(f"Existing control changed to voltage controlled for {row['capcontrol_name']}")
             command_string = f"Edit CapControl.{row['capcontrol_name']} PTRatio={row['PTratio']} " \
                              f"{default_capcontrol_command}"
             check_dss_run_command(command_string)
@@ -116,7 +108,7 @@ def correct_capacitor_parameters(default_capacitor_settings, orig_capacitors_df,
         # if it is already voltage controlled, modify PT ratio if new is different after re-computation
         if (row["capcontrol_type"].lower() == "voltage") and (round(row['PTratio'], 2) != round(row['old_PTratio'], 2)):
             orig_string = ' !original, corrected PTratio only'
-            logger.info(f"PT ratio corrected for capcontrol {row['capcontrol_name']}.")
+            logger.info(f"PT ratio corrected for existing voltage controlled capcontrol {row['capcontrol_name']}.")
             command_string = f"Edit CapControl.{row['capcontrol_name']} PTRatio={row['PTratio']}" + orig_string
             check_dss_run_command(command_string)
             # this does not change original settings, so should not cause convergence
@@ -125,13 +117,13 @@ def correct_capacitor_parameters(default_capacitor_settings, orig_capacitors_df,
             
     # if there are capacitors without cap control, add a voltage-controlled cap control
     lines_df = get_thermal_equipment_info(compute_loading=False, equipment_type="line")
-    lines_df['bus1_extract'] = lines_df['bus1'].str.split(".").str[0]
+    lines_df['bus1_name_only'] = lines_df['bus1'].str.split(".").str[0]
+    lines_df['bus2_name_only'] = lines_df['bus2'].str.split(".").str[0]
     no_capcontrol_present_df = orig_capacitors_df.loc[orig_capacitors_df['capcontrol_present'] != 'capcontrol']
     for index, row in no_capcontrol_present_df.iterrows():
-        logger.info(f"Capacitor control (voltage controlled) added for {row['capcontrol_name']}.")
+        logger.info(f"New capacitor control (voltage controlled) added for {row['capacitor_name']}.")
         capcontrol_name = "capcontrol" + row['capacitor_name']
-        # extract line name that has the same bus as capacitor
-        line_name = lines_df.loc[lines_df['bus1_extract'] == row['bus1']]['name'].values[0]
+        line_name = find_line_connected_to_capacitor(capacitor_row=row, lines_df=lines_df)
         default_pt_ratio = (row['kv'] * 1000) / nominal_voltage
         command_string = f"New CapControl.{capcontrol_name} element=Line.{line_name} " \
                          f"terminal={default_capacitor_settings['terminal']} capacitor={row['capacitor_name']} " \
@@ -145,6 +137,40 @@ def correct_capacitor_parameters(default_capacitor_settings, orig_capacitors_df,
             circuit_solve_and_check(raise_exception=True, **kwargs)
         capacitors_commands_list.append(command_string)
     return capacitors_commands_list
+
+
+def find_line_connected_to_capacitor(capacitor_row, lines_df):
+    """Extract line name that has the same bus as capacitor
+    
+    First look at bus1 of lines.  If line bus1 names dont match, try looking at line bus2.
+    After this, if a line is still not found, check feeder model to ensure network is connected.
+    
+    If capacitor phases < 3, then first try locating lines with bus name information. 
+    If multiple lines are found, then search with bus connectivity information as well.
+    
+    For 3ph capacitors, it is assumed that it is connected to 3ph line.
+    """
+    cap_bus_name = capacitor_row["bus1"].split(".")[0]  # to get just bus name (e.g., extract b83 from b83.1)
+    if capacitor_row["phases"] <= 3:  
+        bus_identifier = "bus1"
+        df = lines_df.loc[lines_df[f"{bus_identifier}_name_only"] == cap_bus_name]
+        if df.empty:
+            bus_identifier = "bus2"
+            df = lines_df.loc[lines_df[f"{bus_identifier}_name_only"] == cap_bus_name]
+        if df.empty:  # if a line is still not found, check feeder model to ensure network is connected
+            raise Exception(f"Line not found at capacitor bus {capacitor_row['bus1']}. Check feeder model.")
+        # if there are more than one lines connected to the bus, could be 1ph, so look for exact bus connection
+        if len(df) > 1:
+            df = df.loc[df[bus_identifier].str.contains(capacitor_row["bus1"])]
+        line_name = df["name"].values[0]
+    else:   # if 3ph capacitor, then assumed that it is connected to 3ph line
+        df = lines_df.loc[lines_df['bus1_name_only'] == capacitor_row['bus1']]
+        if df.empty:  # if line bus1 names dont match, try looking at line bus2
+            df = lines_df.loc[lines_df['bus2_name_only'] == capacitor_row['bus1']]
+        if df.empty:  # if a line is still not found, check feeder model to ensure network is connected
+            raise Exception(f"Line not found at capacitor bus {capacitor_row['bus1']}. Check feeder model.")
+        line_name = df['name'].values[0]
+    return line_name
 
 
 @track_timing(timer_stats_collector)
@@ -293,7 +319,6 @@ def determine_capacitor_upgrades(voltage_upper_limit, voltage_lower_limit, defau
     
     capacitor_dss_commands = []
     logger.info("Capacitors are present in the network. Perform capacitor bank control modifications.")
-    # correct cap control parameters: change to voltage controlled, correct PT ratio. Add cap control if not present
     capcontrol_parameter_commands_list = correct_capacitor_parameters(
         default_capacitor_settings=default_capacitor_settings, orig_capacitors_df=orig_capacitors_df,
         nominal_voltage=voltage_config['nominal_voltage'], **kwargs)
@@ -338,12 +363,23 @@ def get_capacitor_upgrades(orig_capacitors_df, new_capacitors_df):
     
     final_cap_upgrades = {}
     processed_outputs = []
-    # STEP 1: compare controllers that exist in both: original and new- and get difference
-    change = compare_dict(orig_capcontrols, new_capcontrols)
+    # STEP 1: account for any new controllers added (which are not there in original)
+    change = compare_dict(orig_capcontrols, new_capcontrols, properties_to_check=["capcontrol_present", "capcontrol_name"])
+    new_addition = list(change.keys())    
+    
+    # STEP 2: compare controllers that exist in both: original and new- and get difference
+    properties_to_check = ['capacitor_name', 'phases', 'kvar', 'kv', 'conn',
+       'normamps', 'emergamps', 'basefreq', 'equipment_type', 
+       'capcontrol_name', 'capcontrol_type', 'PTratio', 'CTratio', 'ONsetting', 'OFFsetting',
+       'Delay', 'Vmax', 'Vmin', 'DelayOFF', 'DeadTime',
+       'basefreq', 'enabled', 'capcontrol_present', 'old_PTratio']
+    change = compare_dict(orig_capcontrols, new_capcontrols, properties_to_check)
     modified_capacitors = list(change.keys())
-    # STEP 2: account for any new controllers added (which are not there in original)
-    new_addition = list(set(new_capcontrols.keys()) -
-                        (set(orig_capcontrols.keys()) & set(new_capcontrols.keys())))
+    # remove any new addition capcontrols capacitors from modified list
+    modified_capacitors = list(set(modified_capacitors) - set(new_addition))
+    # # this checks for addition of new capacitors - can be used if needed in future
+    # new_addition = list(set(new_capcontrols.keys()) -
+    #                     (set(orig_capcontrols.keys()) & set(new_capcontrols.keys())))
     cap_upgrades = [*modified_capacitors, *new_addition]  # combining these two lists to get upgraded capacitors
     if cap_upgrades:
         for cap_name in cap_upgrades:
@@ -633,6 +669,7 @@ def add_new_regcontrol_command(xfmr_info_series, default_regcontrol_settings, no
                                                       general_property_list=regcontrol_info_series["properties_to_be_defined"])
     check_dss_run_command(new_regcontrol_command)  # run command
     check_dss_run_command('CalcVoltageBases')
+    # max control iterations could exceed here as well, when adding a new regulator
     pass_flag = circuit_solve_and_check(raise_exception=False, calcvoltagebases=True, **kwargs)  # solve circuit
     command_list.append(new_regcontrol_command)
     return {'command_list': command_list, 'new_regcontrol_name': regcontrol_info_series['regcontrol_name'], 'pass_flag': pass_flag}
@@ -711,7 +748,6 @@ def sweep_and_choose_regcontrol_setting(voltage_config, initial_regcontrols_df, 
         regcontrol_sweep_df=regcontrol_sweep_df, initial_regcontrols_df=initial_regcontrols_df,
         exclude_sub_ltc=exclude_sub_ltc, only_sub_ltc=only_sub_ltc, deciding_field=deciding_field, **kwargs)
     reg_sweep_commands_list = reg_sweep_commands_list + regcontrol_settings_commands_list
-
     if (fig_folder is not None) and create_plots and (title is not None):
         bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
             voltage_upper_limit=upper_limit, voltage_lower_limit=lower_limit, **kwargs)
@@ -744,6 +780,7 @@ def determine_substation_ltc_upgrades(voltage_upper_limit, voltage_lower_limit, 
             len(orig_regcontrols_df.loc[orig_regcontrols_df['at_substation_xfmr_flag'] == True]) > 0)
     # if there is no substation transformer in the network
     if orig_ckt_info['substation_xfmr'] is None:
+        logger.info("Substation transformer does not exist. So adding transformer and regcontrol on it.")
         # check add substation transformer and add ltc reg control on it
         new_subxfmr_added_dict = add_new_node_and_xfmr(action_type='New', node=circuit_source, circuit_source=circuit_source, 
                                                     xfmr_conn_type="wye" ,**kwargs)
@@ -773,12 +810,13 @@ def determine_substation_ltc_upgrades(voltage_upper_limit, voltage_lower_limit, 
             upper_limit=voltage_upper_limit, lower_limit=voltage_lower_limit, exclude_sub_ltc=False,
             only_sub_ltc=True, dss_file_list=dss_file_list,
             previous_dss_commands_list=all_commands_list + add_subxfmr_commands + add_subltc_commands, **kwargs)
-        
         circuit_solve_and_check(raise_exception=True, **kwargs)
         subltc_upgrade_commands = add_subxfmr_commands + add_subltc_commands + subltc_control_settings_commands_list
         all_commands_list = all_commands_list + subltc_upgrade_commands
     # if substation transformer is present but there are no regulator controls on the subltc
     elif (orig_ckt_info['substation_xfmr'] is not None) and (not subltc_present_flag):
+        logger.info("Substation transformer exists, but there are no regulator controls on it. Adding..")
+        
         new_subltc_added_dict = add_new_regcontrol_command(
             xfmr_info_series=pd.Series(updated_ckt_info['substation_xfmr']),
             default_regcontrol_settings=default_subltc_settings,
@@ -804,6 +842,7 @@ def determine_substation_ltc_upgrades(voltage_upper_limit, voltage_lower_limit, 
         all_commands_list = all_commands_list + subltc_upgrade_commands
     # if substation transformer, and reg controls are both present
     else:
+        logger.info("Substation transformer and regcontrol exists on it.")
         initial_sub_regcontrols_df = get_regcontrol_info(correct_PT_ratio=True,
                                                             nominal_voltage=voltage_config["nominal_voltage"])
         # sweep through settings and identify best setting
@@ -816,6 +855,7 @@ def determine_substation_ltc_upgrades(voltage_upper_limit, voltage_lower_limit, 
         subltc_upgrade_commands = subltc_control_settings_commands_list
         all_commands_list = all_commands_list + subltc_upgrade_commands
     
+    reload_dss_circuit(dss_file_list=dss_file_list, commands_list=all_commands_list, calcvoltagebases=True, **kwargs)
     # determine voltage violations after changes
     bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
         voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
@@ -885,34 +925,111 @@ def determine_new_regulator_upgrades(voltage_config, buses_with_violations, volt
                                                                     default_regcontrol_settings=default_regcontrol_settings, 
                                                                     deciding_field=deciding_field,
                                                                     fig_folder=fig_folder, **kwargs)
-    dss_commands_list = dss_commands_list + regcontrol_cluster_commands
-    logger.info("Settings sweep for existing reg control devices (other than sub LTC).")
-    regcontrol_df = get_regcontrol_info()
-    regcontrol_sweep_df = sweep_regcontrol_settings(voltage_config=voltage_config,
-                                                    initial_regcontrols_df=regcontrol_df,
-                                                    voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit,
-                                                    exclude_sub_ltc=True, only_sub_ltc=False, **kwargs)
-    regcontrols_df, regcontrol_settings_commands_list = choose_best_regcontrol_sweep_setting(deciding_field=deciding_field,
-        regcontrol_sweep_df=regcontrol_sweep_df, initial_regcontrols_df=regcontrol_df, **kwargs)
-     
-    # # can test: to include subltc as well while doing sweep
-    
-    # reload circuit after settings sweep
-    dss_commands_list = dss_commands_list + regcontrol_settings_commands_list
-    reload_dss_circuit(dss_file_list=dss_file_list, commands_list=dss_commands_list, **kwargs)  # reload circuit after settings sweep
+                
+    if not regcontrol_cluster_commands:  # if there are no regcontrol commands
+        reload_dss_circuit(dss_file_list=dss_file_list, commands_list=previous_dss_commands_list, **kwargs)
+        comparison_dict["after_addition_new_regcontrol"] = compute_voltage_violation_severity(
+            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
+        return {"new_reg_upgrade_commands": [], "comparison_dict": comparison_dict, "best_setting_so_far": best_setting_so_far}
+
+    reg_upgrade_commands = get_newly_added_regulator_settings(dss_file_list, previous_dss_commands_list, regcontrol_cluster_commands, voltage_lower_limit, voltage_upper_limit,
+                                       voltage_config, deciding_field, **kwargs)
+    dss_commands_list = previous_dss_commands_list + reg_upgrade_commands
     comparison_dict["after_addition_new_regcontrol"] = compute_voltage_violation_severity(
         voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
-    new_reg_upgrade_commands = regcontrol_cluster_commands + regcontrol_settings_commands_list
     if comparison_dict["after_addition_new_regcontrol"][deciding_field] < comparison_dict[best_setting_so_far][deciding_field]:
         best_setting_so_far = "after_addition_new_regcontrol"
+        new_reg_upgrade_commands = reg_upgrade_commands
     else: 
         new_reg_upgrade_commands = []
-        dss_commands_list = list(set(dss_commands_list) - set(regcontrol_settings_commands_list) - set(regcontrol_cluster_commands))
+        remove_commands_list = reg_upgrade_commands
+        if remove_commands_list:
+            dss_commands_list = [i for i in dss_commands_list if i not in remove_commands_list]
+
         reload_dss_circuit(dss_file_list=dss_file_list, commands_list=dss_commands_list, **kwargs)
         comparison_dict["disabled_new_regcontrol"] = compute_voltage_violation_severity(
                                                         voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
 
     return {"new_reg_upgrade_commands": new_reg_upgrade_commands, "comparison_dict": comparison_dict, "best_setting_so_far": best_setting_so_far}
+
+
+def get_newly_added_regulator_settings(dss_file_list, previous_dss_commands_list, regcontrol_cluster_commands, voltage_lower_limit, voltage_upper_limit,
+                                       voltage_config, deciding_field, **kwargs):
+    """this function finalizes the settings with the newly added voltage regulator. 
+    It also takes into account errors encountered due to max control iterations being exceeded.
+    """
+    # reload circuit after settings sweep
+    try:
+        logger.info("Settings sweep for existing reg control devices (other than sub LTC).")
+        regcontrol_df = get_regcontrol_info()
+        regcontrol_sweep_df = sweep_regcontrol_settings(voltage_config=voltage_config,
+                                                        initial_regcontrols_df=regcontrol_df,
+                                                        voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit,
+                                                        exclude_sub_ltc=True, only_sub_ltc=False, **kwargs)
+        regcontrols_df, regcontrol_settings_commands_list = choose_best_regcontrol_sweep_setting(deciding_field=deciding_field,
+            regcontrol_sweep_df=regcontrol_sweep_df, initial_regcontrols_df=regcontrol_df, **kwargs)
+        reload_dss_circuit(dss_file_list=dss_file_list, commands_list=previous_dss_commands_list + regcontrol_cluster_commands + regcontrol_settings_commands_list, **kwargs)  # reload circuit after settings sweep
+        reg_upgrade_commands = regcontrol_cluster_commands + regcontrol_settings_commands_list
+    except DSSException as err:  # if there is an error: dss._cffi_api_util.DSSException: (#485)
+        if err.args[0] != 485:
+            raise
+        logger.info(f"First attempt at regulator settings sweep failed with error: {err}.")
+        reload_dss_circuit(dss_file_list=dss_file_list, commands_list=previous_dss_commands_list, **kwargs)  # reload circuit before clustering        
+        temp = []
+        for command in regcontrol_cluster_commands:  # extract only new addition commands
+            if "edit regcontrol." not in command.lower():
+                temp.append(command)        
+        # control iterations are exceeded
+        max_control_iterations = kwargs.get("max_control_iterations", dss.Solution.MaxControlIterations())  # get setting
+        increase_control_iterations = max_control_iterations + 50  # here iterations are increased by 50, to reach a solution
+        logger.info(f"Increased MaxControlIterations from {dss.Solution.MaxControlIterations()} to {increase_control_iterations}")
+        dss.Solution.MaxControlIterations(increase_control_iterations)
+        kwargs["max_control_iterations"] = max_control_iterations
+        # The usual reason for exceeding MaxControlIterations is conflicting controls i.e., one or more RegControl devices are oscillating between taps
+        # so try increasing band of reg control
+        new_voltage_config = voltage_config.copy()
+        new_voltage_config["reg_control_bands"] = [2]
+        try:
+            # First try for regulator controls (without subLTC)
+            logger.info(f"Retrying settings sweep for existing reg control devices (other than sub LTC) with increased band to resolve error.")
+            reload_dss_circuit(dss_file_list=dss_file_list, commands_list=previous_dss_commands_list+temp, **kwargs)  # reload circuit before settings edits
+            regcontrol_df = get_regcontrol_info()
+            regcontrol_sweep_df = sweep_regcontrol_settings(voltage_config=new_voltage_config,
+                                                            initial_regcontrols_df=regcontrol_df,
+                                                            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit,
+                                                            exclude_sub_ltc=True, only_sub_ltc=False, **kwargs)
+            regcontrols_df, regcontrol_settings_commands_list = choose_best_regcontrol_sweep_setting(deciding_field=deciding_field,
+                regcontrol_sweep_df=regcontrol_sweep_df, initial_regcontrols_df=regcontrol_df, **kwargs)
+            reload_dss_circuit(dss_file_list=dss_file_list, commands_list=previous_dss_commands_list+temp+regcontrol_settings_commands_list, **kwargs)  # reload circuit after settings sweep
+            bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
+                voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
+            reg_upgrade_commands =  temp + regcontrol_settings_commands_list
+            if len(buses_with_violations) > 0:
+                regcontrol_df = get_regcontrol_info()
+                regcontrol_sweep_df = sweep_regcontrol_settings(voltage_config=new_voltage_config,
+                                                                initial_regcontrols_df=regcontrol_df,
+                                                                voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit,
+                                                                exclude_sub_ltc=False, only_sub_ltc=True, **kwargs)
+                regcontrols_df, subltc_settings_commands_list = choose_best_regcontrol_sweep_setting(deciding_field=deciding_field,
+                    regcontrol_sweep_df=regcontrol_sweep_df, initial_regcontrols_df=regcontrol_df, **kwargs)
+                reg_upgrade_commands =  reg_upgrade_commands + subltc_settings_commands_list
+                
+        except DSSException as err:
+            if err.args[0] != 485:
+                raise
+            # next try for sub LTC only (if it exists)
+            logger.info(f"Control iterations exceeded. Retrying settings sweep for sub LTC with increased band to resolve error.")
+            reload_dss_circuit(dss_file_list=dss_file_list, commands_list=previous_dss_commands_list+temp, **kwargs)  # reload circuit before settings edits
+            regcontrol_df = get_regcontrol_info()
+            regcontrol_sweep_df = sweep_regcontrol_settings(voltage_config=new_voltage_config,
+                                                            initial_regcontrols_df=regcontrol_df,
+                                                            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit,
+                                                            exclude_sub_ltc=False, only_sub_ltc=True, **kwargs)
+            regcontrols_df, regcontrol_settings_commands_list = choose_best_regcontrol_sweep_setting(deciding_field=deciding_field,
+                regcontrol_sweep_df=regcontrol_sweep_df, initial_regcontrols_df=regcontrol_df, **kwargs)
+            reload_dss_circuit(dss_file_list=dss_file_list, commands_list=previous_dss_commands_list+temp+regcontrol_settings_commands_list, **kwargs)  # reload circuit after settings sweep
+            reg_upgrade_commands =  temp + regcontrol_settings_commands_list
+    return reg_upgrade_commands
 
 
 def add_new_node_and_xfmr(node, circuit_source, xfmr_conn_type=None, action_type='New',
@@ -1188,7 +1305,6 @@ def test_new_regulator_placement_on_common_nodes(voltage_upper_limit, voltage_lo
 
     """
     intra_cluster_group_severity_dict = {}
-
     for node in common_upstream_nodes_list:
         new_xfmr_added_dict = None
         new_regcontrol_dict = None
@@ -1371,57 +1487,6 @@ def get_full_distance_df(upper_triang_paths_dict):
     return square_dist_df
 
 
-def generate_edges(G):
-    """All lines, switches, reclosers etc are modeled as lines, so calling lines takes care of all of them.
-    However we also need to loop over transformers as they form the edge between primary and secondary nodes
-
-    Parameters
-    ----------
-    G
-
-    Returns
-    -------
-
-    """
-
-
-    # prepare lines dataframe
-    all_lines_df = get_thermal_equipment_info(compute_loading=False, equipment_type="line")
-    all_lines_df['bus1'] = all_lines_df['bus1'].str.split('.', expand=True)[0].str.lower()
-    all_lines_df['bus2'] = all_lines_df['bus2'].str.split('.', expand=True)[0].str.lower()
-    all_lines_df.apply(lambda x: x.length * LENGTH_CONVERSION_TO_METRE[x.units])
-    all_lines_df.apply(lambda x: x['length'] * LENGTH_CONVERSION_TO_METRE[x['units']])
-    all_lines_df.apply(lambda x: print(x))
-    # convert length to metres
-
-    all_lines_df['units']
-    all_xfmrs_df = get_thermal_equipment_info(compute_loading=False, equipment_type="transformer")
-
-    dss.Lines.First()
-    while True:
-        from_bus = dss.Lines.Bus1().split('.')[0].lower()
-        to_bus = dss.Lines.Bus2().split('.')[0].lower()
-        phases = dss.Lines.Phases()
-        length = dss.Lines.Length()
-        name = dss.Lines.Name()
-        G.add_edge(from_bus, to_bus, phases=phases, length=length, name=name)
-        if not dss.Lines.Next() > 0:
-            break
-
-    dss.Transformers.First()
-    while True:
-        bus_names = dss.CktElement.BusNames()
-        from_bus = bus_names[0].split('.')[0].lower()
-        to_bus = bus_names[1].split('.')[0].lower()
-        phases = dss.CktElement.NumPhases()
-        length = 0.0
-        name = dss.Transformers.Name()
-        G.add_edge(from_bus, to_bus, phases=phases, length=length, name=name)
-        if not dss.Transformers.Next() > 0:
-            break
-    return G
-
-
 def get_upper_triangular_dist(G, buses_with_violations):
     """ Identify shortest dijkstra paths between all buses with violations.
     Returns a dictionary of nodes with distances to other nodes (only upper triangular)
@@ -1506,6 +1571,7 @@ def per_cluster_group_regulator_analysis(G, buses_list, voltage_config, voltage_
         return None
     cluster_group_info_dict.update(chosen_node_dict)
     # choose best settings for all regulators (with new regulator added)
+    # max control iterations could be exceeded here as well
     init_regcontrols_df = get_regcontrol_info(correct_PT_ratio=True, nominal_voltage=nominal_voltage)
     regcontrol_sweep_df = sweep_regcontrol_settings(voltage_config=voltage_config, initial_regcontrols_df=init_regcontrols_df,
                                                     voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit,
@@ -1543,6 +1609,9 @@ def cluster_and_place_regulator(G, square_distance_df, initial_buses_with_violat
                                                                                    voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, 
                                                                                    default_regcontrol_settings=default_regcontrol_settings,
                                                                                    circuit_source=circuit_source, deciding_field=deciding_field, **kwargs)
+        if cluster_group_info_dict[cluster_id] is None:
+            logger.debug("There is no common node on which regulator can be placed (for this cluster group)")
+            return cluster_group_info_dict         
         cluster_group_info_dict[cluster_id].update({"buses_list": buses_list,})
         # determine voltage violations after changes
         bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
@@ -1565,7 +1634,7 @@ def determine_new_regulator_location(circuit_source, initial_buses_with_violatio
     create_plots = kwargs.get("create_plots", False)
 
     # prepare for clustering
-    G = generate_networkx_representation(create_plot=False)
+    G = generate_networkx_representation()
     upper_triang_paths_dict = get_upper_triangular_dist(G=G, buses_with_violations=initial_buses_with_violations)
     square_distance_df = get_full_distance_df(upper_triang_paths_dict=upper_triang_paths_dict)
     # if create_plots:
@@ -1597,7 +1666,7 @@ def determine_new_regulator_location(circuit_source, initial_buses_with_violatio
                                     str(len(buses_with_violations)), buses_with_violations=buses_with_violations, circuit_source=circuit_source, enable_detailed=True)
         options_dict[cluster_option_name].update(severity_dict)
         if (len(buses_with_violations)) == 0:
-            logger.info("All nodal violations have been removed successfully.....quitting")
+            logger.info("All nodal violations have been removed successfully.")
             break
         # disable previous clustering option before moving onto next cluster option
         disable_previous_clustering_option(cluster_group_info_dict=options_dict[cluster_option_name]["details"])
@@ -1643,6 +1712,11 @@ def plot_feeder(fig_folder, title, circuit_source=None, enable_detailed=False):
     """Function to plot feeder network.
     """
     G = generate_networkx_representation()
+    bus_coordinates_df = get_bus_coordinates()
+    complete_flag = check_buscoordinates_completeness(bus_coordinates_df)  # check if sufficient buscoordinates data is available
+    if not complete_flag:  # feeder cannot be plotted if sufficient buscoordinates data is unavailable
+        logger.warning(f"Unable to plot {title} because feeder model bus coordinates are not provided.")
+        return
     position_dict = nx.get_node_attributes(G, 'pos')
     nodes_list = G.nodes()
     Un_G = G.to_undirected()
@@ -1698,6 +1772,11 @@ def plot_voltage_violations(fig_folder, title, buses_with_violations, circuit_so
     default_node_size = 2
     default_node_color = 'black'
     G = generate_networkx_representation()
+    bus_coordinates_df = get_bus_coordinates()
+    complete_flag = check_buscoordinates_completeness(bus_coordinates_df)  # check if sufficient buscoordinates data is available
+    if not complete_flag:  # feeder cannot be plotted if sufficient buscoordinates data is unavailable
+        logger.warning(f"Unable to plot {title} because feeder model bus coordinates are not provided.")
+        return
     position_dict = nx.get_node_attributes(G, 'pos')
     nodes_list = G.nodes()
     Un_G = G.to_undirected()
@@ -1755,6 +1834,11 @@ def plot_thermal_violations(fig_folder, title, equipment_with_violations, circui
     default_node_size = 2
     default_node_color = 'black'
     G = generate_networkx_representation()
+    bus_coordinates_df = get_bus_coordinates()
+    complete_flag = check_buscoordinates_completeness(bus_coordinates_df)  # check if sufficient buscoordinates data is available
+    if not complete_flag:  # feeder cannot be plotted if sufficient buscoordinates data is unavailable
+        logger.warning(f"Unable to plot {title} because feeder model bus coordinates are not provided.")
+        return
     position_dict = nx.get_node_attributes(G, 'pos')
     # nodes_list = G.nodes()
     # edges_list = G.edges()
@@ -1818,6 +1902,11 @@ def plot_created_clusters(fig_folder, clusters_dict, circuit_source=None):
     default_node_size = 2
     default_node_color = 'black'
     G = generate_networkx_representation()
+    bus_coordinates_df = get_bus_coordinates()
+    complete_flag = check_buscoordinates_completeness(bus_coordinates_df)  # check if sufficient buscoordinates data is available
+    if not complete_flag:  # feeder cannot be plotted if sufficient buscoordinates data is unavailable
+        logger.warning(f"Unable to plot {title} because feeder model bus coordinates are not provided.")
+        return
     position_dict = nx.get_node_attributes(G, 'pos')
     Un_G = G.to_undirected()
     
@@ -1855,8 +1944,6 @@ def plot_created_clusters(fig_folder, clusters_dict, circuit_source=None):
     plt.close(fig)
     return
 
-    
-
 
 def add_graph_bus_nodes(G, bus_coordinates_df):
     """Adds feeder buses as nodes to graph nodes
@@ -1880,9 +1967,8 @@ def get_graph_edges_dataframe(attr_fields):
     all_lines_df['bus1'] = all_lines_df['bus1'].str.split('.', expand=True)[0].str.lower()
     all_lines_df['bus2'] = all_lines_df['bus2'].str.split('.', expand=True)[0].str.lower()
     # convert length to metres
-    all_lines_df['length'] = all_lines_df.apply(lambda x: x.length * LENGTH_CONVERSION_TO_METRE[x.units], axis=1)
+    all_lines_df['length'] = all_lines_df.apply(lambda x: convert_length_units(length=x.length, unit_in=x.units, unit_out="m"), axis=1)
     all_lines_df['equipment_type'] = 'line'
-
     # prepare transformer dataframe
     all_xfmrs_df = get_thermal_equipment_info(compute_loading=False, equipment_type="transformer")
     all_xfmrs_df['length'] = 0.0
@@ -1926,7 +2012,7 @@ def searchDictKey(dct, value):
     return [key for key in dct if (dct[key] == value)]
 
 
-def generate_networkx_representation(**kwargs):
+def generate_networkx_representation():
     """This function generates a networkx graph of the circuit
 
     Parameters
@@ -1944,9 +2030,24 @@ def generate_networkx_representation(**kwargs):
     edges_df = get_graph_edges_dataframe(attr_fields=attr_fields)  # get edges dataframe (from lines and transformers)
     # add edges to graph
     G = add_graph_edges(G=G, edges_df=edges_df, attr_fields=attr_fields, source='bus1', target='bus2')
-    create_plot = kwargs.get('create_plot', False)
-    G = correct_node_coordinates(G=G)  # corrects node coordinates 
+    complete_flag = check_buscoordinates_completeness(bus_coordinates_df, verbose=True)  # check if sufficient buscoordinates data is available
+    if complete_flag:
+        # these new buscoords could be written out to a file after correction
+        G, commands_list = correct_node_coordinates(G=G)  # corrects node coordinates 
     return G
+
+
+def check_buscoordinates_completeness(bus_coordinates_df, verbose=False):
+    """This function checks if complete bus coordinates are present. This is needed to plot feeder figures.
+    """
+    # if coordinates for a buses are [0,0], then it is considered incomplete/unavailable data
+    percent_missing = len(bus_coordinates_df.loc[(bus_coordinates_df["x_coordinate"] == 0) & (bus_coordinates_df["y_coordinate"] == 0)]) * 100 / len(bus_coordinates_df)
+    complete_flag = percent_missing <= 25
+    # if buscoordinates data is incomplete, log the completeness of data
+    if not complete_flag:
+        if verbose:
+            logger.warning(f"Buscoordinates missing for {percent_missing:.2f}% of buses in feeder model. Please verify accurate buscoordinates.dss is present, to plot figures.")
+    return complete_flag
 
 
 def correct_node_coordinates(G):
@@ -1962,6 +2063,7 @@ def correct_node_coordinates(G):
     """
     position_dict = nx.get_node_attributes(G, 'pos')
     missing_coords_nodes = searchDictKey(position_dict, [0, 0])  # get list of nodes with missing coordinates ([0,0])
+    commands_list = []
 
     # iterate over all nodes with missing coordinates
     for missing_node in missing_coords_nodes:
@@ -1972,27 +2074,28 @@ def correct_node_coordinates(G):
         if len(parent_node) != 0:  # parent node exists
             reference_coord = position_dict[parent_node[0]]
             if set(reference_coord) == {0}:  # if parent node also has [0,0] coordinates
-                ancestors_list = G.ancestors(missing_node)  # find list of ancestors, and iterate over them
+                ancestors_list = list(nx.ancestors(G, missing_node))  # find list of ancestors, and iterate over them
                 for ancestor in ancestors_list:
                     reference_coord = position_dict[ancestor]
                     # once an ancestor with non zero coordinates is found, stop iteration
                     if set(reference_coord) != {0}:
                         break
             nx.set_node_attributes(G, {missing_node: reference_coord}, name="pos")  # assign coordinates
-            
+            commands_list.append("{} {} {}".format(missing_node, reference_coord[0], reference_coord[1]))
         elif len(child_node) != 0:  # child node exists
             reference_coord = position_dict[child_node[0]]
             if set(reference_coord) == {0}:  # if child node also has [0,0] coordinates
-                successors_list = nx.dfs_successors(G, missing_node)
+                successors_list = list(nx.dfs_successors(G, missing_node))   # find list of successors, and iterate over them
                 for successor in successors_list:
                     reference_coord = position_dict[successor]
                     # once a node with non zero coordinates is found, stop iteration
                     if set(reference_coord) != {0}:
                         break
             nx.set_node_attributes(G, {missing_node: reference_coord}, name="pos")  # assign coordinates
+            commands_list.append("{} {} {}".format(missing_node, reference_coord[0], reference_coord[1]))
         else:  # if there are no parent or child nodes
             continue  # can't correct coordinates cause no parent or child nodes found.
-    return G
+    return G, commands_list
 
 
 def check_substation_LTC(new_ckt_info, xfmr_name):

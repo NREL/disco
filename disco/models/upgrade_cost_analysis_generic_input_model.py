@@ -98,6 +98,120 @@ class LineCodeCatalogModel(CommonLineParameters):
         description="basefreq",
         determine_upgrade_option=True,
     )
+    
+
+class LineGeometryCatalogModel(UpgradeParamsBaseModel):
+    """Contains LineGeometry information needed for thermal upgrade analysis. Most fields can be directly obtained from the opendss models"""
+    name: str = Field(
+        title="name",
+        description="name",
+    )
+    equipment_type: str = Field(
+        title="equipment_type",
+        description="equipment_type",
+        determine_upgrade_option=True,
+    )
+    nconds: int = Field(
+        title="nconds",
+        description="nconds",
+        determine_upgrade_option=True,
+    )
+    nphases: int = Field(
+        title="nphases",
+        description="nphases",
+        determine_upgrade_option=True,
+    )
+    cond: int = Field(
+        title="cond",
+        description="cond",
+        determine_upgrade_option=True,
+    )
+    wire: str = Field(
+        title="wire",
+        description="wire",
+        determine_upgrade_option=True,
+    )
+    x: List[float] = Field(
+        title="x",
+        description="x",
+        determine_upgrade_option=True,
+    )
+    h: List[float] = Field(
+        title="h",
+        description="h",
+        determine_upgrade_option=True,
+    )
+    units: List[str] = Field(
+        title="units",
+        description="units",
+        determine_upgrade_option=True,
+    )
+    normamps: float = Field(
+        title="normamps",
+        description="normamps",
+        determine_upgrade_option=True,
+    )
+    emergamps: float = Field(
+        title="emergamps",
+        description="emergamps",
+        determine_upgrade_option=True,
+    )
+    reduce: str = Field(
+        title="reduce",
+        description="reduce",
+        determine_upgrade_option=True,
+    )
+    spacing: Optional[Any] = Field(
+        title="spacing",
+        description="spacing",
+    )
+    wires: List[str] = Field(
+        title="wires",
+        description="wires",
+        determine_upgrade_option=True,
+    )
+    cncable: str = Field(
+        title="cncable",
+        description="cncable",
+        determine_upgrade_option=True,
+    )
+    tscable: str = Field(
+        title="tscable",
+        description="tscable",
+        determine_upgrade_option=True,
+    )
+    cncables: List[str] = Field(
+        title="cncables",
+        description="cncables",
+        determine_upgrade_option=True,
+    )
+    tscables: List[str] = Field(
+        title="tscables",
+        description="tscables",
+        determine_upgrade_option=True,
+    )
+    Seasons: int = Field(
+        title="Seasons",
+        description="Seasons",
+    )
+    Ratings: Any = Field(
+        title="Ratings",
+        description="Ratings",
+    )
+    LineType: str = Field(
+        title="LineType",
+        description="LineType",
+        determine_upgrade_option=True,
+    )
+    like: Any = Field(
+        title="like",
+        description="like",
+    )
+    LineType: str = Field(
+        title="LineType",
+        description="LineType",
+        determine_upgrade_option=True,
+    )
 
 
 class OpenDSSTransformerModel(CommonTransformerParameters):
@@ -128,6 +242,8 @@ class TransformerCatalogModel(CommonTransformerParameters, ExtraTransformerParam
         title="name",
         description="name",
     )
+
+
 class UpgradeTechnicalCatalogModel(UpgradeParamsBaseModel):
     """Contains Upgrades Technical Catalog needed for thermal upgrade analysis"""
     line: Optional[List[LineCatalogModel]] = Field(
@@ -145,12 +261,11 @@ class UpgradeTechnicalCatalogModel(UpgradeParamsBaseModel):
         description="linecode catalog",
         default=[]
     )
-    # TODO not implemented yet. Can be added if lines are defined through linegeometry
-    # geometry: Optional[List[LineGeometryCatalogModel]] = Field(
-    #     title="linegeometry",
-    #     description="linegeometry catalog",
-    #     default=[]
-    # )
+    geometry: Optional[List[LineGeometryCatalogModel]] = Field(
+        title="linegeometry",
+        description="linegeometry catalog",
+        default=[]
+    )
 
 
 class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
@@ -205,7 +320,7 @@ class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
     )
     timepoint_multipliers: Optional[Dict] = Field(
         title="timepoint_multipliers",
-        description='Dictionary to provide timepoint multipliers. example: timepoint_multipliers={"load_multipliers": {"with_pv": [0.1], "without_pv": [0.3]}}',
+        description='Dictionary to provide timepoint multipliers. example: timepoint_multipliers={"load_multipliers": {"with_pv": [1.2], "without_pv": [0.6]}}',
     )
 
     @validator("voltage_lower_limit")
@@ -216,6 +331,24 @@ class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
                 f"voltage_upper_limit={upper} must be greater than voltage_lower_limit={voltage_lower_limit}"
             )
         return voltage_lower_limit
+    
+    @validator("line_design_pu")
+    def check_line_design_pu(cls, line_design_pu, values):
+        upper = values["line_upper_limit"]
+        if line_design_pu >= upper:
+            raise ValueError(
+                f"line_design_pu={line_design_pu} must be lesser than line_upper_limit={upper}"
+            )
+        return line_design_pu
+
+    @validator("transformer_design_pu")
+    def check_transformer_design_pu(cls, transformer_design_pu, values):
+        upper = values["transformer_upper_limit"]
+        if transformer_design_pu >= upper:
+            raise ValueError(
+                f"transformer_design_pu={transformer_design_pu} must be lesser than transformer_upper_limit={upper}"
+            )
+        return transformer_design_pu
 
     @validator("external_catalog")
     def check_catalog(cls, external_catalog, values):
@@ -232,9 +365,9 @@ class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
             return timepoint_multipliers
         if "load_multipliers" not in timepoint_multipliers:
             raise ValueError("load_multipliers must be defined in timepoint_multipliers")
-        if "with_pv" not in timepoint_multipliers and "without_pv" not in timepoint_multipliers:
+        if ("with_pv" not in timepoint_multipliers["load_multipliers"]) and ("without_pv" not in timepoint_multipliers["load_multipliers"]):
             raise ValueError(
-                "Either 'with_pv' or 'without_pv' must be defined in timepoint_multipliers"
+                'Either "with_pv" or "without_pv" must be defined in timepoint_multipliers["load_multipliers"]'
             )
         return timepoint_multipliers
 
@@ -266,7 +399,9 @@ class VoltageUpgradeParamsModel(UpgradeParamsBaseModel):
 
     # Optional fields
     create_plots: Optional[bool] = Field(
-        title="create_plots", description="Flag to enable or disable figure creation", default=True
+        title="create_plots", 
+        description="Flag to enable or disable figure creation", 
+        default=True
     )
     capacitor_sweep_voltage_gap: float = Field(
         title="capacitor_sweep_voltage_gap",
@@ -300,7 +435,7 @@ class VoltageUpgradeParamsModel(UpgradeParamsBaseModel):
     )
     timepoint_multipliers: dict = Field(
         title="timepoint_multipliers",
-        description="Dictionary containing timepoint multipliers. Format: {'load_multipliers': {'with_pv': [1.2, 1], 'without_pv': [0.3]}}",
+        description='Dictionary to provide timepoint multipliers. example: timepoint_multipliers={"load_multipliers": {"with_pv": [1.2], "without_pv": [0.6]}}',
         default=None,
     )
     capacitor_action_flag: bool = Field(
@@ -313,6 +448,41 @@ class VoltageUpgradeParamsModel(UpgradeParamsBaseModel):
         description="Flag to enable or disable existing regulator controls settings sweep module",
         default=True,
     )
+    max_control_iterations: int = Field(
+        title="max_control_iterations",
+        description="Max control iterations to be set for OpenDSS",
+        default=50,
+    )
+
+    @validator("initial_lower_limit")
+    def check_initial_voltage_lower_limits(cls, initial_lower_limit, values):
+        upper = values["initial_upper_limit"]
+        if upper <= initial_lower_limit:
+            raise ValueError(
+                f"initial_upper_limit={upper} must be greater than initial_lower_limit={initial_lower_limit}"
+            )
+        return initial_lower_limit
+    
+    @validator("final_lower_limit")
+    def check_final_voltage_lower_limits(cls, final_lower_limit, values):
+        upper = values["final_upper_limit"]
+        if upper <= final_lower_limit:
+            raise ValueError(
+                f"final_upper_limit={upper} must be greater than final_lower_limit={final_lower_limit}"
+            )
+        return final_lower_limit
+    
+    @validator("timepoint_multipliers")
+    def check_timepoint_multipliers(cls, timepoint_multipliers):
+        if timepoint_multipliers is None:
+            return timepoint_multipliers
+        if "load_multipliers" not in timepoint_multipliers:
+            raise ValueError("load_multipliers must be defined in timepoint_multipliers")
+        if ("with_pv" not in timepoint_multipliers["load_multipliers"]) and ("without_pv" not in timepoint_multipliers["load_multipliers"]):
+            raise ValueError(
+                'Either "with_pv" or "without_pv" must be defined in timepoint_multipliers["load_multipliers"]'
+            )
+        return timepoint_multipliers
 
 
 class UpgradeCostAnalysisGenericModel(BaseAnalysisModel):
@@ -548,7 +718,7 @@ class LineUnitCostModel(UpgradeParamsBaseModel):
     @validator("line_placement")
     def check_line_placement(cls, line_placement):
         if line_placement not in ("underground", "overhead"):
-            raise ValueError("Incorrect Line placement type.")
+            raise ValueError("Incorrect Line placement type. Acceptable values: overhead, underground.")
         return line_placement
     
     @validator("cost_units")

@@ -7,7 +7,8 @@
     "voltage_upper_limit": 1.05,
     "voltage_lower_limit": 0.95,
     "read_external_catalog": false,
-    "external_catalog": ""
+    "external_catalog": "",
+	"create_plots": true
   },
   "voltage_upgrade_params": {
     "initial_upper_limit": 1.05,
@@ -22,8 +23,11 @@
     ],
     "reg_v_delta": 0.5,
     "max_regulators": 4,
-    "place_new_regulators": false,
-    "use_ltc_placement": false
+	"use_ltc_placement": true,
+    "place_new_regulators": true,
+	"capacitor_action_flag": true,
+	"existing_regulator_sweep_action": true,
+	"create_plots": true
   },
   "enable_pydss_controllers": false,
   "include_pf1": true,
@@ -31,15 +35,57 @@
   "jobs": [
     {
       "model_type": "UpgradeCostAnalysisGenericModel",
-      "name": "p1uhs21_1247__p1udt5257__close__1__5",
+      "name": "p1uhs21_1247__p1udt5257__close__1__5_internal",
       "opendss_model_file": "tests/data/generic-models/p1uhs21_1247/p1udt5257/PVDeployments/p1uhs21_1247__p1udt5257__close__1__5.dss",
       "blocked_by": [],
       "estimated_run_minutes": null
     },
     {
       "model_type": "UpgradeCostAnalysisGenericModel",
-      "name": "p1uhs21_1247__p1udt5257__close__1__15",
+      "name": "p1uhs21_1247__p1udt5257__close__1__15_internal",
       "opendss_model_file": "tests/data/generic-models/p1uhs21_1247/p1udt5257/PVDeployments/p1uhs21_1247__p1udt5257__close__1__15.dss",
+      "blocked_by": [],
+      "estimated_run_minutes": null
+    },
+	{
+      "model_type": "UpgradeCostAnalysisGenericModel",
+      "name": "J1",
+      "opendss_model_file": "./tests/data/upgrade-models/J1/Master_withPV.dss",
+      "blocked_by": [],
+      "estimated_run_minutes": null
+    },
+	{
+      "model_type": "UpgradeCostAnalysisGenericModel",
+      "name": "K1",
+      "opendss_model_file": "./tests/data/upgrade-models/K1/Master_NoPV.dss",
+      "blocked_by": [],
+      "estimated_run_minutes": null
+    },
+	{
+      "model_type": "UpgradeCostAnalysisGenericModel",
+      "name": "M1",
+      "opendss_model_file": "./tests/data/upgrade-models/M1/Master_NoPV.dss",
+      "blocked_by": [],
+      "estimated_run_minutes": null
+    },
+	{
+      "model_type": "UpgradeCostAnalysisGenericModel",
+      "name": "M1_nobuscoords",
+      "opendss_model_file": "./tests/data/upgrade-models/M1/Master_NoPV_nobuscoords.dss",
+      "blocked_by": [],
+      "estimated_run_minutes": null
+    },
+	{
+      "model_type": "UpgradeCostAnalysisGenericModel",
+      "name": "LVTestCaseNorthAmerican",
+      "opendss_model_file": "./tests/data/upgrade-models/LVTestCaseNorthAmerican/Master.dss",
+      "blocked_by": [],
+      "estimated_run_minutes": null
+    },
+	{
+      "model_type": "UpgradeCostAnalysisGenericModel",
+      "name": "123Bus",
+      "opendss_model_file": "./tests/data/upgrade-models/123Bus/Run_IEEE123Bus.DSS",
       "blocked_by": [],
       "estimated_run_minutes": null
     }

@@ -1,0 +1,19 @@
+Clear
+
+New Circuit.Full_Network bus1=source pu=1.0 basekV=12.47
+
+Redirect WireData.dss
+Redirect CNData.dss
+Redirect LineGeometry.dss
+Redirect Lines.dss
+Redirect Transformers.dss
+Redirect LoadShapes.dss
+Redirect Loads.dss
+
+Set Voltagebases=[0.48, 12.47]
+
+Calcvoltagebases
+
+Buscoords Buscoords.dss
+
+Solve

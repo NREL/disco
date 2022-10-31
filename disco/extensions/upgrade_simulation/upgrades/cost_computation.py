@@ -6,7 +6,8 @@ import numpy as np
 from jade.utils.timing_utils import track_timing, Timer
 from jade.utils.utils import load_data, dump_data
 
-from .common_functions import create_overall_output_file, convert_dict_nan_to_none, summarize_upgrades_outputs
+from .common_functions import create_overall_output_file, convert_dict_nan_to_none, summarize_upgrades_outputs, \
+    convert_length_units
 from disco import timer_stats_collector
 from disco.utils.custom_encoders import ExtendedJSONEncoder
 from disco.models.upgrade_cost_analysis_generic_input_model import load_cost_database
@@ -15,17 +16,7 @@ from disco.models.upgrade_cost_analysis_generic_output_model import AllUpgradesT
         VoltageRegulatorResultType, TotalUpgradeCostsResultModel, AllUpgradesCostResultSummaryModel
     
 logger = logging.getLogger(__name__)
-# Dictionary used to convert between different length units and meters, which are used for all the calculations.
-# OpenDSS can output results in any of these lengths.
-LENGTH_CONVERSION_TO_METRE = {
-    "mi": 1609.34,
-    "kft": 304.8,
-    "km": 1000,
-    "ft": 0.3048,
-    "in": 0.0254,
-    "cm": 0.01,
-    "m": 1,
-}
+
 
 @track_timing(timer_stats_collector)
 def compute_all_costs(
@@ -56,7 +47,6 @@ def compute_all_costs(
         misc_database,
     ) = load_cost_database(cost_database_filepath)
     output_columns = list(EquipmentTypeUpgradeCostsResultModel.schema(True).get("properties").keys())
-
     # reformat data
     if not xfmr_upgrades_df.empty:
         xfmr_upgrades_df, xfmr_cost_database = reformat_xfmr_files(
@@ -282,6 +272,7 @@ def compute_line_costs(line_upgrades_df, line_cost_database, **kwargs):
     backup_deciding_property = kwargs.get("backup_deciding_property", "ampere_rating")
     # choose which properties are to be saved
     upgrade_type_list = ["upgrade", "new_parallel"]
+    
     added_line_df = line_upgrades_df.loc[(line_upgrades_df["upgrade_type"].isin(upgrade_type_list)) & (line_upgrades_df["action"] == "add")]
     computed_cost = []
     for index, row in added_line_df.iterrows():
@@ -299,8 +290,9 @@ def compute_line_costs(line_upgrades_df, line_cost_database, **kwargs):
                                            (line_cost_database["line_placement"] == row["line_placement"]) &
                                            (line_cost_database["upgrade_type"] == upgrade_type)
                                            ]["cost_per_m"]
+        # OpenDSS can output results in any of these lengths.
         # convert line length to metres
-        line_length_m = row["length"] * LENGTH_CONVERSION_TO_METRE[row["units"]]
+        line_length_m = convert_length_units(length=row["length"], unit_in=row["units"], unit_out="m")
         params_dict = dict(row[['final_equipment_name'] + deciding_columns])
         row["equipment_parameters"] = params_dict
         row["type"] = "Line"
