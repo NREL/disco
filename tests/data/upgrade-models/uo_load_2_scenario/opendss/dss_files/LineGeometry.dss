@@ -1,4 +1,0 @@
-New LineGeometry.Geometry_1 Nconds=4 Nphases=3 Units=m Cond=1 Wire=OH_ACSR_477kcmil X=0.0 H=10.0 Normamps=660.0 Cond=2 Wire=OH_ACSR_477kcmil X=0.304 H=10.0 Normamps=660.0 Cond=3 Wire=OH_ACSR_477kcmil X=0.608 H=10.0 Normamps=660.0 Cond=4 Wire=OH_ACSR_477kcmil X=0.0 H=9.6952 Normamps=660.0 Reduce=y
-
-New LineGeometry.Geometry_2 Nconds=3 Nphases=3 Units=m Cond=1 CNCable=UG_AL_750kcmil_15_kV X=0.0 H=-2.0 Normamps=640.0 Cond=2 CNCable=UG_AL_750kcmil_15_kV X=0.152 H=-2.0 Normamps=640.0 Cond=3 CNCable=UG_AL_750kcmil_15_kV X=0.304 H=-2.0 Normamps=640.0 Reduce=n
-

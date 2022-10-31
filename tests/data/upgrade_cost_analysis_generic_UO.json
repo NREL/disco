@@ -62,13 +62,6 @@
       "opendss_model_file": "./tests/data/upgrade-models/uo_load_2.5_scenario/opendss/dss_files/Master.dss",
       "blocked_by": [],
       "estimated_run_minutes": null
-    },
-	{
-      "model_type": "UpgradeCostAnalysisGenericModel",
-      "name": "load_2_scenario",
-      "opendss_model_file": "./tests/data/upgrade-models/uo_load_2_scenario/opendss/dss_files/Master.dss",
-      "blocked_by": [],
-      "estimated_run_minutes": null
     }	
   ]
 }
