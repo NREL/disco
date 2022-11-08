@@ -72,7 +72,7 @@ install_requires = [
     "pandas==1.5.*",
     "pydantic>=1.6.0",
     "seaborn",
-    "sklearn",
+    "scikit-learn",
     "sqlalchemy",
     "toml>=0.10.0",
 ]
