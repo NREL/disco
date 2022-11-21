@@ -113,6 +113,9 @@ def correct_line_violations(line_loading_df, line_design_pu, line_upgrade_option
                                                                                          parallel_lines_limit=parallel_lines_limit, 
                                                                                          external_upgrades_technical_catalog=external_upgrades_technical_catalog)
                 # run command for all parallel equipment added, that resolves overloading for one equipment
+                logger.info("Log all parallel_line_commands")
+                for i, command_item in enumerate(parallel_line_commands):
+                    logger.info("parallel_line_command index=%s [%s]", i, command_item)
                 for command_item in parallel_line_commands:
                     try:
                         check_dss_run_command(command_item)
