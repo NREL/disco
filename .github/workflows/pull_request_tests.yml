@@ -9,9 +9,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
-          # Tests currently fail on Windows
-          #os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.9", "3.10"]
 
     steps:
@@ -25,6 +23,11 @@ jobs:
         python -m pip install '.[dev]'
         jade extensions register `python -c "import os,disco;print(os.path.dirname(disco.__path__[0]))"`/disco/extensions/jade_extensions.json
         jade extensions add-logger disco
-    - name: Run pytests
+    - name: Run pytests on Linux and Mac
+      if: matrix.os != 'windows-latest'
       run: |
         python -m pytest -v --disable-warnings
+    - name: Run pytests on Windows
+      if: matrix.os == 'windows-latest'
+      run: |
+        python -m pytest -v --disable-warnings tests/integration/test_generic_upgrade.py
