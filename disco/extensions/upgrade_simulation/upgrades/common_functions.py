@@ -1360,7 +1360,11 @@ def check_dss_run_command(command_string):
 
     """
     logger.debug(f"Running DSS command: {command_string}")
-    result = dss.Text.Command(f"{command_string}")
+    try:
+        result = dss.Text.Command(f"{command_string}")
+    except Exception:
+        logger.exception("Failed to run [%s]", command_string)
+        raise
     if result is not None:
         raise OpenDssCompileError(f"OpenDSS run_command failed with message: {result}. \nCommand: {command_string}")
 

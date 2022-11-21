@@ -114,7 +114,15 @@ def correct_line_violations(line_loading_df, line_design_pu, line_upgrade_option
                                                                                          external_upgrades_technical_catalog=external_upgrades_technical_catalog)
                 # run command for all parallel equipment added, that resolves overloading for one equipment
                 for command_item in parallel_line_commands:
-                    check_dss_run_command(command_item)
+                    try:
+                        check_dss_run_command(command_item)
+                    except Exception:
+                        logger.info("Log all line names after failure to run [%s]", command_item)
+                        flag = dss.Lines.First()
+                        while flag > 0:
+                            logger.info("Existing line %s", dss.Lines.Name())
+                            flag = dss.Lines.Next()
+                        raise
                     check_dss_run_command('CalcVoltageBases')
                     circuit_solve_and_check(raise_exception=True, **kwargs)
                 commands_list = commands_list + parallel_line_commands

@@ -37,21 +37,21 @@ def test_generic_upgrade_jade_workflow(cleanup):
 def test_upgrades(cleanup):
     """Test for generic upgrades"""
     
-    #run_cmd = f"disco upgrade-cost-analysis run {TEST_UPGRADES_CONFIG_FILE_0} -o {OUTPUT}"
+    run_cmd = f"disco upgrade-cost-analysis run {TEST_UPGRADES_CONFIG_FILE_0} -o {OUTPUT}"
+    assert run_command(run_cmd) == 0
+    verify_upgrade_results(OUTPUT)
+    #run_cmd = f"disco upgrade-cost-analysis run {TEST_UPGRADES_CONFIG_FILE_1} -o {OUTPUT}"
     #assert run_command(run_cmd) == 0
     #verify_upgrade_results(OUTPUT)
-    run_cmd = f"disco upgrade-cost-analysis run {TEST_UPGRADES_CONFIG_FILE_1} -o {OUTPUT}"
-    assert run_command(run_cmd) == 0
-    verify_upgrade_results(OUTPUT)
-    run_cmd = f"disco upgrade-cost-analysis run {TEST_UPGRADES_CONFIG_FILE_2} -o {OUTPUT}"
-    assert run_command(run_cmd) == 0
-    verify_upgrade_results(OUTPUT)
-    run_cmd = f"disco upgrade-cost-analysis run {TEST_UPGRADES_CONFIG_FILE_3} -o {OUTPUT}"
-    assert run_command(run_cmd) == 0
-    verify_upgrade_results(OUTPUT)
-    run_cmd = f"disco upgrade-cost-analysis run {TEST_UPGRADES_CONFIG_FILE_4} -o {OUTPUT}"
-    assert run_command(run_cmd) == 0
-    verify_upgrade_results(OUTPUT)
+    #run_cmd = f"disco upgrade-cost-analysis run {TEST_UPGRADES_CONFIG_FILE_2} -o {OUTPUT}"
+    #assert run_command(run_cmd) == 0
+    #verify_upgrade_results(OUTPUT)
+    #run_cmd = f"disco upgrade-cost-analysis run {TEST_UPGRADES_CONFIG_FILE_3} -o {OUTPUT}"
+    #assert run_command(run_cmd) == 0
+    #verify_upgrade_results(OUTPUT)
+    #run_cmd = f"disco upgrade-cost-analysis run {TEST_UPGRADES_CONFIG_FILE_4} -o {OUTPUT}"
+    #assert run_command(run_cmd) == 0
+    #verify_upgrade_results(OUTPUT)
 
 def test_generic_upgrade_standalone_workflow(cleanup):
     """Additional test for generic upgrades, where data in generic-models is transformed first."""
