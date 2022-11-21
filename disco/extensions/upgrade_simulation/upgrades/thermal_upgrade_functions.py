@@ -184,6 +184,7 @@ def identify_parallel_lines(options, object_row, parallel_lines_limit, **kwargs)
         # this is added to line name to ensure it is unique
         time_stamp = curr_time.split(".")[0] + "_" + curr_time.split(".")[1]
         new_name = "upgrade_" + object_row["name"] + time_stamp
+        logger.info(f"Name of parallel line {line_count}: {new_name}, current time: {curr_time}, time.time:{time.time()}")
         chosen_option["name"] = new_name
         temp_dict = {}
         temp_dict.update(chosen_option.to_dict())
