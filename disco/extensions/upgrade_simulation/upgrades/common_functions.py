@@ -72,6 +72,9 @@ def reload_dss_circuit(dss_file_list, commands_list=None,  **kwargs):
             check_dss_run_command(command_string)
             if "new " in command_string.lower():
                 check_dss_run_command("CalcVoltageBases")
+    solve = kwargs.get("solve", True)
+    if not solve:
+        return kwargs
     enable_pydss_solve = kwargs.get("enable_pydss_solve", False)
     raise_exception = kwargs.get("raise_exception", True)
     if enable_pydss_solve:
@@ -1095,9 +1098,18 @@ def get_thermal_equipment_info(compute_loading, equipment_type, upper_limit=None
     -------
     DataFrame
     """
+    deciding_column_name = "max_per_unit_loading"
+    
+    timeseries_analysis = kwargs.get("timeseries_analysis", False)
+    if timeseries_analysis:
+        loading_df = apply_timeseries_step(equipment_type, compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch, 
+                                           deciding_column_name=deciding_column_name,**kwargs)
+        return loading_df
+    
     timepoint_multipliers = kwargs.get("timepoint_multipliers", None)
     multiplier_type = kwargs.get("multiplier_type", LoadMultiplierType.ORIGINAL)
-     # if there are no multipliers, run on rated load i.e. multiplier=1. 0
+    
+    # if there are no multipliers, run on rated load i.e. multiplier=1. 0
      # if compute_loading is false, then just run once (no need to check multipliers)
     if (timepoint_multipliers is None) or (not compute_loading) or (multiplier_type == LoadMultiplierType.ORIGINAL): 
         if compute_loading and multiplier_type != LoadMultiplierType.ORIGINAL:
@@ -1116,10 +1128,8 @@ def get_thermal_equipment_info(compute_loading, equipment_type, upper_limit=None
                 # this changes the dss network load and pv
                 apply_uniform_timepoint_multipliers(multiplier_name=multiplier_name, field=pv_field, **kwargs)
                 if equipment_type.lower() == "line":
-                    deciding_column_name = "max_per_unit_loading"
                     loading_df = get_all_line_info_instance(compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch)
                 elif equipment_type.lower() == "transformer":
-                    deciding_column_name = "max_per_unit_loading"
                     loading_df = get_all_transformer_info_instance(compute_loading=compute_loading, upper_limit=upper_limit)
                 loading_df.set_index("name", inplace=True)
                 comparison_dict[pv_field+"_"+str(multiplier_name)] = loading_df
@@ -1128,7 +1138,140 @@ def get_thermal_equipment_info(compute_loading, equipment_type, upper_limit=None
     else:
         raise Exception(f"Undefined multiplier_type {multiplier_type} passed.")   
     return loading_df
+
+
+def get_loads():
+    #####################################
+    #    Get current loading condition for all loads
+    #####################################
+    #
+    load_dict = {}
+    dss.Circuit.SetActiveClass("Load")
+    flag = dss.ActiveClass.First()
+
+    while flag > 0:
+        # Get the name of the load
+        load_dict[dss.CktElement.Name()] = {
+                                            'Num_phases': float(dss.Properties.Value("phases")),
+                                            'kV': float(dss.Properties.Value("kV")),
+                                            'kVA': float(dss.Properties.Value("kVA")),
+                                            'kW': float(dss.Properties.Value("kW")),
+                                            'pf': dss.Properties.Value("pf"),
+                                            'Bus1': dss.Properties.Value("bus1"),
+                                            'Powers': dss.CktElement.Powers(),
+                                            'NetPower': sum(dss.CktElement.Powers()[::2]),
+                                            }
+        # Move on to the next Load...
+        flag = dss.ActiveClass.Next()
+    load_df = pd.DataFrame.from_dict(load_dict, "index")
+    return load_df
+
+
+def apply_timeseries_step(equipment_type, **kwargs):
+    """
+    Info: TODO to remove from here
+    ControlMode = {OFF | STATIC |EVENT | TIME} Default is "STATIC". Control mode for the solution. Set to OFF to prevent controls from changing.
+    STATIC = Time does not advance. Control actions are executed in order of shortest time to act until all actions are cleared from the control queue. 
+            Use this mode for power flow solutions which may require several regulator tap changes per solution. 
+            This is the default for the standard Snapshot mode as well as Daily and Yearly simulations where the stepsize is typically greater than 15 min.
+    EVENT = solution is event driven. Only the control actions nearest in time are executed and the time is advanced automatically to the time of the event.
+    TIME = solution is time driven. Control actions are executed when the time for the pending action is reached or surpassed. Use this for dutycycle mode and dynamic mode.
+            Controls may reset and may choose not to act when it comes their time to respond.
+            Use TIME mode when modeling a control externally to the DSS and a solution mode such as DAILY or DUTYCYCLE that advances time, or set the time (hour and sec) explicitly from the external program.
+            
+    SOLVE
+    Mode=Specify the solution mode for the active circuit. Mode can be one of (unique abbreviation will suffice, as with nearly all DSS commands):
+    Mode=Snap:
+    Solve a single snapshot power flow for the present conditions. Loads are modified only by the global load multiplier (LoadMult) and the growth factor for the present year (Year).
+    Mode=Daily:
+    Do a series of solutions following the daily load curves. The Stepsize defaults to 3600 sec (1 hr). Set the starting hour and the number of solutions (e.g., 24) you wish to execute. Monitors are reset at the beginning of the solution. The peak of the daily load curve is determined by the global load multiplier (LoadMult) and the growth factor for the present year (Year).
+    Mode=Direct:
+    Solve a single snapshot solution using an admittance model of all loads. This is non-iterative; just a direct solution using the currently specified voltage and current sources.
+    Mode=Dutycycle:
+    Follow the duty cycle curves with the time increment specified. Perform the solution for the number of times specified by the Number parameter (see below).
     
+    Number=specify the number of time steps or solutions to run or the number of Monte Carlo cases to run.
+    
+    Difference between Duty and Daily:
+    Dutycycle mode does not sample ENERGYMETER objects; only MONITOR elements. It is designed for relatively short simulations at a small time step efficiently.
+
+    """
+    if (equipment_type.lower() == "transformer") or (equipment_type.lower() == "line"):
+        deciding_column_name = kwargs.get("deciding_column_name")
+        compute_loading = kwargs.get("compute_loading")
+        upper_limit = kwargs.get("upper_limit")
+        ignore_switch = kwargs.get("ignore_switch", False)
+    elif equipment_type == "voltage":  # pop out of dictionary since kwargs are also passed to voltage function
+        voltage_upper_limit = kwargs.pop("voltage_upper_limit")
+        voltage_lower_limit = kwargs.pop("voltage_lower_limit")
+        raise_exception = kwargs.pop("raise_exception")
+        deciding_column_dict = kwargs.pop("deciding_column_dict")
+    else:
+        raise Exception(f"Incorrect equipment type {equipment_type} provided. Possible values: line, transformer, voltage.")
+        
+    comparison_dict = {}
+
+    # simple QSTS
+    
+    # dss_file_list = kwargs.pop("dss_file_list")
+    # reload_dss_circuit(dss_file_list=dss_file_list, solve=False, **kwargs)  # only reload, dont solve
+    
+    sol = dss.Solution  # opendss solution interface
+    dss.run_command("Set mode=yearly number=1")  # 1 power flow per solve and I guess stepsize remains the same
+    # dss.run_command("Set mode=duty number=1")  # 1 power flow per solve and I guess stepsize remains the same
+    startH = 0 # TODO get programmatically
+    num_pts = len(dss.LoadShape.PMult())
+
+    time_step = 1 
+    print(dss.LoadShape.Name())
+    print(num_pts)
+    for present_step in range(startH, num_pts, time_step):
+        key_name = "timepoint_"+str(present_step)
+        print()
+        print(f"Present step: {present_step}")
+        # manual says 'time' is used for higher resolutions, and code is used to make changes to control settings via some algorithm
+        # dss.run_command("Set Controlmode=TIME")  
+         # 'static' when stepsize > 15min, and code is not making changes to control settings
+        dss.run_command("Set Controlmode=Static") 
+        dss.Text.Command(f"set hour = {present_step}")
+        sol.Solve()  # solves for specific hour that has been set
+        # sol.SolveSnap()
+        # dss_solve_and_check(raise_exception=False)
+        # sol.LoadMult()
+        print(dss.LoadShape.Name())
+        print(dss.LoadShape.PMult()[present_step])
+        dss.Loads.First()
+        l_df = get_loads()
+        print(dss.Loads.Name())
+        print(sum(dss.CktElement.Powers()[::2]))
+        # dss.run_command("Set Controlmode=off")  # 'off' before computing things
+        if (equipment_type.lower() == "transformer") or (equipment_type.lower() == "line"):
+            if equipment_type.lower() == "line":
+                loading_df = get_all_line_info_instance(compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch)
+            elif equipment_type.lower() == "transformer":
+                loading_df = get_all_transformer_info_instance(compute_loading=compute_loading, upper_limit=upper_limit)
+            loading_df.set_index("name", inplace=True)
+            comparison_dict[key_name] = loading_df
+        elif equipment_type.lower() == "voltage":
+            bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages_instance(
+                    voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, raise_exception=raise_exception, **kwargs)
+            bus_voltages_df.set_index("name", inplace=True)
+            comparison_dict[key_name] = bus_voltages_df
+    
+    # compare all dataframe, and create one that contains all worst loading conditions (across all multiplier conditions)
+    if (equipment_type.lower() == "transformer") or (equipment_type.lower() == "line"):
+        loading_df = compare_multiple_dataframes(comparison_dict, deciding_column_name, comparison_type="max")
+        return loading_df
+    elif equipment_type.lower() == "voltage":
+        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, \
+            buses_with_violations = compare_multiple_dataframes_voltage(
+                comparison_dict=comparison_dict, deciding_column_dict=deciding_column_dict, 
+                voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit)
+        return bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, \
+            buses_with_violations
+    else:
+        raise Exception(f"Incorrect equipment type {equipment_type} provided. Possible values: line, transformer, voltage.")
+
 
 def get_regcontrol_info(correct_PT_ratio=False, nominal_voltage=None):
     """This collects enabled regulator control information.
@@ -1377,8 +1520,20 @@ def get_bus_voltages(voltage_upper_limit, voltage_lower_limit, raise_exception=T
     -------
     DataFrame
     """
+    deciding_column_dict = {"max_per_unit_voltage": "max", "min_per_unit_voltage": "min"}
+    
+    timeseries_analysis = kwargs.get("timeseries_analysis", False)
+    if timeseries_analysis:
+        bus_voltages_df, undervoltage_bus_list, \
+            overvoltage_bus_list, buses_with_violations = apply_timeseries_step(deciding_column_dict=deciding_column_dict,
+                voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, 
+                equipment_type="voltage", raise_exception=True, **kwargs)
+        
+        return bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations
+    
     timepoint_multipliers = kwargs.get("timepoint_multipliers", None)
     multiplier_type = kwargs.get("multiplier_type", LoadMultiplierType.ORIGINAL)
+    
      # if there are no multipliers, run on rated load i.e. multiplier=1. 0
      # if compute_loading is false, then just run once (no need to check multipliers)
     if (timepoint_multipliers is None) or (multiplier_type == LoadMultiplierType.ORIGINAL): 
@@ -1402,7 +1557,6 @@ def get_bus_voltages(voltage_upper_limit, voltage_lower_limit, raise_exception=T
                 bus_voltages_df.set_index("name", inplace=True)
                 comparison_dict[pv_field+"_"+str(multiplier_name)] = bus_voltages_df
         # compare all dataframe, and create one that contains all worst loading conditions (across all multiplier conditions)
-        deciding_column_dict = {"max_per_unit_voltage": "max", "min_per_unit_voltage": "min"}
         bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = compare_multiple_dataframes_voltage(comparison_dict=comparison_dict, 
                                                                                                                                   deciding_column_dict=deciding_column_dict,
                                                                                                                                   voltage_upper_limit=voltage_upper_limit,

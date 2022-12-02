@@ -54,6 +54,9 @@ def determine_thermal_upgrades(
         multiplier_type = LoadMultiplierType.ORIGINAL
     simulation_params.update({"timepoint_multipliers": timepoint_multipliers, "multiplier_type": multiplier_type})
     
+    if thermal_config["timeseries_analysis"]:
+        simulation_params.update({"timeseries_analysis": thermal_config["timeseries_analysis"]})
+
     voltage_upper_limit = thermal_config["voltage_upper_limit"]
     voltage_lower_limit = thermal_config["voltage_lower_limit"]
     if thermal_config["read_external_catalog"]:
