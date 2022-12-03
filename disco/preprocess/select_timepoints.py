@@ -111,7 +111,7 @@ def agregate_series(bus_data, profile_data, critical_conditions):
     critical_time_indices = []
     head_critical_time_indices = []
     for bus, dic in bus_data.items():
-        ag_series[bus] = {'critical_time_idx':[],}
+        ag_series[bus] = {'critical_time_idx':[],'condition':[],}
         
         if dic['demand']:
             for data in dic['demand']:
@@ -123,9 +123,12 @@ def agregate_series(bus_data, profile_data, critical_conditions):
             if 'max_demand' in  critical_conditions:       
                 max_demand_idx = np.where(ag_series[bus]['demand'] == np.amax(ag_series[bus]['demand']))[0].tolist()[0]
                 ag_series[bus]['critical_time_idx'].append(max_demand_idx)
+                ag_series[bus]['condition'].append("max_demand")
+                
             if 'min_demand' in  critical_conditions: 
                 min_demand_idx = np.where(ag_series[bus]['demand'] == np.amin(ag_series[bus]['demand']))[0].tolist()[0]
                 ag_series[bus]['critical_time_idx'].append(min_demand_idx)
+                ag_series[bus]['condition'].append("min_demand")
                 # ag_series[bus]['critical_time_idx'] += [max_demand_idx, min_demand_idx]
            
         if dic['generation']:
@@ -137,10 +140,12 @@ def agregate_series(bus_data, profile_data, critical_conditions):
             if 'max_generation' in  critical_conditions: 
                 max_gen_idx = np.where(ag_series[bus]['generation'] == np.amax(ag_series[bus]['generation']))[0].tolist()[0]
                 ag_series[bus]['critical_time_idx'].append(max_gen_idx) 
+                ag_series[bus]['condition'].append("max_generation")
             if 'demand' in ag_series[bus].keys() and 'max_net_generation' in  critical_conditions:
                 arr = ag_series[bus]['generation'] - ag_series[bus]['demand']
                 max_netgen_idx = np.where(arr == np.amax(arr))[0].tolist()[0]
                 ag_series[bus]['critical_time_idx'].append(max_netgen_idx)
+                ag_series[bus]['condition'].append("max_net_generation")
                 
     total_gen = sum([dic['generation'] for bus, dic in ag_series.items() 
                      if 'generation' in dic.keys()])
