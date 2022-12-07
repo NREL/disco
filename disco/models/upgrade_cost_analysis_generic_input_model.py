@@ -322,12 +322,6 @@ class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
         title="timepoint_multipliers",
         description='Dictionary to provide timepoint multipliers. example: timepoint_multipliers={"load_multipliers": {"with_pv": [1.2], "without_pv": [0.6]}}',
     )
-    timeseries_analysis: Optional[bool] = Field(
-        title="timeseries_analysis",
-        description='timeseries_analysis',
-        default=False
-    )
-
     @validator("voltage_lower_limit")
     def check_voltage_lower_limits(cls, voltage_lower_limit, values):
         upper = values["voltage_upper_limit"]
@@ -584,6 +578,9 @@ class UpgradeCostAnalysisSimulationModel(UpgradeParamsBaseModel):
     )
     dc_ac_ratio: Optional[float] = Field(
         title="dc_ac_ratio", description="Apply DC-AC ratio for PV Systems", default=None
+    )
+    timeseries_analysis: Optional[bool] = Field(
+        title="timeseries_analysis", description="timeseries_analysis", default=False
     )
     jobs: List[UpgradeCostAnalysisGenericModel]
 

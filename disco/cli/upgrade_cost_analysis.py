@@ -299,6 +299,10 @@ def run_job(job, config, jobs_output_dir, file_log_level):
         global_config["upgrade_simulation_params"]["pydss_controller"] = (
             config.pydss_controllers.pv_controller.dict(),
         )
+    # create a simulation params dictionary
+    rem_list = ["thermal_upgrade_params", "voltage_upgrade_params", "jobs", "enable_pydss_controllers", "pydss_controllers"]
+    simulation_params_config = dict(config)
+    simulation_params_config = {key: simulation_params_config[key] for key in simulation_params_config if key not in rem_list}
 
     simulation = UpgradeSimulation(
         job=job,
@@ -306,11 +310,11 @@ def run_job(job, config, jobs_output_dir, file_log_level):
         output=jobs_output_dir,
     )
     simulation.run(
-        dc_ac_ratio=global_config["dc_ac_ratio"],
         enable_pydss_solve=global_config["upgrade_simulation_params"]["enable_pydss_controller"],
         pydss_controller_model=config.pydss_controllers.pv_controller,
         thermal_config=global_config["thermal_upgrade_params"],
         voltage_config=global_config["voltage_upgrade_params"],
+        simulation_params_config=simulation_params_config,
         cost_database_filepath=global_config["upgrade_cost_database"],
         verbose=file_log_level == logging.DEBUG,
     )

@@ -53,13 +53,12 @@ def run(config_file, name, output, output_format, verbose):
         output=output
     )
     try:
-        upgrade_simulation_params = config.job_global_config["upgrade_simulation_params"]
-        dc_ac_ratio = upgrade_simulation_params["dc_ac_ratio"]
-        enable_pydss_controller = upgrade_simulation_params["enable_pydss_controller"]
+        simulation_params_config = config.job_global_config["upgrade_simulation_params"]
+        enable_pydss_controller = simulation_params_config["enable_pydss_controller"]
         if enable_pydss_controller:
             pv_controllers = load_data(DEFAULT_CONTROLLER_CONFIG_FILE)
             pydss_controller_model = PvControllerModel(
-                **pv_controllers[upgrade_simulation_params["pydss_controller_name"]]
+                **pv_controllers[simulation_params_config["pydss_controller_name"]]
             )
         else:
             pv_controllers = None
@@ -68,12 +67,13 @@ def run(config_file, name, output, output_format, verbose):
         thermal_config = config.job_global_config["thermal_upgrade_params"]
         voltage_config = config.job_global_config["voltage_upgrade_params"]
         cost_database_filepath = config.job_global_config["upgrade_cost_database"]
+        simulation_params_config = config.job_global_config["upgrade_simulation_params"]
         ret = simulation.run(
-            dc_ac_ratio = dc_ac_ratio,
             enable_pydss_solve=enable_pydss_controller,
             pydss_controller_model=pydss_controller_model,
             thermal_config=thermal_config,
             voltage_config=voltage_config,
+            simulation_params_config=simulation_params_config,
             cost_database_filepath=cost_database_filepath,
             verbose=verbose
         )

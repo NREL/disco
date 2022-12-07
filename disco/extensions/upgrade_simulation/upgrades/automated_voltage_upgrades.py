@@ -27,6 +27,7 @@ def determine_voltage_upgrades(
     pydss_volt_var_model,
     thermal_config,
     voltage_config,
+    simulation_params_config,
     thermal_upgrades_dss_filepath,
     voltage_upgrades_dss_filepath,
     upgraded_master_dss_filepath,
@@ -34,7 +35,6 @@ def determine_voltage_upgrades(
     feeder_stats_json_file,
     voltage_upgrades_directory,
     overall_output_summary_filepath,
-    dc_ac_ratio,
     ignore_switch=True,
     verbose=False
 ):
@@ -73,16 +73,18 @@ def determine_voltage_upgrades(
         raise Exception(f"AutomatedThermalUpgrade did not produce thermal upgrades dss file")
     
     initial_simulation_params = {"enable_pydss_solve": enable_pydss_solve, "pydss_volt_var_model": pydss_volt_var_model,
-                                 "dc_ac_ratio": dc_ac_ratio, "max_control_iterations": voltage_config["max_control_iterations"]}
+                                 "dc_ac_ratio": simulation_params_config["dc_ac_ratio"], "max_control_iterations": voltage_config["max_control_iterations"]}
+    initial_simulation_params.update({"timepoint_multipliers": timepoint_multipliers, "multiplier_type": multiplier_type})
+    if simulation_params_config["timeseries_analysis"]:
+        initial_simulation_params.update({"timeseries_analysis": simulation_params_config["timeseries_analysis"]})
     initial_dss_file_list = [master_path, thermal_upgrades_dss_filepath]
     simulation_params = reload_dss_circuit(dss_file_list=initial_dss_file_list, commands_list=None, **initial_simulation_params)
-    simulation_params.update({"timepoint_multipliers": timepoint_multipliers, "multiplier_type": multiplier_type})
+
     # reading original objects (before upgrades)
     orig_ckt_info = get_circuit_info()
     orig_xfmrs_df =  get_thermal_equipment_info(compute_loading=False, equipment_type="transformer")
     orig_regcontrols_df = get_regcontrol_info(correct_PT_ratio=True, nominal_voltage=voltage_config["nominal_voltage"])
     orig_capacitors_df = get_capacitor_info(correct_PT_ratio=True, nominal_voltage=voltage_config['nominal_voltage'])
-
     # Initialize dss upgrades file
     dss_commands_list = ["//This file has all the voltage upgrades\n"]
     upgrade_status = ''  # status - whether voltage upgrades done or not
