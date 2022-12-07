@@ -179,12 +179,10 @@ def identify_parallel_lines(options, object_row, parallel_lines_limit, **kwargs)
     new_config_type = chosen_option["line_definition_type"]
     external_upgrades_technical_catalog = kwargs.get("external_upgrades_technical_catalog", None)
     upgrades_dict_parallel = []
-    for line_count in range(0, num_parallel_lines):
+    for i in range(0, num_parallel_lines):
         curr_time = str(time.time())
-        # this is added to line name to ensure it is unique
-        time_stamp = curr_time.split(".")[0] + "_" + curr_time.split(".")[1]
-        new_name = "upgrade_" + object_row["name"] + time_stamp
-        logger.info(f"Name of parallel line {line_count}: {new_name}, current time: {curr_time}, time.time:{time.time()}")
+        unique_tag = curr_time.split(".")[0] + "_" + curr_time.split(".")[1] + "_" + str(i)
+        new_name = "upgrade_" + object_row["name"] + unique_tag
         chosen_option["name"] = new_name
         temp_dict = {}
         temp_dict.update(chosen_option.to_dict())
@@ -486,11 +484,10 @@ def identify_parallel_xfmrs(upgrade_options, object_row, parallel_transformers_l
         chosen_option["kVAs"] = ast.literal_eval(chosen_option["kVAs"])
     num_parallel_xfmrs = int(chosen_option["num_parallel"])
     upgrades_dict_parallel = []
-    for xfmr_count in range(0, num_parallel_xfmrs):
+    for i in range(0, num_parallel_xfmrs):
         curr_time = str(time.time())
-        # the timestamp is added to line name to ensure it is unique
-        time_stamp = curr_time.split(".")[0] + "_" + curr_time.split(".")[1]
-        new_name = "upgrade_" + object_row["name"] + time_stamp
+        unique_tag = curr_time.split(".")[0] + "_" + curr_time.split(".")[1] + "_" + str(i)
+        new_name = "upgrade_" + object_row["name"] + unique_tag
         chosen_option["name"] = new_name
         temp_dict = {}
         temp_dict.update(chosen_option.to_dict())
