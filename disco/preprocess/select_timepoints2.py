@@ -120,6 +120,38 @@ def get_param_values(param_class, bus_data, category='demand'):
             
         
     return bus_data
+
+def reset_profile_data(used_profiles, critical_time_indices, profile_types=['active', 'reactive']):
+    flag = dss.LoadShape.First()
+    while flag>0:
+        name = dss.LoadShape.Name()
+        number_of_timepoints = len(critical_time_indices)
+        
+        if name in used_profiles:
+            if 'active' in profile_types:
+                original_p_mult = dss.LoadShape.PMult()
+                
+            if 'reactive' in profile_types:
+                original_q_mult = dss.LoadShape.QMult()
+                
+            dss.LoadShape.Npts(number_of_timepoints)
+            
+            if len(original_p_mult)>1:
+                if len(original_p_mult)>max(critical_time_indices):
+                    dss.LoadShape.PMult(list(np.array(original_p_mult)[critical_time_indices]))
+                else:
+                    raise Exception("IndexError: Index out of range") 
+            if len(original_q_mult)>1:
+                
+                if len(original_q_mult)>max(critical_time_indices):
+                    dss.LoadShape.QMult(list(np.array(original_q_mult)[critical_time_indices]))
+                else:
+                    raise Exception("IndexError: Index out of range") 
+        flag = dss.LoadShape.Next()
+
+def save_circuit(output_folder):
+    dss.Text.Command(f'Save Circuit Dir={output_folder}')
+    
             
 def get_profile_data():
     """
@@ -145,7 +177,11 @@ def get_profile_data():
     return profile_data    
     
             
-def agregate_series(bus_data, profile_data, critical_conditions, new_profile_folder):
+def agregate_series(bus_data, 
+                    profile_data, 
+                    critical_conditions, 
+                    recreate_profiles,
+                    destination_dir):
     ag_series = {}
     critical_time_indices = []
     head_critical_time_indices = []
@@ -213,21 +249,32 @@ def agregate_series(bus_data, profile_data, critical_conditions, new_profile_fol
     critical_time_indices += head_critical_time_indices
     critical_time_indices = list(set(critical_time_indices))
     critical_time_indices.sort()
+    destination_model_dir = os.path.join(destination_dir,'new_model')
+    os.makedirs(destination_model_dir, exist_ok=True)
+    if recreate_profiles:
+        destination_profile_dir = os.path.join(destination_dir,'new_profiles')
+        os.makedirs(destination_profile_dir, exist_ok=True)
+        
     for profile, val in profile_data.items():
         if profile in used_profiles:
             base_len = len(val['time_series'])
             compression_rate = len(critical_time_indices)/base_len
-            data = val['time_series'][critical_time_indices]
-            new_profile_path = os.path.join(new_profile_folder, f'{profile}.csv')
-            pd.DataFrame(data).to_csv(new_profile_path, 
-                                      index=False, header=False)
+            if recreate_profiles:
+                data = val['time_series'][critical_time_indices]
+                new_profile_path = os.path.join(destination_profile_dir, f'{profile}.csv')
+                pd.DataFrame(data).to_csv(new_profile_path, index=False, header=False)
+            
+    reset_profile_data(used_profiles, critical_time_indices)
+    save_circuit(destination_model_dir)
             
     return ag_series, head_critical_time_indices, critical_time_indices, compression_rate
     
 
 def main(path_to_master, 
          category_class_dict, 
-         critical_conditions=['max_demand', 'min_demand', 'max_generation', 'max_net_generation']):
+         critical_conditions=['max_demand', 'min_demand', 'max_generation', 'max_net_generation'],
+         recreate_profiles=False,
+         destination_dir=None):
     """
     INPUT:
         category_path_dict: a dictionary where: 
@@ -245,9 +292,11 @@ def main(path_to_master,
                              
     """
     folder, _ = os.path.split(path_to_master)
-    new_profile_folder = os.path.join(folder, 'new-profiles')
-    if not os.path.exists(new_profile_folder):
-        os.mkdir(new_profile_folder)
+    if destination_dir==None:
+        folder, _ = os.path.split(path_to_master)
+        destination_dir = folder
+    else:
+        os.makedirs(destination_dir, exist_ok=True)
     
     bus_data={}
     load_feeder(path_to_master)
@@ -256,18 +305,26 @@ def main(path_to_master,
             bus_data = get_param_values(param_class, bus_data, category)
     profile_data = get_profile_data()
     ag_series, head_time_indices, critical_time_indices, compression_rate = \
-        agregate_series(bus_data, profile_data, critical_conditions, new_profile_folder)
+        agregate_series(bus_data, 
+                        profile_data, 
+                        critical_conditions, 
+                        recreate_profiles, 
+                        destination_dir)
     return bus_data, profile_data, ag_series, head_time_indices, critical_time_indices, compression_rate
     
 
 if __name__ == "__main__":
     path_to_master = r"C:\Users\KSEDZRO\Documents\Projects\LA-equity-resilience\data\P12U\sb9_p12uhs3_1247_trans_264--p12udt8475\Master.dss"
+    destination = r"C:\Users\KSEDZRO\Documents\Projects\LA-equity-resilience\data\P12U"
     st = time.time()
     category_class_dict = {'demand': ['Load'], 'generation': ['PVSystem']}
     critical_conditions = ['max_demand', 'max_net_generation']
     
     bus_data, profile_data, ag_series, head_time_indices, critical_time_indices, compression_rate = \
-        main(path_to_master, category_class_dict)
+        main(path_to_master, category_class_dict, 
+             critical_conditions = critical_conditions,
+             destination_dir=destination, 
+             recreate_profiles=True)
     et = time.time()
     elapse_time = et-st
 
