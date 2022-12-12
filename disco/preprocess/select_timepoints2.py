@@ -41,12 +41,13 @@ def get_param_values(param_class, bus_data, category="demand"):
         return bus
 
     def get_profile():
-        profile = ""
         profile = dss.Properties.Value("yearly")
         if not profile:
             profile = dss.Properties.Value("daily")
         if not profile:
             profile = dss.Properties.Value("duty")
+        if not profile:
+            raise Exception(f"Did not find profile name for {dss.CktElement.Name()}")
         return profile
 
     if param_class == "Load":
@@ -63,6 +64,8 @@ def get_param_values(param_class, bus_data, category="demand"):
                 size = dss.Properties.Value("kva")
             if size:
                 capacity = float(size)
+            else:
+                raise Exception(f"Did not find size for {dss.CktElement.Name()}")
 
             profile_name = get_profile()
             bus_data[bus][category].append([capacity, profile_name])
@@ -82,6 +85,8 @@ def get_param_values(param_class, bus_data, category="demand"):
                 size = dss.Properties.Value("kva")
             if size:
                 capacity = float(size)
+            else:
+                raise Exception(f"Did not find size for {dss.CktElement.Name()}")
 
             profile_name = get_profile()
             bus_data[bus][category].append([capacity, profile_name])
@@ -101,6 +106,8 @@ def get_param_values(param_class, bus_data, category="demand"):
                 size = dss.Properties.Value("kva")
             if size:
                 capacity = float(size)
+            else:
+                raise Exception(f"Did not find size for {dss.CktElement.Name()}")
 
             profile_name = get_profile()
             bus_data[bus][category].append([capacity, profile_name])
