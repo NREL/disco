@@ -20,11 +20,15 @@ def load_feeder(path_to_master):
         new_master = os.path.join(dpath, f"{newfname}_new.dss")
         with open(path_to_master, "r") as mr:
             slines = mr.readlines()
+        found_solve = False
         lines = []
         for line in slines:
             if line.lower().lstrip().startswith("solve"):
                 line = "Solve\n"
+                found_solve = True
             lines.append(line)
+        if not found_solve:
+            lines.append("Solve\n")
         with open(new_master, "w") as mw:
             mw.writelines(lines)
 
