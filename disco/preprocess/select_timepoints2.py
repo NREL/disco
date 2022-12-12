@@ -33,9 +33,7 @@ def load_feeder(path_to_master):
         with open(new_master, "w") as mw:
             mw.writelines(lines)
 
-    r = dss.run_command(f"redirect {new_master}")
-    if r != "":
-        print(f"PoenDSS error: {r}")
+    dss.Text.Command(f"redirect {new_master}")
 
 
 def get_param_values(param_class, bus_data, category="demand"):
