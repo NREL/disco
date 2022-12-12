@@ -21,15 +21,10 @@ def load_feeder(path_to_master):
         with open(path_to_master, "r") as mr:
             slines = mr.readlines()
         lines = []
-        bk = False
         for line in slines:
-
-            if line.lower().startswith("solve"):
+            if line.lower().lstrip().startswith("solve"):
                 line = "Solve\n"
-                bk = True
             lines.append(line)
-            if bk:
-                break
         with open(new_master, "w") as mw:
             mw.writelines(lines)
 
