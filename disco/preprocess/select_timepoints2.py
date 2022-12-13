@@ -5,9 +5,11 @@ Created on Fri Dec  2 12:13:24 2022
 @author: ksedzro
 """
 
+import filecmp
+import enum
 import logging
-import os
 import time
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -17,33 +19,55 @@ import opendssdirect as dss
 logger = logging.getLogger(__name__)
 
 
-def load_feeder(path_to_master):
-    if not os.path.exists(path_to_master):
+class CriticalCondition(enum.Enum):
+    """Possible critical conditions to use for time-point selection"""
+
+    MAX_DEMAND = "max_demand"
+    MIN_DEMAND = "min_demand"
+    MAX_GENERATION = "max_generation"
+    MAX_NET_GENERATION = "max_net_generation"
+
+
+class DemandCategory(enum.Enum):
+
+    LOAD = "load"
+
+
+class GenerationCategory(enum.Enum):
+
+    PV_SYSTEM = "pv_system"
+    STORAGE = "storage"
+
+
+def load_feeder(path_to_master: Path):
+    """Compile an OpenDSS circuit after first ensuring that time-series mode is disabled."""
+    if not path_to_master.exists():
         raise FileNotFoundError(path_to_master)
 
-    dpath, fname = os.path.split(path_to_master)
-    newfname = fname.split(".")[0]
-    new_master = os.path.join(dpath, f"{newfname}_new.dss")
-    with open(path_to_master, "r") as mr:
-        slines = mr.readlines()
+    suffix = path_to_master.suffix
+    new_master = path_to_master.parent / path_to_master.name.replace(suffix, f"_new{suffix}")
+    if new_master.exists():
+        raise Exception(f"{new_master} already exists")
+
     found_solve = False
-    lines = []
-    for line in slines:
-        if line.lower().lstrip().startswith("solve"):
-            line = "Solve\n"
-            found_solve = True
-        lines.append(line)
-    if not found_solve:
-        lines.append("Solve\n")
-    with open(new_master, "w") as mw:
-        mw.writelines(lines)
+    with open(new_master, "w") as f_out:
+        with open(path_to_master, "r") as f_in:
+            for line in f_in:
+                if line.lower().lstrip().startswith("solve"):
+                    line = "Solve\n"
+                    found_solve = True
+                f_out.write(line)
+        if not found_solve:
+            f_out.write("Solve\n")
 
-    dss.Text.Command(f"redirect {new_master}")
+    try:
+        dss.Text.Command(f"redirect {new_master}")
+        logger.info("Redirected to %s", new_master)
+    finally:
+        new_master.unlink()
 
 
-def get_param_values(param_class, bus_data, category="demand"):
-    assert category in ["demand", "generation"]
-
+def get_param_values(param_class, bus_data, category):
     def get_bus():
         bus = dss.Properties.Value("bus1")
         if "." in bus:
@@ -60,7 +84,7 @@ def get_param_values(param_class, bus_data, category="demand"):
             raise Exception(f"Did not find profile name for {dss.CktElement.Name()}")
         return profile
 
-    if param_class == "Load":
+    if param_class == DemandCategory.LOAD:
         flag = dss.Loads.First()
         while flag > 0:
             bus = get_bus()
@@ -81,7 +105,7 @@ def get_param_values(param_class, bus_data, category="demand"):
             bus_data[bus][category].append([capacity, profile_name])
             flag = dss.Loads.Next()
 
-    if param_class == "PVSystem":
+    elif param_class == GenerationCategory.PV_SYSTEM:
         flag = dss.PVsystems.First()
         while flag > 0:
             bus = get_bus()
@@ -102,7 +126,7 @@ def get_param_values(param_class, bus_data, category="demand"):
             bus_data[bus][category].append([capacity, profile_name])
             flag = dss.PVsystems.Next()
 
-    if param_class == "Storage":
+    elif param_class == GenerationCategory.STORAGE:
         flag = dss.Storages.First()
         while flag > 0:
             bus = get_bus()
@@ -122,6 +146,9 @@ def get_param_values(param_class, bus_data, category="demand"):
             profile_name = get_profile()
             bus_data[bus][category].append([capacity, profile_name])
             flag = dss.Storages.Next()
+
+    else:
+        raise Exception(f"Invalid param_class={param_class}")
 
     return bus_data
 
@@ -157,9 +184,46 @@ def reset_profile_data(used_profiles, critical_time_indices, profile_types=("act
         flag = dss.LoadShape.Next()
 
 
-def save_circuit(output_folder):
+def save_circuit(output_folder: Path):
+    """Run the OpenDSS command to save a compiled circuit into a directory."""
     dss.Text.Command(f"Save Circuit Dir={output_folder}")
     logger.info("Saved circuit to %s", output_folder)
+
+
+def export_power_flow_results(path: Path):
+    """Export OpenDSS circuit elemement values into a directory."""
+    path.mkdir(exist_ok=True)
+    for export_type, filename in {
+        "currents": "currents.csv",
+        "capacity": "capacity.csv",
+        "loads": "loads.csv",
+        "powers [mva]": "powers.csv",
+        "voltages": "voltages.csv",
+    }.items():
+        dss.Text.Command(f"export {export_type} {path}/{filename}")
+
+
+def compare_power_flow_results(before_path, after_path):
+    """Compare the exported results from two directories.
+
+    Raises
+    ------
+    Exception
+        Raised if the results do not match.
+
+    """
+    before = {x.name: x for x in before_path.iterdir()}
+    after = {x.name: x for x in after_path.iterdir()}
+    assert sorted(before.keys()) == sorted(after.keys())
+    match = True
+    for name in before:
+        if not filecmp.cmp(before[name], after[name]):
+            logger.error("Files before=%s and after=%s do not match", before[name], after[name])
+            match = False
+
+    # TODO: csv comparisons have _mostly_ minor differences.
+    # if not match:
+    #    raise Exception("Before/after power flow results do not match. Refer to the log file.")
 
 
 def get_profile_data():
@@ -189,8 +253,14 @@ def get_profile_data():
     return profile_data
 
 
-def agregate_series(
-    bus_data, profile_data, critical_conditions, recreate_profiles, destination_dir
+def aggregate_series(
+    bus_data,
+    profile_data,
+    critical_conditions,
+    recreate_profiles,
+    destination_dir,
+    create_new_circuit,
+    check_power_flow,
 ):
     ag_series = {}
     critical_time_indices = []
@@ -209,19 +279,19 @@ def agregate_series(
                 else:
                     ag_series[bus]["demand"] = data[0] * profile_data[data[1]]["time_series"]
                 used_profiles.append(data[1])
-            if "max_demand" in critical_conditions:
+            if CriticalCondition.MAX_DEMAND in critical_conditions:
                 max_demand_idx = np.where(
                     ag_series[bus]["demand"] == np.amax(ag_series[bus]["demand"])
                 )[0].tolist()[0]
                 ag_series[bus]["critical_time_idx"].append(max_demand_idx)
-                ag_series[bus]["condition"].append("max_demand")
+                ag_series[bus]["condition"].append(CriticalCondition.MAX_DEMAND)
 
-            if "min_demand" in critical_conditions:
+            if CriticalCondition.MIN_DEMAND in critical_conditions:
                 min_demand_idx = np.where(
                     ag_series[bus]["demand"] == np.amin(ag_series[bus]["demand"])
                 )[0].tolist()[0]
                 ag_series[bus]["critical_time_idx"].append(min_demand_idx)
-                ag_series[bus]["condition"].append("min_demand")
+                ag_series[bus]["condition"].append(CriticalCondition.MIN_DEMAND)
                 # ag_series[bus]['critical_time_idx'] += [max_demand_idx, min_demand_idx]
 
         if dic["generation"]:
@@ -231,31 +301,34 @@ def agregate_series(
                 else:
                     ag_series[bus]["generation"] = data[0] * profile_data[data[1]]["time_series"]
                 used_profiles.append(data[1])
-            if "max_generation" in critical_conditions:
+            if CriticalCondition.MAX_GENERATION in critical_conditions:
                 max_gen_idx = np.where(
                     ag_series[bus]["generation"] == np.amax(ag_series[bus]["generation"])
                 )[0].tolist()[0]
                 ag_series[bus]["critical_time_idx"].append(max_gen_idx)
-                ag_series[bus]["condition"].append("max_generation")
-            if "demand" in ag_series[bus] and "max_net_generation" in critical_conditions:
+                ag_series[bus]["condition"].append(CriticalCondition.MAX_GENERATION)
+            if (
+                "demand" in ag_series[bus]
+                and CriticalCondition.MAX_NET_GENERATION in critical_conditions
+            ):
                 arr = ag_series[bus]["generation"] - ag_series[bus]["demand"]
                 max_netgen_idx = np.where(arr == np.amax(arr))[0].tolist()[0]
                 ag_series[bus]["critical_time_idx"].append(max_netgen_idx)
-                ag_series[bus]["condition"].append("max_net_generation")
+                ag_series[bus]["condition"].append(CriticalCondition.MAX_NET_GENERATION)
 
     total_gen = sum([dic["generation"] for bus, dic in ag_series.items() if "generation" in dic])
     total_dem = sum([dic["demand"] for bus, dic in ag_series.items() if "demand" in dic])
     net_total_gen = total_gen - total_dem
-    if "max_demand" in critical_conditions:
+    if CriticalCondition.MAX_DEMAND in critical_conditions:
         max_demand_idx = np.where(total_dem == np.amax(total_dem))[0].tolist()[0]
         head_critical_time_indices.append(max_demand_idx)
-    if "min_demand" in critical_conditions:
+    if CriticalCondition.MIN_DEMAND in critical_conditions:
         min_demand_idx = np.where(total_dem == np.amin(total_dem))[0].tolist()[0]
         head_critical_time_indices.append(min_demand_idx)
-    if "max_generation" in critical_conditions:
+    if CriticalCondition.MAX_GENERATION in critical_conditions:
         max_gen_idx = np.where(total_gen == np.amax(total_gen))[0].tolist()[0]
         head_critical_time_indices.append(max_gen_idx)
-    if "max_net_generation" in critical_conditions:
+    if CriticalCondition.MAX_NET_GENERATION in critical_conditions:
         max_netgen_idx = np.where(net_total_gen == np.amax(net_total_gen))[0].tolist()[0]
         head_critical_time_indices.append(max_netgen_idx)
 
@@ -266,14 +339,11 @@ def agregate_series(
         if "critical_time_idx" in dic
     ]
     critical_time_indices += head_critical_time_indices
-    critical_time_indices = list(set(critical_time_indices))
-    critical_time_indices.sort()
-    destination_model_dir = os.path.join(destination_dir, "new_model")
-    os.makedirs(destination_model_dir, exist_ok=True)
+    critical_time_indices = sorted(set(critical_time_indices))
     compression_rate = 0
     if recreate_profiles:
-        destination_profile_dir = os.path.join(destination_dir, "new_profiles")
-        os.makedirs(destination_profile_dir, exist_ok=True)
+        destination_profile_dir = destination_dir / "new_profiles"
+        destination_profile_dir.mkdir()
 
         for profile, val in profile_data.items():
             if profile in used_profiles:
@@ -281,21 +351,43 @@ def agregate_series(
                 compression_rate = len(critical_time_indices) / base_len
                 if recreate_profiles:
                     data = val["time_series"][critical_time_indices]
-                    new_profile_path = os.path.join(destination_profile_dir, f"{profile}.csv")
+                    new_profile_path = destination_profile_dir / f"{profile}.csv"
                     pd.DataFrame(data).to_csv(new_profile_path, index=False, header=False)
 
-    reset_profile_data(used_profiles, critical_time_indices)
-    save_circuit(destination_model_dir)
+    if create_new_circuit:
+        reset_profile_data(used_profiles, critical_time_indices)
+        dss.Text.Command("Solve")
+        before_path = destination_dir / "power_flow_results_before"
+        after_path = destination_dir / "power_flow_results_after"
+        if check_power_flow:
+            export_power_flow_results(before_path)
+        destination_model_dir = destination_dir / "new_model"
+        destination_model_dir.mkdir()
+        save_circuit(destination_model_dir)
+        master_file = destination_model_dir / "Master.dss"
+        with open(master_file, "a") as f_out:
+            f_out.write("Solve\n")
+        if check_power_flow:
+            dss.Text.Command("Clear")
+            dss.Text.Command(f"Redirect {master_file}")
+            export_power_flow_results(after_path)
+            compare_power_flow_results(before_path, after_path)
+            # TODO: Re-enable after we fix verification.
+            # logger.info("Verified power flow results after saving the modified circuit.")
+        else:
+            logger.warning("Skipped check of power flow results.")
 
     return ag_series, head_critical_time_indices, critical_time_indices, compression_rate
 
 
 def main(
-    path_to_master,
-    category_class_dict,
-    critical_conditions=("max_demand", "min_demand", "max_generation", "max_net_generation"),
+    path_to_master: Path,
+    categories,
+    critical_conditions=tuple(x for x in CriticalCondition),
     recreate_profiles=False,
     destination_dir=None,
+    create_new_circuit=True,
+    check_power_flow=True,
 ):
     """
     INPUT:
@@ -313,22 +405,38 @@ def main(
         compression_rate: ratio between the number of critical timepoints and the total number of timepoints in the timeseries
 
     """
-    folder, _ = os.path.split(path_to_master)
-    if destination_dir is None:
-        folder, _ = os.path.split(path_to_master)
-        destination_dir = folder
-    else:
-        os.makedirs(destination_dir, exist_ok=True)
+    if not destination_dir.exists():
+        raise FileNotFoundError(f"destination_dir={destination_dir} does not exist")
+
+    if check_power_flow and not create_new_circuit:
+        logger.warning("Ignore check_power_flow because create_new_circuit is False")
+        check_power_flow = False
 
     bus_data = {}
     load_feeder(path_to_master)
-    for category, param_classes in category_class_dict.items():
+    for category, param_classes in categories.items():
         for param_class in param_classes:
             bus_data = get_param_values(param_class, bus_data, category)
     profile_data = get_profile_data()
-    ag_series, head_time_indices, critical_time_indices, compression_rate = agregate_series(
-        bus_data, profile_data, critical_conditions, recreate_profiles, destination_dir
+    ag_series, head_time_indices, critical_time_indices, compression_rate = aggregate_series(
+        bus_data,
+        profile_data,
+        critical_conditions,
+        recreate_profiles,
+        destination_dir,
+        create_new_circuit,
+        check_power_flow,
     )
+
+    logger.info("head_time_indices = %s length = %s", head_time_indices, len(head_time_indices))
+    logger.info(
+        "critical_time_indices = %s length = %s", critical_time_indices, len(critical_time_indices)
+    )
+    with open(destination_dir / "metadata.csv", "w") as f_out:
+        f_out.write("index,time_point_index,timestamp,condition\n")
+        for i, tp_index in enumerate(critical_time_indices):
+            f_out.write(f"{i},{tp_index},TBD,TBD\n")
+
     return (
         bus_data,
         profile_data,
@@ -340,11 +448,17 @@ def main(
 
 
 if __name__ == "__main__":
-    path_to_master = r"C:\Users\KSEDZRO\Documents\Projects\LA-equity-resilience\data\P12U\sb9_p12uhs3_1247_trans_264--p12udt8475\Master.dss"
-    destination = r"C:\Users\KSEDZRO\Documents\Projects\LA-equity-resilience\data\P12U"
+    path_to_master = Path(
+        r"C:\Users\KSEDZRO\Documents\Projects\LA-equity-resilience\data\P12U\sb9_p12uhs3_1247_trans_264--p12udt8475\Master.dss"
+    )
+    destination = Path(r"C:\Users\KSEDZRO\Documents\Projects\LA-equity-resilience\data\P12U")
+    destination.mkdir(exist_ok=True)
     st = time.time()
-    category_class_dict = {"demand": ["Load"], "generation": ["PVSystem"]}
-    critical_conditions = ["max_demand", "max_net_generation"]
+    category_class_dict = {
+        "demand": [DemandCategory.LOAD],
+        "generation": [GenerationCategory.PV_SYSTEM],
+    }
+    critical_conditions = [CriticalCondition.MAX_DEMAND, CriticalCondition.MAX_NET_GENERATION]
 
     (
         bus_data,
