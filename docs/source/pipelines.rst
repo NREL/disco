@@ -11,8 +11,8 @@ to generate stage results. The result output from prior stage can be passed to i
 as inputs, so that produces further results. DISCO uses pipeline ``template`` and pipeline
 ``config`` to manage the DISCO analysis workflow.
 
-To generate a pipeline template file, and create a pipeline config file based on it,
-use this group command below:
+To generate a pipeline template file and create a pipeline config file based on it,
+use this group command:
 
 .. code-block:: bash
 
@@ -42,9 +42,9 @@ The opendss model inputs - ``<INPUTS>``  can be source models or preconfigured m
 
 .. note::
 
-    When creating the pipeline template for snapshot simulation (default), the flag ``--with-loadshape``
-    or ``--no-with-loadshape`` must be set to indicate if there's ``LoadShapes.dss`` redirected in  models
-    and the according mode it's going to run with,
+    When creating the pipeline template for snapshot simulation the flag ``--with-loadshape``
+    or ``--no-with-loadshape`` must be set according to whether the Loads or PVSystems in the
+    models use load shapes.
     
     * if ``--no-with-loadshape``, DISCO runs snapshot simulation by using ``Snapshot`` mode.
     * if ``--with-loadshape``, DISCO runs snapshot simulation by using ``QSTS`` mode with only one timestamp.
@@ -53,7 +53,7 @@ a. Source Model Inputs
 
 .. code-block:: bash
 
-    $ disco create-pipeline template tests/data/smart-ds/substations -s snapshot --hosting-capacity -t pipeline-template.toml
+    $ disco create-pipeline template tests/data/smart-ds/substations --task-name TestTask -s snapshot --hosting-capacity -t pipeline-template.toml
 
 b. Preconfigured Model Inputs
 
@@ -67,7 +67,7 @@ Then, use ``--preconfigured`` flag to indicate the input models ``snapshot-feede
 
 .. code-block:: bash
 
-    $ disco create-pipeline template snapshot-feeder-models --preconfigured -s snapshot --hosting-capacity -t pipeline-template.toml
+    $ disco create-pipeline template snapshot-feeder-models  --task-name TestTask --preconfigured -s snapshot --hosting-capacity -t pipeline-template.toml
 
 The commands above create a pipeline template file named ``pipeline-template.toml``.
 
@@ -90,9 +90,16 @@ run ``--help`` on its command.
     * ``postprocess.config-params`` from ``jade config create``.
     * ``postprocess.submitter-params`` from ``jade submit-jobs``
 
-Note that, simulation and postprocess can applied different submitter params, including
-``hpc_config``, which enables you to use different partitions to run your jobs on
-different stages. To create HPC config file, use command ``jade config create``.
+Note that simulation and postprocess can use different JADE submitter parameters. Check the default values
+chosen by DISCO and consider whether they can be optimized for your run. If you're not familiar with the terms
+used in this section, please refer to `JADE docs <https://nrel.github.io/jade/tutorial.html>`_.
+
+For snapshot simulations DISCO uses a default value for ``per-node-batch-size``. You may be able to pick
+a better value for the simulation stage.
+
+For time-series simulations DISCO estimates job runtimes and then uses JADE time-based-batching. So, you
+should not need to worry about ``per-node-batch-size``. However, you might need to adjust the ``walltime``
+value in ``hpc_config.toml`` to account for your longest jobs.
 
 
 **3. Create Pipeline Config File**
@@ -102,7 +109,7 @@ different stages. To create HPC config file, use command ``jade config create``.
     $ disco create-pipeline config pipeline-template.toml -c pipeline.json
 
 This step creates the pipeline config file named ``pipeline.json``, which contains the stage
-information. In this example, there are 2 stages, JADE run each of the stage in order, and manage
+information. In this example, there are 2 stages, JADE run each of the stage in order, and manages
 the status of each util it completes the whole workflow.
 
 
@@ -157,27 +164,26 @@ From the result tree, the metrics summary tables ``*.csv`` were created in ``out
 by the postprocess job from stage 2.
 
 
-
 Time-series Hosting Capacity Analysis
 -------------------------------------
 
-Simlarly, you can run time-series hosting capacity analysis using pipeline.
+Similarly, you can run time-series hosting capacity analysis using pipeline.
 However, there is a difference for time-series pipeline, where one more
 stage named ``prescreen`` could be enabled, so that to prescreen pv penetration levels
 and avoid running jobs with higher failure potentials, which could help reduce the consumption of
-allocated HPC hours.
+HPC compute node hours.
 
 **1. Create Pipeline Template File**
 
 .. code-block:: bash
 
-    $ disco create-pipeline template tests/data/smart-ds/substations -s time-series --hosting-capacity -t pipeline-template.toml
+    $ disco create-pipeline template tests/data/smart-ds/substations  --task-name TestTask -s time-series --hosting-capacity -t pipeline-template.toml
 
 If you need to prescreen PV penetration levels, use the flag ``--prescreen`` to create the template.
 
 .. code-block:: bash
 
-    $ disco create-pipeline template tests/data/smart-ds/substations -s time-series --prescreen --hosting-capacity -t pipeline-template.toml
+    $ disco create-pipeline template tests/data/smart-ds/substations  --task-name TestTask -s time-series --prescreen --hosting-capacity -t pipeline-template.toml
 
 This step create the ``pipeline-template.toml`` file.
 
@@ -275,3 +281,13 @@ which contains the results of 3 stages with ``--prescreen`` enabled.
 
 As shown above, the metrics summary tables ``*.csv`` were created in ``output-stage2``
 by postprocess job from stage 3.
+
+**5. Check Results and Plots**
+
+Based on the metrics results, DISCO integrate plot functions which help create 3 plots.
+
+1. compare voltage primary and secondary on the first feeder.
+2. compare pf1 and volt-var on the first feeder.
+3. heatmap for max and min hosting capacity for all feeders.
+
+These visualizations show the feeder operational conditions under different PV penetration levels.

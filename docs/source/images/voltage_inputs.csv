@@ -1,0 +1,16 @@
+﻿Input Parameter,Type,Description,Required/Optional,Default/Example
+initial_upper_limit,float,Initial upper limit in per unit ,Required,1.05
+initial_lower_limit,float,Initial lower limit in per unit ,Required,0.95
+final_upper_limit,float,Final upper limit in per unit ,Required,1.05
+final_lower_limit,float,Final lower limit in per unit ,Required,0.95
+nominal_voltage,float,Nominal voltage (volts),Required,120
+create_plots,bool,Flag to enable or disable figure creation,Optional,TRUE
+capacitor_sweep_voltage_gap,float,Capacitor sweep voltage gap,Optional,1
+reg_control_bands,list(int),Regulator control bands ,Optional,"[1,2]"
+reg_v_delta,float,Regulator voltage delta,Optional,0.5
+max_regulators,int,Maximum number of new regulators that can be placed,Optional,4
+place_new_regulators,bool,Flag to enable or disable new regulator placement,Optional,FALSE
+use_ltc_placement,bool,Flag to enable or disable substation LTC upgrades module,Optional,FALSE
+capacitor_action_flag,bool,Flag to enable or disable capacitor controls settings sweep module,Optional,TRUE
+existing_regulator_sweep_action,bool,Flag to enable or disable existing regulator controls settings sweep module,Optional,TRUE
+timepoint_multipliers,dict,Dictionary to provide timepoint multipliers,Optional,None

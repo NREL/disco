@@ -2,8 +2,9 @@ import logging
 import os
 from abc import ABC, abstractmethod
 
+from jade.hpc.common import HpcType
 from jade.jobs.pipeline_manager import PipelineManager
-from jade.models import HpcConfig
+from jade.models import HpcConfig, LocalHpcConfig
 from jade.models.pipeline import PipelineStage
 from jade.utils.utils import dump_data, load_data
 from disco.pipelines.enums import TemplateSection, TemplateParams
@@ -199,7 +200,7 @@ class PipelineCreatorBase(ABC):
         return os.path.join(".", "pipeline-postprocess-command.txt")
     
     @abstractmethod
-    def create_pipeline(self, pipline_config_file):
+    def create_pipeline(self, pipeline_config_file):
         """Create pipeline config file"""
     
     @abstractmethod
@@ -220,7 +221,7 @@ class PipelineCreatorBase(ABC):
     
     @abstractmethod
     def make_postprocess_command(self):
-        """Make disco-internal make-summary-tables & compute-hosting-capacity command"""
+        """Make disco make-summary-tables & compute-hosting-capacity command"""
     
     def create_prescreen_auto_config_text_file(self):
         """Create script for generating prescreen config file"""
@@ -278,8 +279,7 @@ class PipelineCreatorBase(ABC):
         self.stage_num += 1
         auto_config_text_file = self.create_prescreen_auto_config_text_file()
         submitter_params = self.template.get_submitter_params(TemplateSection.PRESCREEN)
-        hpc_config = HpcConfig(**load_data(submitter_params["hpc_config"]))
-        submitter_params["hpc_config"] = hpc_config
+        submitter_params["hpc_config"] = _create_hpc_config(submitter_params)
         
         auto_config_py = self.get_auto_config_python_file()
         auto_config_command = f"python {auto_config_py} {auto_config_text_file}"
@@ -296,8 +296,7 @@ class PipelineCreatorBase(ABC):
         self.stage_num += 1
         auto_config_text_file = self.create_simulation_auto_config_text_file()
         submitter_params = self.template.get_submitter_params(TemplateSection.SIMULATION)
-        hpc_config = HpcConfig(**load_data(submitter_params["hpc_config"]))
-        submitter_params["hpc_config"] = hpc_config
+        submitter_params["hpc_config"] = _create_hpc_config(submitter_params)
         
         if self.template.contains_prescreen():
             prescreen_params = self.template.get_prescreen_params(TemplateSection.PRESCREEN)
@@ -320,8 +319,7 @@ class PipelineCreatorBase(ABC):
         self.stage_num += 1
         auto_config_text_file = self.create_postprocess_auto_config_text_file()
         submitter_params = self.template.get_submitter_params(TemplateSection.POSTPROCESS)
-        hpc_config = HpcConfig(**load_data(submitter_params["hpc_config"]))
-        submitter_params["hpc_config"] = hpc_config
+        submitter_params["hpc_config"] = _create_hpc_config(submitter_params)
         
         auto_config_py = self.get_auto_config_python_file()
         auto_config_command = f"python {auto_config_py} {auto_config_text_file}"
@@ -333,3 +331,15 @@ class PipelineCreatorBase(ABC):
             submitter_params=submitter_params
         )
         return stage
+
+
+def _create_hpc_config(submitter_params):
+    # TODO: this should be solved in JADE.
+    hpc_config = submitter_params["hpc_config"]
+    if isinstance(hpc_config, str):
+        return HpcConfig(**load_data(hpc_config))
+
+    if submitter_params["hpc_config"]["hpc_type"] == "local":
+        return HpcConfig(hpc_type=HpcType.LOCAL, hpc=LocalHpcConfig())
+
+    raise Exception(f"Unknown hpc config: {hpc_config}")

@@ -1,0 +1,21 @@
+[thermal_upgrade_params]
+transformer_upper_limit = 1.25
+line_upper_limit = 1.25
+line_design_pu = 0.75
+transformer_design_pu = 0.75
+voltage_upper_limit = 1.05
+voltage_lower_limit = 0.95
+read_external_catalog = false
+external_catalog = ""
+
+[voltage_upgrade_params]
+initial_upper_limit = 1.05
+initial_lower_limit = 0.95
+final_upper_limit = 1.05
+final_lower_limit = 0.95
+nominal_voltage = 120
+
+[upgrade_simulation_params]
+enable_pydss_controller = true
+dc_ac_ratio = 1.15
+pydss_controller_name = "volt_var_ieee_1547_2018_catB"

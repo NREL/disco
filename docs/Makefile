@@ -19,6 +19,11 @@ help:
 %: Makefile
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
+html:
+	python generate_schemas.py $(BUILDDIR)/json_schemas
+	python generate_tables.py $(BUILDDIR)/tables
+	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
 github: html
 	rm -rf source/disco
 	sphinx-apidoc -o source/disco ../disco

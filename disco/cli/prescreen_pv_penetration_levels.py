@@ -113,7 +113,7 @@ def run(config, ctx, substation, feeder, placement, sample, jade_runtime_output,
         "__".join((substation, feeder, placement, str(sample))) + ".log",
     )
     level = logging.DEBUG if verbose else logging.INFO
-    setup_logging("disco", filename, console_level=logging.WARNING)
+    setup_logging("disco", filename, console_level=logging.WARNING, packages=["disco"])
 
     src_config_file = ctx.parent.params["config_file"]
     run_prescreen(
@@ -141,7 +141,7 @@ def filter_config(config, ctx, config_file, output_dir):
     """Filter the source config file with the prescreening results."""
     os.makedirs(output_dir, exist_ok=True)
     filename = Path(output_dir) / "filter_prescreened_jobs.log"
-    setup_logging("disco", filename, console_level=logging.WARNING)
+    setup_logging("disco", filename, console_level=logging.WARNING, packages=["disco"])
     src_config_file = ctx.parent.params["config_file"]
     prescreen_jobs_output = Path(output_dir) / PRESCREEN_JOBS_OUTPUT
     highest_passing_levels = {}

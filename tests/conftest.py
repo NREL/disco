@@ -15,8 +15,8 @@ def cleanup():
             CONFIG_FILE,
             PRESCREEN_CONFIG_FILE,
             PRESCREEN_FINAL_CONFIG_FILE,
-            UPGRADE_PARAMS,
-            TRANSFORM_MODEL_LOG
+            TRANSFORM_MODEL_LOG,
+            UPGRADE_SUMMARY
         ):
             if os.path.exists(path):
                 os.remove(path)

@@ -11,7 +11,6 @@ from disco.models.snapshot_impact_analysis_model import SnapshotImpactAnalysisMo
 from disco.models.time_series_analysis_model import TimeSeriesAnalysisModel
 from disco.models.upgrade_cost_analysis_model import UpgradeCostAnalysisModel
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -23,7 +22,7 @@ class DeploymentParameters(JobParametersInterface):
     _EXTENSIONS = {
         SnapshotImpactAnalysisModel: "pydss_simulation",
         TimeSeriesAnalysisModel: "pydss_simulation",
-        UpgradeCostAnalysisModel: "automated_upgrade_simulation",
+        UpgradeCostAnalysisModel: "upgrade_simulation"
     }
 
     def __init__(self, estimated_run_minutes=None, **kwargs):
@@ -62,6 +61,14 @@ class DeploymentParameters(JobParametersInterface):
         if isinstance(self._model, ImpactAnalysisBaseModel):
             return self._model.base_case
         return None
+
+    def has_pydss_controllers(self):
+        """Return True if pydss controllers are present."""
+        if self._model.deployment.pydss_controllers is None:
+            return False
+        if isinstance(self._model.deployment.pydss_controllers, list):
+            return bool(self._model.deployment.pydss_controllers)
+        return True
 
     @property
     def name(self):

@@ -152,7 +152,7 @@ def summarize_hosting_capacity(
 
     level = logging.DEBUG if verbose else logging.INFO
     log_file = output_directory / "summarize_hc_metrics.log"
-    setup_logging("summarize_hc_metrics", log_file, console_level=level, file_level=level)
+    setup_logging("summarize_hc_metrics", log_file, console_level=level, file_level=level, packages=["disco"])
     logger.info(get_cli_string())
 
     if task_pattern is None and not task_names:
@@ -191,7 +191,7 @@ def summarize_hosting_capacity(
         f_query.write(query)
         f_query.flush()
 
-        out_file = output_directory / "hc_query.sql"
+        out_file = output_directory / "query.sql"
         shutil.copyfile(f_query.name, out_file)
 
         with NamedTemporaryFile(mode="w") as f_sqlite3_cmd:

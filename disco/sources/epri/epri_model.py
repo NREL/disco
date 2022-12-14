@@ -14,7 +14,7 @@ from jade.utils.utils import ExtendedJSONEncoder
 from PyDSS.common import ControllerType
 
 from disco.cli.common import handle_existing_dir
-from disco.enums import SimulationType
+from disco.enums import SimulationType, SimulationHierarchy
 from disco.models.base import PyDSSControllerModel
 from disco.models.snapshot_impact_analysis_model import SnapshotImpactAnalysisModel
 from disco.models.time_series_analysis_model import TimeSeriesAnalysisModel
@@ -226,7 +226,7 @@ class EpriModel(BaseOpenDssModel):
     def pydss_controllers(self):
         return PyDSSControllerModel(
             controller_type=ControllerType.PV_CONTROLLER,
-            name="volt-var",
+            name="volt_var_ieee_1547_2018_catB",
         )
 
     @staticmethod
@@ -277,7 +277,12 @@ class EpriModel(BaseOpenDssModel):
             }
             model = cls(data)
             path = os.path.join(output_path, feeder)
-            deployment = model.create_deployment(name, path, pv_profile=pv_profile)
+            deployment = model.create_deployment(
+                name,
+                path,
+                pv_profile=pv_profile,
+                hierarchy=SimulationHierarchy.FEEDER,
+            )
 
             item = {
                 "deployment": deployment,

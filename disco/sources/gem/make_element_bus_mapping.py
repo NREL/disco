@@ -428,7 +428,8 @@ def main():
     path = sys.argv[1]
     level = logging.INFO
     log_file = os.path.join(path, "bus_mapping.log")
-    logger = setup_logging("bus_mapping", log_file, console_level=logging.ERROR, file_level=level)
+    logger = setup_logging("bus_mapping", log_file, console_level=logging.ERROR, file_level=level,
+                           packages=["disco"])
     logger.info(get_cli_string())
 
     try:

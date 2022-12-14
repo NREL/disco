@@ -26,7 +26,12 @@ DEFAULT_CONTROLLER_CONFIGS = [
         "controller_type": ControllerType.PV_CONTROLLER.value,
         "name": "volt_var_1",
         "filename": DEFAULT_CONTROLLER_CONFIG_FILE
-    }
+    },
+    {
+        "controller_type": ControllerType.PV_CONTROLLER.value,
+        "name": "volt_var_ieee_1547_2018_catB",
+        "filename": DEFAULT_CONTROLLER_CONFIG_FILE
+    },
 ]
 
 DEFAULT_LOAD_SHAPE_START_TIME = "2021-01-01 00:00:00.0"
@@ -114,8 +119,6 @@ def get_default_reports_file(simulation_type: SimulationType):
         filename = "time_series_reports.toml"
     elif simulation_type == SimulationType.SNAPSHOT:
         filename = "snapshot_reports.toml"
-    elif simulation_type == SimulationType.UPGRADE:
-        raise InvalidParameter("reports with upgrade simulations is not supported")
     else:
         assert False, simulation_type
 

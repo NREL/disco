@@ -17,7 +17,6 @@ from typing import Optional, Tuple, Sequence
 import numpy as np
 import opendssdirect as dss
 from filelock import SoftFileLock
-from unidecode import unidecode
 
 from jade.utils.run_command import check_run_command
 from jade.utils.utils import load_data, dump_data
@@ -82,13 +81,13 @@ class PVDSSInstance:
         """Parse feeder path from master file path"""
         return os.path.dirname(self.master_file)
 
-    def convert_to_ascii(self) -> None:
-        """Convert unicode data in ASCII characters for representation"""
-        logger.info("Convert master file - %s", self.master_file)
-        data = Path(self.master_file).read_text()
-        updated_data = unidecode(data)
-        with open(self.master_file, "w") as f:
-            f.write(updated_data)
+    # def convert_to_ascii(self) -> None:
+    #     """Convert unicode data in ASCII characters for representation"""
+    #     logger.info("Convert master file - %s", self.master_file)
+    #     data = Path(self.master_file).read_text()
+    #     updated_data = unidecode(data)
+    #     with open(self.master_file, "w") as f:
+    #         f.write(updated_data)
 
     def disable_loadshapes_redirect(self) -> None:
         """To comment out 'Redirect LoadShapes.dss' in Master.dss file
@@ -117,10 +116,10 @@ class PVDSSInstance:
 
     def load_feeder(self) -> None:
         """OpenDSS redirect master DSS file"""
-        dss.run_command("Clear")
+        dss.Text.Command("Clear")
         logger.info("OpenDSS loads feeder - %s", self.master_file)
-        r = dss.run_command(f"Redirect {self.master_file}")
-        if r != "":
+        r = dss.Text.Command(f"Redirect '{self.master_file}'")
+        if r is not None:
             logger.exception("OpenDSSError: %s. Feeder: %s", str(r), self.master_file)
             raise
 
@@ -342,7 +341,11 @@ class PVScenarioGeneratorBase(abc.ABC):
         try:
             lock_file = master_file + ".lock"
             with SoftFileLock(lock_file=lock_file, timeout=900):
-                pvdss_instance.convert_to_ascii()
+                # This code was ported from a different location. The functionality
+                # should not be needed. Leaving it commented-out in case this assumption
+                # is incorrect.
+                # unidecode is no longer being installed with disco.
+                # pvdss_instance.convert_to_ascii()
                 pvdss_instance.disable_loadshapes_redirect()
                 pvdss_instance.load_feeder()
                 flag = pvdss_instance.ensure_energy_meter()
@@ -668,7 +671,7 @@ class PVScenarioGeneratorBase(abc.ABC):
         new_pv_string = (
             f"New PVSystem.{pv_name} phases={ph} "
             f"bus1={bus} kv={kv} irradiance=1 "
-            f"Pmpp={pv_size} pctPmpp=100 kVA={pv_size} "
+            f"Pmpp={pv_size} %Pmpp=100 kVA={pv_size} "
             f"conn=wye %cutin=0.1 %cutout=0.1 "
             f"Vmaxpu=1.2\n"
         )
@@ -821,7 +824,7 @@ class PVScenarioGeneratorBase(abc.ABC):
             if pv_name in pv_systems:
                 continue
             if float(pv_value) > limit:
-                control_name = "volt-var"
+                control_name = "volt_var_ieee_1547_2018_catB"
             else:
                 control_name = "pf1"
             pv_profile = random.choice(shape_list)
@@ -882,19 +885,24 @@ class PVScenarioGeneratorBase(abc.ABC):
     
     def attach_profile(self, pv_systems_file: str, pv_profiles: dict) -> None:
         """Attach PV profile to each system with 'yearly=<pv-profile>' in PVSystems.dss"""
-        regex = re.compile(r"new pvsystem\.([^\s]+)")
+        regex1 = re.compile("yearly=[\w\.\-_]+")
+        regex2 = re.compile(r"new pvsystem\.([^\s]+)")
         
         updated_data = []
         with open(pv_systems_file, "r") as fr:
             for line in fr.readlines():
                 lowered_line = line.lower()
-                if "new pvsystem" not in lowered_line or "yearly" in lowered_line:
+                if "new pvsystem" not in lowered_line:
                     updated_data.append(line)
                     continue
                 
-                match = regex.search(lowered_line)
-                assert match, line
-                pv_name = match.group(0).split(".")[1]
+                match1 = regex1.search(line)
+                if match1:
+                    line = " ".join(line.split(match1.group(0))).strip()
+                
+                match2 = regex2.search(lowered_line)
+                assert match2, line
+                pv_name = match2.group(0).split(".")[1]
                 pv_profile = pv_profiles.get(pv_name, None)
                 if not pv_profile:
                     raise Exception(f"No PV profile founded for {pv_name} - [{line}]]")
@@ -1366,7 +1374,7 @@ class PVDataManager(PVDataStorage):
         logger.info("Feeder Redirect LoadShapes.dss enabled in master files, total %s", len(feeder_paths))
     
     def restore_feeder_data(self) -> None:
-        """After PV deployments, we need to restore feeder data tranformed during PV deployments
+        """After PV deployments, we need to restore feeder data transformed during PV deployments
             1) rename transformed Loads.dss to PV_Loads.dss;
             2) uncomment on LoadShapes.dss redirect in master file.
         """

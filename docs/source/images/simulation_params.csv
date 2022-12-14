@@ -1,0 +1,6 @@
+﻿Input Parameter,Type,Description,Required/Optional,Default/Example
+upgrade_cost_database,string,Final lower limit in per unit ,Required,
+pydss_controllers,PyDSSControllerModel,"If enable_pydss_controllers is True, these PyDSS controllers are applied to each corresponding element type",Required,
+enable_pydss_controllers,bool,Flag to enable/disable use of PyDSS controllers,Required,FALSE
+include_pf1,bool,Include PF1 scenario (no controls) if pydss_controllers are defined.,Required,FALSE
+dc_ac_ratio,float,Apply DC-AC ratio for PV Systems,Optional,None

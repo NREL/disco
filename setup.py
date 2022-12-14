@@ -8,22 +8,14 @@ from pathlib import Path
 from setuptools import setup, find_packages
 from setuptools.command.develop import develop
 from setuptools.command.install import install
-from subprocess import check_call
-import shlex
 import sys
 
-try:
-    from jade.utils.subprocess_manager import run_command
-except ImportError:
-    print("jade must be installed prior to installing disco")
-    sys.exit(1)
 
 logger = logging.getLogger(__name__)
 
 
 def read_lines(filename):
     return Path(filename).read_text().splitlines()
-
 
 
 class PostDevelopCommand(develop):
@@ -41,6 +33,13 @@ class PostInstallCommand(install):
 
 
 def install_jade_extensions():
+    # These won't be available until after jade gets installed by pip.
+    from jade.extensions.registry import Registry
+    from jade.utils.subprocess_manager import run_command
+
+    registry_filename = Path.home() / Registry._REGISTRY_FILENAME
+    if os.path.exists(registry_filename):
+        os.remove(registry_filename)
     ext = os.path.join(here, "disco", "extensions", "jade_extensions.json")
     run_command(f"jade extensions register {ext}")
     run_command("jade extensions add-logger disco")
@@ -52,11 +51,45 @@ with open("README.md", encoding="utf-8") as f:
     readme = f.read()
 
 with open(os.path.join(here, "disco", "version.py"), encoding="utf-8") as f:
-    version = f.read()
+    lines = f.read().split("\n")
+    if len(lines) != 2:
+        print("Invalid format in version.py", file=sys.stderr)
+        sys.exit(1)
 
-version = version.split()[2].strip('"').strip("'")
 
-test_requires = ["pytest", ]
+version = lines[0].split()[2].strip('"').strip("'")
+
+install_requires = [
+    "NREL-jade~=0.9.3",
+    "chevron~=0.14.0",
+    "click~=8.0",
+    "dsspy~=2.2",
+    "filelock~=3.8",
+    "matplotlib~=3.6",
+    "networkx~=2.8",
+    "opendssdirect.py~=0.7.0",
+    "openpyxl~=3.0",
+    "pandas~=1.5.0",
+    "pydantic~=1.6",
+    "seaborn~=0.12.1",
+    "scikit-learn~=1.1",
+    "sqlalchemy~=1.4",
+    "toml~=0.10.0",
+]
+dev_requires = [
+    "flake8",
+    "ghp-import",
+    "mock>=3.0.0",
+    "pycodestyle",
+    "pylint",
+    "pytest",
+    "pytest-cov",
+    "sphinx>=2.0",
+    "sphinx-rtd-theme>=0.4.3",
+    "sphinxcontrib-plantuml",
+    "tox",
+]
+test_requires = ["pytest"]
 
 setup(
     name="NREL-disco",
@@ -82,6 +115,8 @@ setup(
             "pipelines/template/*.toml",
             "extensions/pydss_simulation/*.toml",
             "extensions/pydss_simulation/trained_lm_time_prediction.sav",
+            "extensions/upgrade_simulation/upgrades/*.xlsx",
+            "extensions/upgrade_simulation/upgrades/*.toml",
             "extensions/*.json",
             "postprocess/config/*.toml",
             "postprocess/toolbox/query_tool.ipynb",
@@ -93,16 +128,18 @@ setup(
     keywords=["disco"],
     python_requires=">=3.7",
     classifiers=[
-        "Development Status :: Alpha",
-        "Intended Audience :: Modelers",
+        "Development Status :: 4 - Beta",
         "License :: OSI Approved :: BSD License",
         "Natural Language :: English",
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.9",
     ],
     test_suite="tests",
-    install_requires=read_lines("requirements.txt"),
+    install_requires=install_requires,
     extras_require={
-        "dev": read_lines("dev-requirements.txt"),
+        "dev": dev_requires,
+        "extras": ["ipywidgets"]
     },
-    cmdclass={"install": PostInstallCommand, "develop": PostDevelopCommand},
+    # Disabled because this method is not compatible with wheels, and so we
+    # can't build a PyPi package.
+    #cmdclass={"install": PostInstallCommand, "develop": PostDevelopCommand},
 )

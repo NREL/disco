@@ -1,0 +1,778 @@
+New Loadshape.res_kw_11496_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_11496_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_11496_pu.csv)
+
+New Loadshape.res_kw_12775_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_12775_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_12775_pu.csv)
+
+New Loadshape.res_kw_13923_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_13923_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_13923_pu.csv)
+
+New Loadshape.res_kw_11779_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_11779_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_11779_pu.csv)
+
+New Loadshape.res_kw_14157_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_14157_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_14157_pu.csv)
+
+New Loadshape.res_kw_4118_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_4118_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_4118_pu.csv)
+
+New Loadshape.res_kw_2823_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_2823_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_2823_pu.csv)
+
+New Loadshape.res_kw_7820_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7820_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7820_pu.csv)
+
+New Loadshape.res_kw_13722_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_13722_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_13722_pu.csv)
+
+New Loadshape.res_kw_13745_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_13745_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_13745_pu.csv)
+
+New Loadshape.res_kw_5928_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_5928_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_5928_pu.csv)
+
+New Loadshape.res_kw_14557_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_14557_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_14557_pu.csv)
+
+New Loadshape.res_kw_11663_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_11663_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_11663_pu.csv)
+
+New Loadshape.res_kw_4304_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_4304_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_4304_pu.csv)
+
+New Loadshape.res_kw_7615_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7615_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7615_pu.csv)
+
+New Loadshape.res_kw_3245_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_3245_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_3245_pu.csv)
+
+New Loadshape.res_kw_8986_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_8986_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_8986_pu.csv)
+
+New Loadshape.res_kw_7172_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7172_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7172_pu.csv)
+
+New Loadshape.res_kw_1786_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_1786_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_1786_pu.csv)
+
+New Loadshape.res_kw_13250_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_13250_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_13250_pu.csv)
+
+New Loadshape.res_kw_3213_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_3213_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_3213_pu.csv)
+
+New Loadshape.res_kw_5872_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_5872_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_5872_pu.csv)
+
+New Loadshape.res_kw_4488_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_4488_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_4488_pu.csv)
+
+New Loadshape.res_kw_5410_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_5410_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_5410_pu.csv)
+
+New Loadshape.res_kw_10152_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_10152_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_10152_pu.csv)
+
+New Loadshape.res_kw_7050_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7050_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7050_pu.csv)
+
+New Loadshape.res_kw_1372_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_1372_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_1372_pu.csv)
+
+New Loadshape.res_kw_12019_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_12019_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_12019_pu.csv)
+
+New Loadshape.res_kw_2425_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_2425_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_2425_pu.csv)
+
+New Loadshape.res_kw_1770_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_1770_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_1770_pu.csv)
+
+New Loadshape.res_kw_995_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_995_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_995_pu.csv)
+
+New Loadshape.res_kw_10140_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_10140_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_10140_pu.csv)
+
+New Loadshape.res_kw_13041_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_13041_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_13041_pu.csv)
+
+New Loadshape.res_kw_13348_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_13348_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_13348_pu.csv)
+
+New Loadshape.res_kw_2917_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_2917_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_2917_pu.csv)
+
+New Loadshape.res_kw_291_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_291_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_291_pu.csv)
+
+New Loadshape.res_kw_10222_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_10222_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_10222_pu.csv)
+
+New Loadshape.res_kw_430_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_430_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_430_pu.csv)
+
+New Loadshape.res_kw_836_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_836_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_836_pu.csv)
+
+New Loadshape.res_kw_5635_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_5635_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_5635_pu.csv)
+
+New Loadshape.res_kw_13779_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_13779_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_13779_pu.csv)
+
+New Loadshape.res_kw_2606_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_2606_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_2606_pu.csv)
+
+New Loadshape.res_kw_4310_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_4310_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_4310_pu.csv)
+
+New Loadshape.res_kw_10071_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_10071_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_10071_pu.csv)
+
+New Loadshape.res_kw_14950_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_14950_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_14950_pu.csv)
+
+New Loadshape.res_kw_7966_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7966_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7966_pu.csv)
+
+New Loadshape.res_kw_13668_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_13668_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_13668_pu.csv)
+
+New Loadshape.res_kw_1519_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_1519_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_1519_pu.csv)
+
+New Loadshape.res_kw_13190_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_13190_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_13190_pu.csv)
+
+New Loadshape.res_kw_12933_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_12933_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_12933_pu.csv)
+
+New Loadshape.res_kw_13410_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_13410_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_13410_pu.csv)
+
+New Loadshape.res_kw_6662_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_6662_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_6662_pu.csv)
+
+New Loadshape.res_kw_13707_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_13707_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_13707_pu.csv)
+
+New Loadshape.res_kw_4165_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_4165_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_4165_pu.csv)
+
+New Loadshape.res_kw_5354_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_5354_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_5354_pu.csv)
+
+New Loadshape.res_kw_10710_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_10710_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_10710_pu.csv)
+
+New Loadshape.res_kw_13166_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_13166_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_13166_pu.csv)
+
+New Loadshape.res_kw_11875_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_11875_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_11875_pu.csv)
+
+New Loadshape.res_kw_3651_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_3651_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_3651_pu.csv)
+
+New Loadshape.res_kw_9376_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_9376_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_9376_pu.csv)
+
+New Loadshape.res_kw_10341_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_10341_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_10341_pu.csv)
+
+New Loadshape.res_kw_14088_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_14088_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_14088_pu.csv)
+
+New Loadshape.res_kw_7086_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7086_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7086_pu.csv)
+
+New Loadshape.res_kw_370_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_370_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_370_pu.csv)
+
+New Loadshape.res_kw_2556_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_2556_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_2556_pu.csv)
+
+New Loadshape.res_kw_5668_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_5668_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_5668_pu.csv)
+
+New Loadshape.res_kw_9406_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_9406_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_9406_pu.csv)
+
+New Loadshape.res_kw_1592_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_1592_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_1592_pu.csv)
+
+New Loadshape.res_kw_379_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_379_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_379_pu.csv)
+
+New Loadshape.res_kw_7102_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7102_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7102_pu.csv)
+
+New Loadshape.res_kw_1005_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_1005_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_1005_pu.csv)
+
+New Loadshape.res_kw_6984_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_6984_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_6984_pu.csv)
+
+New Loadshape.res_kw_10713_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_10713_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_10713_pu.csv)
+
+New Loadshape.res_kw_6378_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_6378_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_6378_pu.csv)
+
+New Loadshape.res_kw_606_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_606_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_606_pu.csv)
+
+New Loadshape.res_kw_9260_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_9260_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_9260_pu.csv)
+
+New Loadshape.res_kw_6160_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_6160_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_6160_pu.csv)
+
+New Loadshape.res_kw_7_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7_pu.csv)
+
+New Loadshape.res_kw_6311_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_6311_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_6311_pu.csv)
+
+New Loadshape.res_kw_11147_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_11147_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_11147_pu.csv)
+
+New Loadshape.res_kw_2776_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_2776_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_2776_pu.csv)
+
+New Loadshape.res_kw_5671_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_5671_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_5671_pu.csv)
+
+New Loadshape.res_kw_6915_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_6915_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_6915_pu.csv)
+
+New Loadshape.res_kw_6256_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_6256_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_6256_pu.csv)
+
+New Loadshape.res_kw_12305_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_12305_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_12305_pu.csv)
+
+New Loadshape.res_kw_1336_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_1336_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_1336_pu.csv)
+
+New Loadshape.res_kw_7894_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7894_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7894_pu.csv)
+
+New Loadshape.res_kw_7043_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7043_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7043_pu.csv)
+
+New Loadshape.res_kw_8384_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_8384_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_8384_pu.csv)
+
+New Loadshape.res_kw_7033_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7033_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7033_pu.csv)
+
+New Loadshape.res_kw_7264_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7264_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7264_pu.csv)
+
+New Loadshape.res_kw_13436_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_13436_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_13436_pu.csv)
+
+New Loadshape.res_kw_7362_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7362_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7362_pu.csv)
+
+New Loadshape.res_kw_1361_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_1361_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_1361_pu.csv)
+
+New Loadshape.res_kw_9825_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_9825_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_9825_pu.csv)
+
+New Loadshape.res_kw_6275_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_6275_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_6275_pu.csv)
+
+New Loadshape.res_kw_2678_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_2678_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_2678_pu.csv)
+
+New Loadshape.res_kw_1335_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_1335_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_1335_pu.csv)
+
+New Loadshape.res_kw_6825_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_6825_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_6825_pu.csv)
+
+New Loadshape.res_kw_771_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_771_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_771_pu.csv)
+
+New Loadshape.res_kw_11810_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_11810_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_11810_pu.csv)
+
+New Loadshape.res_kw_2196_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_2196_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_2196_pu.csv)
+
+New Loadshape.res_kw_127_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_127_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_127_pu.csv)
+
+New Loadshape.res_kw_11801_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_11801_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_11801_pu.csv)
+
+New Loadshape.res_kw_9164_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_9164_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_9164_pu.csv)
+
+New Loadshape.res_kw_1323_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_1323_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_1323_pu.csv)
+
+New Loadshape.res_kw_3710_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_3710_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_3710_pu.csv)
+
+New Loadshape.res_kw_7988_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7988_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7988_pu.csv)
+
+New Loadshape.res_kw_13794_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_13794_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_13794_pu.csv)
+
+New Loadshape.res_kw_14952_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_14952_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_14952_pu.csv)
+
+New Loadshape.res_kw_12755_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_12755_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_12755_pu.csv)
+
+New Loadshape.res_kw_3271_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_3271_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_3271_pu.csv)
+
+New Loadshape.res_kw_5577_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_5577_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_5577_pu.csv)
+
+New Loadshape.res_kw_1982_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_1982_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_1982_pu.csv)
+
+New Loadshape.res_kw_11096_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_11096_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_11096_pu.csv)
+
+New Loadshape.res_kw_4348_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_4348_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_4348_pu.csv)
+
+New Loadshape.res_kw_2085_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_2085_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_2085_pu.csv)
+
+New Loadshape.res_kw_6096_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_6096_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_6096_pu.csv)
+
+New Loadshape.res_kw_8268_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_8268_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_8268_pu.csv)
+
+New Loadshape.res_kw_2978_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_2978_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_2978_pu.csv)
+
+New Loadshape.res_kw_10803_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_10803_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_10803_pu.csv)
+
+New Loadshape.res_kw_5824_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_5824_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_5824_pu.csv)
+
+New Loadshape.res_kw_4429_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_4429_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_4429_pu.csv)
+
+New Loadshape.res_kw_15139_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_15139_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_15139_pu.csv)
+
+New Loadshape.res_kw_3843_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_3843_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_3843_pu.csv)
+
+New Loadshape.res_kw_11954_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_11954_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_11954_pu.csv)
+
+New Loadshape.res_kw_10201_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_10201_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_10201_pu.csv)
+
+New Loadshape.res_kw_14661_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_14661_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_14661_pu.csv)
+
+New Loadshape.res_kw_14315_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_14315_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_14315_pu.csv)
+
+New Loadshape.res_kw_4109_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_4109_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_4109_pu.csv)
+
+New Loadshape.res_kw_7778_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7778_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7778_pu.csv)
+
+New Loadshape.res_kw_6490_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_6490_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_6490_pu.csv)
+
+New Loadshape.res_kw_3797_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_3797_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_3797_pu.csv)
+
+New Loadshape.res_kw_1471_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_1471_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_1471_pu.csv)
+
+New Loadshape.res_kw_4148_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_4148_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_4148_pu.csv)
+
+New Loadshape.res_kw_3968_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_3968_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_3968_pu.csv)
+
+New Loadshape.res_kw_8723_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_8723_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_8723_pu.csv)
+
+New Loadshape.res_kw_4808_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_4808_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_4808_pu.csv)
+
+New Loadshape.res_kw_14388_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_14388_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_14388_pu.csv)
+
+New Loadshape.res_kw_15213_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_15213_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_15213_pu.csv)
+
+New Loadshape.res_kw_470_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_470_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_470_pu.csv)
+
+New Loadshape.res_kw_5289_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_5289_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_5289_pu.csv)
+
+New Loadshape.res_kw_8495_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_8495_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_8495_pu.csv)
+
+New Loadshape.res_kw_7101_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7101_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7101_pu.csv)
+
+New Loadshape.res_kw_1060_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_1060_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_1060_pu.csv)
+
+New Loadshape.res_kw_13881_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_13881_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_13881_pu.csv)
+
+New Loadshape.res_kw_12238_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_12238_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_12238_pu.csv)
+
+New Loadshape.res_kw_9297_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_9297_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_9297_pu.csv)
+
+New Loadshape.res_kw_990_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_990_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_990_pu.csv)
+
+New Loadshape.res_kw_2453_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_2453_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_2453_pu.csv)
+
+New Loadshape.res_kw_12593_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_12593_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_12593_pu.csv)
+
+New Loadshape.res_kw_5977_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_5977_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_5977_pu.csv)
+
+New Loadshape.res_kw_3963_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_3963_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_3963_pu.csv)
+
+New Loadshape.res_kw_9768_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_9768_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_9768_pu.csv)
+
+New Loadshape.res_kw_9789_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_9789_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_9789_pu.csv)
+
+New Loadshape.res_kw_10055_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_10055_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_10055_pu.csv)
+
+New Loadshape.res_kw_8127_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_8127_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_8127_pu.csv)
+
+New Loadshape.res_kw_1579_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_1579_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_1579_pu.csv)
+
+New Loadshape.res_kw_10066_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_10066_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_10066_pu.csv)
+
+New Loadshape.res_kw_15138_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_15138_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_15138_pu.csv)
+
+New Loadshape.res_kw_3948_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_3948_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_3948_pu.csv)
+
+New Loadshape.res_kw_14271_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_14271_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_14271_pu.csv)
+
+New Loadshape.res_kw_2483_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_2483_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_2483_pu.csv)
+
+New Loadshape.res_kw_7785_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7785_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7785_pu.csv)
+
+New Loadshape.res_kw_3364_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_3364_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_3364_pu.csv)
+
+New Loadshape.res_kw_1063_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_1063_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_1063_pu.csv)
+
+New Loadshape.res_kw_11262_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_11262_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_11262_pu.csv)
+
+New Loadshape.res_kw_14419_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_14419_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_14419_pu.csv)
+
+New Loadshape.res_kw_13863_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_13863_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_13863_pu.csv)
+
+New Loadshape.res_kw_12115_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_12115_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_12115_pu.csv)
+
+New Loadshape.res_kw_14110_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_14110_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_14110_pu.csv)
+
+New Loadshape.res_kw_9042_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_9042_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_9042_pu.csv)
+
+New Loadshape.res_kw_10888_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_10888_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_10888_pu.csv)
+
+New Loadshape.res_kw_11808_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_11808_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_11808_pu.csv)
+
+New Loadshape.res_kw_7129_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7129_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7129_pu.csv)
+
+New Loadshape.res_kw_6768_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_6768_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_6768_pu.csv)
+
+New Loadshape.res_kw_14290_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_14290_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_14290_pu.csv)
+
+New Loadshape.res_kw_5685_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_5685_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_5685_pu.csv)
+
+New Loadshape.res_kw_12485_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_12485_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_12485_pu.csv)
+
+New Loadshape.res_kw_9618_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_9618_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_9618_pu.csv)
+
+New Loadshape.res_kw_9240_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_9240_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_9240_pu.csv)
+
+New Loadshape.res_kw_7451_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7451_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7451_pu.csv)
+
+New Loadshape.res_kw_5908_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_5908_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_5908_pu.csv)
+
+New Loadshape.res_kw_10572_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_10572_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_10572_pu.csv)
+
+New Loadshape.res_kw_9813_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_9813_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_9813_pu.csv)
+
+New Loadshape.res_kw_1061_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_1061_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_1061_pu.csv)
+
+New Loadshape.res_kw_7955_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7955_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7955_pu.csv)
+
+New Loadshape.res_kw_13901_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_13901_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_13901_pu.csv)
+
+New Loadshape.res_kw_8119_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_8119_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_8119_pu.csv)
+
+New Loadshape.res_kw_4327_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_4327_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_4327_pu.csv)
+
+New Loadshape.res_kw_6320_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_6320_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_6320_pu.csv)
+
+New Loadshape.res_kw_678_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_678_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_678_pu.csv)
+
+New Loadshape.res_kw_10538_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_10538_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_10538_pu.csv)
+
+New Loadshape.res_kw_9681_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_9681_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_9681_pu.csv)
+
+New Loadshape.res_kw_6819_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_6819_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_6819_pu.csv)
+
+New Loadshape.res_kw_15203_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_15203_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_15203_pu.csv)
+
+New Loadshape.res_kw_1135_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_1135_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_1135_pu.csv)
+
+New Loadshape.res_kw_8820_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_8820_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_8820_pu.csv)
+
+New Loadshape.res_kw_705_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_705_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_705_pu.csv)
+
+New Loadshape.res_kw_7349_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7349_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7349_pu.csv)
+
+New Loadshape.res_kw_5920_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_5920_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_5920_pu.csv)
+
+New Loadshape.res_kw_588_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_588_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_588_pu.csv)
+
+New Loadshape.res_kw_13292_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_13292_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_13292_pu.csv)
+
+New Loadshape.res_kw_13578_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_13578_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_13578_pu.csv)
+
+New Loadshape.res_kw_10774_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_10774_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_10774_pu.csv)
+
+New Loadshape.res_kw_11269_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_11269_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_11269_pu.csv)
+
+New Loadshape.res_kw_11990_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_11990_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_11990_pu.csv)
+
+New Loadshape.res_kw_5712_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_5712_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_5712_pu.csv)
+
+New Loadshape.res_kw_14104_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_14104_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_14104_pu.csv)
+
+New Loadshape.res_kw_14805_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_14805_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_14805_pu.csv)
+
+New Loadshape.res_kw_12900_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_12900_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_12900_pu.csv)
+
+New Loadshape.res_kw_319_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_319_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_319_pu.csv)
+
+New Loadshape.res_kw_865_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_865_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_865_pu.csv)
+
+New Loadshape.res_kw_7412_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7412_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7412_pu.csv)
+
+New Loadshape.res_kw_10513_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_10513_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_10513_pu.csv)
+
+New Loadshape.res_kw_14866_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_14866_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_14866_pu.csv)
+
+New Loadshape.res_kw_9593_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_9593_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_9593_pu.csv)
+
+New Loadshape.res_kw_7375_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7375_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7375_pu.csv)
+
+New Loadshape.res_kw_7632_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7632_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7632_pu.csv)
+
+New Loadshape.res_kw_4872_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_4872_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_4872_pu.csv)
+
+New Loadshape.res_kw_2521_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_2521_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_2521_pu.csv)
+
+New Loadshape.res_kw_9190_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_9190_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_9190_pu.csv)
+
+New Loadshape.res_kw_14544_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_14544_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_14544_pu.csv)
+
+New Loadshape.res_kw_3924_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_3924_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_3924_pu.csv)
+
+New Loadshape.res_kw_913_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_913_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_913_pu.csv)
+
+New Loadshape.res_kw_13164_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_13164_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_13164_pu.csv)
+
+New Loadshape.res_kw_14121_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_14121_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_14121_pu.csv)
+
+New Loadshape.res_kw_259_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_259_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_259_pu.csv)
+
+New Loadshape.res_kw_4732_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_4732_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_4732_pu.csv)
+
+New Loadshape.res_kw_3413_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_3413_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_3413_pu.csv)
+
+New Loadshape.res_kw_12000_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_12000_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_12000_pu.csv)
+
+New Loadshape.res_kw_12377_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_12377_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_12377_pu.csv)
+
+New Loadshape.res_kw_10779_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_10779_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_10779_pu.csv)
+
+New Loadshape.res_kw_1663_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_1663_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_1663_pu.csv)
+
+New Loadshape.res_kw_3356_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_3356_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_3356_pu.csv)
+
+New Loadshape.res_kw_1681_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_1681_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_1681_pu.csv)
+
+New Loadshape.res_kw_14281_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_14281_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_14281_pu.csv)
+
+New Loadshape.res_kw_1537_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_1537_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_1537_pu.csv)
+
+New Loadshape.res_kw_6553_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_6553_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_6553_pu.csv)
+
+New Loadshape.res_kw_8326_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_8326_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_8326_pu.csv)
+
+New Loadshape.res_kw_10571_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_10571_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_10571_pu.csv)
+
+New Loadshape.res_kw_13148_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_13148_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_13148_pu.csv)
+
+New Loadshape.res_kw_8996_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_8996_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_8996_pu.csv)
+
+New Loadshape.res_kw_13892_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_13892_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_13892_pu.csv)
+
+New Loadshape.res_kw_3780_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_3780_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_3780_pu.csv)
+
+New Loadshape.res_kw_14441_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_14441_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_14441_pu.csv)
+
+New Loadshape.res_kw_5110_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_5110_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_5110_pu.csv)
+
+New Loadshape.res_kw_113_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_113_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_113_pu.csv)
+
+New Loadshape.res_kw_2619_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_2619_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_2619_pu.csv)
+
+New Loadshape.res_kw_10533_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_10533_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_10533_pu.csv)
+
+New Loadshape.res_kw_14133_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_14133_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_14133_pu.csv)
+
+New Loadshape.res_kw_8669_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_8669_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_8669_pu.csv)
+
+New Loadshape.res_kw_4343_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_4343_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_4343_pu.csv)
+
+New Loadshape.res_kw_10706_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_10706_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_10706_pu.csv)
+
+New Loadshape.res_kw_13996_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_13996_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_13996_pu.csv)
+
+New Loadshape.res_kw_13840_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_13840_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_13840_pu.csv)
+
+New Loadshape.res_kw_6602_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_6602_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_6602_pu.csv)
+
+New Loadshape.res_kw_11820_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_11820_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_11820_pu.csv)
+
+New Loadshape.res_kw_6298_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_6298_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_6298_pu.csv)
+
+New Loadshape.res_kw_8826_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_8826_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_8826_pu.csv)
+
+New Loadshape.res_kw_1130_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_1130_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_1130_pu.csv)
+
+New Loadshape.res_kw_9964_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_9964_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_9964_pu.csv)
+
+New Loadshape.res_kw_8203_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_8203_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_8203_pu.csv)
+
+New Loadshape.res_kw_2939_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_2939_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_2939_pu.csv)
+
+New Loadshape.res_kw_2763_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_2763_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_2763_pu.csv)
+
+New Loadshape.res_kw_2418_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_2418_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_2418_pu.csv)
+
+New Loadshape.res_kw_8491_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_8491_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_8491_pu.csv)
+
+New Loadshape.res_kw_12636_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_12636_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_12636_pu.csv)
+
+New Loadshape.res_kw_10190_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_10190_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_10190_pu.csv)
+
+New Loadshape.res_kw_4103_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_4103_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_4103_pu.csv)
+
+New Loadshape.res_kw_7613_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7613_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7613_pu.csv)
+
+New Loadshape.res_kw_10438_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_10438_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_10438_pu.csv)
+
+New Loadshape.res_kw_8165_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_8165_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_8165_pu.csv)
+
+New Loadshape.res_kw_6751_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_6751_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_6751_pu.csv)
+
+New Loadshape.res_kw_7234_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7234_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7234_pu.csv)
+
+New Loadshape.res_kw_7199_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7199_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7199_pu.csv)
+
+New Loadshape.res_kw_270_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_270_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_270_pu.csv)
+
+New Loadshape.res_kw_2715_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_2715_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_2715_pu.csv)
+
+New Loadshape.res_kw_11005_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_11005_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_11005_pu.csv)
+
+New Loadshape.res_kw_12637_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_12637_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_12637_pu.csv)
+
+New Loadshape.res_kw_2065_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_2065_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_2065_pu.csv)
+
+New Loadshape.res_kw_13361_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_13361_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_13361_pu.csv)
+
+New Loadshape.res_kw_14064_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_14064_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_14064_pu.csv)
+
+New Loadshape.res_kw_3575_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_3575_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_3575_pu.csv)
+
+New Loadshape.res_kw_4727_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_4727_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_4727_pu.csv)
+
+New Loadshape.res_kw_610_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_610_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_610_pu.csv)
+
+New Loadshape.res_kw_14047_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_14047_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_14047_pu.csv)
+
+New Loadshape.res_kw_982_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_982_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_982_pu.csv)
+
+New Loadshape.res_kw_14077_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_14077_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_14077_pu.csv)
+
+New Loadshape.res_kw_8869_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_8869_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_8869_pu.csv)
+
+New Loadshape.res_kw_2067_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_2067_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_2067_pu.csv)
+
+New Loadshape.res_kw_8046_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_8046_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_8046_pu.csv)
+
+New Loadshape.res_kw_5155_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_5155_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_5155_pu.csv)
+
+New Loadshape.res_kw_569_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_569_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_569_pu.csv)
+
+New Loadshape.res_kw_11587_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_11587_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_11587_pu.csv)
+
+New Loadshape.res_kw_11998_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_11998_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_11998_pu.csv)
+
+New Loadshape.res_kw_2637_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_2637_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_2637_pu.csv)
+
+New Loadshape.res_kw_6344_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_6344_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_6344_pu.csv)
+
+New Loadshape.res_kw_11929_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_11929_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_11929_pu.csv)
+
+New Loadshape.res_kw_1686_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_1686_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_1686_pu.csv)
+
+New Loadshape.res_kw_12796_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_12796_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_12796_pu.csv)
+
+New Loadshape.res_kw_5618_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_5618_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_5618_pu.csv)
+
+New Loadshape.res_kw_2400_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_2400_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_2400_pu.csv)
+
+New Loadshape.res_kw_11842_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_11842_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_11842_pu.csv)
+
+New Loadshape.res_kw_4140_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_4140_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_4140_pu.csv)
+
+New Loadshape.res_kw_10051_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_10051_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_10051_pu.csv)
+
+New Loadshape.res_kw_3913_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_3913_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_3913_pu.csv)
+
+New Loadshape.res_kw_1194_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_1194_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_1194_pu.csv)
+
+New Loadshape.res_kw_4277_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_4277_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_4277_pu.csv)
+
+New Loadshape.res_kw_7456_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7456_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7456_pu.csv)
+
+New Loadshape.res_kw_4111_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_4111_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_4111_pu.csv)
+
+New Loadshape.res_kw_4742_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_4742_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_4742_pu.csv)
+
+New Loadshape.res_kw_11113_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_11113_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_11113_pu.csv)
+
+New Loadshape.res_kw_3729_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_3729_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_3729_pu.csv)
+
+New Loadshape.res_kw_12275_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_12275_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_12275_pu.csv)
+
+New Loadshape.res_kw_6686_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_6686_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_6686_pu.csv)
+
+New Loadshape.res_kw_4715_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_4715_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_4715_pu.csv)
+
+New Loadshape.res_kw_7798_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7798_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7798_pu.csv)
+
+New Loadshape.res_kw_9429_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_9429_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_9429_pu.csv)
+
+New Loadshape.res_kw_9512_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_9512_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_9512_pu.csv)
+
+New Loadshape.res_kw_528_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_528_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_528_pu.csv)
+
+New Loadshape.res_kw_9009_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_9009_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_9009_pu.csv)
+
+New Loadshape.res_kw_7242_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7242_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7242_pu.csv)
+
+New Loadshape.res_kw_11099_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_11099_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_11099_pu.csv)
+
+New Loadshape.res_kw_1760_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_1760_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_1760_pu.csv)
+
+New Loadshape.res_kw_7030_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7030_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7030_pu.csv)
+
+New Loadshape.res_kw_3815_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_3815_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_3815_pu.csv)
+
+New Loadshape.res_kw_3592_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_3592_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_3592_pu.csv)
+
+New Loadshape.res_kw_14038_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_14038_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_14038_pu.csv)
+
+New Loadshape.res_kw_1109_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_1109_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_1109_pu.csv)
+
+New Loadshape.res_kw_9711_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_9711_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_9711_pu.csv)
+
+New Loadshape.res_kw_12136_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_12136_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_12136_pu.csv)
+
+New Loadshape.res_kw_9896_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_9896_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_9896_pu.csv)
+
+New Loadshape.res_kw_12787_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_12787_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_12787_pu.csv)
+
+New Loadshape.res_kw_10372_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_10372_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_10372_pu.csv)
+
+New Loadshape.res_kw_7686_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7686_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7686_pu.csv)
+
+New Loadshape.res_kw_8543_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_8543_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_8543_pu.csv)
+
+New Loadshape.res_kw_2707_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_2707_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_2707_pu.csv)
+
+New Loadshape.res_kw_11790_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_11790_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_11790_pu.csv)
+
+New Loadshape.res_kw_7726_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7726_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7726_pu.csv)
+
+New Loadshape.res_kw_12714_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_12714_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_12714_pu.csv)
+
+New Loadshape.res_kw_3440_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_3440_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_3440_pu.csv)
+
+New Loadshape.res_kw_7294_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7294_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7294_pu.csv)
+
+New Loadshape.res_kw_7881_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7881_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7881_pu.csv)
+
+New Loadshape.res_kw_11173_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_11173_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_11173_pu.csv)
+
+New Loadshape.res_kw_1243_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_1243_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_1243_pu.csv)
+
+New Loadshape.res_kw_13507_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_13507_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_13507_pu.csv)
+
+New Loadshape.res_kw_11915_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_11915_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_11915_pu.csv)
+
+New Loadshape.res_kw_4390_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_4390_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_4390_pu.csv)
+
+New Loadshape.res_kw_7343_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_7343_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_7343_pu.csv)
+
+New Loadshape.res_kw_11737_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_11737_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_11737_pu.csv)
+
+New Loadshape.res_kw_10446_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_10446_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_10446_pu.csv)
+
+New Loadshape.res_kw_13015_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kw_13015_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/res_kvar_13015_pu.csv)
+
+New Loadshape.com_kw_29147_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_29147_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_29147_pu.csv)
+
+New Loadshape.com_kw_16012_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_16012_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_16012_pu.csv)
+
+New Loadshape.com_kw_2697_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_2697_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_2697_pu.csv)
+
+New Loadshape.com_kw_29082_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_29082_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_29082_pu.csv)
+
+New Loadshape.com_kw_35494_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_35494_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_35494_pu.csv)
+
+New Loadshape.com_kw_1777_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_1777_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_1777_pu.csv)
+
+New Loadshape.com_kw_18188_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_18188_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_18188_pu.csv)
+
+New Loadshape.com_kw_29643_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_29643_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_29643_pu.csv)
+
+New Loadshape.com_kw_16289_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_16289_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_16289_pu.csv)
+
+New Loadshape.com_kw_33385_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_33385_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_33385_pu.csv)
+
+New Loadshape.com_kw_29584_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_29584_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_29584_pu.csv)
+
+New Loadshape.com_kw_16302_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_16302_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_16302_pu.csv)
+
+New Loadshape.com_kw_17135_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_17135_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_17135_pu.csv)
+
+New Loadshape.com_kw_41699_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_41699_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_41699_pu.csv)
+
+New Loadshape.com_kw_1315_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_1315_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_1315_pu.csv)
+
+New Loadshape.com_kw_18016_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_18016_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_18016_pu.csv)
+
+New Loadshape.com_kw_33970_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_33970_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_33970_pu.csv)
+
+New Loadshape.com_kw_18088_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_18088_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_18088_pu.csv)
+
+New Loadshape.com_kw_1197_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_1197_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_1197_pu.csv)
+
+New Loadshape.com_kw_29164_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_29164_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_29164_pu.csv)
+
+New Loadshape.com_kw_41529_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_41529_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_41529_pu.csv)
+
+New Loadshape.com_kw_17146_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_17146_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_17146_pu.csv)
+
+New Loadshape.com_kw_16425_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_16425_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_16425_pu.csv)
+
+New Loadshape.com_kw_20964_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_20964_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_20964_pu.csv)
+
+New Loadshape.com_kw_1541_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_1541_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_1541_pu.csv)
+
+New Loadshape.com_kw_2536_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_2536_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_2536_pu.csv)
+
+New Loadshape.com_kw_16631_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_16631_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_16631_pu.csv)
+
+New Loadshape.com_kw_33478_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_33478_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_33478_pu.csv)
+
+New Loadshape.com_kw_39212_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_39212_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_39212_pu.csv)
+
+New Loadshape.com_kw_31691_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_31691_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_31691_pu.csv)
+
+New Loadshape.com_kw_16870_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_16870_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_16870_pu.csv)
+
+New Loadshape.com_kw_16993_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_16993_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_16993_pu.csv)
+
+New Loadshape.com_kw_33992_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_33992_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_33992_pu.csv)
+
+New Loadshape.com_kw_31783_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_31783_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_31783_pu.csv)
+
+New Loadshape.com_kw_17748_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_17748_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_17748_pu.csv)
+
+New Loadshape.com_kw_2430_pu npts= 35040 interval=0.25 mult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kw_2430_pu.csv) qmult = (file=/projects/distcosts3/SMART-DS/v1.0/2018/SFO_xfmr/P7U/profiles/com_kvar_2430_pu.csv)
+

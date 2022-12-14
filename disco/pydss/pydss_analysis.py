@@ -47,7 +47,7 @@ class PyDssScenarioAnalysis:
 
     def __init__(self, job, results, scenario_name=None):
         self._job = job
-        self._feeder = job.feeder
+        self._feeder = job.model.deployment.feeder
         if not results.scenarios:
             raise InvalidParameter("there are no scenarios in the results")
 
@@ -189,7 +189,9 @@ class PyDssScenarioAnalysis:
         return loadings
 
     def get_kw_at_bus_mapping(self):
-        """Return a mapping of bus to PV system and load kW values
+        """Return a mapping of bus to PV system and load kW values.
+
+        Requires that the script make_element_bus_mapping.py has been run on this feeder.
 
         Returns
         -------
@@ -200,12 +202,14 @@ class PyDssScenarioAnalysis:
             Example: {"123456": [{"type": "pv_systems", "name": "pv_1234", "kW", 1.3}]}
 
         """
-        input_directory = self._job.deployment.directory
+        input_directory = self._job.model.deployment.directory
         bus_mapping_file = os.path.join(
             input_directory, REGION_BUS_MAPPING_FILENAME
         )
         if not os.path.exists(bus_mapping_file):
-            raise InvalidConfiguration(f"{bus_mapping_file} does not exist")
+            raise InvalidConfiguration(
+                f"{bus_mapping_file} does not exist. Has make_element_bus_mapping.py been run?"
+            )
 
         summary = load_data(bus_mapping_file)
         if self._feeder not in summary:

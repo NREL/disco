@@ -29,11 +29,10 @@ For example, if the input path is a GEM file:
 
     $ disco transform-model ./gem-file.json --help
 
-    Available analysis types: snapshot upgrade
+    Available analysis types: snapshot
 
     For additional help run one of the following:
         disco transform-model ./gem-file.json snapshot --help
-        disco transform-model ./gem-file.json upgrade --help
 
 
 Input Directory
@@ -46,23 +45,22 @@ in *format.toml*.
 
     $ disco transform-model tests/data/smart-ds/substations/ --help
 
-    Available analysis types: snapshot time-series upgrade
+    Available analysis types: snapshot time-series
 
     For additional help run one of the following:
         disco transform-model tests/data/smart-ds/substations/ snapshot --help
         disco transform-model tests/data/smart-ds/substations/ time-series --help
-        disco transform-model tests/data/smart-ds/substations/ upgrade --help
 
 .. note::
 
     By default, the name of PV deployments directory is ``hc_pv_deployments``, if the PV deployments
-    are located in other directory, please specify the right directory by using option `-P/--pv-deployments-dirname`
-    in command ``transform-model``.
+    are located in another directory, please specify the right directory by using option ``-P/--pv-deployments-dirname``
+    in the ``transform-model`` command.
 
 
 Load Shape Data files
 ---------------------
-By default DISCO replaces relative paths to load shape data files with absolute
+By default, DISCO replaces relative paths to load shape data files with absolute
 paths and does not copy them. This reduces time and consumed storage space.
 However, it also makes the directory non-portable to other systems.
 
@@ -88,14 +86,11 @@ Suppose we have particular controller settings defined in a ``my-custom-controll
 
 .. code-block:: python
 
-    [project123]
-    Category = "Legacy"
+    [my_volt_var_curve]
+    Control1 = "VVar"
+    Control2 = "None"
+    Control3 = "None"
     ...
-    pf = "None"
-    pfMin = 0.5
-    ...
-    Priority = "Var"
-    DampCoef = 0.5
 
 .. code-block:: bash
 
@@ -147,7 +142,7 @@ Model Schema
 
 DISCO uses `pydantic <https://pydantic-docs.helpmanual.io/>`_ 
 models to define the schema of model inputs for each type of analysis. Given a 
-type of anaalysis in DISCO, the schema shows all attributes used  to define 
+type of analysis in DISCO, the schema shows all attributes used to define 
 the analysis models.
 
 *Show Schema*

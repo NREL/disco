@@ -33,7 +33,7 @@ from disco.extensions.pydss_simulation.pydss_configuration import PyDssConfigura
 def compute_snapshot_hosting_capacity(jade_runtime_output, verbose=False):
     """Merge the pydss simulation results into one CSV file."""
     level = logging.DEBUG if verbose else logging.INFO
-    logger = setup_logging(__name__, None, console_level=level)
+    logger = setup_logging(__name__, None, console_level=level, packages=["disco"])
     logger.info("Run compute_snapshot_hosting_capacity")
     print(get_cli_string())
 

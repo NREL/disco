@@ -1,0 +1,26 @@
+New Load.1 bus1=e4bcf9d6-e0b7-421c-91d4-554d06c69364.1.2.3 kV=12.47 model=1 kW=4961.147721461635 kvar=1138.1653453593858 Phases=3 yearly=feature_1
+
+New Load.2 bus1=53c917d8-b04d-4110-bdd9-cbf044e6a1fa.1.2.3 kV=0.48 model=1 kW=226.26934267290764 kvar=51.909747301714695 Phases=3 yearly=feature_2
+
+New Load.3 bus1=67b07fac-6666-4954-98b8-3e08b0896646.1.2.3 kV=12.47 model=1 kW=1277.8064698880355 kvar=293.1489090339154 Phases=3 yearly=feature_3
+
+New Load.4 bus1=be6e5e58-e73e-4172-a939-250c6a7a3c2c.1.2.3 kV=0.48 model=1 kW=336.08532480578174 kvar=77.1032614334445 Phases=3 yearly=feature_4
+
+New Load.5 bus1=3d1aa47d-69dd-4200-ab34-9b6244ad82d7.1.2.3 kV=0.48 model=1 kW=12.159078946234457 kvar=2.789484019640473 Phases=3 yearly=feature_5
+
+New Load.6 bus1=db52eea7-f395-4fb1-999d-47c82333a4a7.1.2.3 kV=0.48 model=1 kW=15.74178000285817 kvar=3.6114120117846387 Phases=3 yearly=feature_6
+
+New Load.7 bus1=9d037967-7ac1-4296-8f87-2d4a842d7a87.1.2.3 kV=0.48 model=1 kW=1010.9459946369252 kvar=231.9269172631351 Phases=3 yearly=feature_7
+
+New Load.8 bus1=18fe5a25-2547-4c32-a225-8bd455e93c9b.1.2.3 kV=12.47 model=1 kW=2185.323191585642 kvar=501.347523741978 Phases=3 yearly=feature_8
+
+New Load.9 bus1=40867501-5a41-4626-a9d4-be5444a5b575.1.2.3 kV=12.47 model=1 kW=1380.0778008452764 kvar=316.61156147938993 Phases=3 yearly=feature_9
+
+New Load.10 bus1=44963046-644a-4c03-b81c-f65d80475015.1.2.3 kV=12.47 model=1 kW=5802.739796933826 kvar=1331.2398089734875 Phases=3 yearly=feature_10
+
+New Load.11 bus1=14072af7-3121-4e3d-b85f-c79868702ec9.1.2.3 kV=0.48 model=1 kW=345.6915805803552 kvar=79.30708765171657 Phases=3 yearly=feature_11
+
+New Load.12 bus1=753b77b9-b88b-443f-9c3b-3cd977bb3558.1.2.3 kV=12.47 model=1 kW=1313.8416564929219 kvar=301.415947814038 Phases=3 yearly=feature_12
+
+New Load.13 bus1=38a42375-ff02-497e-90ef-c5d9eb78850e.1.2.3 kV=12.47 model=1 kW=1139.366097122639 kvar=261.3885093186278 Phases=3 yearly=feature_13
+

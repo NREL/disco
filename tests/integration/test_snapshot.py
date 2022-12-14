@@ -26,10 +26,9 @@ DISCO_PATH = disco.__path__[0]
 
 
 def test_snapshot_basic(cleanup):
-    base = os.path.join(DISCO_PATH, "extensions", "pydss_simulation")
     config_file = CONFIG_FILE
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations snapshot -c -F -o {MODELS_DIR}"
-    config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} -c {CONFIG_FILE}"
+    config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} -c {CONFIG_FILE} --no-with-loadshape"
     submit_cmd = f"{SUBMIT_JOBS} {config_file} -o {OUTPUT}"
 
     assert run_command(transform_cmd) == 0
@@ -51,7 +50,6 @@ def test_snapshot_basic(cleanup):
 
 
 def test_snapshot_basic_with_loadshape_no_pf1(cleanup):
-    base = os.path.join(DISCO_PATH, "extensions", "pydss_simulation")
     config_file = CONFIG_FILE
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations snapshot -F -o {MODELS_DIR}"
     config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} --with-loadshape --no-pf1 -c {CONFIG_FILE} -d1"
@@ -84,7 +82,6 @@ def test_snapshot_basic_with_loadshape_no_pf1(cleanup):
 
 def test_snapshot_impact_analysis(cleanup):
     """For each job, gather outputs and generate desired output CSV files."""
-    base = os.path.join(DISCO_PATH, "extensions", "pydss_simulation")
     config_file = CONFIG_FILE
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations snapshot -F -o {MODELS_DIR}"
     config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} -c {CONFIG_FILE} --with-loadshape -d1"
@@ -100,7 +97,7 @@ def test_snapshot_impact_analysis(cleanup):
     assert not config.list_user_data_keys()
 
     # Verify Post-process & Results
-    postprocess_cmd = f"disco-internal make-summary-tables {OUTPUT}"
+    postprocess_cmd = f"disco make-summary-tables {OUTPUT}"
     assert run_command(postprocess_cmd) == 0
     for filename in POSTPROCESS_RESULTS:
         summary_table = os.path.join(OUTPUT, filename)
@@ -112,10 +109,10 @@ def test_snapshot_impact_analysis(cleanup):
 
 def test_snapshot_hosting_capacity(cleanup):
     """For each job, gather outputs and generate desired output CSV files."""
-    base = os.path.join(DISCO_PATH, "extensions", "pydss_simulation")
     config_file = CONFIG_FILE
     transform_cmd = f"{TRANSFORM_MODEL} tests/data/smart-ds/substations snapshot -F -o {MODELS_DIR}"
-    config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} -c {CONFIG_FILE} --with-loadshape -d1"
+    config_cmd = f"{CONFIG_JOBS} snapshot {MODELS_DIR} -c {CONFIG_FILE} --with-loadshape -d1 " \
+        "-v volt_var_ieee_1547_2018_catB"
     submit_cmd = f"{SUBMIT_JOBS} {config_file} -o {OUTPUT} -p1"
 
     assert run_command(transform_cmd) == 0
@@ -128,8 +125,8 @@ def test_snapshot_hosting_capacity(cleanup):
     assert not config.list_user_data_keys()
 
     # Ensure that control_mode scenarios have PV controllers defined and pf1 scenarios do not.
-    job = jobs[-1]
-    assert not job.model.is_base_case
+    job = find_non_base_case_job(jobs)
+    assert job.model.deployment.pydss_controllers.name == "volt_var_ieee_1547_2018_catB"
     results = PyDssResults(Path(OUTPUT) / JOBS_OUTPUT_DIR / job.name / "pydss_project")
     for scenario in results.scenarios:
         controller_file = f"Scenarios/{scenario.name}/pyControllerList/PvController.toml"
@@ -144,7 +141,7 @@ def test_snapshot_hosting_capacity(cleanup):
             assert list(controller_dict.values())
 
     # Verify Post-process & Results
-    postprocess_cmd = f"disco-internal make-summary-tables {OUTPUT}"
+    postprocess_cmd = f"disco make-summary-tables {OUTPUT}"
     assert run_command(postprocess_cmd) == 0
     output_path = Path(OUTPUT)
     for filename in POSTPROCESS_RESULTS:

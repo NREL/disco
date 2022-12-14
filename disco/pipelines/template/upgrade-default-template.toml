@@ -1,0 +1,47 @@
+inputs = "null"
+preconfigured = false
+simulation_type = "upgrade"
+
+[model]
+[model.transform-params]
+start = "2020-01-01T00:00:00.0"
+output = "upgrade-models"
+
+[simulation]
+[simulation.config-params]
+config_file = "config.json"
+cost_database = "null"
+params_file = "null"
+verbose = false
+
+[simulation.submitter-params]
+hpc_config = "hpc_config.toml"
+# assume worst case 1 job 1 min
+per_node_batch_size = 500
+poll_interval = 60
+resource_monitor_interval = 0
+num_processes = "null"
+generate_reports = true
+try_add_blocked_jobs = false
+verbose = false
+node_setup_script = "null"
+node_shutdown_script = "null"
+
+[postprocess]
+[postprocess.config-params]
+config_file = "postprocess-config.json"
+cancel_on_blocking_job_failure = "null"
+minutes_per_job = "null"
+verbose = false
+
+[postprocess.submitter-params]
+hpc_config = "hpc_config.toml"
+per_node_batch_size = 32
+poll_interval = 60
+resource_monitor_interval = 0
+num_processes = "null"
+generate_reports = true
+try_add_blocked_jobs = true
+verbose = false
+node_setup_script = "null"
+node_shutdown_script = "null"

@@ -1,0 +1,38 @@
+{
+  "model_type": "PowerFlowTimeSeriesSimulationModel",
+  "start_time": "2020-01-01 00:00:00",
+  "end_time": "2020-01-02 00:00:00",
+  "step_resolution": 900,
+  "include_control_mode": true,
+  "include_pf1": true,
+  "jobs": [
+    {
+      "name": "p1uhs21_1247__p1udt5257__close__1__5",
+      "opendss_model_file": "tests/data/generic-models/p1uhs21_1247/p1udt5257/PVDeployments/p1uhs21_1247__p1udt5257__close__1__5.dss",
+       "pydss_controllers": [
+         {
+        "controller_type": "PvController",
+        "name": "volt_var_ieee_1547_2018_catB",
+        "targets": null
+         }
+      ],
+      "blocked_by": [],
+      "estimated_run_minutes": null,
+      "project_data": {}
+    },
+    {
+      "name": "p1uhs21_1247__p1udt5257__close__1__15",
+      "opendss_model_file": "tests/data/generic-models/p1uhs21_1247/p1udt5257/PVDeployments/p1uhs21_1247__p1udt5257__close__1__5.dss",
+       "pydss_controllers": [
+         {
+        "controller_type": "PvController",
+        "name": "volt_var_ieee_1547_2018_catB",
+        "targets": null
+         }
+      ],
+      "blocked_by": [],
+      "estimated_run_minutes": null,
+      "project_data": {}
+    }
+  ]
+}

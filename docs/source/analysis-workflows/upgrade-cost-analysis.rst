@@ -1,219 +1,338 @@
 Upgrade Cost Analysis
 =====================
 
-After running the ``transform-model`` command on source models to get standard
-DISCO models we can configure the jobs for customized analysis.
+This chapter introduces the workflow for conducting *upgrade cost analysis* by using DISCO commands
+step by step or DISCO pipeline, where the pipeline chains the individual steps and runs upgrade cost
+analysis seamlessly. In the following two sections we will introduce the two methods separately.
 
-* run single upgrade cost analysis if ``job_order`` field in model is ``null``;
-* or if ``job_order`` specified, run sequential upgrade cost analysis.
+There is a third method that bypasses the normal DISCO processes. This generic workflow allows you
+to run the upgrade simulations on existing, non-standardized OpenDSS models without any transformations.
 
-The following steps show how to conduct upgrade cost analysis using DISCO models 
-- ``upgrade-models`` generated from ``transform-model``.
+The following commands run with default options. If you need any customization, please run ``--help`` on
+the commands to see the available options.
 
-**1. Config Jobs**
+Step-by-Step Workflow
+---------------------
 
-We use DISCO ``disco config`` command to configure jobs. 
-The ``--help`` option shows all available functionality.
+**1. Transform Model**
 
-.. code-block:: bash
-
-    $ disco config upgrade --help
-    Usage: disco config upgrade [OPTIONS] INPUTS
-
-    Create JADE configuration for upgrade cost analysis.
-
-    Options:
-    -d, --cost-database PATH  The unit cost database spreadsheet.  [default:
-                                ~/disco/disco/analysis/generic_cost_database_v1.xlsx]
-    -p, --params-file PATH    Thermal & Voltage upgrade parameters file.
-                                [default: upgrade-params.toml]
-    --show-params             Show the default upgrade parameters in file.
-    -n, --nearest-redirect    Redirect DSS files from nearest lower-order jobs.
-    -s, --sequential-upgrade  Enable sequential upgrades.
-    -c, --config-file PATH    JADE config file to create  [default: config.json]
-    --verbose                 Enable debug logging.
-    --help                    Show this message and exit.
-
-* **disco-database**: The path to the *unit cost database file*. The default is 
-  ``~/disco/disco/analysis/generic_cost_database_v1.xlsx``.
-
-* **show-params**: an option for showing the upgrade parameters from 
-  ``--params-file`` that would be passed to PyDSS for upgrade simulation. 
-  By default, ``--params-file=upgrade-params.toml``, DISCO creates that with 
-  pre-defined parameters if it does not exist.
+Prepare the model with PV deployments by using DISCO model transformation.
 
 .. code-block:: bash
 
-    $ disco config upgrade --show-params .
-    Thermal Upgrade Config
-    ----------
-    Parameter                 Value
-    line_loading_limit      : 1.0
-    dt_loading_limit        : 1.0
-    line_safety_margin      : 1.5
-    xfmr_safety_margin      : 1.5
-    nominal_voltage         : 120
-    max_iterations          : 20
-    create_upgrade_plots    : false
-    tps_to_test             : [0.2, 1.8, 0.1, 0.9]
-    create_upgrades_library : true
-    upgrade_library_path    :
+    $ disco transform-model tests/data/smart-ds/substations upgrade -o upgrade-models
 
-    Voltage Upgrade Config
-    ----------
-    Parameter                     Value
-    target_v                    : 1
-    initial_voltage_upper_limit : 1.0583
-    initial_voltage_lower_limit : 0.9167
-    final_voltage_upper_limit   : 1.05
-    final_voltage_lower_limit   : 0.95
-    nominal_voltage             : 120
-    nominal_pu_voltage          : 1
-    tps_to_test                 : [0.2, 1.3, 0.1, 0.9]
-    create_topology_plots       : false
-    cap_sweep_voltage_gap       : 1
-    reg_control_bands           : [1, 2]
-    reg_v_delta                 : 0.5
-    max_regulators              : 4
-    use_ltc_placement           : true
-    thermal_scenario_name       : ThermalUpgrade
+Load shape profiles for ``Load`` elements are not used by the upgrade module, and so we recommend that
+you remove them from the models in order to speed-up the simulations. Do so with this option:
 
-    Upgrade params from 'upgrade-params.toml'.
+.. code-block:: bash
 
-These parameters would be applied to all upgrade simulation jobs globally. 
-You can cutomize the values by editing this params file manually, then save.
+    $ disco transform-model tests/data/smart-ds/substations upgrade --exclude-load-profile -o upgrade-models
 
-    [1] Thermal Upgrade Config: a dict configuration for thermal upgrade post-processing in PyDSS.
+**2. Create Config**
 
-    .. note::
-
-        If ``create_upgrades_library = true``, then ``upgrade_library_path`` is not 
-        a required filed. However, if ``false``, then ``upgrade_library_path`` 
-        should be set correctly, and the path is a directory which contains your 
-        ``Line_upgrades_library.json``, and ``Transformer_upgrades_library.json``.
-        Make sure these upgrades ``json`` files were created before the configuration.
-
-    [2] Voltage Upgrade Config: a dict configuration for voltage upgrade post-processing in PyDSS.
-
-    .. note::
-
-        In this config, ``Thermal scenario name`` is default to ``ThermalUpgrade``, 
-        your overrides to this would not apply.
-
-* **config-file**: the output config file, by default, it's ``config.json``.
-
-
-After configuring the parameters we are going to create the job configs for
-upgrade cost analysis.
-
-**- Single upgrade cost analysis**
-
-Run ``disco config upgrade`` to generate the job configuration file,
-which will create a ``config.json`` file,
+With the transformed model, create the `config.json` file with submittable jobs.
 
 .. code-block:: bash
 
     $ disco config upgrade upgrade-models
 
+DISCO will use default upgrade parameters if the option ``--params-file`` is not specified.
+If ``--params-file`` is specified, that file must contain all required parameters.
 
-**- Sequential upgrade cost analysis**
+Here are optional parameters that you can customize in the same file:
 
-.. code-block:: bash
+.. code-block::
 
-    $ disco config upgrade --sequential-upgrade upgrade-models 
-    $ disco config upgrade --sequential-upgrade --nearest-redirect upgrade-models
+    [thermal_upgrade_params]
+    parallel_transformers_limit = 4
+    parallel_lines_limit = 4
+    upgrade_iteration_threshold = 5
+    timepoint_multipliers = {}
 
-* **sequential-upgrade**: the value is ``true`` or ``false``, default is ``false``. 
-  If ``true``, it will run upgrades sequentially based on the job order. The job 
-  order is determined by ``job_order`` value in model inputs, please 
-  make sure the values are provided if ``sequential-upgrade`` is 
-  ``true``. Then upgrade simulation runs from lower level of ``job_order`` 
-  to higher level within each feeder.
-
-* **nearest-redirect**, by default ``false``, it means DISCO redirects the 
-  upgrade DSS files from all lower-order jobs. If ``true``, DISCO will redirect 
-  upgrade DSS files only from nearest lower-order jobs. For example, suppose we 
-  have four jobs, the job order are 1, 2, 3, 4. If ``nearest-redirect=false``, 
-  DISCO will redirect upgrade DSS files generated from job-1, job-2 and job-3 
-  to job-4. If ``nearest-redirect=true``, then DISCO will only redirect 
-  upgrade DSS files generated from job-3 to job-4.
-
-
-**2. Submit Jobs**
-
-Now, our ``config.json`` is created. Use the JADE command below to submit jobs.
-
-.. code-block:: bash
-
-    $ jade submit-jobs config.json
+    [voltage_upgrade_params]
+    capacitor_sweep_voltage_gap = 1.0
+    reg_control_bands = [1, 2]
+    reg_v_delta = 0.5
+    max_regulators = 4
+    place_new_regulators = true
+    use_ltc_placement = true
+    timepoint_multipliers = {}
+    capacitor_action_flag = true
+    existing_regulator_sweep_action = true
 
 
-**3. Job Analysis**
+**3. Submit Jobs**
 
-After jobs finish, check the results using ``jade show-results``.
+Submit jobs by using JADE and conduct upgrade cost analysis within each job. 
+This command assumes that you are running on a local system. Please remove the option
+``--local`` if you run on an HPC.
 
 .. code-block:: bash
 
-    $ jade show-results
-    Results from directory: output
-    JADE Version: 0.1.0
-    02/23/2020 16:20:12
+    $ jade submit-jobs config.json --local
 
-    +-----------------------------------------+-------------+----------+--------------------+----------------------------+
-    |                 Job Name                | Return Code |  Status  | Execution Time (s) |      Completion Time       |
-    +-----------------------------------------+-------------+----------+--------------------+----------------------------+
-    | feeder_3__-1__None__None__deployment0.dss |      0      | finished | 9.103492021560669  | 2020-02-23 16:20:02.732357 |
-    |  feeder_3__3__1.15__1.0__deployment1.dss  |      0      | finished |  9.10144591331482  | 2020-02-23 16:20:02.734277 |
-    |  feeder_3__3__1.15__1.0__deployment2.dss  |      0      | finished |  9.09758710861206  | 2020-02-23 16:20:02.734846 |
-    |  feeder_3__3__1.15__1.0__deployment3.dss  |      0      | finished | 10.095330953598022 | 2020-02-23 16:20:03.736296 |
-    |  feeder_3__3__1.15__1.0__deployment4.dss  |      0      | finished | 10.09266185760498  | 2020-02-23 16:20:03.737270 |
-    |  feeder_3__3__1.15__1.0__deployment5.dss  |      0      | finished | 10.08967399597168  | 2020-02-23 16:20:03.738050 |
-    |  feeder_1__-1__None__None__deployment0.dss |      0      | finished | 16.100937843322754 | 2020-02-23 16:20:09.754281 |
-    |   feeder_1__3__1.15__1.0__deployment1.dss  |      0      | finished | 17.099663019180298 | 2020-02-23 16:20:10.757113 |
-    |   feeder_1__3__1.15__1.0__deployment2.dss  |      0      | finished | 18.098870992660522 | 2020-02-23 16:20:11.760401 |
-    |   feeder_1__3__1.15__1.0__deployment3.dss  |      0      | finished |  18.0959370136261  | 2020-02-23 16:20:11.761575 |
-    |   feeder_1__3__1.15__1.0__deployment4.dss  |      0      | finished | 18.091224193572998 | 2020-02-23 16:20:11.762137 |
-    |   feeder_1__3__1.15__1.0__deployment5.dss  |      0      | finished | 18.080937147140503 | 2020-02-23 16:20:11.762635 |
-    +-----------------------------------------+-------------+----------+--------------------+----------------------------+
+This step will generate the directory ``output``, which contains all upgrade results.
 
-    Num successful: 12
-    Num failed: 0
-    Total: 12
+**4. Upgrade Analysis**
 
-    Avg execution time (s): 13.60
-    Min execution time (s): 9.10
-    Max execution time (s): 18.10
+Run post-processing to aggregate upgrade cost analysis results and create analysis CSV tables.
 
-The ``UpgradeCostAnalysis`` results are stored in each job output direcotry, please check ``post-process-results.json``
-and ``post_process`` subfolder for CSV outputs. For example, in job directory ``/data/tests/output/job-outputs/feeder_3__3__1.15__1.0__deployment3.dss``.
-The ``post-process-results.json`` looks like this,
+.. code-block:: bash
 
-.. code-block:: python
+    $ disco-internal make-upgrade-tables output
 
-    {
-        "job": "feeder_3__3__1.15__1.0__deployment3.dss",
-        "post-process": "UpgradeCostAnalysis",
-        "results": {
-            "inputs": [
-                ...
-            ],
-            "outputs": [
-                {
-                    "result_type": "detailed_line_upgrade_costs",
-                    "data": "output/job-outputs/feeder_3__3__1.15__1.0__deployment3.dss/post_process/detailed_line_upgrade_costs.csv"
-                },
-                {
-                    "result_type": "detailed_transformer_costs",
-                    "data": "output/job-outputs/feeder_3__3__1.15__1.0__deployment3.dss/post_process/detailed_transformer_costs.csv"
-                },
-                {
-                    "result_type": "summary_of_upgrade_costs",
-                    "data": "output/job-outputs/feeder_3__3__1.15__1.0__deployment3.dss/post_process/summary_of_upgrade_costs.csv"
-                }
-            ]
-        }
-    }
+If everything succeeds, it produces aggregated json file: ``upgrade_summary.json``
 
-The ``post_process`` subfolder contains the CSV files as shown in the JSON ``outputs`` section above.
 
-Done! You've already run the *upgrade cost analysis* successfully.
+Pipeline Workflow
+-----------------
+
+**1. Create Template**
+
+Create a DISCO pipeline template file. By default, the output file is ``pipeline-template.toml``.
+
+.. code-block:: bash
+
+    $ disco create-pipeline template --task-name UpgradeTask --simulation-type upgrade --upgrade-analysis ~/Workspace/disco/tests/data/smart-ds/substations
+
+Here, we need to enable the ``--upgrade-analysis`` option.
+
+**2. Config Pipeline**
+
+Update the pipeline template file for customization if needed. Then create the pipeline config file
+``pipeline.json`` with this command.
+
+.. code-block:: bash
+
+    $ disco create-pipeline config pipeline-template.toml
+
+
+**3. Submit Pipeline**
+
+Submit the pipeline with JADE
+
+.. code-block:: bash
+
+    $ jade pipeline submit pipeline.json
+
+If everything succeeds, it produces same aggregated upgrade tables in ``output-stage1``.
+
+Generic Workflow
+----------------
+Let's assume that you have multiple networks defined in OpenDSS model files where each network has
+its own ``Master.dss``.
+
+- ``./custom_models/model1/Master.dss``
+- ``./custom_models/model2/Master.dss``
+
+Single Execution Mode
+~~~~~~~~~~~~~~~~~~~~~
+1. Configure the simulation parameters and in an input JSON file called ``upgrades.json``.
+Refer to this
+`file <https://github.com/NREL/disco/blob/main/tests/data/test_upgrade_cost_analysis_generic.json>`_
+as an example. The JSON schemas are defined in :ref:`upgrade_cost_analysis_schemas`.
+
+Each job represents one OpenDSS network and one upgrade simulation.
+
+2. Run the simulation.
+
+.. code-block:: bash
+
+   $ disco upgrade-cost-analysis run upgrades.json
+
+Refer to ``disco upgrade-cost-analysis run --help`` for additional options.
+
+Parallel Execution Mode through JADE
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1. Configure ``upgrades.json`` as described in the previous step.
+
+2. Create the JADE configuration file.
+
+.. code-block:: bash
+
+   $ disco upgrade-cost-analysis config upgrades.json
+
+3. Modify the generated ``config.json`` if necessary.
+
+4. Run the jobs through JADE. This will aggregate results across all jobs.
+   This example assumes local-mode execution.
+
+.. code-block:: bash
+
+   jade submit-jobs --local config.json
+
+
+Technical Details
+-----------------
+The automated upgrades module consists of three components as shown in the figure: it performs traditional infrastructure upgrades to resolve both thermal and voltage violations, 
+and then computes the costs associated with each of those upgrades.
+
+.. image:: ../images/upgrades.png
+   :width: 250
+
+A high level overview of thermal and voltage upgrades considerations is shown below:
+
+.. image:: ../images/thermal_upgrades.png
+   :width: 250
+
+.. image:: ../images/voltage_upgrades.png
+   :width: 250
+
+
+
+**1. Thermal Upgrades Workflow**
+
+In this sub-module, the thermal equipment (lines and transformers) violations are identified, and upgrades are determined as per the flowchart given below.
+
+.. image:: ../images/thermal_workflow.png
+   :height: 650
+
+
+The technical equipment database is a catalog of available lines and transformers and can optionally be provided as an input. 
+All the equipment in this database will be considered as available options while determining thermal upgrades. 
+If this file is not provided, a technical database will be automatically generated from the given feeder model. 
+This would provide the thermal upgrades module with a limited set of upgrade options.
+Refer to this `sample technical equipment catalog
+<https://github.com/NREL/disco/blob/main/disco/extensions/upgrade_simulation/upgrades/technical_catalog.json>`_
+for more information.
+
+
+For an overloaded equipment, if a higher rated equipment of similar configuration is available in the technical catalog, that is considered as an upgrade and is chosen.
+Else, similar configuration equipment are added in parallel to resolve the observed violations. 
+Sometimes, extreme thermal equipment overloaded can also cause voltage issues. So, it can be seen that thermal upgrades also resolve some undervoltage violations.
+
+
+
+**2. Voltage Upgrades Workflow**
+
+In this sub-module, the voltage violations present in the feeder are identified, and are resolved as shown in flowchart below:
+
+.. image:: ../images/voltage_workflow.png
+   :width: 250
+
+
+*a.  Existing Capacitors:*
+
+* If capacitors are present
+
+
+    * If capacitor control is present for a capacitor: correct capacitor control parameters i.e. PT ratio is checked and corrected (if needed)
+    * If capacitor control is present, it is changed to voltage-controlled (if it is of any other kind) 
+    * If capacitor control is not present, voltage-controlled capacitor control is added and default control settings are applied to any newly added controller
+
+* A settings sweep is performed through all capacitor settings, and setting with least number of violations is chosen. If initial settings are best, no changes are made. In the capacitor settings sweep method, same settings are applied to all capacitors.
+
+
+*b.  Existing Regulators:*
+
+* If voltage regulators are present, regulator control parameters (like ptratio) are corrected (if needed), including for substation LTC.
+
+
+* A settings sweep is performed for existing regulator control devices (excluding substation LTC). 
+    * In this settings sweep method, same settings are applied to all regulators
+
+
+*c. Add new Regulator:*
+
+* A new regulator is added by clustering nearby buses with violations and testing regulator placement (one at a time) on each of the common upstream nodes. The placement option with least number of violations is chosen. 
+
+
+
+**3. Upgrades Cost computation**
+A unit cost database is used to determine the total costs associated thermal and voltage upgrades determined through the workflows described above.
+Sample input cost database can be found `here <https://github.com/NREL/disco/blob/main/disco/extensions/upgrade_simulation/upgrades/Generic_DISCO_cost_database_v2.xlsx>`_
+
+
+
+Input parameters
+~~~~~~~~~~~~~~~~
+
+In order to run this simulation, the following inputs are needed. For required fields, example inputs are provided, and for optional parameters, default inputs are shown.
+
+
+*1. Thermal Upgrade Inputs*
+
+The input parameters for thermal upgrades are shown in table below. For required fields, example inputs are provided, and for optional parameters, default inputs are shown.
+
+.. csv-table:: Thermal Upgrade Inputs
+   :file: ../images/thermal_inputs.csv
+   :header-rows: 1
+
+
+*2. Voltage Upgrade Inputs*
+
+The input parameters for voltage upgrades are shown in table below. 
+
+.. csv-table:: Voltage Upgrade Inputs
+   :file: ../images/voltage_inputs.csv
+   :header-rows: 1
+
+
+*3. Simulation Input Parameters*
+
+In addition to the thermal and voltage input parameters, there are a few other simulation parameters which need to be provided.
+
+.. csv-table:: Simulation input parameters
+   :file: ../images/simulation_params.csv
+   :header-rows: 1
+
+
+Outputs
+~~~~~~~
+
+*1. Costs*
+
+.. csv-table:: Output costs
+   :file: ../images/output_costs.csv
+   :header-rows: 1
+
+
+
+
+*2. Summary*
+
+.. csv-table:: Output summary
+   :file: ../images/output_summary.csv
+   :header-rows: 1
+
+
+Example
+~~~~~~~
+
+For a feeder with thermal and voltage violations, the following figures show the violations in a feeder before and after upgrades.
+
+.. image:: ../images/feeder.png
+   :width: 400
+
+
+*1. Thermal Upgrades*
+
+The following figures show the thermal violations in a feeder before and after thermal upgrades:
+
+.. image:: ../images/thermalbefore_thermalupgrades.png
+   :width: 400
+
+
+.. image:: ../images/thermalafter_thermalupgrades.png
+   :width: 400
+
+The following figures show the voltage violations in a feeder before and after thermal upgrades:
+
+.. image:: ../images/voltagebefore_thermalupgrades.png
+   :width: 400
+
+
+.. image:: ../images/voltageafter_thermalupgrades.png
+   :width: 400
+
+
+*2. Voltage Upgrades*
+
+The following figures show the voltage violations in a feeder before and after voltage upgrades:
+
+.. image:: ../images/voltagebefore_voltageupgrades.png
+   :width: 400
+
+.. image:: ../images/voltageafter_voltageupgrades.png
+   :width: 400

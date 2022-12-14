@@ -58,7 +58,7 @@ def generate_analysis(analysis_type, config_file, list_defaults,
                       overrides, output_file, verbose):
     """Generate Analysis configuration for job post-processing."""
     level = logging.DEBUG if verbose else logging.INFO
-    setup_logging("generate_analysis", None, console_level=level)
+    setup_logging("generate_analysis", None, console_level=level, packages=["disco"])
 
     if config_file is None:
         config = {}

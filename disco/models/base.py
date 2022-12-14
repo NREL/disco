@@ -128,6 +128,11 @@ class PyDSSControllerModel(DiscoBaseModel):
 class OpenDssDeploymentModel(DiscoBaseModel):
     """PV Deployment on Feeder"""
 
+    is_standalone: bool = Field(
+        title="is_standalone",
+        description="Set to True if the models are not to be modified by DISCO.",
+        default=False,
+    )
     deployment_file: str = Field(
         title="deployment_file",
         description="The path to the PV deployment file.",

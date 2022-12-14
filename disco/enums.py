@@ -119,7 +119,14 @@ class AnalysisType(enum.Enum):
     IMPACT_ANALYSIS = "impact-analysis"
     HOSTING_CAPACITY = "hosting-capacity"
     COST_BENEFIT = "cost-benefit"
+    UPGRADE_ANALYSIS = "upgrade-analysis"
     NONE = "none"
+
+
+class LoadMultiplierType(enum.Enum):
+    """Multiplier types"""
+    ORIGINAL = "original"
+    UNIFORM = "uniform"
 
 
 ANALYSIS_MODEL_TYPES = [t.value for t in AnalysisModelType]

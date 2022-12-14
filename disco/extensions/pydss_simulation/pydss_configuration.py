@@ -3,13 +3,15 @@
 import logging
 from collections import defaultdict
 
-from jade.exceptions import InvalidParameter
+from jade.exceptions import InvalidParameter, InvalidConfiguration
 from jade.extensions.generic_command.generic_command_parameters import GenericCommandParameters
 from jade.utils.utils import load_data
 
+from PyDSS.common import ControllerType
+from PyDSS.reports.pv_reports import CONTROL_MODE_SCENARIO
+
 from disco.distribution.deployment_parameters import DeploymentParameters
 from disco.enums import SimulationHierarchy, SimulationType
-from disco.exceptions import PyDssJobException
 from disco.pydss.pydss_configuration_base import PyDssConfigurationBase
 from disco.pydss.common import ConfigType
 from disco.extensions.pydss_simulation.pydss_inputs import PyDssInputs
@@ -92,13 +94,16 @@ class PyDssConfiguration(PyDssConfigurationBase):
 
     @classmethod
     def auto_config(cls, inputs, simulation_config=None, scenarios=None,
-                    order_by_penetration=False, estimated_run_minutes=None, **kwargs):
+                    order_by_penetration=False, estimated_run_minutes=None,
+                    dc_ac_ratio=None, **kwargs):
         """Create a configuration from all available inputs."""
         if isinstance(inputs, str):
             inputs = PyDssInputs(inputs)
         config = cls(**kwargs)
         for job in inputs.iter_jobs():
             job.estimated_run_minutes = estimated_run_minutes
+            if dc_ac_ratio is not None:
+                job.model.deployment.dc_ac_ratio = dc_ac_ratio
             config.add_job(job)
 
         if simulation_config is None:
@@ -111,7 +116,8 @@ class PyDssConfiguration(PyDssConfigurationBase):
 
         if order_by_penetration:
             config.apply_job_order_by_penetration_level()
-        
+
+        config.check_job_consistency()
         return config
 
     def apply_job_order_by_penetration_level(self):
@@ -138,6 +144,22 @@ class PyDssConfiguration(PyDssConfigurationBase):
                 # Blocked by the previous job.
                 job.add_blocking_job(jobs[i].name)
 
+    def check_job_consistency(self):
+        """Check all jobs for consistency.
+        
+        Raises
+        ------
+        InvalidConfiguration
+            Raised if a rule is violated.
+
+        """
+        config_has_pydss_controllers = None
+        for job in self.iter_pydss_simulation_jobs(exclude_base_case=True):
+            if config_has_pydss_controllers is None:
+                config_has_pydss_controllers = job.has_pydss_controllers()
+            elif job.has_pydss_controllers() != config_has_pydss_controllers:
+                raise InvalidParameter("All jobs must consistently define pydss_controllers.")
+        
     def create_from_result(self, job, output_dir):
         cls = self.job_execution_class(job.extension)
         return cls.create(self.pydss_inputs, job, output=output_dir)
@@ -173,6 +195,11 @@ class PyDssConfiguration(PyDssConfigurationBase):
                 return hierarchy
 
         raise Exception("Failed to identify SimulationHierarchy")
+
+    def has_pydss_controllers(self):
+        """Return True if the jobs have pydss controllers defined."""
+        job = next(iter(self.iter_pydss_simulation_jobs(exclude_base_case=True)))
+        return job.has_pydss_controllers()
 
     def iter_feeder_jobs(self, feeder):
         """Return jobs for the given feeder in the config.
@@ -231,10 +258,23 @@ class PyDssConfiguration(PyDssConfigurationBase):
         -------
         DeploymentParameters
 
-        Raises
-        ------
-        PyDssJobException
-
         """
         # TODO: callers should just call this.
         return self.get_job(job_name)
+
+    def update_volt_var_curve(self, volt_var_curve: str):
+        """Update the volt-var curve for all jobs configured with PV controls."""
+        count = 0
+        for job in self.iter_pydss_simulation_jobs(exclude_base_case=True):
+            pydss_controllers = job.model.deployment.pydss_controllers
+            if pydss_controllers is not None:
+                if isinstance(pydss_controllers, list):
+                    for controller in pydss_controllers:
+                        if controller.controller_type == ControllerType.PV_CONTROLLER:
+                            controller.name = volt_var_curve
+                            count += 1
+                elif pydss_controllers.controller_type == ControllerType.PV_CONTROLLER:
+                    pydss_controllers.name = volt_var_curve
+                    count += 1
+
+        logger.info("Updated %s jobs with volt-var curve %s", count, volt_var_curve)

@@ -13,7 +13,6 @@ POST_PROCESS_OUTPUT_FILE = "post-process.toml"
 PRESCREEN_JOBS = "disco prescreen-pv-penetration-levels"
 SUBMIT_JOBS = "jade submit-jobs --local"
 TRANSFORM_MODEL = "disco transform-model"
-UPGRADE_PARAMS = "test-upgrade-params.toml"
 TRANSFORM_MODEL_LOG = "transform_model.log"
 POSTPROCESS_RESULTS = [
     "feeder_head_table.csv",
@@ -22,3 +21,13 @@ POSTPROCESS_RESULTS = [
     "thermal_metrics_table.csv",
     "voltage_metrics_table.csv"
 ]
+UPGRADE_SUMMARY = "upgrade_summary.json"
+
+
+def find_non_base_case_job(jobs):
+    """Return a job that is not a base case."""
+    for job in jobs:
+        if job.model.base_case is not None:
+            assert not job.model.is_base_case
+            return job
+    raise Exception("Did not find a non-base-case job")

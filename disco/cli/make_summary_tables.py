@@ -101,9 +101,9 @@ def parse_job_results(job, output_path):
             name=job.name,
             substation=deployment.substation,
             feeder=deployment.feeder,
-            placement=deployment.project_data["placement"],
-            sample=deployment.project_data["sample"],
-            penetration_level=deployment.project_data["penetration_level"],
+            placement=deployment.project_data.get("placement", "NA"),
+            sample=deployment.project_data.get("sample", 0.0),
+            penetration_level=deployment.project_data.get("penetration_level", 0.0),
         )
     results = PyDssResults(job_path)
     metadata_table = get_metadata_table(results, job_info)
@@ -164,10 +164,19 @@ def get_metadata_table(results: PyDssResults, job_info: JobInfo):
     return metadata_table
 
 
+def _read_file(results, path):
+    try:
+        return json.loads(results.read_file(path))
+    except KeyError:
+        return []
+
+
 def get_feeder_losses(results: PyDssResults, job_info: JobInfo):
     """Return feeder losses for all scenarios."""
     feeder_losses_table = []
-    data = json.loads(results.read_file("Reports/feeder_losses.json"))
+    data = _read_file(results, "Reports/feeder_losses.json")
+    if not data:
+        return feeder_losses_table
     for scenario, values in data["scenarios"].items():
         row = job_info._asdict()
         add_scenario(row, scenario)
@@ -191,7 +200,10 @@ def get_feeder_head_info(results: PyDssResults, job_info: JobInfo):
 def get_thermal_metrics(results: PyDssResults, job_info: JobInfo):
     """Return the thermal metrics for all scenarios."""
     thermal_metrics_table = []
-    data = json.loads(results.read_file("Reports/thermal_metrics.json"))
+    data = _read_file(results, "Reports/thermal_metrics.json")
+    if not data:
+        return thermal_metrics_table
+    
     for scenario, metrics in create_summary_from_dict(data).items():
         row = job_info._asdict()
         add_scenario(row, scenario)
@@ -204,7 +216,10 @@ def get_thermal_metrics(results: PyDssResults, job_info: JobInfo):
 def get_voltage_metrics(results: PyDssResults, job_info: JobInfo):
     """Return the voltage metrics for all scenarios."""
     voltage_metrics_table = []
-    data = json.loads(results.read_file("Reports/voltage_metrics.json"))
+    data = _read_file(results, "Reports/voltage_metrics.json")
+    if not data:
+        return voltage_metrics_table
+    
     for scenario in data["scenarios"]:
         for node_type in data["scenarios"][scenario]:
             row = job_info._asdict()
@@ -249,7 +264,9 @@ def compute_total_load_kw(scenario: PyDssScenarioResults):
 def serialize_table(table, filename):
     """Serialize a list of dictionaries to a CSV file."""
     with open(filename, "w") as f:
-        assert table, filename
+        if not table:
+            logger.info("No data to write to %s", filename)
+            return
         fields = table[0].keys()
         writer = csv.DictWriter(f, fieldnames=fields)
         writer.writeheader()
@@ -265,6 +282,6 @@ def serialize_table(table, filename):
 def make_summary_tables(output_dir, verbose):
     """Make hosting capacity summary tables for all jobs in a batch."""
     level = logging.DEBUG if verbose else logging.INFO
-    setup_logging(__name__, None, console_level=level)
+    setup_logging(__name__, None, console_level=level, packages=["disco"])
     output_dir = ensure_jade_pipeline_output_dir(output_dir)
     parse_batch_results(output_dir)

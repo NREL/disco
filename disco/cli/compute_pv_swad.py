@@ -89,8 +89,8 @@ def compute_weighted_average_pv_distance(load_info, option="size"):
 def collect_weighted_average_pv_distance(filename: Path, option):
     orig = os.getcwd()
     try:
-        reply = dss.utils.run_command(f"compile {filename}")
-        if reply != "":
+        reply = dss.Text.Command(f"compile '{filename}'")
+        if reply is not None:
             logger.error("Failed to compile OpenDSS model %s: %s", filename, reply)
             sys.exit(1)
 
@@ -146,7 +146,7 @@ def collect_weighted_average_pv_distances(path: Path, option):
 def compute_pv_swad(path, option, verbose):
     """Compute weighted average PV distance for each model. Requires an EnergyMeter."""
     level = logging.DEBUG if verbose else logging.INFO
-    setup_logging("swad", None, console_level=level)
+    setup_logging("swad", None, console_level=level, packages=["disco"])
     results = collect_weighted_average_pv_distances(path, option)
     if results:
         output_file = path / "weighted_average_pv_distances.csv"

@@ -11,12 +11,7 @@ import click
 from jade.exceptions import InvalidParameter
 from disco.cli.common import handle_existing_dir
 from disco.models.snapshot_impact_analysis_model import SnapshotImpactAnalysisModel
-from disco.models.upgrade_cost_analysis_model import UpgradeCostAnalysisModel
-from disco.sources.base import (
-    BaseOpenDssModel,
-    DEFAULT_SNAPSHOT_IMPACT_ANALYSIS_PARAMS,
-    DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS
-)
+from disco.sources.base import BaseOpenDssModel, DEFAULT_SNAPSHOT_IMPACT_ANALYSIS_PARAMS
 from .factory import read_config_data
 
 
@@ -62,34 +57,11 @@ def snapshot(ctx, force, output):
     print(f"Transformed data from {input_path} to {output} for Snapshot Analysis.")
 
 
-@click.command()
-@common_options
-@click.option(
-    "-o",
-    "--output",
-    default=DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS["output_dir"],
-    show_default=True,
-    help="output directory"
-)
-@click.pass_context
-def upgrade(ctx, force, output):
-    """Transform input data for an upgrade cost analysis simulation."""
-    input_path = ctx.parent.params["input_path"]
-    handle_existing_dir(output, force)
-    GemModel.transform(
-        input_file=input_path,
-        output_path=output,
-        simulation_model=UpgradeCostAnalysisModel,
-    )
-    print(f"Transformed data from {input_path} to {output} for UpgradeCostAnalysis.")
-
-
 class GemModel(BaseOpenDssModel):
     """GEM Feeder Model Inputs Class"""
 
     TRANSFORM_SUBCOMMANDS = {
-        "snapshot": snapshot,
-        "upgrade": upgrade
+        "snapshot": snapshot
     }
 
     @property

@@ -12,7 +12,6 @@ from jade.utils.utils import modify_file, interpret_datetime
 from PyDSS.common import DATE_FORMAT
 
 from disco.enums import SimulationType
-from disco.models.upgrade_cost_analysis_model import UpgradeCostAnalysisModel
 from disco.pydss.common import ConfigType
 from disco.pydss.pydss_simulation_base import PyDssSimulationBase
 
@@ -95,14 +94,6 @@ class PyDssSimulation(PyDssSimulationBase):
         modify_file(deployment_filename, self._recalculate_kva)
         logger.info("Modified kVA in %s", deployment_filename)
 
-        if isinstance(self._model, UpgradeCostAnalysisModel):
-            for upgrade_path in self._model.upgrade_paths:
-                self._redirect_upgrade_path(deployment_filename, upgrade_path)
-                logger.info(
-                    "Redirect upgrade path '%s' in deployment '%s'",
-                    upgrade_path, deployment_filename
-                )
-
         modify_file(deployment_filename, self.fix_redirects, Path(deployment_filename))
         logger.info("Modified redirect path in %s", deployment_filename)
 
@@ -144,7 +135,7 @@ class PyDssSimulation(PyDssSimulationBase):
             if len(val_pair) == 2:
                 if val_pair[0].lower() == "pmpp":
                     pmpp = float(val_pair[1])
-                elif val_pair[0].lower() == "pctpmpp":
+                elif val_pair[0].lower() == "%pmpp":
                     old_pct_pmpp = float(val_pair[1])
                     pct_pmpp_index = i
                 elif val_pair[0].lower() == "kva":
@@ -171,7 +162,7 @@ class PyDssSimulation(PyDssSimulationBase):
 
         if old_pct_pmpp is not None or self._add_pct_pmpp:
             pct_pmpp = self._irradiance_scaling_factor / dc_ac_ratio
-            token = f"pctPmpp={pct_pmpp}"
+            token = f"%Pmpp={pct_pmpp}"
             if pct_pmpp_index is None:
                 values.append(token)
                 logger.debug("Added pct_pmpp = %s", pct_pmpp)
@@ -209,31 +200,3 @@ class PyDssSimulation(PyDssSimulationBase):
             new_path /= parent
         new_line = match.group(1) + str(new_path)
         return new_line
-
-    @staticmethod
-    def _redirect_upgrade_path(deployment_file, upgrade_path):
-        """Redirect upgrade paths in deployment file."""
-        # This could be improved by making this path relative.
-        redirect_line = f"Redirect {os.path.abspath(upgrade_path)}"
-        redirected = False
-        
-        # if Solve in file, the redirect upgrade paths before Solve.
-        # TODO: create extra newlines in file, need to fix.
-        with fileinput.input(files=[deployment_file], inplace=True) as f:
-            for line in f:
-                line = line.strip()
-                if line == redirect_line:
-                    print(line)
-                    redirected = True
-                elif line == "Solve" and not redirected:
-                    print(redirect_line)
-                    print("\nSolve\n")
-                    redirected = True
-                else:
-                    print(line)
-
-        # if Solve not in file, append to the end
-        if not redirected:
-            with open(deployment_file, "a") as f:
-                f.write(redirect_line)
-                f.write("\n")

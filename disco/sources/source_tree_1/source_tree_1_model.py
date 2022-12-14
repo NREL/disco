@@ -25,8 +25,8 @@ from disco.sources.base import (
     SOURCE_CONFIGURATION_FILENAME,
     DEFAULT_SNAPSHOT_IMPACT_ANALYSIS_PARAMS,
     DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS,
-    DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS,
-    DEFAULT_PV_DEPLOYMENTS_DIRNAME
+    DEFAULT_PV_DEPLOYMENTS_DIRNAME,
+    DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS
 )
 from .source_tree_1_model_inputs import SourceTree1ModelInputs
 
@@ -107,6 +107,14 @@ COMMON_OPTIONS = (
         show_default=True,
     ),
     click.option(
+        "-x",
+        "--strip-load-shape-profiles",
+        is_flag=True,
+        default=False,
+        show_default=True,
+        help="Strip load shape profiles from DSS models"
+    ),
+    click.option(
         "-P",
         "--pv-deployments-dirname",
         help="The output directory name of PV deployments in feeder",
@@ -158,6 +166,7 @@ def snapshot(
     penetration_levels,
     master_file,
     copy_load_shape_data_files,
+    strip_load_shape_profiles,
     pv_deployments_dirname,
     force,
     start,
@@ -187,6 +196,7 @@ def snapshot(
         penetration_levels=penetration_levels,
         master_file=master_file,
         copy_load_shape_data_files=copy_load_shape_data_files,
+        strip_load_shape_profiles=strip_load_shape_profiles,
         pv_deployments_dirname=pv_deployments_dirname
     )
     print(f"Transformed data from {input_path} to {output} for Snapshot Analysis.")
@@ -234,6 +244,7 @@ def time_series(
     penetration_levels,
     master_file,
     copy_load_shape_data_files,
+    strip_load_shape_profiles,
     pv_deployments_dirname,
     force,
     start,
@@ -265,6 +276,7 @@ def time_series(
         master_file=master_file,
         hierarchy=hierarchy,
         copy_load_shape_data_files=copy_load_shape_data_files,
+        strip_load_shape_profiles=strip_load_shape_profiles,
         pv_deployments_dirname=pv_deployments_dirname
     )
     print(
@@ -299,6 +311,7 @@ def upgrade(
     penetration_levels,
     master_file,
     copy_load_shape_data_files,
+    strip_load_shape_profiles,
     pv_deployments_dirname,
     force,
     start,
@@ -307,8 +320,10 @@ def upgrade(
     """Transform input data for an automated upgrade simulation"""
     if output is None:
         output = f"upgrade-{hierarchy.value}-models"
+    
     input_path = ctx.parent.params["input_path"]
     handle_existing_dir(output, force)
+
     simulation_params = {
         "start_time": start,
         "end_time": start,
@@ -328,6 +343,7 @@ def upgrade(
         penetration_levels=penetration_levels,
         master_file=master_file,
         copy_load_shape_data_files=copy_load_shape_data_files,
+        strip_load_shape_profiles=strip_load_shape_profiles,
         pv_deployments_dirname=pv_deployments_dirname
     )
     print(f"Transformed data from {input_path} to {output} for UpgradeCostAnalysis.")
@@ -340,7 +356,7 @@ class SourceTree1Model(BaseOpenDssModel):
     TRANSFORM_SUBCOMMANDS = {
         "snapshot": snapshot,
         "time-series": time_series,
-        "upgrade": upgrade
+        "upgrade": upgrade,
     }
 
     def __init__(self, data):
@@ -451,6 +467,7 @@ class SourceTree1Model(BaseOpenDssModel):
         penetration_levels=("all",),
         master_file="Master.dss",
         copy_load_shape_data_files=False,
+        strip_load_shape_profiles=False,
         pv_deployments_dirname=DEFAULT_PV_DEPLOYMENTS_DIRNAME
     ):
         inputs = SourceTree1ModelInputs(input_path, pv_deployments_dirname)
@@ -483,6 +500,7 @@ class SourceTree1Model(BaseOpenDssModel):
             penetration_levels,
             master_file,
             copy_load_shape_data_files,
+            strip_load_shape_profiles
         )
 
     @classmethod
@@ -500,6 +518,7 @@ class SourceTree1Model(BaseOpenDssModel):
         penetration_levels,
         master_file,
         copy_load_shape_data_files,
+        strip_load_shape_profiles
     ):
         config = []
         base_cases = set()
@@ -586,6 +605,7 @@ class SourceTree1Model(BaseOpenDssModel):
                             pv_profile=pv_profiles,
                             hierarchy=SimulationHierarchy.FEEDER,
                             copy_load_shape_data_files=copy_load_shape_data_files,
+                            strip_load_shape_profiles=strip_load_shape_profiles
                         )
                         out_deployment.project_data["placement"] = placement
                         out_deployment.project_data["sample"] = sample
@@ -621,6 +641,7 @@ class SourceTree1Model(BaseOpenDssModel):
             penetration_levels,
             master_file,
             copy_load_shape_data_files,
+            strip_load_shape_profiles
     ):
         config = []
         deployment_files_by_key = defaultdict(list)
@@ -707,6 +728,7 @@ class SourceTree1Model(BaseOpenDssModel):
                             pv_profile=pv_profiles,
                             hierarchy=SimulationHierarchy.SUBSTATION,
                             copy_load_shape_data_files=copy_load_shape_data_files,
+                            strip_load_shape_profiles=strip_load_shape_profiles
                         )
                         out_deployment.project_data["placement"] = placement
                         out_deployment.project_data["sample"] = sample
@@ -792,13 +814,16 @@ def get_pydss_controller_and_profiles(pv_configs):
     pv_profiles = {}
     pydss_controller = None
     for pv_config in pv_configs:
-        ctrl = (pv_config["pydss_controller"]["controller_type"],
-                pv_config["pydss_controller"]["name"])
-        if ctrl[1] != "pf1" and ctrl not in pydss_controllers:
-            pydss_controller = PyDSSControllerModel.validate(
-                pv_config["pydss_controller"]
-            )
-            pydss_controllers.add(ctrl)
+        if pv_config["pydss_controller"] is None:
+            ctrl = None
+        else:
+            ctrl = (pv_config["pydss_controller"]["controller_type"],
+                    pv_config["pydss_controller"]["name"])
+            if ctrl[1] != "pf1" and ctrl not in pydss_controllers:
+                pydss_controller = PyDSSControllerModel.validate(
+                    pv_config["pydss_controller"]
+                )
+                pydss_controllers.add(ctrl)
         pv_profiles[pv_config["name"]] = pv_config["pv_profile"]
 
     if len(pydss_controllers) > 1:

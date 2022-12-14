@@ -3,9 +3,74 @@ Data Sources
 ************
 
 DISCO currently supports OpenDSS models stored in several source formats,
-namely GEM, EPRI, SourceTree1, SourceTree2.
+namely Generic Models, SourceTree1, SourceTree2, GEM, EPRI.
 
-The SMART-DS dataset is an open-source dataset which is in the SourceTree1 format.
+The following sections show how to
+prepare the source feeder models which are used as *input paths* for
+transforming models with a given analysis type.
+
+.. _GenericPowerFlowModels:
+
+Generic Power Flow Models
+=========================
+You can use this format to run power-flow simulations on your own OpenDSS models.
+Unlike simulations run in the other formats, DISCO will not make any dynamic changes to the
+models (as it does for DC-AC ratio for PVSystems).
+
+Refer to these input JSON files as examples:
+
+- `Snapshot <https://github.com/NREL/disco/blob/main/tests/data/snapshot_generic.json>`_
+- `Time Series <https://github.com/NREL/disco/blob/main/tests/data/time_series_generic.json>`_
+
+This `test file <https://github.com/NREL/disco/blob/main/tests/integration/test_generic_power_flow.py>`_
+demonstrates the workflow.
+
+.. note:: If you enable external controls for PVSystems through PyDSS then the file specified as
+    ``opendss_model_file`` must contain the PVSystem definitions.
+
+The inputs must conform to the JSON schemas below.
+
+PowerFlowSnapshotSimulationModel
+----------------------------------
+.. literalinclude:: ../build/json_schemas/PowerFlowSnapshotSimulationModel.json
+    :language: json
+
+PowerFlowTimeSeriesSimulationModel
+----------------------------------
+.. literalinclude:: ../build/json_schemas/PowerFlowTimeSeriesSimulationModel.json
+    :language: json
+
+.. _SourceTree1Model:
+
+SourceTree1 Model
+=================
+
+This format requires the following directory structure:
+
+.. code-block:: bash
+
+  source_model_directory
+  ├── format.toml
+  ├── <substation>
+  │   ├── *.dss
+  │   └── <substation>--<feeder>
+  │       ├── *.dss
+  │       └── hc_pv_deployments
+  │           ├── feeder_summary.csv
+  │           └── <placement>
+  │               ├── <sample>
+  │               │   ├── <penetration-level>
+  │               │   │   └── PVSystems.dss
+  │               │   │   └── PVSystems.dss
+  │               │   └── pv_config.json
+  └── profiles
+      └── <profile>.csv
+
+Where in *format.toml*, it defines ``type = "SourceTree1Model"``.
+To see how to generate the PV deployments data in ``hc_pv_deployments`` directory, please
+refer to :ref:`SourceTree1PVDeployments`.
+
+The `SMART-DS <https://www.nrel.gov/grid/smart-ds.html>`_ dataset is an open-source dataset which is in the SourceTree1 format.
 This dataset is prepared for performing DISCO hosting capacity analysis after some pre-processing which is described in the link below:
 
 .. toctree::
@@ -13,9 +78,34 @@ This dataset is prepared for performing DISCO hosting capacity analysis after so
 
   data-sources/smart-ds-model-preparation
 
-The following sections show how to
-prepare the source feeder models which are used as *input paths* for
-transforming models with a given analysis type.
+
+.. _SourceTree2Model:
+
+SourceTree2 Model
+=================
+
+This format requires the following directory structure:
+
+.. code-block:: bash
+
+  source_model_directory
+  ├── inputs
+  │   ├── <feeder>
+  │   │   ├── LoadShapes
+  │   │   │   ├── <profile>.csv
+  │   │   ├── OpenDSS
+  │   │   │   ├── *.dss
+  │   │   ├── PVDeployments
+  │   │   │   └── new
+  │   │   │       ├── <dc-ac-ratio>
+  │   │   │       │   ├── <scale>
+  │   │   │       │   │   ├── <placement>
+  │   │   │       │   │   │   ├── <sample>
+  │   │   │       │   │   │   │   ├── PV_Gen_<sample>_<penetration-level>.txt
+  ├── format.toml
+
+Where in *format.toml*, it defines ``type = "SourceTree2Model"``.
+
 
 .. _GEM_JSON_Schema:
 
@@ -72,17 +162,7 @@ Here is an example JSON file:
         "name": "MyFeeder",
         "opendss_location": "/opendss/location/path/",
         "start_time": "2010-08-11_15:00:00.000",
-        "step_resolution": 900,
-        "thermal_upgrade_overrides": {
-          "line_loading_limit": 1.5,
-          "dt_loading_limit": 1.5
-        },
-        "voltage_upgrade_overrides": {
-          "initial_voltage_upper_limit": 1.058333,
-          "initial_voltage_lower_limit": 0.9167,
-          "final_voltage_upper_limit": 1.05,
-          "final_voltage_lower_limit": 0.95
-        }
+        "step_resolution": 900
       },
     ]
   }
@@ -110,62 +190,3 @@ this command:
 .. code-block:: bash
 
   $ disco download-source epri J1 K1 M1 --directory ./epri-feeders
-
-
-.. _SourceTree1Model:
-
-SourceTree1 Model
-=================
-
-This format requires the following directory structure:
-
-.. code-block:: bash
-
-  source_model_directory
-  ├── format.toml
-  ├── <substation>
-  │   ├── *.dss
-  │   └── <substation>--<feeder>
-  │       ├── *.dss
-  │       └── hc_pv_deployments
-  │           ├── feeder_summary.csv
-  │           └── <placement>
-  │               ├── <sample>
-  │               │   ├── <penetration-level>
-  │               │   │   └── PVSystems.dss
-  │               │   │   └── PVSystems.dss
-  │               │   └── pv_config.json
-  └── profiles
-      └── <profile>.csv
-
-Where in *format.toml*, it defines ``type = "SourceTree1Model"``.
-To see how to generate the PV deployments data in ``hc_pv_deployments`` directory, please
-refer to :ref:`SourceTree1PVDeployments`.
-
-
-.. _SourceTree2Model:
-
-SourceTree2 Model
-=================
-
-This format requires the following directory structure:
-
-.. code-block:: bash
-
-  source_model_directory
-  ├── inputs
-  │   ├── <feeder>
-  │   │   ├── LoadShapes
-  │   │   │   ├── <profile>.csv
-  │   │   ├── OpenDSS
-  │   │   │   ├── *.dss
-  │   │   ├── PVDeployments
-  │   │   │   └── new
-  │   │   │       ├── <dc-ac-ratio>
-  │   │   │       │   ├── <scale>
-  │   │   │       │   │   ├── <placement>
-  │   │   │       │   │   │   ├── <sample>
-  │   │   │       │   │   │   │   ├── PV_Gen_<sample>_<penetration-level>.txt
-  ├── format.toml
-
-Where in *format.toml*, it defines ``type = "SourceTree2Model"``.

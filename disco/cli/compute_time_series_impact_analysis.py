@@ -26,7 +26,7 @@ def compute_time_series_impact_analysis(feeder, jade_runtime_output, verbose=Fal
     """Run post-process computations for time series impact analysis."""
     level = logging.DEBUG if verbose else logging.INFO
     filename = os.path.join(jade_runtime_output, f"compute_time_series_impact_analysis_{feeder}.log")
-    logger = setup_logging("disco", filename, console_level=level, file_level=level)
+    logger = setup_logging("disco", filename, console_level=level, file_level=level, packages=["disco"])
     logger.info("Run compute_time_series_impact_analysis for feeder %s", feeder)
     logger.info(get_cli_string())
 

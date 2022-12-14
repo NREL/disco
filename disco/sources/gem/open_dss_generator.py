@@ -16,7 +16,6 @@ from jade.utils.utils import dump_data, modify_file, get_filenames_by_ext, \
 from disco.enums import SimulationType
 from disco.models.base import OpenDssDeploymentModel, PyDSSControllerModel, \
     ImpactAnalysisBaseModel
-from disco.models.upgrade_cost_analysis_model import UpgradeCostAnalysisModel
 from disco.sources.base import SOURCE_CONFIGURATION_FILENAME
 from disco.sources.gem.model_input_interface import ModelInputDataInterface
 
@@ -131,7 +130,6 @@ class OpenDssGenerator(ModelInputDataInterface):
             feeder_dir = self._feeder_dir(self._output_dir, feeder)
             opendss_dir = self._opendss_dir(feeder_dir)
             self._copy_dss_files(feeder.opendss_location, opendss_dir)
-            self._copy_upgrade_files(feeder, opendss_dir)
             for deployment in feeder.deployments:
                 self._copy_deployment_data(deployment, feeder_dir,
                                            include_pv_systems)
@@ -204,20 +202,6 @@ class OpenDssGenerator(ModelInputDataInterface):
             src_dir = os.path.abspath(os.path.dirname(path))
             # TODO: add support for copying data files if we use this source model again.
             OpenDssGenerator.make_data_file_references_absolute(src_dir, target_path)
-
-    @staticmethod
-    def _copy_upgrade_files(feeder, dst):
-        for src_key, src_file in feeder.upgrade_paths.items():
-            src_filename = os.path.basename(src_file)
-            dst_filename = f"UpgradePath__{src_key}__{src_filename}"
-            dst_file = os.path.join(dst, dst_filename)
-
-            try:
-                shutil.copy(src_file, dst_file)
-            except FileNotFoundError:
-                logger.error("File %s does not exist.", src_filename)
-                raise
-            logger.debug("Copied %s to %s", src_file, dst_file)
 
     @staticmethod
     def make_data_file_references_absolute(src_dir, filename):
@@ -364,18 +348,6 @@ class OpenDssGenerator(ModelInputDataInterface):
         }
         if issubclass(simulation_model, ImpactAnalysisBaseModel):
             data["base_case"] = inputs.feeder.base_case
-        if simulation_model == UpgradeCostAnalysisModel:
-            upgrade_paths = [
-                os.path.join(opendss_dir, upgrade_filename)
-                for upgrade_filename in os.listdir(opendss_dir)
-                if upgrade_filename.startswith("UpgradePath")
-            ]
-            upgrade_overrides = {
-                "thermal_upgrade_overrides": feeder.thermal_upgrade_overrides,
-                "voltage_upgrade_overrides": feeder.voltage_upgrade_overrides,
-            }
-            data["upgrade_paths"] = upgrade_paths
-            data["upgrade_overrides"] = upgrade_overrides
 
         return simulation_model.validate(data).dict()
 
@@ -393,9 +365,6 @@ class Feeder:
         self.start_time = data["start_time"]
         self.end_time = data["end_time"]
         self.step_resolution = data["step_resolution"]
-        self.upgrade_paths = data.get("upgrade_paths", {})
-        self.thermal_upgrade_overrides = data.get("thermal_upgrade_overrides", {})
-        self.voltage_upgrade_overrides = data.get("voltage_upgrade_overrides", {})
 
         if self.simulation_type == SimulationType.SNAPSHOT:
             if self.start_time != self.end_time:

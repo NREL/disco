@@ -6,12 +6,10 @@ import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from disco.analysis import GENERIC_COST_DATABASE
-from disco.enums import AnalysisModelType, SimulationType, SimulationHierarchy
+from disco.enums import SimulationType, SimulationHierarchy
 from disco.exceptions import AnalysisConfigurationException
 from disco.models.base import OpenDssDeploymentModel
 from disco.utils.dss_utils import comment_out_leading_strings
-
 
 FORMAT_FILENAME = "format.toml"
 TYPE_KEY = "type"
@@ -35,10 +33,6 @@ DEFAULT_TIME_SERIES_IMPACT_ANALYSIS_PARAMS = {
 
 DEFAULT_UPGRADE_COST_ANALYSIS_PARAMS = {
     "output_dir": "upgrade-models",
-    "cost_database": GENERIC_COST_DATABASE,
-    "params_file": "upgrade-params.toml",
-    "sequential_upgrade": False,
-    "nearest_redirect": False,
     "start_time": "2020-01-01T00:00:00",
     "end_time": "2020-01-08T00:00:00",
     "simulation_type": SimulationType.SNAPSHOT.value,
@@ -287,7 +281,15 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
             )
         )
 
-    def create_deployment(self, name, outdir, hierarchy, pv_profile=None, copy_load_shape_data_files=False):
+    def create_deployment(
+        self,
+        name,
+        outdir,
+        hierarchy,
+        pv_profile=None,
+        copy_load_shape_data_files=False,
+        strip_load_shape_profiles=False
+    ):
         """Create the deployment.
 
         Parameters
@@ -300,6 +302,8 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
         pv_profile : str
             Optional load shape profile name to apply to all PVSystems
         copy_load_shape_data_files : bool
+        strip_load_shape_profiles : bool
+            Strip load shape profiles from DSS models.
 
         Returns
         -------
@@ -309,8 +313,17 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
         workspace = OpenDssFeederWorkspace(outdir)
         if not os.path.exists(workspace.master_file):
             self._create_common_files(workspace, copy_load_shape_data_files, hierarchy)
+        
+        if strip_load_shape_profiles:
+            self._strip_load_profiles_from_loads_file(workspace)
+            self._strip_shape_files_from_master_file(workspace)
+
         deployment_file = self._create_deployment_file(
-            name, workspace, hierarchy, pv_profile=pv_profile
+            name=name,
+            workspace=workspace,
+            hierarchy=hierarchy,
+            pv_profile=pv_profile,
+            strip_load_shape_profiles=strip_load_shape_profiles
         )
         if hierarchy == SimulationHierarchy.FEEDER:
             directory = outdir
@@ -366,7 +379,7 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
                         os.path.abspath(src_dir), dst_file
                 )
 
-    def _create_deployment_file(self, name, workspace, hierarchy, pv_profile=None):
+    def _create_deployment_file(self, name, workspace, hierarchy, pv_profile=None, strip_load_shape_profiles=False):
         """Create deployment dss file.
 
         Parameters
@@ -380,7 +393,8 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
             Optional load shape profile name to apply to PVSystems.
             If str, apply the name to all PVSystems.
             If dict, keys are PVSystem names and values are profile names.
-
+        strip_load_shape_profiles: bool
+            Strip load shape profiles from PVsystems if True, default False.
         """
         deployment_file = Path(workspace.pv_deployments_directory) / (name + ".dss")
         rel_path = self._get_master_file_relative_path(deployment_file, Path(workspace.master_file))
@@ -390,18 +404,27 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
                 fw.write("\nSolve\n")
             return str(deployment_file)
 
-        regex = re.compile(r"new pvsystem\.([^\s]+)")
+        regex1 = re.compile("yearly=[\w\.\-_]+")
+        regex2 = re.compile(r"new pvsystem\.([^\s]+)")
         with open(deployment_file, "w") as fw, fileinput.input(self.pv_locations) as fr:
             if hierarchy == SimulationHierarchy.FEEDER:
                 fw.write(f"Redirect {rel_path}\n\n")
             for line in fr:
-                if pv_profile is not None:
+                
+                # Exclude load profiles for upgrades to reduce simulation time.
+                if strip_load_shape_profiles:
+                    match = regex1.search(line)
+                    if match:
+                        value = match.group(0)
+                        line = " ".join(line.split(value)).strip() + "\n"
+                
+                elif pv_profile is not None:
                     lowered = line.lower()
                     if "new pvsystem" in lowered and "yearly" not in lowered:
                         if isinstance(pv_profile, str):
                             profile = pv_profile
                         else:
-                            match = regex.search(lowered)
+                            match = regex2.search(lowered)
                             assert match, lowered
                             pv_system = match.group(1)
                             if pv_system not in pv_profile:
@@ -472,6 +495,57 @@ class BaseOpenDssModel(BaseSourceDataModel, ABC):
             for line in f_in:
                 line = re.sub(BaseOpenDssModel.REGEX_LOAD_SHAPE_DATA_FILE, replace_func, line)
                 print(line, end="")
+    
+    @staticmethod
+    def _strip_shape_files_from_master_file(workspace):
+        """Exclude load and pv shapes from master DSS model file"""
+        new_lines = []
+        with open(workspace.master_file, "r") as f:
+            for line in f.readlines():
+                lowered = line.strip().lower()
+                if lowered.startswith("!"):
+                    new_lines.append(line)
+                    continue
+                elif "redirect loadshapes.dss" in lowered or "redirect pvshapes" in lowered:
+                    new_lines.append("!" + line)
+                else:
+                    new_lines.append(line)
+        
+        with open(workspace.master_file, "w") as f:
+            f.writelines(new_lines)
+
+    @staticmethod
+    def _strip_load_profiles_from_loads_file(workspace):
+        """Exclude load profiles from loads DSS model file"""
+        loads = os.path.basename(workspace.loads_file)
+        loads_in_master = False
+        with open(workspace.master_file, "r") as f:
+            for line in f.readlines():
+                if line.strip().startswith("!"):
+                    continue
+                if loads in line:
+                    loads_in_master = True
+                    break
+        
+        if not loads_in_master:
+            return
+        
+        regex = re.compile("yearly=[\w\.\-_]+")
+        new_lines = []
+        with open(workspace.loads_file, "r") as f:
+            for line in f.readlines():
+                if not line.strip():
+                    continue
+                matched = regex.search(line)
+                if not matched:
+                    new_lines.append(line)
+                    continue
+                value = matched.group(0)
+                new_line = " ".join(line.split(value)).strip()
+                new_lines.append(new_line + "\n")
+
+        with open(workspace.loads_file, "w") as f:
+            f.writelines(new_lines)
 
 
 class OpenDssSubstationWorkspace:
@@ -550,3 +624,7 @@ class OpenDssFeederWorkspace:
     @property
     def metadata_directory(self):
         return os.path.join(self.feeder_directory, "Metadata")
+
+    @property
+    def loads_file(self):
+        return os.path.join(self.opendss_directory, "Loads.dss")

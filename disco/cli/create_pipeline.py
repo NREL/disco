@@ -4,12 +4,20 @@ import sys
 
 import click
 
-from jade.models import SingularityParams
+from jade.models import (
+    HpcConfig,
+    LocalHpcConfig,
+    SingularityParams,
+)
 from jade.utils.utils import dump_data, load_data
 
 from disco.enums import SimulationType
-from disco.pipelines.base import TemplateSection, TemplateParams, PipelineTemplate
+from disco.pipelines.base import TemplateSection, TemplateParams
 from disco.enums import AnalysisType
+from disco.extensions.upgrade_simulation.upgrade_configuration import (
+    DEFAULT_UPGRADE_COST_DB_FILE,
+    DEFAULT_UPGRADE_PARAMS_FILE
+)
 from disco.pipelines.factory import PipelineCreatorFactory
 from disco.pipelines.utils import get_default_pipeline_template, check_hpc_config
 from disco.pydss.pydss_configuration_base import get_default_reports_file, get_default_exports_file
@@ -18,7 +26,11 @@ from disco.sources.factory import make_source_model
 
 logger = logging.getLogger(__name__)
 
-SIMULATION_TYPE_CHOICE = [SimulationType.SNAPSHOT.value, SimulationType.TIME_SERIES.value]
+SIMULATION_TYPE_CHOICE = [
+    SimulationType.SNAPSHOT.value,
+    SimulationType.TIME_SERIES.value,
+    SimulationType.UPGRADE.value
+]
 
 
 @click.group()
@@ -85,6 +97,13 @@ def create_pipeline():
     help="Enable hosting capacity computations",
 )
 @click.option(
+    "-u", "--upgrade-analysis",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Enable upgrade cost computations"
+)
+@click.option(
     "-c", "--cost-benefit",
     is_flag=True,
     default=False,
@@ -136,6 +155,14 @@ def create_pipeline():
     show_default=True,
     help="The path of new or existing SQLite database"
 )
+@click.option(
+    "-l",
+    "--local",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Run in local mode (non-HPC)."
+)
 def template(
     inputs,
     task_name,
@@ -146,13 +173,15 @@ def template(
     auto_select_time_points_search_duration_days,
     impact_analysis,
     hosting_capacity,
+    upgrade_analysis,
     cost_benefit,
     prescreen,
     template_file,
     reports_filename,
     enable_singularity,
     container,
-    database
+    database,
+    local,
 ):
     """Create pipeline template file"""
     if hosting_capacity and impact_analysis:
@@ -196,6 +225,10 @@ def template(
     
         template.update_config_params(config_params, TemplateSection.SIMULATION)
 
+        if reports_filename is None:
+            reports_filename = get_default_reports_file(simulation_type)
+        template.update_reports_params(load_data(reports_filename))
+
     # time-series special cases
     if simulation_type == SimulationType.TIME_SERIES:
         if prescreen:
@@ -212,14 +245,22 @@ def template(
                 config_params["exports_filename"] = exports_filename
                 template.update_config_params(config_params, TemplateSection.SIMULATION)
     
-    if reports_filename is None:
-        reports_filename = get_default_reports_file(simulation_type)
-    template.update_reports_params(load_data(reports_filename))
+        if reports_filename is None:
+            reports_filename = get_default_reports_file(simulation_type)
+        template.update_reports_params(load_data(reports_filename))
+
+    # upgrade special case
+    if simulation_type == SimulationType.UPGRADE:
+        config_params["cost_database"] = DEFAULT_UPGRADE_COST_DB_FILE
+        config_params["params_file"] = DEFAULT_UPGRADE_PARAMS_FILE
+        template.update_config_params(config_params, TemplateSection.SIMULATION)
 
     if impact_analysis:
         template.data["analysis_type"] = AnalysisType.IMPACT_ANALYSIS.value
     elif hosting_capacity:
         template.data["analysis_type"] = AnalysisType.HOSTING_CAPACITY.value
+    elif upgrade_analysis:
+        template.data["analysis_type"] = AnalysisType.UPGRADE_ANALYSIS.value
     elif cost_benefit:
         template.data["analysis_type"] = AnalysisType.COST_BENEFIT.value
     else:
@@ -231,6 +272,14 @@ def template(
         for section in template.data.values():
             if isinstance(section, dict) and "submitter-params" in section:
                 section["submitter-params"]["singularity_params"] = singularity_params.dict()
+
+    if local:
+        for section in template.data.values():
+            if isinstance(section, dict) and "submitter-params" in section:
+                hpc_config = HpcConfig(hpc_type="local", hpc=LocalHpcConfig())
+                section["submitter-params"]["hpc_config"] = hpc_config.dict()
+                type_val = hpc_config.hpc_type.value
+                section["submitter-params"]["hpc_config"]["hpc_type"] = type_val
 
     dump_data(template.data, filename=template_file)
     print(f"Pipeline template file created - {template_file}")
