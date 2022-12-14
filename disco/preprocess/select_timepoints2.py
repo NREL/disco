@@ -8,6 +8,7 @@ Created on Fri Dec  2 12:13:24 2022
 import filecmp
 import enum
 import logging
+import shutil
 import time
 from pathlib import Path
 
@@ -17,6 +18,9 @@ import opendssdirect as dss
 
 
 logger = logging.getLogger(__name__)
+
+
+_DISALLOWED_OPEN_DSS_COMMANDS = ("export", "plot", "show")
 
 
 class CriticalCondition(enum.Enum):
@@ -39,32 +43,115 @@ class GenerationCategory(enum.Enum):
     STORAGE = "storage"
 
 
-def load_feeder(path_to_master: Path):
+class InvalidParameter(Exception):
+    """Raised when user input is invalid"""
+
+
+def load_feeder(path_to_master: Path, destination_dir: Path, fix_master_file: bool):
     """Compile an OpenDSS circuit after first ensuring that time-series mode is disabled."""
     if not path_to_master.exists():
         raise FileNotFoundError(path_to_master)
 
-    suffix = path_to_master.suffix
-    new_master = path_to_master.parent / path_to_master.name.replace(suffix, f"_new{suffix}")
-    if new_master.exists():
-        raise Exception(f"{new_master} already exists")
-
-    found_solve = False
-    with open(new_master, "w") as f_out:
-        with open(path_to_master, "r") as f_in:
-            for line in f_in:
-                if line.lower().lstrip().startswith("solve"):
-                    line = "Solve\n"
-                    found_solve = True
-                f_out.write(line)
-        if not found_solve:
-            f_out.write("Solve\n")
+    if fix_master_file:
+        new_master = make_fixes_to_master(path_to_master)
+    else:
+        new_master = path_to_master
+    check_master_file(new_master)
 
     try:
         dss.Text.Command(f"redirect {new_master}")
+        shutil.copyfile(new_master, destination_dir / new_master.name)
         logger.info("Redirected to %s", new_master)
     finally:
-        new_master.unlink()
+        if path_to_master != new_master:
+            new_master.unlink()
+
+
+def make_fixes_to_master(master_file):
+    suffix = master_file.suffix
+    new_master = master_file.parent / master_file.name.replace(suffix, f"_new{suffix}")
+
+    def has_invalid_command(line):
+        for command in _DISALLOWED_OPEN_DSS_COMMANDS:
+            if line.startswith(command):
+                return True
+        return False
+
+    found_solve = False
+    solve_line = "Solve\n"
+    with open(new_master, "w") as f_out:  # overwrite file if it exists
+        with open(master_file, "r") as f_in:
+            for line in f_in:
+                lowered = line.strip().lower()
+                if lowered.startswith("solve"):
+                    line = solve_line
+                    found_solve = True
+                elif has_invalid_command(lowered):
+                    continue
+                f_out.write(line)
+        if not found_solve:
+            f_out.write(solve_line)
+
+    return new_master
+
+
+def check_master_file(master_file: Path):
+    comment_chars = ("!", "#")
+    allowed_after_solve = ("monitors", "buscoords")
+
+    def check_invalid_command(line):
+        for invalid_command in _DISALLOWED_OPEN_DSS_COMMANDS:
+            if line.startswith(invalid_command):
+                raise InvalidParameter(f"The command {invalid_command} is not allowed.")
+
+    def check_command_allowed_after_solve(line):
+        for command in allowed_after_solve:
+            if command in line:
+                return
+        raise InvalidParameter(f"Found invalid command after Solve: {line}")
+
+    def is_commented(line):
+        for comment_char in comment_chars:
+            if line.startswith(comment_char):
+                return True
+        return False
+
+    with open(master_file) as f_in:
+        found_solve = False
+        for line in f_in:
+            lowered = line.strip().lower()
+            if not lowered or is_commented(line):
+                continue
+            check_invalid_command(lowered)
+            if "solve" in lowered:
+                if lowered != "solve":
+                    raise InvalidParameter(
+                        f"The solve command cannot have parameters: {line.strip()}: {master_file}"
+                    )
+                if found_solve:
+                    raise InvalidParameter(
+                        f"Cannot have more than one call to Solve: {master_file}"
+                    )
+                found_solve = True
+            elif found_solve:
+                check_command_allowed_after_solve(lowered)
+
+
+def get_profile():
+    """Return the profile of the currenlty-selected OpenDSS element.
+
+    Returns
+    -------
+    str
+        Return "" if there is no load shape profile attached.
+
+    """
+    profile = dss.Properties.Value("yearly")
+    if not profile:
+        profile = dss.Properties.Value("daily")
+    if not profile:
+        profile = dss.Properties.Value("duty")
+    return profile
 
 
 def get_param_values(param_class, bus_data, category):
@@ -73,16 +160,6 @@ def get_param_values(param_class, bus_data, category):
         if "." in bus:
             bus = dss.Properties.Value("bus1").split(".")[0]
         return bus
-
-    def get_profile():
-        profile = dss.Properties.Value("yearly")
-        if not profile:
-            profile = dss.Properties.Value("daily")
-        if not profile:
-            profile = dss.Properties.Value("duty")
-        if not profile:
-            raise Exception(f"Did not find profile name for {dss.CktElement.Name()}")
-        return profile
 
     if param_class == DemandCategory.LOAD:
         flag = dss.Loads.First()
@@ -102,6 +179,8 @@ def get_param_values(param_class, bus_data, category):
                 raise Exception(f"Did not find size for {dss.CktElement.Name()}")
 
             profile_name = get_profile()
+            if not profile_name:
+                raise Exception(f"Did not find profile name for {dss.CktElement.Name()}")
             bus_data[bus][category].append([capacity, profile_name])
             flag = dss.Loads.Next()
 
@@ -123,6 +202,8 @@ def get_param_values(param_class, bus_data, category):
                 raise Exception(f"Did not find size for {dss.CktElement.Name()}")
 
             profile_name = get_profile()
+            if not profile_name:
+                raise Exception(f"Did not find profile name for {dss.CktElement.Name()}")
             bus_data[bus][category].append([capacity, profile_name])
             flag = dss.PVsystems.Next()
 
@@ -144,6 +225,8 @@ def get_param_values(param_class, bus_data, category):
                 raise Exception(f"Did not find size for {dss.CktElement.Name()}")
 
             profile_name = get_profile()
+            if not profile_name:
+                raise Exception(f"Did not find profile name for {dss.CktElement.Name()}")
             bus_data[bus][category].append([capacity, profile_name])
             flag = dss.Storages.Next()
 
@@ -387,6 +470,7 @@ def main(
     recreate_profiles=False,
     destination_dir=None,
     create_new_circuit=True,
+    fix_master_file=False,
     check_power_flow=True,
 ):
     """
@@ -413,7 +497,7 @@ def main(
         check_power_flow = False
 
     bus_data = {}
-    load_feeder(path_to_master)
+    load_feeder(path_to_master, destination_dir, fix_master_file)
     for category, param_classes in categories.items():
         for param_class in param_classes:
             bus_data = get_param_values(param_class, bus_data, category)

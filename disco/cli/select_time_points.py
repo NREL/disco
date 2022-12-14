@@ -80,6 +80,13 @@ logger = logging.getLogger(__name__)
     help="Run power flow before and after creating new circuit and check output values.",
 )
 @click.option(
+    "--fix-master-file/--no-fix-master-file",
+    is_flag=True,
+    show_default=True,
+    default=False,
+    help="Remove commands in the Master.dss file that interfere with time-point selection.",
+)
+@click.option(
     "-f",
     "--force",
     is_flag=True,
@@ -103,10 +110,16 @@ def select_time_points(
     output,
     create_new_circuit,
     check_power_flow,
+    fix_master_file,
     force,
     verbose,
 ):
-    """Down-select load shape time points in the circuit based on the critical conditions."""
+    """Select load shape time points in the circuit based on the specified critical conditions.
+
+    By default, the Master.dss file is not allowed enable time-series mode. Specify
+    --fix-master-file to disable time-series mode and other disallowed parameters.
+
+    """
     if output.exists():
         if force:
             shutil.rmtree(output)
@@ -129,6 +142,7 @@ def select_time_points(
         critical_conditions=critical_conditions,
         destination_dir=output,
         create_new_circuit=create_new_circuit,
+        fix_master_file=fix_master_file,
         check_power_flow=check_power_flow,
         recreate_profiles=False,
     )
