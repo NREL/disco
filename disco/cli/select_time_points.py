@@ -116,7 +116,7 @@ def select_time_points(
 ):
     """Select load shape time points in the circuit based on the specified critical conditions.
 
-    By default, the Master.dss file is not allowed enable time-series mode. Specify
+    By default, the Master.dss file is not allowed to enable time-series mode. Specify
     --fix-master-file to disable time-series mode and other disallowed parameters.
 
     """

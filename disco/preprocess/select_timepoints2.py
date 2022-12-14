@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 _DISALLOWED_OPEN_DSS_COMMANDS = ("export", "plot", "show")
+_SOLVE_LINE = "Solve mode=snapshot\n"
 
 
 class CriticalCondition(enum.Enum):
@@ -78,19 +79,18 @@ def make_fixes_to_master(master_file):
         return False
 
     found_solve = False
-    solve_line = "Solve\n"
     with open(new_master, "w") as f_out:  # overwrite file if it exists
         with open(master_file, "r") as f_in:
             for line in f_in:
                 lowered = line.strip().lower()
                 if lowered.startswith("solve"):
-                    line = solve_line
+                    line = _SOLVE_LINE
                     found_solve = True
                 elif has_invalid_command(lowered):
                     continue
                 f_out.write(line)
         if not found_solve:
-            f_out.write(solve_line)
+            f_out.write(_SOLVE_LINE)
 
     return new_master
 
@@ -124,9 +124,10 @@ def check_master_file(master_file: Path):
                 continue
             check_invalid_command(lowered)
             if "solve" in lowered:
-                if lowered != "solve":
+                if lowered not in ("solve", _SOLVE_LINE.strip().lower()):
                     raise InvalidParameter(
-                        f"The solve command cannot have parameters: {line.strip()}: {master_file}"
+                        "The solve command cannot have parameters besides snapshot mode: "
+                        f"{line.strip()}: {master_file}"
                     )
                 if found_solve:
                     raise InvalidParameter(
