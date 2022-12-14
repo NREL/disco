@@ -1,14 +1,19 @@
+import fileinput
 import math
+import shutil
 import subprocess
 from pathlib import Path
 
 import opendssdirect as dss
+import pytest
 
 from disco.preprocess.select_timepoints2 import (
     CriticalCondition,
     DemandCategory,
     GenerationCategory,
+    InvalidParameter,
     main,
+    get_profile,
 )
 
 
@@ -44,13 +49,14 @@ def test_time_point_selection(tmp_path):
     )
     dss.Text.Command(f"Clear")
     dss.Text.Command(f"Redirect {MASTER_FILE}")
-    before = get_pmult_data()
+    connected_profiles = get_connected_load_shape_profiles()
+    before = get_pmult_data(connected_profiles)
 
     new_master = tmp_path / "new_model" / "Master.dss"
     assert new_master.exists()
     dss.Text.Command(f"Clear")
     dss.Text.Command(f"Redirect {new_master}")
-    after = get_pmult_data()
+    after = get_pmult_data(connected_profiles)
     assert sorted(before.keys()) == sorted(after.keys())
 
     count = 0
@@ -65,12 +71,61 @@ def test_time_point_selection(tmp_path):
             count += 1
 
 
-def get_pmult_data():
+def test_invalid_master_file(tmp_path):
+    bad_file = MASTER_FILE.parent / (MASTER_FILE.name + ".tmp")
+    shutil.copyfile(MASTER_FILE, bad_file)
+    with fileinput.input(files=[bad_file], inplace=True) as f:
+        for line in f:
+            if "Solve" in line:
+                print("Solve mode=yearly")
+            else:
+                print(line, end="")
+
+    categories = {
+        "demand": [DemandCategory.LOAD],
+        "generation": [GenerationCategory.PV_SYSTEM],
+    }
+    critical_conditions = [CriticalCondition.MAX_DEMAND, CriticalCondition.MAX_NET_GENERATION]
+    try:
+        with pytest.raises(InvalidParameter):
+            main(
+                bad_file,
+                categories=categories,
+                critical_conditions=critical_conditions,
+                destination_dir=tmp_path,
+                fix_master_file=False,
+            )
+        main(
+            bad_file,
+            categories=categories,
+            critical_conditions=critical_conditions,
+            destination_dir=tmp_path,
+            fix_master_file=True,
+        )
+    finally:
+        if bad_file.exists():
+            bad_file.unlink()
+
+
+def get_connected_load_shape_profiles():
+    load_shapes = set()
+    for cls in (dss.Loads, dss.PVsystems, dss.Storages):
+        flag = cls.First()
+        while flag > 0:
+            profile = get_profile()
+            if profile:
+                load_shapes.add(profile)
+            flag = cls.Next()
+
+    return load_shapes
+
+
+def get_pmult_data(connected_profiles):
     flag = dss.LoadShape.First()
     load_shapes = {}
     while flag > 0:
         name = dss.LoadShape.Name()
-        if name != "default":
+        if name in connected_profiles:
             assert name not in load_shapes, name
             load_shapes[name] = dss.LoadShape.PMult()
         flag = dss.LoadShape.Next()
