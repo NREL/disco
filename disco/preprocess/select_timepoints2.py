@@ -78,18 +78,12 @@ def make_fixes_to_master(master_file):
                 return True
         return False
 
-    found_solve = False
     with open(new_master, "w") as f_out:  # overwrite file if it exists
         with open(master_file, "r") as f_in:
             for line in f_in:
                 lowered = line.strip().lower()
-                if lowered.startswith("solve"):
-                    line = _SOLVE_LINE
-                    found_solve = True
-                elif has_invalid_command(lowered):
-                    continue
-                f_out.write(line)
-        if not found_solve:
+                if not (lowered.startswith("solve") or has_invalid_command(lowered)):
+                    f_out.write(line)
             f_out.write(_SOLVE_LINE)
 
     return new_master
@@ -97,18 +91,11 @@ def make_fixes_to_master(master_file):
 
 def check_master_file(master_file: Path):
     comment_chars = ("!", "#")
-    allowed_after_solve = ("monitors", "buscoords")
 
     def check_invalid_command(line):
         for invalid_command in _DISALLOWED_OPEN_DSS_COMMANDS:
             if line.startswith(invalid_command):
                 raise InvalidParameter(f"The command {invalid_command} is not allowed.")
-
-    def check_command_allowed_after_solve(line):
-        for command in allowed_after_solve:
-            if command in line:
-                return
-        raise InvalidParameter(f"Found invalid command after Solve: {line}")
 
     def is_commented(line):
         for comment_char in comment_chars:
@@ -126,7 +113,7 @@ def check_master_file(master_file: Path):
             if "solve" in lowered:
                 if lowered not in ("solve", _SOLVE_LINE.strip().lower()):
                     raise InvalidParameter(
-                        "The solve command cannot have parameters besides snapshot mode: "
+                        "The solve command cannot have parameters besides mode=snapshot: "
                         f"{line.strip()}: {master_file}"
                     )
                 if found_solve:
@@ -134,8 +121,6 @@ def check_master_file(master_file: Path):
                         f"Cannot have more than one call to Solve: {master_file}"
                     )
                 found_solve = True
-            elif found_solve:
-                check_command_allowed_after_solve(lowered)
 
 
 def get_profile():
