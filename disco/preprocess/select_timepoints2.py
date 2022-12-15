@@ -425,7 +425,6 @@ def aggregate_series(
 
     if create_new_circuit:
         reset_profile_data(used_profiles, critical_time_indices)
-        dss.Text.Command("Solve")
         before_path = destination_dir / "power_flow_results_before"
         after_path = destination_dir / "power_flow_results_after"
         if check_power_flow:

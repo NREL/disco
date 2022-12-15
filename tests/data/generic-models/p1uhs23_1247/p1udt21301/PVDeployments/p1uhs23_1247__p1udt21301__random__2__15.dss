@@ -14,4 +14,4 @@ New PVSystem.small_p1ulv31633_1_2_pv phases=1 bus1=p1ulv31633.1.2 kv=0.2402 irra
 New PVSystem.small_p1ulv16326_1_2_pv phases=1 bus1=p1ulv16326.1.2 kv=0.2402 irradiance=1 Pmpp=20.882 %Pmpp=100 kVA=20.882 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1565103_30.24_-97.47_2019
 New PVSystem.small_p1ulv47451_1_2_pv phases=1 bus1=p1ulv47451.1.2 kv=0.2402 irradiance=1 Pmpp=27.733 %Pmpp=100 kVA=27.733 conn=wye %cutin=0.1 %cutout=0.1 Vmaxpu=1.2 yearly=1538760_30.22_-97.79_2019
 
-Solve
+Solve mode=snapshot
