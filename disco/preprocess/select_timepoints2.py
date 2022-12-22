@@ -82,7 +82,9 @@ def make_fixes_to_master(master_file):
         with open(master_file, "r") as f_in:
             for line in f_in:
                 lowered = line.strip().lower()
-                if not (lowered.startswith("solve") or has_invalid_command(lowered)):
+                if (lowered.startswith("solve") or has_invalid_command(lowered)):
+                    logger.warning("Removing line from new Master.dss: %s", line.strip())
+                else:
                     f_out.write(line)
             f_out.write(_SOLVE_LINE)
 
