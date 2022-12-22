@@ -436,6 +436,7 @@ def aggregate_series(
         save_circuit(destination_model_dir)
         master_file = destination_model_dir / "Master.dss"
         with open(master_file, "a") as f_out:
+            f_out.write("Calcvoltagebases\n")
             f_out.write("Solve\n")
         if check_power_flow:
             dss.Text.Command("Clear")
