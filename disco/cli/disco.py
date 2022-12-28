@@ -23,6 +23,7 @@ from disco.cli.summarize_hosting_capacity import summarize_hosting_capacity
 from disco.cli.config_generic_models import config_generic_models
 from disco.cli.upgrade_cost_analysis import upgrade_cost_analysis
 from disco.cli.pydss_hosting_capacity import hosting_capacity_by_timestep
+from disco.cli.ev import ev
 
 
 logger = logging.getLogger(__name__)
@@ -55,3 +56,4 @@ cli.add_command(make_summary_tables)
 cli.add_command(summarize_hosting_capacity)
 cli.add_command(upgrade_cost_analysis)
 cli.add_command(hosting_capacity_by_timestep)
+cli.add_command(ev)

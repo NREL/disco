@@ -4,11 +4,17 @@ Created on Wed Sep 18 15:55:53 2019
 
 @author: ppaudyal
 """
-import matplotlib.pyplot as plt
+import logging
 import os
+from pathlib import Path
+
+import matplotlib.pyplot as plt
 
 
-def plot_capacity_V(file, caseA, caseB, caseC, caseD, feeder):
+logger = logging.getLogger(__name__)
+
+
+def plot_capacity_V(file, caseA, caseB, caseC, caseD, output_dir: Path):
     fig, ax1 = plt.subplots(nrows=1, figsize=(14, 8))  # figsize=(18,12)
     vplot1 = ax1.plot(range(len(file)), file[caseA], c="k", marker="o", label="Initial load")
     vplot2 = ax1.plot(
@@ -44,10 +50,10 @@ def plot_capacity_V(file, caseA, caseB, caseC, caseD, feeder):
         "Feeder Node (where highest is furthest from substation)", fontsize=33
     )  ##'Load indices, according to distance from SS \n(load #' + str(len(file)) + ' is the furthest from SS)'
     # plt.tight_layout()
-    plt.savefig(str(feeder) + "_Cap_by_V_limit.png", bbox_inches="tight", dpi=150)
+    plt.savefig(output_dir / "Cap_by_V_limit.png", bbox_inches="tight", dpi=150)
 
 
-def plot_capacity_thermal_2(file, caseA, caseB, caseC, feeder):
+def plot_capacity_thermal_2(file, caseA, caseB, caseC, output_dir: Path):
     fig, ax1 = plt.subplots(nrows=1, figsize=(14, 8))
     thplot1 = ax1.plot(range(len(file)), file[caseA], c="k", marker="o", label="Initial load")
     thplot2 = ax1.plot(
@@ -75,10 +81,10 @@ def plot_capacity_thermal_2(file, caseA, caseB, caseC, feeder):
         "Feeder Node (where highest is furthest from substation)", fontsize=30
     )  # ax1.set_xlabel('Load indices, according to distance from SS \n(load #' + str(len(file)) + ' is the furthest from SS)', fontsize=40)
     plt.tight_layout()
-    plt.savefig(str(feeder) + "_Cap_by_thermal_limit.png", dpi=150)
+    plt.savefig(output_dir / "Cap_by_thermal_limit.png", dpi=150)
 
 
-def plot_capacity_thermal_1(file, caseA, caseB, feeder, extra):
+def plot_capacity_thermal_1(file, caseA, caseB, output_dir: Path, extra):
     fig, ax1 = plt.subplots(nrows=1, figsize=(14, 8))
     thplot1 = ax1.plot(range(len(file)), file[caseA], c="k", marker="o", label="Initial load")
     thplot2 = ax1.plot(
@@ -96,7 +102,7 @@ def plot_capacity_thermal_1(file, caseA, caseB, feeder, extra):
     )  # ax1.set_xlabel('Load indices, according to distance from SS \n(load #' + str(len(file)) + ' is the furthest from SS)', fontsize=40)
     # fig.tight_layout()
     plt.savefig(
-        str(feeder) + "_Cap_by_thermal_limit_" + str(extra) + ".png", bbox_inches="tight", dpi=150
+        output_dir / "Cap_by_thermal_limit_" + str(extra) + ".png", bbox_inches="tight", dpi=150
     )
 
 

@@ -1,8 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Sep 25 07:53:52 2019
-
-@author: ppaudyal
+"""This code calculates the hosting capcity (checks voltage and thermal violation limits) for
+a given feeder.
 """
 
 # -*- coding: utf-8 -*-
@@ -13,96 +10,284 @@ Created on Wed Sep 18 14:32:29 2019
 """
 
 
-# this code calculates the hosting capcity (checks voltage and thermal violation limits) for a given feeder
-# every feeder model should have a 'Master.dss' as main dss file
-#
-
+import logging
 import os
+from pathlib import Path
+
 import pandas as pd
 import numpy as np
 import math
 import opendssdirect as dss
 
-import load_distance_from_SS
-import plot_hosting_capacity
-import number_of_ev_chargers
+from jade.utils.timing_utils import track_timing, Timer
+from disco import timer_stats_collector
+from .load_distance_from_SS import calc_dist
+from .plot_hosting_capacity import (
+    plot_capacity_V,
+    plot_capacity_thermal_1,
+    plot_capacity_thermal_2,
+)
+from .number_of_ev_chargers import levels_of_charger
 
 
-# variable quantities
-feeder_folder = "477NHS"  #'BaseCaseWRR074'   #'BaseaseALD095'
-low_lmt_0 = 0.950  # lower voltage limit
-high_lmt_0 = 1.050  # upper voltage limit
-low_lmt_1 = 0.975  # lower voltage limit
-high_lmt_1 = 1.05  # upper voltage limit
-low_lmt_2 = 0.985  # lower voltage limit
-high_lmt_2 = 1.05  # upper voltage limit
-v_limit = [[low_lmt_0, high_lmt_0], [low_lmt_1, high_lmt_1], [low_lmt_2, high_lmt_2]]
-step_v = 10
-step_thermal = 5
-
-extra_percent = [2]  # , 25]  # in case, this considers extra % for already overloaded elements
-extra_limit = [
-    100
-]  # , 120]  #120, if we want to consider overload condition when %Normal>= 120 or any other %
-
-master_dssfile = "Master.dss"
-
-# **************** System Information *****************
-MainDir = os.getcwd()
-FeederDir = os.path.join(MainDir, feeder_folder)
-MasterFile = os.path.join(FeederDir, master_dssfile)
-dss.Text.Command("clear")
-dss.Text.Command(f"Compile {MasterFile}")
-dss.Text.Command("solve")
-circuit = dss.Circuit
-ckt_name = circuit.Name()
-print("\n*** Circuit name:", ckt_name, "***\n from ", feeder_folder, " folder\n")
-
-AllNodeNames = circuit.YNodeOrder()
-pd.DataFrame(AllNodeNames).to_csv("Allnodenames.csv")
-# print(type(AllNodeNames))
-
-# --------- Voltage Base kV Information -----
-node_number = len(AllNodeNames)
-Vbase_allnode = [0] * node_number
-ii = 0
-for node in AllNodeNames:
-    circuit.SetActiveBus(node)
-    Vbase_allnode[ii] = dss.Bus.kVBase() * 1000
-    ii = ii + 1
-
-# --------- Capacitor Information ----------
-capNames = dss.Capacitors.AllNames()
-hCapNames = [None] * len(capNames)
-for i, n in enumerate(capNames):
-    hCapNames[i] = str(n)
-hCapNames = str(hCapNames)[1:-1]
-
-# --------- Regulator Information ----------
-regNames = dss.RegControls.AllNames()
-hRegNames = [None] * len(regNames)
-for i, n in enumerate(regNames):
-    hRegNames[i] = str(n)
-hRegNames = str(hRegNames)[1:-1]
-
-dss.Text.Command("solve mode=snap")
-# dss.Text.Command('export voltages')
-v = np.array(dss.Circuit.AllBusMagPu())
+logger = logging.getLogger(__name__)
 
 
-dss.utils.lines_to_dataframe()
+@track_timing(timer_stats_collector)
+def run(
+    master_file: Path,
+    lower_voltage_limit: float,
+    upper_voltage_limit: float,
+    kw_step_voltage_violation: float,
+    kw_step_thermal_violation: float,
+    extra_percentages_for_existing_overloads: tuple[float],
+    thermal_loading_limits: tuple[float],
+    export_circuit_elements: bool,
+    # plot_heatmap: bool,
+    output_dir: Path,
+):
+    dss.Text.Command("clear")
+    compile_circuit(master_file)
+    circuit = dss.Circuit
+    ckt_name = circuit.Name()
+    logger.info(" Circuit name: %s from %s folder", ckt_name, master_file)
 
-volt_violation = np.any(v > high_lmt_0) or np.any(v < low_lmt_0)
-print("Initial condition voltage violation: ", volt_violation)
+    if export_circuit_elements:
+        export_circuit_element_properties(output_dir)
 
-Bus_Distance = []
-for node in AllNodeNames:
-    circuit.SetActiveBus(node)
-    # print('node', node, 'bus_distance', dss.Bus.Distance()) # testing
-    Bus_Distance.append(dss.Bus.Distance())
-np.savetxt("node_distance_" + str(feeder_folder) + ".csv", Bus_Distance)
+    v_limit = [(lower_voltage_limit, upper_voltage_limit)]
+    # TODO: do we need more limits?
+    # assert lower_voltage_limit == 0.95
+    # v_limit += [(0.975, upper_voltage_limit), (0.985, upper_voltage_limit)]
+    # TODO: Priti, how to calculate these programmatically?
+
+    AllNodeNames = circuit.YNodeOrder()
+
+    # --------- Voltage Base kV Information -----
+    node_number = len(AllNodeNames)
+    Vbase_allnode = [0] * node_number
+    ii = 0
+    for node in AllNodeNames:
+        circuit.SetActiveBus(node)
+        Vbase_allnode[ii] = dss.Bus.kVBase() * 1000
+        ii = ii + 1
+
+    # --------- Capacitor Information ----------
+    capNames = dss.Capacitors.AllNames()
+    hCapNames = [None] * len(capNames)
+    for i, n in enumerate(capNames):
+        hCapNames[i] = str(n)
+    hCapNames = str(hCapNames)[1:-1]
+
+    # --------- Regulator Information ----------
+    regNames = dss.RegControls.AllNames()
+    hRegNames = [None] * len(regNames)
+    for i, n in enumerate(regNames):
+        hRegNames[i] = str(n)
+    hRegNames = str(hRegNames)[1:-1]
+
+    dss.Text.Command("solve mode=snap")
+    # dss.Text.Command('export voltages')
+    v = np.array(dss.Circuit.AllBusMagPu())
+
+    volt_violation = np.any(v > upper_voltage_limit) or np.any(v < lower_voltage_limit)
+    logger.info("Initial condition voltage violation: %s", volt_violation)
+
+    Bus_Distance = []
+    for node in AllNodeNames:
+        circuit.SetActiveBus(node)
+        Bus_Distance.append(dss.Bus.Distance())
+    np.savetxt(output_dir / "node_distance.csv", Bus_Distance)
+
+    ####### for thermal overload capapcity #######################################################
+    dss.Text.Command("solve mode = snap")
+    overloads_filename = output_dir / "overloads.csv"
+    dss.Text.Command(f"export Overloads {overloads_filename}")
+
+    # read this overload file and record the ' %Normal' for each line in this file
+    overload_df = pd.read_csv(overloads_filename)
+    # len(overload_df)
+    if len(overload_df) == 0:
+        logger.info("No thermal violation initially")
+    else:
+        logger.info("Thermal violation exists initially")
+        logger.info("Overloads: %s", overload_df.head())
+
+    elements = [[], []]
+    amps = [[], []]
+    new_threshold = [[], []]
+    for j in range(len(extra_percentages_for_existing_overloads)):
+        for i in range(len(overload_df)):
+            overload_df["Element"] = overload_df["Element"].str.strip()
+            element = overload_df["Element"][i]
+            amp = overload_df[" %Normal"][i]
+            element_new_limit = amp + extra_percentages_for_existing_overloads[j]
+            elements[j].append(str(element))
+            amps[j].append(amp)
+            new_threshold[j].append(element_new_limit)
+
+    logger.debug("new_threshold=%s", new_threshold)
+
+    ##############################################################################################
+    # get the load data
+    [Load, totalkW] = get_loads(dss, circuit, 0, "")
+
+    # calculate the hosting capacity based on voltage constraints
+    v_output_df = []
+    for j in range(len(v_limit)):
+        lmt1 = v_limit[j][0]
+        lmt2 = v_limit[j][1]
+        v_lst = []
+        v_output_list = []
+        v_threshold = []
+        v_allow_limit = []
+        v_names = []
+        v_bus_name = []
+        v_default_load = []
+        v_maxv = []
+        v_minv = []
+        for i in range(len(Load)):
+            logger.info("Run voltage check on load index=%s", i)
+            v_node_cap = node_V_capacity_check(
+                master_file, Load[i], lmt1, lmt2, kw_step_voltage_violation
+            )  # v_node_cap is a list
+            v_allowable_load = v_node_cap[0] - kw_step_voltage_violation
+            v_threshold.append(v_node_cap[0])
+            v_allow_limit.append(v_allowable_load)
+            v_names.append(Load[i]["name"])
+            v_bus_name.append(Load[i]["bus1"])
+            v_default_load.append(Load[i]["kW"])
+            v_maxv.append(v_node_cap[1])
+            v_minv.append(v_node_cap[2])
+
+        v_lst = [v_names, v_bus_name, v_default_load, v_threshold, v_allow_limit, v_maxv, v_minv]
+        v_output_list = list(map(list, zip(*v_lst)))
+        # v_output_df[0] = pd.DataFrame(v_output_list, columns = ['Load' , 'Bus', 'Initial_kW', 'Volt_Violation', 'Maximum_kW', 'Max_voltage', 'Min_voltage'])
+        v_output_df.append(
+            pd.DataFrame(
+                v_output_list,
+                columns=[
+                    "Load",
+                    "Bus",
+                    "Initial_kW",
+                    "Volt_Violation",
+                    "Maximum_kW",
+                    "Max_voltage",
+                    "Min_voltage",
+                ],
+            )
+        )
+
+        v_output_df[j].to_csv(output_dir / f"Hosting_capacity_test_{lmt1}.csv")
+
+    # calculate the hosting capacity based on thermal ratings constraint
+    th_threshold = [[], []]
+    th_allow_limit = [[], []]
+    th_names = [[], []]
+    th_bus_name = [[], []]
+    th_default_load = [[], []]
+
+    th_output_df = []
+    for i in range(len(thermal_loading_limits)):
+        logger.info("Run thermal check on index=%s limit=%s", i, thermal_loading_limits[i])
+        th_lst = []
+        for j in range(len(Load)):
+            if j == 0:
+                continue
+            th_node_cap = thermal_overload_check(
+                Load[j], thermal_loading_limits[i], i, kw_step_thermal_violation, output_dir
+            )  # th_node_cap is a list
+            th_allowable_load = (
+                th_node_cap[0] - kw_step_thermal_violation
+            )  # 5 # th_node_cap[0] is a float  # reduce the value of add_kW
+            th_threshold[i].append(th_node_cap[0])
+            th_allow_limit[i].append(th_allowable_load)
+            th_names[i].append(Load[j]["name"])
+            th_bus_name[i].append(Load[j]["bus1"])
+            th_default_load[i].append(Load[j]["kW"])
+
+        th_lst = [
+            th_names[i],
+            th_bus_name[i],
+            th_default_load[i],
+            th_threshold[i],
+            th_allow_limit[i],
+        ]
+        th_output_list = list(map(list, zip(*th_lst)))
+        th_output_df.append(
+            pd.DataFrame(
+                th_output_list,
+                columns=["Load", "Bus", "Initial_kW", "Thermal_Violation", "Maximum_kW"],
+            )
+        )
+
+        th_output_df[i].to_csv(
+            output_dir / f"Thermal_capacity_test_{thermal_loading_limits[i]}.csv"
+        )
+
+    #################### for plotting results ####################################################
+
+    load_bus = pd.DataFrame()
+    load_bus["Load"] = th_output_df[0]["Load"]  #
+    load_bus["Bus"] = th_output_df[0]["Bus"]
+    node_distance = pd.DataFrame()
+    node_distance["Node"] = AllNodeNames
+    node_distance["Distance"] = Bus_Distance
+
+    dist_file = calc_dist(load_bus, node_distance)
+
+    dist_file["Initial_MW"] = th_output_df[0]["Initial_kW"] / 1000
+    dist_file["Volt_Violation_0.95"] = v_output_df[0]["Volt_Violation"] / 1000
+    dist_file["Volt_Violation_0.975"] = v_output_df[1]["Volt_Violation"] / 1000
+    dist_file["Volt_Violation_0.985"] = v_output_df[2]["Volt_Violation"] / 1000
+
+    dist_file["Thermal_Violation_100"] = th_output_df[0]["Thermal_Violation"] / 1000
+    # dist_file["Thermal_Violation_120"] = th_output_df[1]["Thermal_Violation"]/1000
+
+    plot_df = dist_file.sort_values(by=["Distance"])
+
+    # plot voltage violation scenarios
+    plot_capacity_V(
+        plot_df,
+        "Initial_MW",
+        "Volt_Violation_0.95",
+        "Volt_Violation_0.975",
+        "Volt_Violation_0.985",
+        output_dir,
+    )
+
+    # plot thermal violation
+    plot_capacity_thermal_1(plot_df, "Initial_MW", "Thermal_Violation_100", output_dir, 100)
+    # plot_capacity_thermal_2(plot_df, 'Initial_MW', 'Thermal_Violation_100', 'Thermal_Violation_120', output_dir)
+
+    ### Assuming the hosting capacity is limited by thermal loading ##############################
+
+    ## Difference of initial load and maximum hosting capacity (assuming always thermal limit occurs first) ##
+
+    for i in range(len(thermal_loading_limits)):
+        diff = th_output_df[i]["Thermal_Violation"] - th_output_df[i]["Initial_kW"]
+        new_df = pd.DataFrame()
+
+        new_df["Load"] = th_output_df[i]["Load"]
+        new_df["Bus"] = th_output_df[i]["Bus"]
+        new_df["Initial_kW"] = th_output_df[i]["Initial_kW"]
+        new_df["Hosting_capacity(kW)"] = diff  # additional load it can support
+
+        new_df.to_csv(
+            output_dir / "Additional_HostingCapacity_" + str(thermal_loading_limits[i]) + ".csv",
+            index=False,
+        )
+
+        ## find number of ev chargers for each node ##
+
+        chargers_3_2_1 = levels_of_charger(th_output_df[i])
+        chargers_3_2_1.to_csv(
+            output_dir / "Loadwithlevel3_2_1_" + str(thermal_loading_limits[i]) + ".csv"
+        )
+
 
 # --------- Load Information ----------
+@track_timing(timer_stats_collector)
 def get_loads(dss, circuit, loadshape_flag, loadshape_folder):
     data = []
     load_flag = dss.Loads.First()
@@ -142,283 +327,143 @@ def get_loads(dss, circuit, loadshape_flag, loadshape_folder):
     return [data, total_load]
 
 
-############################################## for voltage violation capacity ######################################
-def node_V_capacity_check(which_load, low_lmt, high_lmt):
+############################ for voltage violation capacity ######################################
+@track_timing(timer_stats_collector)
+def node_V_capacity_check(master_file, which_load, low_lmt, high_lmt, kw_step_voltage_violation):
     initial_kW = which_load["kW"]
-    # print(initial_kW)  #just for testing
-    add_kW = step_v  # 10
+    logger.debug("initial_kW=%s", initial_kW)
     tmp_kW = initial_kW
     volt_violation = False
     v = None
 
-    while volt_violation == False:
-        # while the voltages are within limits keep on increasing
-        new_kW = tmp_kW + add_kW  # increase the load by 10 kW each time
-        dss.Text.Command("edit Load." + str(which_load["name"]) + " kW=" + str(new_kW))
-        dss.Text.Command("solve mode = snap")
-        v = np.array(dss.Circuit.AllBusMagPu())
-        volt_violation = np.any(v > high_lmt) or np.any(v < low_lmt)
-        #  print(volt_violation)  # for initial testing
-        if volt_violation == True:
-            # print(volt_violation)  # for initial testing
-            vmax = np.max(v)
-            vmin = np.min(v)
-            cap_limit = new_kW
-            dss.Text.Command("edit Load." + str(which_load["name"]) + " kW=" + str(initial_kW))
-            dss.Text.Command("Compile " + MasterFile)
+    while not volt_violation:
+        with Timer(timer_stats_collector, "check_voltage_violation_after_increasing_kw"):
+            # while the voltages are within limits keep on increasing
+            new_kW = tmp_kW + kw_step_voltage_violation
+            logger.info("Check voltage violation with kW=%s", new_kW)
+            dss.Text.Command("edit Load." + str(which_load["name"]) + " kW=" + str(new_kW))
             dss.Text.Command("solve mode = snap")
-        else:
-            tmp_kW = new_kW
+            v = np.array(dss.Circuit.AllBusMagPu())
+            volt_violation = np.any(v > high_lmt) or np.any(v < low_lmt)
+            logger.debug("Voltage violation = %s", volt_violation)
+            if volt_violation:
+                vmax = np.max(v)
+                vmin = np.min(v)
+                cap_limit = new_kW
+                # TODO: no point in doing this, right?
+                # dss.Text.Command("edit Load." + str(which_load["name"]) + " kW=" + str(initial_kW))
+                compile_circuit(master_file)
+            else:
+                tmp_kW = new_kW
 
     return [cap_limit, vmax, vmin]
 
 
-################################# for thermal overload capapcity #######################################################
-dss.Text.Command("solve mode = snap")
-dss.Text.Command("export Overloads")
-
-# rename this overload csv file
-src = circuit.Name() + "_EXP_OVERLOADS.CSV"
-dst = feeder_folder + "_overloads.csv"
-if os.path.exists(dst):
-    os.remove(dst)
-os.rename(src, dst)
-
-# read this overload file and record the ' %Normal' for each line in this file
-overload_df = pd.read_csv(dst)
-# len(overload_df)
-if len(overload_df) == 0:
-    print("No thermal violation initially \n")
-else:
-    print("Thermal violation exists initially \n")
-    print(overload_df.head())
-
-
-elements = [[], []]
-amps = [[], []]
-new_threshold = [[], []]
-for j in range(len(extra_percent)):
-
-    for i in range(len(overload_df)):
-        overload_df["Element"] = overload_df[
-            "Element"
-        ].str.strip()  # removing the extra spaces at the end (if any)
-        element = overload_df["Element"][i]
-        amp = overload_df[" %Normal"][i]
-        element_new_limit = amp + extra_percent[j]
-        elements[j].append(str(element))
-        amps[j].append(amp)
-        new_threshold[j].append(element_new_limit)
-
-print("new_threshold", new_threshold)  # testing
-
-
-def thermal_overload_check(which_load, th_limit, case):
+@track_timing(timer_stats_collector)
+def thermal_overload_check(
+    which_load, th_limit, case, kw_step_thermal_violation, output_dir: Path
+):
     initial_kW = which_load["kW"]
-    # print(initial_kW)
-    add_kW = step_thermal  # 5
+    logger.debug("initial_kW=%s", initial_kW)
     tmp_kW = initial_kW
     thermal_violation = False
 
-    while thermal_violation == False:
-        # while the elements loadings are within limits keep on increasing
-        new_kW = tmp_kW + add_kW  # increase the load by 5 kW each time
-        dss.Text.Command("edit Load." + str(which_load["name"]) + " kW=" + str(new_kW))
-        dss.Text.Command("solve mode = snap")
-        dss.Text.Command("export Overloads")
-        report = pd.read_csv(str(ckt_name) + "_EXP_OVERLOADS.CSV")
-        report["Element"] = report["Element"].str.strip()
+    while not thermal_violation:
+        with Timer(timer_stats_collector, "check_thermal_violation_after_increasing_kw"):
+            # while the elements loadings are within limits keep on increasing
+            new_kW = tmp_kW + kw_step_thermal_violation
+            logger.info("Check thermal violation with kW=%s", new_kW)
+            dss.Text.Command("edit Load." + str(which_load["name"]) + " kW=" + str(new_kW))
+            dss.Text.Command("solve mode = snap")
+            overloads_filename = output_dir / "overloads.csv"
+            dss.Text.Command("export Overloads {overloads_filename}")
+            report = pd.read_csv(overloads_filename)
+            report["Element"] = report["Element"].str.strip()
 
-        if len(report) == 0:  # if no any overload element
-            thermal_violation = False
+            if len(report) == 0:  # if no any overload element
+                thermal_violation = False
 
-        elif report["Element"].isin(elements[case]).any():
-            for i in range(len(report)):
-                if report["Element"][i] in elements[case]:
-                    indx_ = elements[case].index(report["Element"][i])  # find the index of
-                    if report[" %Normal"][i] >= new_threshold[case][indx_]:
-                        thermal_violation = True  # just exit here (get out of for loop)
-                        # print(i)
-                        break
+            elif report["Element"].isin(elements[case]).any():
+                for i in range(len(report)):
+                    if report["Element"][i] in elements[case]:
+                        indx_ = elements[case].index(report["Element"][i])  # find the index of
+                        if report[" %Normal"][i] >= new_threshold[case][indx_]:
+                            thermal_violation = True  # just exit here (get out of for loop)
+                            break
+                        else:
+                            thermal_violation = False
                     else:
-                        thermal_violation = False
-                else:
-                    # check the percentage normal if greater than specified % then only violation
+                        # check the percentage normal if greater than specified % then only violation
+                        if report[" %Normal"][i] >= th_limit:
+                            thermal_violation = True
+                            break
+                        else:
+                            thermal_violation = False
+
+            else:
+                # check the percentage normal if greater than specified % then only violation
+                for i in range(len(report)):
                     if report[" %Normal"][i] >= th_limit:
                         thermal_violation = True
                         break
                     else:
                         thermal_violation = False
 
-        else:
-            # check the percentage normal if greater than specified % then only violation
-            for i in range(len(report)):
-                if report[" %Normal"][i] >= th_limit:
-                    thermal_violation = True
-                    break
-                else:
-                    thermal_violation = False
-
-        # print(thermal_violation)  # for initial testing
-        if thermal_violation == True:
-            # print(thermal_violation)  # for initial testing
-            dss.Text.Command("export Capacity")
-            dss.Text.Command("export Currents")
-            cap_limit = new_kW
-            dss.Text.Command("edit Load." + str(which_load["name"]) + " kW=" + str(initial_kW))
-            dss.Text.Command("Compile " + MasterFile)
-            dss.Text.Command("solve mode = snap")
-        else:
-            tmp_kW = new_kW
+            logger.debug("thermal_violation=%s", thermal_violation)
+            if thermal_violation:
+                logger.debug("thermal_violation=%s", thermal_violation)
+                dss.Text.Command(f"export Capacity {output_dir / 'capacity.csv'}")
+                dss.Text.Command(f"export Currents {output_dir / 'currents.csv'}")
+                cap_limit = new_kW
+                # TODO: no point in doing this, right?
+                # dss.Text.Command("edit Load." + str(which_load["name"]) + " kW=" + str(initial_kW))
+                compile_circuit(master_file)
+            else:
+                tmp_kW = new_kW
 
     return [cap_limit]
 
 
-#########################################################################################################################
-# get the load data
-[Load, totalkW] = get_loads(dss, circuit, 0, "")
+@track_timing(timer_stats_collector)
+def compile_circuit(master_file: Path):
+    logger.info("Compile circuit from %s", master_file)
+    orig = os.getcwd()
+    try:
+        dss.Text.Command(f"Compile {master_file}")
+    finally:
+        os.chdir(orig)
 
-# calculate the hosting capacity based on voltage constraints
-v_output_df = []
-for j in range(len(v_limit)):
-    lmt1 = v_limit[j][0]
-    lmt2 = v_limit[j][1]
-    v_lst = []
-    v_output_list = []
-    v_threshold = []
-    v_allow_limit = []
-    v_names = []
-    v_bus_name = []
-    v_default_load = []
-    v_maxv = []
-    v_minv = []
-    for i in range(len(Load)):
-        v_node_cap = node_V_capacity_check(Load[i], lmt1, lmt2)  # v_node_cap is a list
-        v_allowable_load = v_node_cap[0] - step_v  # 10 # v_node_cap[0] is a float
-        v_threshold.append(v_node_cap[0])
-        v_allow_limit.append(v_allowable_load)
-        v_names.append(Load[i]["name"])
-        v_bus_name.append(Load[i]["bus1"])
-        v_default_load.append(Load[i]["kW"])
-        v_maxv.append(v_node_cap[1])
-        v_minv.append(v_node_cap[2])
 
-    v_lst = [v_names, v_bus_name, v_default_load, v_threshold, v_allow_limit, v_maxv, v_minv]
-    v_output_list = list(map(list, zip(*v_lst)))
-    # v_output_df[0] = pd.DataFrame(v_output_list, columns = ['Load' , 'Bus', 'Initial_kW', 'Volt_Violation', 'Maximum_kW', 'Max_voltage', 'Min_voltage'])
-    v_output_df.append(
-        pd.DataFrame(
-            v_output_list,
-            columns=[
-                "Load",
-                "Bus",
-                "Initial_kW",
-                "Volt_Violation",
-                "Maximum_kW",
-                "Max_voltage",
-                "Min_voltage",
-            ],
-        )
+@track_timing(timer_stats_collector)
+def export_circuit_element_properties(output_dir: Path):
+    export_dir = output_dir / "circuit_elements"
+    export_dir.mkdir()
+    exports = (
+        ("Capacitor", dss.Capacitors.Count),
+        ("Fuse", dss.Fuses.Count),
+        ("Generator", dss.Generators.Count),
+        ("Isource", dss.Isource.Count),
+        ("Line", dss.Lines.Count),
+        ("Load", dss.Loads.Count),
+        ("Monitor", dss.Monitors.Count),
+        ("PVSystem", dss.PVsystems.Count),
+        ("Recloser", dss.Reclosers.Count),
+        ("RegControl", dss.RegControls.Count),
+        ("Relay", dss.Relays.Count),
+        ("Sensor", dss.Sensors.Count),
+        ("Transformer", dss.Transformers.Count),
+        ("Vsource", dss.Vsources.Count),
+        ("XYCurve", dss.XYCurves.Count),
     )
 
-    v_output_df[j].to_csv("Hosting_capacity_test_" + str(feeder_folder) + "_" + str(lmt1) + ".csv")
+    for class_name, count_func in exports:
+        if count_func() > 0:
+            filename = export_dir / +f"{class_name}.csv"
+            df = dss.utils.class_to_dataframe(class_name)
+            df.to_csv(filename)
+            logger.info("Exported %s information to %s.", class_name, filename)
+        else:
+            logger.info("There are no elements of type=%s to export", class_name)
 
-# calculate the hosting capacity based on thermal ratings constraint
-th_threshold = [[], []]
-th_allow_limit = [[], []]
-th_names = [[], []]
-th_bus_name = [[], []]
-th_default_load = [[], []]
-
-th_output_df = []
-for i in range(len(extra_limit)):
-
-    th_lst = []
-    for j in range(len(Load)):
-        th_node_cap = thermal_overload_check(Load[j], extra_limit[i], i)  # th_node_cap is a list
-        th_allowable_load = (
-            th_node_cap[0] - step_thermal
-        )  # 5 # th_node_cap[0] is a float  # reduce the value of add_kW
-        th_threshold[i].append(th_node_cap[0])
-        th_allow_limit[i].append(th_allowable_load)
-        th_names[i].append(Load[j]["name"])
-        th_bus_name[i].append(Load[j]["bus1"])
-        th_default_load[i].append(Load[j]["kW"])
-
-    th_lst = [th_names[i], th_bus_name[i], th_default_load[i], th_threshold[i], th_allow_limit[i]]
-    th_output_list = list(map(list, zip(*th_lst)))
-    th_output_df.append(
-        pd.DataFrame(
-            th_output_list,
-            columns=["Load", "Bus", "Initial_kW", "Thermal_Violation", "Maximum_kW"],
-        )
-    )
-
-    th_output_df[i].to_csv(
-        "Thermal_capacity_test_" + str(feeder_folder) + "_" + str(extra_limit[i]) + ".csv"
-    )
-
-
-############################################## for plotting results ####################################################
-
-load_bus = pd.DataFrame()
-load_bus["Load"] = th_output_df[0]["Load"]  #
-load_bus["Bus"] = th_output_df[0]["Bus"]
-node_distance = pd.DataFrame()
-node_distance["Node"] = AllNodeNames
-node_distance["Distance"] = Bus_Distance
-
-dist_file = load_distance_from_SS.calc_dist(load_bus, node_distance)
-
-
-dist_file["Initial_MW"] = th_output_df[0]["Initial_kW"] / 1000
-dist_file["Volt_Violation_0.95"] = v_output_df[0]["Volt_Violation"] / 1000
-dist_file["Volt_Violation_0.975"] = v_output_df[1]["Volt_Violation"] / 1000
-dist_file["Volt_Violation_0.985"] = v_output_df[2]["Volt_Violation"] / 1000
-
-dist_file["Thermal_Violation_100"] = th_output_df[0]["Thermal_Violation"] / 1000
-# dist_file["Thermal_Violation_120"] = th_output_df[1]["Thermal_Violation"]/1000
-
-plot_df = dist_file.sort_values(by=["Distance"])
-
-# plot voltage violation scenarios
-plot_hosting_capacity.plot_capacity_V(
-    plot_df,
-    "Initial_MW",
-    "Volt_Violation_0.95",
-    "Volt_Violation_0.975",
-    "Volt_Violation_0.985",
-    feeder_folder,
-)
-
-# plot thermal violation
-plot_hosting_capacity.plot_capacity_thermal_1(
-    plot_df, "Initial_MW", "Thermal_Violation_100", feeder_folder, 100
-)
-# plot_hosting_capacity.plot_capacity_thermal_2(plot_df, 'Initial_MW', 'Thermal_Violation_100', 'Thermal_Violation_120', feeder_folder)
-
-
-####################### Assuming the hosting capacity is limited by thermal loading #####################################
-
-## Difference of initial load and maximum hosting capacity (assuming always thermal limit occurs first) ##
-
-for i in range(len(extra_limit)):
-    diff = th_output_df[i]["Thermal_Violation"] - th_output_df[i]["Initial_kW"]
-    new_df = pd.DataFrame()
-
-    new_df["Load"] = th_output_df[i]["Load"]
-    new_df["Bus"] = th_output_df[i]["Bus"]
-    new_df["Initial_kW"] = th_output_df[i]["Initial_kW"]
-    new_df["Hosting_capacity(kW)"] = diff  # additional load it can support
-
-    new_df.to_csv(
-        str(feeder_folder) + "_Additional_HostingCapacity_" + str(extra_limit[i]) + ".csv",
-        index=False,
-    )
-
-    ## find number of ev chargers for each node ##
-
-    chargers_3_2_1 = number_of_ev_chargers.levels_of_charger(th_output_df[i])
-    chargers_3_2_1.to_csv(
-        str(feeder_folder) + "_Loadwithlevel3_2_1_" + str(extra_limit[i]) + ".csv"
-    )
+    all_node_names = circuit.YNodeOrder()
+    pd.DataFrame(all_node_names).to_csv(output_dir / "Allnodenames.csv")
