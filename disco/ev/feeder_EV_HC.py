@@ -51,9 +51,9 @@ master_dssfile = "Master.dss"
 MainDir = os.getcwd()
 FeederDir = os.path.join(MainDir, feeder_folder)
 MasterFile = os.path.join(FeederDir, master_dssfile)
-dss.run_command("clear")
-dss.run_command("Compile " + MasterFile)
-dss.run_command("solve")
+dss.Text.Command("clear")
+dss.Text.Command(f"Compile {MasterFile}")
+dss.Text.Command("solve")
 circuit = dss.Circuit
 ckt_name = circuit.Name()
 print("\n*** Circuit name:", ckt_name, "***\n from ", feeder_folder, " folder\n")
@@ -85,8 +85,8 @@ for i, n in enumerate(regNames):
     hRegNames[i] = str(n)
 hRegNames = str(hRegNames)[1:-1]
 
-dss.run_command("solve mode=snap")
-# dss.run_command('export voltages')
+dss.Text.Command("solve mode=snap")
+# dss.Text.Command('export voltages')
 v = np.array(dss.Circuit.AllBusMagPu())
 
 
@@ -154,8 +154,8 @@ def node_V_capacity_check(which_load, low_lmt, high_lmt):
     while volt_violation == False:
         # while the voltages are within limits keep on increasing
         new_kW = tmp_kW + add_kW  # increase the load by 10 kW each time
-        dss.run_command("edit Load." + str(which_load["name"]) + " kW=" + str(new_kW))
-        dss.run_command("solve mode = snap")
+        dss.Text.Command("edit Load." + str(which_load["name"]) + " kW=" + str(new_kW))
+        dss.Text.Command("solve mode = snap")
         v = np.array(dss.Circuit.AllBusMagPu())
         volt_violation = np.any(v > high_lmt) or np.any(v < low_lmt)
         #  print(volt_violation)  # for initial testing
@@ -164,9 +164,9 @@ def node_V_capacity_check(which_load, low_lmt, high_lmt):
             vmax = np.max(v)
             vmin = np.min(v)
             cap_limit = new_kW
-            dss.run_command("edit Load." + str(which_load["name"]) + " kW=" + str(initial_kW))
-            dss.run_command("Compile " + MasterFile)
-            dss.run_command("solve mode = snap")
+            dss.Text.Command("edit Load." + str(which_load["name"]) + " kW=" + str(initial_kW))
+            dss.Text.Command("Compile " + MasterFile)
+            dss.Text.Command("solve mode = snap")
         else:
             tmp_kW = new_kW
 
@@ -174,8 +174,8 @@ def node_V_capacity_check(which_load, low_lmt, high_lmt):
 
 
 ################################# for thermal overload capapcity #######################################################
-dss.run_command("solve mode = snap")
-dss.run_command("export Overloads")
+dss.Text.Command("solve mode = snap")
+dss.Text.Command("export Overloads")
 
 # rename this overload csv file
 src = circuit.Name() + "_EXP_OVERLOADS.CSV"
@@ -223,9 +223,9 @@ def thermal_overload_check(which_load, th_limit, case):
     while thermal_violation == False:
         # while the elements loadings are within limits keep on increasing
         new_kW = tmp_kW + add_kW  # increase the load by 5 kW each time
-        dss.run_command("edit Load." + str(which_load["name"]) + " kW=" + str(new_kW))
-        dss.run_command("solve mode = snap")
-        dss.run_command("export Overloads")
+        dss.Text.Command("edit Load." + str(which_load["name"]) + " kW=" + str(new_kW))
+        dss.Text.Command("solve mode = snap")
+        dss.Text.Command("export Overloads")
         report = pd.read_csv(str(ckt_name) + "_EXP_OVERLOADS.CSV")
         report["Element"] = report["Element"].str.strip()
 
@@ -262,12 +262,12 @@ def thermal_overload_check(which_load, th_limit, case):
         # print(thermal_violation)  # for initial testing
         if thermal_violation == True:
             # print(thermal_violation)  # for initial testing
-            dss.run_command("export Capacity")
-            dss.run_command("export Currents")
+            dss.Text.Command("export Capacity")
+            dss.Text.Command("export Currents")
             cap_limit = new_kW
-            dss.run_command("edit Load." + str(which_load["name"]) + " kW=" + str(initial_kW))
-            dss.run_command("Compile " + MasterFile)
-            dss.run_command("solve mode = snap")
+            dss.Text.Command("edit Load." + str(which_load["name"]) + " kW=" + str(initial_kW))
+            dss.Text.Command("Compile " + MasterFile)
+            dss.Text.Command("solve mode = snap")
         else:
             tmp_kW = new_kW
 
