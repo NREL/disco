@@ -197,7 +197,7 @@ def snapshot(
         for i in indices_to_pop.reverse():
             scenarios_config.pop(i)
         logger.info(
-            "Excluding %s scenarios because there are no pydss controllers.", CONTROL_MODE_SCENARIO
+            "Excluding %s scenario because there are no pydss controllers.", CONTROL_MODE_SCENARIO
         )
         config.set_pydss_config(ConfigType.SCENARIOS, scenarios_config)
 
@@ -241,18 +241,19 @@ def make_simulation_config(
         if report["name"] in ("Thermal Metrics", "Voltage Metrics"):
             report["store_per_element_data"] = store_per_element_data
 
+    names = []
+    scenarios = []
+    if not include_control_mode and not include_pf1:
+        logger.error("At least one of 'include_pf1' and 'include_control_mode' must be set.")
+        sys.exit(1)
+    if include_control_mode:
+        names.append(CONTROL_MODE_SCENARIO)
+    if include_pf1:
+        names.append(PF1_SCENARIO)
+
     if with_loadshape:
         simulation_config["project"]["simulation_type"] = SimulationType.QSTS.value
-        names = []
-        if not include_control_mode and not include_pf1:
-            logger.error("At least one of 'include_pf1' and 'include_control_mode' must be set.")
-            sys.exit(1)
-        if include_control_mode:
-            names.append(CONTROL_MODE_SCENARIO)
-        if include_pf1:
-            names.append(PF1_SCENARIO)
         if auto_select_time_points:
-            scenarios = []
             for scenario_name in names:
                 for mode in SnapshotTimePointSelectionMode:
                     if mode == SnapshotTimePointSelectionMode.NONE:
@@ -271,11 +272,13 @@ def make_simulation_config(
     else:
         exports = {} if exports_filename is None else load_data(exports_filename)
         simulation_config["project"]["simulation_type"] = SimulationType.SNAPSHOT.value
+        scenarios = [PyDssConfiguration.make_default_pydss_scenario(x) for x in names]
         scenarios = [
             PyDssConfiguration.make_default_pydss_scenario(
-                "scenario",
+                x,
                 exports=exports,
             )
+            for x in names
         ]
 
     return simulation_config, scenarios

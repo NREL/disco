@@ -76,21 +76,17 @@ class SnapshotPipelineCreator(PipelineCreatorBase):
                 pf1 = config_params["pf1"]
                 base_cmd = f"disco-internal compute-hosting-capacity {inputs}"
                 plot_cmd = f"disco-internal plot {inputs}"
-                if with_loadshape:
-                    scenarios = [CONTROL_MODE_SCENARIO]
-                    if pf1:
-                        scenarios.append(PF1_SCENARIO)
-                    if auto_select_time_points:
-                        for scenario in scenarios:
-                            for mode in SnapshotTimePointSelectionMode:
-                                if mode != SnapshotTimePointSelectionMode.NONE:
-                                    commands.append(f"{base_cmd} --scenario={scenario} --time-point={mode.value}")
-                    else:
-                        for scenario in scenarios:
-                            commands.append(f"{base_cmd} --scenario={scenario}")
+                scenarios = [CONTROL_MODE_SCENARIO]
+                if pf1:
+                    scenarios.append(PF1_SCENARIO)
+                if with_loadshape and auto_select_time_points:
+                    for scenario in scenarios:
+                        for mode in SnapshotTimePointSelectionMode:
+                            if mode != SnapshotTimePointSelectionMode.NONE:
+                                commands.append(f"{base_cmd} --scenario={scenario} --time-point={mode.value}")
                 else:
-                    commands.append(f"{base_cmd} --scenario=scenario")
-                    scenarios = ["scenario"]
+                    for scenario in scenarios:
+                        commands.append(f"{base_cmd} --scenario={scenario}")
             
                 # Plot
                 for scenario in scenarios:

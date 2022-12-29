@@ -125,7 +125,7 @@ class TableIngesterMixin:
         columns = self.data_class.__table__.columns.keys()
         data = [tuple([item[column] for column in columns]) for item in objects]
         self._perform_ingestion(columns=columns, data=data)
-        if "id" in objects[0]:
+        if objects and "id" in objects[0]:
             indexes = {self._generate_identifier(item): item["id"] for item in objects}
         else:
             indexes = []

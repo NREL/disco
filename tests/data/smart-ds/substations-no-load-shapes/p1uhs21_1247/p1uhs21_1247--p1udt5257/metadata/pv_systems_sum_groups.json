@@ -1,0 +1,20 @@
+{
+  "sum_groups": [
+    {
+      "name": "residential",
+      "elements": [
+        "small_p1ulv53232_1_2_pv",
+        "small_p1ulv31790_1_2_pv",
+        "small_p1ulv59420_1_2_pv",
+        "small_p1ulv62436_1_2_pv"
+      ]
+    },
+    {
+      "name": "commercial",
+      "elements": [
+        "small_p1ulv57596_1_2_3_pv",
+        "small_p1ulv5951_1_2_pv"
+      ]
+    }
+  ]
+}

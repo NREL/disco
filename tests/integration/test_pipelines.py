@@ -47,18 +47,17 @@ SCENARIO_HOSTING_CAPACITY_OVERALL_FILE = "hosting_capacity_overall__control_mode
 
 
 CONFIG_HPC_COMMAND = (
-    f"jade config hpc -a testaccount -p short -t local -w 4:00 "
-    f"-c {TEST_HPC_CONFIG_FILE}"
+    f"jade config hpc -a testaccount -p short -t local -w 4:00 " f"-c {TEST_HPC_CONFIG_FILE}"
 )
 MAKE_PIPELINE_CONFIG_COMMAND = (
-    f"disco create-pipeline config {TEST_TEMPLATE_FILE} "
-    F"-c {TEST_PIPELINE_CONFIG_FILE}"
+    f"disco create-pipeline config {TEST_TEMPLATE_FILE} " f"-c {TEST_PIPELINE_CONFIG_FILE}"
 )
 
 
 @pytest.fixture
 def cleanup():
     """clean up all filenames and dirs generated during tests"""
+
     def delete_test_results():
         result_files = [
             TEST_TEMPLATE_FILE,
@@ -76,7 +75,7 @@ def cleanup():
             SNAPSHOT_REPORTS_FILE,
             TIME_SERIES_REPORTS_FILE,
             SCENARIO_HOSTING_CAPACITY_SUMMARY_FILE,
-            SCENARIO_HOSTING_CAPACITY_OVERALL_FILE
+            SCENARIO_HOSTING_CAPACITY_OVERALL_FILE,
         ]
         for path in result_files:
             if os.path.exists(path):
@@ -86,7 +85,7 @@ def cleanup():
             SNAPSHOT_MODELS_DIR,
             TIME_SERIES_MODELS_DIR,
             TEST_PIPELINE_OUTPUT,
-            TEST_PRECONFIGURED_MODELS
+            TEST_PRECONFIGURED_MODELS,
         ]
         for path in result_dirs:
             if os.path.exists(path):
@@ -123,7 +122,9 @@ def test_source_tree_1_create_snapshot_pipeline_template(smart_ds_substations, c
     assert "submitter-params" in data["simulation"]
 
 
-def test_source_tree_1_create_snapshot_pipeline_template__impact_analysis(smart_ds_substations, cleanup):
+def test_source_tree_1_create_snapshot_pipeline_template__impact_analysis(
+    smart_ds_substations, cleanup
+):
     cmd = (
         f"disco create-pipeline template {smart_ds_substations} "
         "--task-name TestTask "
@@ -169,7 +170,9 @@ def test_source_tree_1_create_snapshot_pipeline_template__prescreen(smart_ds_sub
     assert "prescreen" not in data
 
 
-def test_source_tree_1_create_snapshot_pipeline_template__preconfigured_models(smart_ds_substations, cleanup):
+def test_source_tree_1_create_snapshot_pipeline_template__preconfigured_models(
+    smart_ds_substations, cleanup
+):
     cmd1 = f"disco transform-model {smart_ds_substations} snapshot -o {TEST_PRECONFIGURED_MODELS}"
     ret = run_command(cmd1)
     assert ret == 0
@@ -279,7 +282,9 @@ def test_source_tree_1_create_time_series_pipeline_template(smart_ds_substations
     assert "submitter-params" in data["simulation"]
 
 
-def test_source_tree_1_create_time_series_pipeline_template__impact_analysis(smart_ds_substations, cleanup):
+def test_source_tree_1_create_time_series_pipeline_template__impact_analysis(
+    smart_ds_substations, cleanup
+):
     cmd = (
         f"disco create-pipeline template {smart_ds_substations} "
         "--task-name TestTask "
@@ -310,7 +315,9 @@ def test_source_tree_1_create_time_series_pipeline_template__impact_analysis(sma
     assert "submitter-params" in data["postprocess"]
 
 
-def test_source_tree_1_create_time_series_pipeline_template__prescreen(smart_ds_substations, cleanup):
+def test_source_tree_1_create_time_series_pipeline_template__prescreen(
+    smart_ds_substations, cleanup
+):
     cmd = (
         f"disco create-pipeline template {smart_ds_substations} "
         "--task-name TestTask "
@@ -341,7 +348,9 @@ def test_source_tree_1_create_time_series_pipeline_template__prescreen(smart_ds_
     assert "submitter-params" in data["simulation"]
 
 
-def test_source_tree_1_create_time_series_pipeline_template__prescreen__impact_analysis(smart_ds_substations, cleanup):
+def test_source_tree_1_create_time_series_pipeline_template__prescreen__impact_analysis(
+    smart_ds_substations, cleanup
+):
     cmd = (
         f"disco create-pipeline template {smart_ds_substations} "
         "--task-name TestTask "
@@ -483,7 +492,9 @@ def test_source_tree_1_config_time_series_pipeline__impact_analysis(smart_ds_sub
     assert len(pipeline_data["stages"]) == 2
 
 
-def test_source_tree_1_config_time_series_pipeline__prescreen__impact_analysis(smart_ds_substations, cleanup):
+def test_source_tree_1_config_time_series_pipeline__prescreen__impact_analysis(
+    smart_ds_substations, cleanup
+):
     cmd1 = (
         f"disco create-pipeline template {smart_ds_substations} "
         "--task-name TestTask "
@@ -546,10 +557,16 @@ def test_source_tree_1_snapshot_pipeline_submit__hosting_capacity(smart_ds_subst
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", FEEDER_HEAD_TABLE))
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", FEEDER_LOSSES_TABLE))
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", METADATA_TABLE))
-    assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", THERMAL_METRICS_TABLE))
-    assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", VOLTAGE_METRICS_TABLE))
+    assert os.path.exists(
+        os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", THERMAL_METRICS_TABLE)
+    )
+    assert os.path.exists(
+        os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", VOLTAGE_METRICS_TABLE)
+    )
 
-    modes = (x.value for x in SnapshotTimePointSelectionMode if x != SnapshotTimePointSelectionMode.NONE)
+    modes = (
+        x.value for x in SnapshotTimePointSelectionMode if x != SnapshotTimePointSelectionMode.NONE
+    )
     for mode in modes:
         expected1 = SCENARIO_HOSTING_CAPACITY_OVERALL_FILE.replace(".json", f"__{mode}.json")
         expected2 = SCENARIO_HOSTING_CAPACITY_SUMMARY_FILE.replace(".json", f"__{mode}.json")
@@ -557,7 +574,52 @@ def test_source_tree_1_snapshot_pipeline_submit__hosting_capacity(smart_ds_subst
         assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", expected2))
 
 
-def test_source_tree_1_time_series_pipeline_submit__prescreen__impact_analysis(smart_ds_substations, cleanup):
+def test_source_tree_1_snapshot_no_loadshapes_pipeline_submit__hosting_capacity(
+    smart_ds_substations_no_loadshapes, cleanup
+):
+    cmd1 = (
+        f"disco create-pipeline template {smart_ds_substations_no_loadshapes} "
+        "--task-name TestTask "
+        f"--hosting-capacity --no-with-loadshape "
+        f"--template-file {TEST_TEMPLATE_FILE} "
+        "--local"
+    )
+    ret = run_command(cmd1)
+    assert ret == 0
+    ret = run_command(MAKE_PIPELINE_CONFIG_COMMAND)
+
+    cmd2 = f"jade pipeline submit {TEST_PIPELINE_CONFIG_FILE} -o {TEST_PIPELINE_OUTPUT}"
+    ret = run_command(cmd2)
+
+    assert ret == 0
+    assert not os.path.exists("snapshot-models")
+    assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "snapshot-models"))
+
+    assert os.path.exists(TEST_PIPELINE_OUTPUT)
+    assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1"))
+    assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage2"))
+
+    assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", FEEDER_HEAD_TABLE))
+    assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", FEEDER_LOSSES_TABLE))
+    assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", METADATA_TABLE))
+    assert os.path.exists(
+        os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", THERMAL_METRICS_TABLE)
+    )
+    assert os.path.exists(
+        os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", VOLTAGE_METRICS_TABLE)
+    )
+
+    assert os.path.exists(
+        os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", SCENARIO_HOSTING_CAPACITY_OVERALL_FILE)
+    )
+    assert os.path.exists(
+        os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", SCENARIO_HOSTING_CAPACITY_SUMMARY_FILE)
+    )
+
+
+def test_source_tree_1_time_series_pipeline_submit__prescreen__impact_analysis(
+    smart_ds_substations, cleanup
+):
     cmd1 = (
         f"disco create-pipeline template {smart_ds_substations} "
         "--task-name TestTask "
@@ -589,8 +651,12 @@ def test_source_tree_1_time_series_pipeline_submit__prescreen__impact_analysis(s
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage2", FEEDER_HEAD_TABLE))
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage2", FEEDER_LOSSES_TABLE))
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage2", METADATA_TABLE))
-    assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage2", THERMAL_METRICS_TABLE))
-    assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage2", VOLTAGE_METRICS_TABLE))
+    assert os.path.exists(
+        os.path.join(TEST_PIPELINE_OUTPUT, "output-stage2", THERMAL_METRICS_TABLE)
+    )
+    assert os.path.exists(
+        os.path.join(TEST_PIPELINE_OUTPUT, "output-stage2", VOLTAGE_METRICS_TABLE)
+    )
 
 
 def test_source_tree_1_time_series_pipeline_submit__cost_benefit(smart_ds_substations, cleanup):
@@ -623,4 +689,6 @@ def test_source_tree_1_time_series_pipeline_submit__cost_benefit(smart_ds_substa
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", REG_CONTROL_TABLE))
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", POWERS_TABLE))
     assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", LOAD_TYPES_TABLE))
-    assert os.path.exists(os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", PV_SYSTEM_TYPES_TABLE))
+    assert os.path.exists(
+        os.path.join(TEST_PIPELINE_OUTPUT, "output-stage1", PV_SYSTEM_TYPES_TABLE)
+    )
