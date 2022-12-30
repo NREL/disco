@@ -26,6 +26,7 @@ def determine_thermal_upgrades(
     enable_pydss_solve,
     pydss_volt_var_model,
     thermal_config,
+    simulation_params_config,
     internal_upgrades_technical_catalog_filepath,
     thermal_upgrades_dss_filepath,
     upgraded_master_dss_filepath,
@@ -33,26 +34,29 @@ def determine_thermal_upgrades(
     feeder_stats_json_file,
     thermal_upgrades_directory,
     overall_output_summary_filepath,
-    dc_ac_ratio,
     ignore_switch=True,
     verbose=False
 ):
     start_time = time.time()
     logger.info( f"Simulation start time: {start_time}")   
     initial_simulation_params = {"enable_pydss_solve": enable_pydss_solve, "pydss_volt_var_model": pydss_volt_var_model,
-                                 "dc_ac_ratio": dc_ac_ratio}
-    logger.info("Initial simulation parameters: %s", initial_simulation_params)
+                                "dc_ac_ratio": simulation_params_config["dc_ac_ratio"]}
     create_plots = thermal_config["create_plots"]
-    # start upgrades
-    initial_dss_file_list = [master_path]
-    simulation_params = reload_dss_circuit(dss_file_list=initial_dss_file_list, commands_list=None, **initial_simulation_params)
+    
     timepoint_multipliers = thermal_config["timepoint_multipliers"]
-
     if timepoint_multipliers is not None:
         multiplier_type = LoadMultiplierType.UNIFORM
     else:
         multiplier_type = LoadMultiplierType.ORIGINAL
-    simulation_params.update({"timepoint_multipliers": timepoint_multipliers, "multiplier_type": multiplier_type})
+    initial_simulation_params.update({"timepoint_multipliers": timepoint_multipliers, "multiplier_type": multiplier_type})
+    
+    if simulation_params_config["timeseries_analysis"]:
+        initial_simulation_params.update({"timeseries_analysis": simulation_params_config["timeseries_analysis"]})
+    logger.info("Initial simulation parameters: %s", initial_simulation_params)
+    
+    # start upgrades
+    initial_dss_file_list = [master_path]
+    simulation_params = reload_dss_circuit(dss_file_list=initial_dss_file_list, commands_list=None, **initial_simulation_params)
     
     voltage_upper_limit = thermal_config["voltage_upper_limit"]
     voltage_lower_limit = thermal_config["voltage_lower_limit"]
