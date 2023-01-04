@@ -13,7 +13,7 @@ from disco.extensions.upgrade_simulation.upgrade_configuration import (
 )
 from disco.models.upgrade_cost_analysis_generic_input_model import (
     ThermalUpgradeParamsModel,
-    VoltageUpgradeParamsModel
+    VoltageUpgradeParamsModel,
 )
 
 logger = logging.getLogger(__name__)
@@ -64,6 +64,7 @@ def upgrade(
     thermal_upgrade_params = ThermalUpgradeParamsModel(**params["thermal_upgrade_params"]).dict()
     voltage_upgrade_params = VoltageUpgradeParamsModel(**params["voltage_upgrade_params"]).dict()
     upgrade_simulation_params = params["upgrade_simulation_params"]
+    breakpoint()
 
     job_global_config = {
         "upgrade_cost_database": cost_database,

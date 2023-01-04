@@ -31,6 +31,9 @@ def get_default_thermal_upgrade_params():
 def get_default_voltage_upgrade_params():
     return _get_default_upgrade_params()["voltage_upgrade_params"]
 
+def get_default_upgrade_simulation_params():
+    breakpoint()
+    return _get_default_upgrade_params()["upgrade_simulation_params"]
 
 class OpenDSSLineModel(OpenDSSLineParams):
     bus1: str = Field(
@@ -484,6 +487,70 @@ class VoltageUpgradeParamsModel(UpgradeParamsBaseModel):
         return timepoint_multipliers
 
 
+class PyDssControllerModels(UpgradeParamsBaseModel):
+    """Defines the settings for PyDSS controllers"""
+
+    pv_controller: Optional[PvControllerModel] = Field(
+        title="pv_controller", description="Settings for a PV controller"
+    )
+
+
+class UpgradeSimulationParamsModel(UpgradeParamsBaseModel):
+    """Parameters for all jobs in a simulation"""
+    plot_violations: bool = Field(
+        title="plot_violations",
+        description="If True, create plots of violations before and after simulation.",
+        default=True,
+    )
+    upgrade_order: Optional[List[str]] = Field(
+        description="Order of upgrade algorithm. 'thermal' or 'voltage' can be removed from the "
+        "simulation by excluding them from this parameter.",
+        default=_SUPPORTED_UPGRADE_TYPES,
+    )
+    include_pf1: Optional[bool] = Field(
+        title="include_pf1",
+        description="Include PF1 scenario (no controls) if pydss_controllers are defined.",
+        default=True,
+    )
+    dc_ac_ratio: Optional[float] = Field(
+        title="dc_ac_ratio", 
+        description="Apply DC-AC ratio for PV Systems", 
+        default=None
+    )
+    timeseries_analysis: Optional[bool] = Field(
+        title="timeseries_analysis", 
+        description="timeseries_analysis", 
+        default=False
+    )
+    enable_pydss_controllers: Optional[bool] = Field(
+        title="enable_pydss_controllers",
+        description="Flag to enable/disable use of PyDSS controllers",
+        default=False,
+    )
+    pydss_controllers: Optional[PyDssControllerModels] = Field(
+        title="pydss_controllers",
+        description="If enable_pydss_controllers is True, these PyDSS controllers are applied to each corresponding element type.",
+        default=PyDssControllerModels(),
+    )
+
+    @validator("upgrade_order")
+    def check_upgrade_order(cls, upgrade_order):
+        diff = set(upgrade_order).difference(_SUPPORTED_UPGRADE_TYPES)
+        if diff:
+            raise ValueError(f"Unsupported values in upgrade_order: {diff}")
+        return upgrade_order
+    
+    def has_pydss_controllers(self):
+        """Return True if a PyDSS controller is defined.
+
+        Returns
+        -------
+        bool
+
+        """
+        return self.pydss_controllers.pv_controller is not None
+
+
 class UpgradeCostAnalysisGenericModel(BaseAnalysisModel):
     """Parameters for each job in a simulation"""
 
@@ -517,15 +584,7 @@ class UpgradeCostAnalysisGenericModel(BaseAnalysisModel):
         return opendss_model_file
 
 
-class PyDssControllerModels(UpgradeParamsBaseModel):
-    """Defines the settings for PyDSS controllers"""
-
-    pv_controller: Optional[PvControllerModel] = Field(
-        title="pv_controller", description="Settings for a PV controller"
-    )
-
-
-class UpgradeCostAnalysisSimulationModel(UpgradeParamsBaseModel):
+class UpgradeCostAnalysisSimulationModel(UpgradeSimulationParamsModel):
     """Defines the jobs in an upgrade cost analysis simulation."""
 
     class Config:
@@ -546,41 +605,10 @@ class UpgradeCostAnalysisSimulationModel(UpgradeParamsBaseModel):
         title="upgrade_cost_database",
         description="Database containing costs for each equipment type",
     )
-    calculate_costs: bool = Field(
+    calculate_costs:Optional[bool] = Field(
         title="calculate_costs",
         description="If True, calculate upgrade costs from database.",
         default=True,
-    )
-    upgrade_order: List[str] = Field(
-        description="Order of upgrade algorithm. 'thermal' or 'voltage' can be removed from the "
-        "simulation by excluding them from this parameter.",
-        default=_SUPPORTED_UPGRADE_TYPES,
-    )
-    pydss_controllers: PyDssControllerModels = Field(
-        title="pydss_controllers",
-        description="If enable_pydss_controllers is True, these PyDSS controllers are applied to each corresponding element type.",
-        default=PyDssControllerModels(),
-    )
-    plot_violations: bool = Field(
-        title="plot_violations",
-        description="If True, create plots of violations before and after simulation.",
-        default=True,
-    )
-    enable_pydss_controllers: bool = Field(
-        title="enable_pydss_controllers",
-        description="Flag to enable/disable use of PyDSS controllers",
-        default=False,
-    )
-    include_pf1: bool = Field(
-        title="include_pf1",
-        description="Include PF1 scenario (no controls) if pydss_controllers are defined.",
-        default=True,
-    )
-    dc_ac_ratio: Optional[float] = Field(
-        title="dc_ac_ratio", description="Apply DC-AC ratio for PV Systems", default=None
-    )
-    timeseries_analysis: Optional[bool] = Field(
-        title="timeseries_analysis", description="timeseries_analysis", default=False
     )
     jobs: List[UpgradeCostAnalysisGenericModel]
 
@@ -592,7 +620,7 @@ class UpgradeCostAnalysisSimulationModel(UpgradeParamsBaseModel):
                 raise ValueError(f"{job['name']} is duplicated")
             names.add(job["name"])
         return values
-
+    
     @validator("calculate_costs")
     def check_database(cls, calculate_costs, values):
         if calculate_costs:
@@ -604,23 +632,6 @@ class UpgradeCostAnalysisSimulationModel(UpgradeParamsBaseModel):
             load_cost_database(values["upgrade_cost_database"])
         return calculate_costs
 
-    @validator("upgrade_order")
-    def check_upgrade_order(cls, upgrade_order):
-        diff = set(upgrade_order).difference(_SUPPORTED_UPGRADE_TYPES)
-        if diff:
-            raise ValueError(f"Unsupported values in upgrade_order: {diff}")
-        return upgrade_order
-
-    def has_pydss_controllers(self):
-        """Return True if a PyDSS controller is defined.
-
-        Returns
-        -------
-        bool
-
-        """
-        return self.pydss_controllers.pv_controller is not None
- 
     
 class TransformerUnitCostModel(UpgradeParamsBaseModel):
     """Contains Transformer Unit Cost Database Model"""

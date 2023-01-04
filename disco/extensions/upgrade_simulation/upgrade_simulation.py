@@ -118,7 +118,7 @@ class UpgradeSimulation:
         pydss_controller_model,
         thermal_config,
         voltage_config,
-        simulation_params_config,
+        upgrade_simulation_params_config,
         cost_database_filepath,
         verbose=False
     ):  
@@ -127,7 +127,7 @@ class UpgradeSimulation:
             master_path=self.model.deployment.deployment_file,
             enable_pydss_solve=enable_pydss_solve,
             thermal_config=thermal_config,
-            simulation_params_config=simulation_params_config,
+            simulation_params_config=upgrade_simulation_params_config,
             pydss_volt_var_model=pydss_controller_model,
             internal_upgrades_technical_catalog_filepath=self.internal_upgrades_technical_catalog_filepath(),
             thermal_upgrades_dss_filepath=self.get_thermal_upgrades_dss_file(),
@@ -145,7 +145,7 @@ class UpgradeSimulation:
             pydss_volt_var_model=pydss_controller_model,
             thermal_config=thermal_config,
             voltage_config=voltage_config,
-            simulation_params_config=simulation_params_config,
+            simulation_params_config=upgrade_simulation_params_config,
             thermal_upgrades_dss_filepath=self.get_thermal_upgrades_dss_file(),
             voltage_upgrades_dss_filepath=self.get_voltage_upgrades_dss_file(),
             upgraded_master_dss_filepath=self.get_upgraded_master_dss_file(),

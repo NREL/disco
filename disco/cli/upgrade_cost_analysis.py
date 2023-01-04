@@ -20,7 +20,7 @@ from disco.cli.make_upgrade_tables import get_upgrade_tables, combine_job_output
 from disco.exceptions import DiscoBaseException, get_error_code_from_exception
 from disco.models.base import OpenDssDeploymentModel
 from disco.models.upgrade_cost_analysis_generic_input_model import (
-    UpgradeCostAnalysisSimulationModel
+    UpgradeCostAnalysisSimulationModel, UpgradeSimulationParamsModel
 )
 from disco.models.upgrade_cost_analysis_generic_output_model import (
     JobUpgradeSummaryOutputModel,
@@ -284,26 +284,24 @@ def run_job(job, config, jobs_output_dir, file_log_level):
             feeder="NA",
         ),
     )
-
+    breakpoint()
+    upgrade_simulation_params_names = list(UpgradeSimulationParamsModel.schema()["properties"].keys())
+    breakpoint()
     global_config = {
         "thermal_upgrade_params": config.thermal_upgrade_params.dict(),
         "voltage_upgrade_params": config.voltage_upgrade_params.dict(),
-        "upgrade_simulation_params": {
-            "enable_pydss_controller": config.enable_pydss_controllers,
-        },
+        "upgrade_simulation_params": dict((k, config.dict()[k]) for k in upgrade_simulation_params_names),
         "upgrade_cost_database": config.upgrade_cost_database,
-        "dc_ac_ratio": config.dc_ac_ratio,
     }
-    global_config["upgrade_simulation_params"]["pydss_controller"] = None
+    # TODO decide what to do here
+    pydss_controller = None
     if (config.pydss_controllers.pv_controller is not None) and config.enable_pydss_controllers:
-        global_config["upgrade_simulation_params"]["pydss_controller"] = (
+        pydss_controller = (
             config.pydss_controllers.pv_controller.dict(),
         )
     # create a simulation params dictionary
-    rem_list = ["thermal_upgrade_params", "voltage_upgrade_params", "jobs", "enable_pydss_controllers", "pydss_controllers"]
-    simulation_params_config = dict(config)
-    simulation_params_config = {key: simulation_params_config[key] for key in simulation_params_config if key not in rem_list}
-
+    upgrade_simulation_params = global_config["upgrade_simulation_params"]
+    breakpoint()
     simulation = UpgradeSimulation(
         job=job,
         job_global_config=global_config,
@@ -314,7 +312,7 @@ def run_job(job, config, jobs_output_dir, file_log_level):
         pydss_controller_model=config.pydss_controllers.pv_controller,
         thermal_config=global_config["thermal_upgrade_params"],
         voltage_config=global_config["voltage_upgrade_params"],
-        simulation_params_config=simulation_params_config,
+        upgrade_simulation_params_config=upgrade_simulation_params,
         cost_database_filepath=global_config["upgrade_cost_database"],
         verbose=file_log_level == logging.DEBUG,
     )
