@@ -57,6 +57,8 @@ def reload_dss_circuit(dss_file_list, commands_list=None,  **kwargs):
 
     """
     logger.info("Reloading OpenDSS circuit")
+    if "solve" in kwargs.keys():
+        raise Exception("WRONG")
     check_dss_run_command("clear")
     if dss_file_list is None:
         raise Exception("No OpenDSS files have been passed to be loaded.")
@@ -72,15 +74,14 @@ def reload_dss_circuit(dss_file_list, commands_list=None,  **kwargs):
             check_dss_run_command(command_string)
             if "new " in command_string.lower():
                 check_dss_run_command("CalcVoltageBases")
-    solve = kwargs.get("solve", True)
-    if not solve:
-        return kwargs
     enable_pydss_solve = kwargs.get("enable_pydss_solve", False)
     raise_exception = kwargs.get("raise_exception", True)
     if enable_pydss_solve:
-        pydss_params = define_initial_pydss_settings(**kwargs)
-        circuit_solve_and_check(raise_exception=raise_exception, **pydss_params)
-        return pydss_params
+        pydss_params = define_initial_pydss_settings(pydss_volt_var_model=kwargs["pydss_volt_var_model"], 
+                                                     pydss_controller_manager=kwargs["pydss_controller_manager"])
+        kwargs.update(pydss_params)
+        circuit_solve_and_check(raise_exception=raise_exception, **kwargs)
+        return kwargs
     else:
         max_control_iterations = kwargs.get("max_control_iterations", None)
         if max_control_iterations is not None:
@@ -1102,7 +1103,7 @@ def get_thermal_equipment_info(compute_loading, equipment_type, upper_limit=None
 
     timeseries_analysis = kwargs.get("timeseries_analysis", False)
     if timeseries_analysis:
-        loading_df = apply_timeseries_step(equipment_type, compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch, 
+        loading_df = apply_timeseries_thermal(equipment_type, compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch, 
                                            deciding_column_name=deciding_column_name,**kwargs)
         return loading_df
     
@@ -1140,26 +1141,21 @@ def get_thermal_equipment_info(compute_loading, equipment_type, upper_limit=None
     return loading_df
 
 
-def apply_timeseries_step(equipment_type, **kwargs):
+def apply_timeseries_thermal(equipment_type, **kwargs):
     """
     Time-series data used to determine thermal and voltage violations
+    
     """
     if (equipment_type.lower() == "transformer") or (equipment_type.lower() == "line"):
         deciding_column_name = kwargs.get("deciding_column_name")
         compute_loading = kwargs.get("compute_loading")
         upper_limit = kwargs.get("upper_limit")
         ignore_switch = kwargs.get("ignore_switch", False)
-    elif equipment_type == "voltage":  # pop out of dictionary since kwargs are also passed to voltage function
-        voltage_upper_limit = kwargs.pop("voltage_upper_limit")
-        voltage_lower_limit = kwargs.pop("voltage_lower_limit")
-        raise_exception = kwargs.pop("raise_exception")
-        deciding_column_dict = kwargs.pop("deciding_column_dict")
     else:
-        raise Exception(f"Incorrect equipment type {equipment_type} provided. Possible values: line, transformer, voltage.")
+        raise Exception(f"Incorrect equipment type {equipment_type} provided. Possible values: line, transformer.")
 
     comparison_dict = {}
-    sol = dss.Solution  # opendss solution interface
-    dss.run_command("Set mode=yearly number=1") # 1 power flow per solve and I guess stepsize remains the same
+    check_dss_run_command("Set mode=yearly number=1") # number=1, power flow per solve and stepsize remains the same
     startH = 0
     num_pts = len(dss.LoadShape.PMult())
 
@@ -1167,40 +1163,69 @@ def apply_timeseries_step(equipment_type, **kwargs):
     for present_step in range(startH, num_pts, time_step):
         key_name = "timepoint_"+str(present_step)
         logger.debug(f"Present step: {present_step}")
-        dss.run_command("Set Controlmode=Static") 
-        dss.Text.Command(f"set hour = {present_step}")
-        sol.Solve()  # solves for specific hour that has been set
+        check_dss_run_command("Set Controlmode=Static") 
+        check_dss_run_command(f"set hour = {present_step}")
+        dss.Solution.Solve()  # solves for specific hour that has been set
+        # TODO Sherin remove these debbug statements
         logger.debug(dss.LoadShape.Name())
         logger.debug(dss.LoadShape.PMult()[present_step])
         logger.debug(dss.Loads.Name())
         logger.debug(sum(dss.CktElement.Powers()[::2]))
-        if (equipment_type.lower() == "transformer") or (equipment_type.lower() == "line"):
-            if equipment_type.lower() == "line":
-                loading_df = get_all_line_info_instance(compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch)
-            elif equipment_type.lower() == "transformer":
-                loading_df = get_all_transformer_info_instance(compute_loading=compute_loading, upper_limit=upper_limit)
-            loading_df.set_index("name", inplace=True)
-            comparison_dict[key_name] = loading_df
-        elif equipment_type.lower() == "voltage":
-            bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages_instance(
-                    voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, raise_exception=raise_exception, **kwargs)
-            bus_voltages_df.set_index("name", inplace=True)
-            comparison_dict[key_name] = bus_voltages_df
+        if equipment_type.lower() == "line":
+            loading_df = get_all_line_info_instance(compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch)
+        elif equipment_type.lower() == "transformer":
+            loading_df = get_all_transformer_info_instance(compute_loading=compute_loading, upper_limit=upper_limit)
+        loading_df.set_index("name", inplace=True)
+        comparison_dict[key_name] = loading_df
 
     # compare all dataframe, and create one that contains all worst loading conditions (across all multiplier conditions)
-    if (equipment_type.lower() == "transformer") or (equipment_type.lower() == "line"):
-        loading_df = compare_multiple_dataframes(comparison_dict, deciding_column_name, comparison_type="max")
-        return loading_df
-    elif equipment_type.lower() == "voltage":
-        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, \
+    loading_df = compare_multiple_dataframes(comparison_dict, deciding_column_name, comparison_type="max")
+    return loading_df
+    
+
+def apply_timeseries_voltage(equipment_type, **kwargs):
+    """
+    Time-series data used to determine thermal and voltage violations
+    
+    """
+    if equipment_type == "voltage":  # pop out of dictionary since kwargs are also passed to voltage function
+        voltage_upper_limit = kwargs.pop("voltage_upper_limit")
+        voltage_lower_limit = kwargs.pop("voltage_lower_limit")
+        raise_exception = kwargs.pop("raise_exception")
+        deciding_column_dict = kwargs.pop("deciding_column_dict")
+    else:
+        raise Exception(f"Incorrect equipment type {equipment_type} provided. Possible values: voltage.")
+
+    comparison_dict = {}
+    check_dss_run_command("Set mode=yearly number=1") # 1 power flow per solve and stepsize remains the same
+    startH = 0
+    num_pts = len(dss.LoadShape.PMult())
+
+    time_step = 1 
+    for present_step in range(startH, num_pts, time_step):
+        key_name = "timepoint_"+str(present_step)
+        logger.debug(f"Present step: {present_step}")
+        check_dss_run_command("Set Controlmode=Static") 
+        check_dss_run_command(f"set hour = {present_step}")
+        dss.Solution.Solve()  # solves for specific hour that has been set
+        # TODO Sherin remove these debbug statements
+        logger.debug(dss.LoadShape.Name())
+        logger.debug(dss.LoadShape.PMult()[present_step])
+        logger.debug(dss.Loads.Name())
+        logger.debug(sum(dss.CktElement.Powers()[::2]))
+        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages_instance(
+                    voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, raise_exception=raise_exception, **kwargs)
+        bus_voltages_df.set_index("name", inplace=True)
+        comparison_dict[key_name] = bus_voltages_df
+
+    # compare all dataframe, and create one that contains all worst loading conditions (across all multiplier conditions)
+    bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, \
             buses_with_violations = compare_multiple_dataframes_voltage(
                 comparison_dict=comparison_dict, deciding_column_dict=deciding_column_dict, 
                 voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit)
-        return bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, \
+    return bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, \
             buses_with_violations
-    else:
-        raise Exception(f"Incorrect equipment type {equipment_type} provided. Possible values: line, transformer, voltage.")
-    
+
 
 def get_regcontrol_info(correct_PT_ratio=False, nominal_voltage=None):
     """This collects enabled regulator control information.
@@ -1432,11 +1457,7 @@ def check_dss_run_command(command_string):
 
     """
     logger.debug(f"Running DSS command: {command_string}")
-    try:  # TODO Sherin check if this was there before 
-        result = dss.Text.Command(f"{command_string}")
-    except Exception:
-        logger.exception("Failed to run [%s]", command_string)
-        raise
+    result = dss.Text.Command(f"{command_string}")
     if result is not None:
         raise OpenDssCompileError(f"OpenDSS run_command failed with message: {result}. \nCommand: {command_string}")
 
@@ -1454,7 +1475,7 @@ def get_bus_voltages(voltage_upper_limit, voltage_lower_limit, raise_exception=T
     timeseries_analysis = kwargs.get("timeseries_analysis", False)
     if timeseries_analysis:
         bus_voltages_df, undervoltage_bus_list, \
-            overvoltage_bus_list, buses_with_violations = apply_timeseries_step(deciding_column_dict=deciding_column_dict,
+            overvoltage_bus_list, buses_with_violations = apply_timeseries_voltage(deciding_column_dict=deciding_column_dict,
                 voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, 
                 equipment_type="voltage", raise_exception=True, **kwargs)
 

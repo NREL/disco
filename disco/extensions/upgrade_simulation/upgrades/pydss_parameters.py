@@ -11,7 +11,7 @@ from disco.exceptions import PyDssConvergenceError
 logger = logging.getLogger(__name__)
 
 
-def define_initial_pydss_settings(**kwargs):
+def define_initial_pydss_settings(pydss_volt_var_model, pydss_controller_manager):
     settings = ProjectModel(
         max_control_iterations=50,
         error_tolerance=0.0001,
@@ -20,12 +20,10 @@ def define_initial_pydss_settings(**kwargs):
     dss.Text.Command("Set ControlMode={}".format(settings.control_mode.value))
     dss.Solution.MaxControlIterations(settings.max_control_iterations)
     # we dont need to define controller everytime we solve the circuit, unless we're reloading the circuit
-    controller = CircuitElementController(
-        kwargs["pydss_volt_var_model"]
-    )  # Use all elements.
+    controller = CircuitElementController(pydss_volt_var_model)  # Use all elements.
     pydss_controller_manager = ControllerManager.create([controller], settings)
-    kwargs.update({"pydss_controller_manager": pydss_controller_manager})
-    return kwargs
+    pydss_settings = {"pydss_controller_manager": pydss_controller_manager, "pydss_volt_var_model": pydss_volt_var_model}
+    return pydss_settings
 
 
 def pydss_solve_and_check(raise_exception=False, **kwargs):

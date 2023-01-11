@@ -284,35 +284,30 @@ def run_job(job, config, jobs_output_dir, file_log_level):
             feeder="NA",
         ),
     )
-    breakpoint()
     upgrade_simulation_params_names = list(UpgradeSimulationParamsModel.schema()["properties"].keys())
-    breakpoint()
+    # create a global config dictionary
     global_config = {
         "thermal_upgrade_params": config.thermal_upgrade_params.dict(),
         "voltage_upgrade_params": config.voltage_upgrade_params.dict(),
         "upgrade_simulation_params": dict((k, config.dict()[k]) for k in upgrade_simulation_params_names),
         "upgrade_cost_database": config.upgrade_cost_database,
     }
-    # TODO decide what to do here
-    pydss_controller = None
-    if (config.pydss_controllers.pv_controller is not None) and config.enable_pydss_controllers:
-        pydss_controller = (
-            config.pydss_controllers.pv_controller.dict(),
+    global_config["upgrade_simulation_params"]["pydss_controller"] = None
+    if (global_config["upgrade_simulation_params"]["pydss_controllers"].pv_controller is not None) and global_config["upgrade_simulation_params"].enable_pydss_controllers:
+        global_config["upgrade_simulation_params"]["pydss_controller"] = (
+            global_config["upgrade_simulation_params"]["pydss_controllers"].pv_controller.dict(),
         )
-    # create a simulation params dictionary
-    upgrade_simulation_params = global_config["upgrade_simulation_params"]
-    breakpoint()
     simulation = UpgradeSimulation(
         job=job,
         job_global_config=global_config,
         output=jobs_output_dir,
     )
     simulation.run(
-        enable_pydss_solve=global_config["upgrade_simulation_params"]["enable_pydss_controller"],
-        pydss_controller_model=config.pydss_controllers.pv_controller,
+        enable_pydss_solve=global_config["upgrade_simulation_params"]["enable_pydss_controllers"],
+        pydss_controller_model=global_config["upgrade_simulation_params"]["pydss_controllers"].pv_controller,
         thermal_config=global_config["thermal_upgrade_params"],
         voltage_config=global_config["voltage_upgrade_params"],
-        upgrade_simulation_params_config=upgrade_simulation_params,
+        upgrade_simulation_params_config=global_config["upgrade_simulation_params"],
         cost_database_filepath=global_config["upgrade_cost_database"],
         verbose=file_log_level == logging.DEBUG,
     )

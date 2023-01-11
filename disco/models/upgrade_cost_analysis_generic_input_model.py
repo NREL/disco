@@ -31,9 +31,6 @@ def get_default_thermal_upgrade_params():
 def get_default_voltage_upgrade_params():
     return _get_default_upgrade_params()["voltage_upgrade_params"]
 
-def get_default_upgrade_simulation_params():
-    breakpoint()
-    return _get_default_upgrade_params()["upgrade_simulation_params"]
 
 class OpenDSSLineModel(OpenDSSLineParams):
     bus1: str = Field(

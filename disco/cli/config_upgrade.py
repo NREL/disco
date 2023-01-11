@@ -64,7 +64,6 @@ def upgrade(
     thermal_upgrade_params = ThermalUpgradeParamsModel(**params["thermal_upgrade_params"]).dict()
     voltage_upgrade_params = VoltageUpgradeParamsModel(**params["voltage_upgrade_params"]).dict()
     upgrade_simulation_params = params["upgrade_simulation_params"]
-    breakpoint()
 
     job_global_config = {
         "upgrade_cost_database": cost_database,
