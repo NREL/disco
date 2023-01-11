@@ -82,7 +82,7 @@ def make_fixes_to_master(master_file):
         with open(master_file, "r") as f_in:
             for line in f_in:
                 lowered = line.strip().lower()
-                if (lowered.startswith("solve") or has_invalid_command(lowered)):
+                if lowered.startswith("solve") or has_invalid_command(lowered):
                     logger.warning("Removing line from new Master.dss: %s", line.strip())
                 else:
                     f_out.write(line)
@@ -331,7 +331,6 @@ def aggregate_series(
     recreate_profiles,
     destination_dir,
     create_new_circuit,
-    check_power_flow,
 ):
     ag_series = {}
     critical_time_indices = []
@@ -429,8 +428,6 @@ def aggregate_series(
         reset_profile_data(used_profiles, critical_time_indices)
         before_path = destination_dir / "power_flow_results_before"
         after_path = destination_dir / "power_flow_results_after"
-        if check_power_flow:
-            export_power_flow_results(before_path)
         destination_model_dir = destination_dir / "new_model"
         destination_model_dir.mkdir()
         save_circuit(destination_model_dir)
@@ -438,15 +435,6 @@ def aggregate_series(
         with open(master_file, "a") as f_out:
             f_out.write("Calcvoltagebases\n")
             f_out.write("Solve\n")
-        if check_power_flow:
-            dss.Text.Command("Clear")
-            dss.Text.Command(f"Redirect {master_file}")
-            export_power_flow_results(after_path)
-            compare_power_flow_results(before_path, after_path)
-            # TODO: Re-enable after we fix verification.
-            # logger.info("Verified power flow results after saving the modified circuit.")
-        else:
-            logger.warning("Skipped check of power flow results.")
 
     return ag_series, head_critical_time_indices, critical_time_indices, compression_rate
 
@@ -459,7 +447,6 @@ def main(
     destination_dir=None,
     create_new_circuit=True,
     fix_master_file=False,
-    check_power_flow=True,
 ):
     """
     INPUT:
@@ -480,10 +467,6 @@ def main(
     if not destination_dir.exists():
         raise FileNotFoundError(f"destination_dir={destination_dir} does not exist")
 
-    if check_power_flow and not create_new_circuit:
-        logger.warning("Ignore check_power_flow because create_new_circuit is False")
-        check_power_flow = False
-
     bus_data = {}
     load_feeder(path_to_master, destination_dir, fix_master_file)
     for category, param_classes in categories.items():
@@ -497,7 +480,6 @@ def main(
         recreate_profiles,
         destination_dir,
         create_new_circuit,
-        check_power_flow,
     )
 
     logger.info("head_time_indices = %s length = %s", head_time_indices, len(head_time_indices))
