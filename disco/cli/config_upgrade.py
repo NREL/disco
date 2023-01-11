@@ -13,7 +13,7 @@ from disco.extensions.upgrade_simulation.upgrade_configuration import (
 )
 from disco.models.upgrade_cost_analysis_generic_input_model import (
     ThermalUpgradeParamsModel,
-    VoltageUpgradeParamsModel,
+    VoltageUpgradeParamsModel
 )
 
 logger = logging.getLogger(__name__)
