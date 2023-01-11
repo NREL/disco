@@ -26,7 +26,7 @@ def determine_thermal_upgrades(
     enable_pydss_solve,
     pydss_volt_var_model,
     thermal_config,
-    simulation_params_config,
+    upgrade_simulation_params_config,
     internal_upgrades_technical_catalog_filepath,
     thermal_upgrades_dss_filepath,
     upgraded_master_dss_filepath,
@@ -40,7 +40,7 @@ def determine_thermal_upgrades(
     start_time = time.time()
     logger.info( f"Simulation start time: {start_time}")   
     initial_simulation_params = {"enable_pydss_solve": enable_pydss_solve, "pydss_volt_var_model": pydss_volt_var_model,
-                                "dc_ac_ratio": simulation_params_config["dc_ac_ratio"]}
+                                "dc_ac_ratio": upgrade_simulation_params_config["dc_ac_ratio"]}
     create_plots = thermal_config["create_plots"]
     
     timepoint_multipliers = thermal_config["timepoint_multipliers"]
@@ -50,8 +50,8 @@ def determine_thermal_upgrades(
         multiplier_type = LoadMultiplierType.ORIGINAL
     initial_simulation_params.update({"timepoint_multipliers": timepoint_multipliers, "multiplier_type": multiplier_type})
     
-    if simulation_params_config["timeseries_analysis"]:
-        initial_simulation_params.update({"timeseries_analysis": simulation_params_config["timeseries_analysis"]})
+    if upgrade_simulation_params_config["timeseries_analysis"]:
+        initial_simulation_params.update({"timeseries_analysis": upgrade_simulation_params_config["timeseries_analysis"]})
     logger.info("Initial simulation parameters: %s", initial_simulation_params)
     
     # start upgrades

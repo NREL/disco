@@ -322,6 +322,7 @@ class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
         title="timepoint_multipliers",
         description='Dictionary to provide timepoint multipliers. example: timepoint_multipliers={"load_multipliers": {"with_pv": [1.2], "without_pv": [0.6]}}',
     )
+
     @validator("voltage_lower_limit")
     def check_voltage_lower_limits(cls, voltage_lower_limit, values):
         upper = values["voltage_upper_limit"]
@@ -617,7 +618,7 @@ class UpgradeCostAnalysisSimulationModel(UpgradeSimulationParamsModel):
                 raise ValueError(f"{job['name']} is duplicated")
             names.add(job["name"])
         return values
-    
+
     @validator("calculate_costs")
     def check_database(cls, calculate_costs, values):
         if calculate_costs:
