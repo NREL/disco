@@ -73,13 +73,6 @@ logger = logging.getLogger(__name__)
     help="Create new circuit with down-selected time points.",
 )
 @click.option(
-    "--check-power-flow/--no-check-power-flow",
-    default=True,
-    is_flag=True,
-    show_default=True,
-    help="Run power flow before and after creating new circuit and check output values.",
-)
-@click.option(
     "--fix-master-file/--no-fix-master-file",
     is_flag=True,
     show_default=True,
@@ -109,7 +102,6 @@ def select_time_points(
     critical_conditions,
     output,
     create_new_circuit,
-    check_power_flow,
     fix_master_file,
     force,
     verbose,
@@ -143,6 +135,5 @@ def select_time_points(
         destination_dir=output,
         create_new_circuit=create_new_circuit,
         fix_master_file=fix_master_file,
-        check_power_flow=check_power_flow,
         recreate_profiles=False,
     )
