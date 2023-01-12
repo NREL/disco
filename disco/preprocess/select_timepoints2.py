@@ -439,28 +439,34 @@ def aggregate_series(
     return ag_series, head_critical_time_indices, critical_time_indices, compression_rate
 
 
-def get_metadata(ag_series, head_critical_time_indices):
+def get_metadata(ag_series, head_critical_time_indices, critical_conditions):
     """
     This function exports metadata associated with selected timepoints.
     INPUT:
         ag_series: Dictionary
-        head_critical_time_indices: List    
+        head_critical_time_indices: List
     OUTPUT:
         metadata_df: DataFrame
     """
     buses_list = []
     critical_timepoint_list = []
     condition_list = []
-    for bus, dic in ag_series.items(): 
-        buses_list.append(bus) 
-        critical_timepoint_list.append(dic["critical_time_idx"]) 
+    for bus, dic in ag_series.items():
+        buses_list.append(bus)
+        critical_timepoint_list.append(dic["critical_time_idx"])
         condition_list.append(dic["condition"])
     buses_list.append("feederhead")
     critical_timepoint_list.append(head_critical_time_indices)
-    condition_list.append(dic["condition"])
-    df = pd.DataFrame(list(zip(buses_list, critical_timepoint_list, condition_list)), columns=["buses_list", "critical_timepoint_list", "condition_list"])
+    condition_list.append(critical_conditions)
+    df = pd.DataFrame(
+        list(zip(buses_list, critical_timepoint_list, condition_list)),
+        columns=["buses_list", "critical_timepoint_list", "condition_list"],
+    )
     expanded_df = df.explode(["critical_timepoint_list", "condition_list"])
-    metadata_df = expanded_df.groupby('critical_timepoint_list').agg(list)
+    expanded_df.loc[expanded_df["condition_list"].notnull(), "condition_list"] = expanded_df.loc[
+        expanded_df["condition_list"].notnull()
+    ]["condition_list"].apply(lambda x: x.value)
+    metadata_df = expanded_df.groupby("critical_timepoint_list").agg(list)
     return metadata_df
 
 
@@ -506,8 +512,7 @@ def main(
         destination_dir,
         create_new_circuit,
     )
-    
-    metadata_df = get_metadata(ag_series, head_time_indices)
+    metadata_df = get_metadata(ag_series, head_time_indices, critical_conditions)
     metadata_df.to_csv(destination_dir / "metadata.csv")
 
     logger.info("head_time_indices = %s length = %s", head_time_indices, len(head_time_indices))
