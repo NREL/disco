@@ -292,19 +292,16 @@ def run_job(job, config, jobs_output_dir, file_log_level):
         "upgrade_simulation_params": dict((k, config.dict()[k]) for k in upgrade_simulation_params_names),
         "upgrade_cost_database": config.upgrade_cost_database,
     }
-    global_config["upgrade_simulation_params"]["pydss_controller"] = None
-    if (global_config["upgrade_simulation_params"]["pydss_controllers"].pv_controller is not None) and global_config["upgrade_simulation_params"].enable_pydss_controllers:
-        global_config["upgrade_simulation_params"]["pydss_controller"] = (
-            global_config["upgrade_simulation_params"]["pydss_controllers"].pv_controller.dict(),
-        )
+    # replace PyDSS PV Controller dictionary with Model
+    if (global_config["upgrade_simulation_params"]["pydss_controllers"]["pv_controller"] is not None) and global_config["upgrade_simulation_params"]["enable_pydss_controllers"]:
+        global_config["upgrade_simulation_params"]["pydss_controllers"] = config.pydss_controllers.pv_controller
+
     simulation = UpgradeSimulation(
         job=job,
         job_global_config=global_config,
         output=jobs_output_dir,
     )
     simulation.run(
-        enable_pydss_solve=global_config["upgrade_simulation_params"]["enable_pydss_controllers"],
-        pydss_controller_model=global_config["upgrade_simulation_params"]["pydss_controllers"].pv_controller,
         thermal_config=global_config["thermal_upgrade_params"],
         voltage_config=global_config["voltage_upgrade_params"],
         upgrade_simulation_params_config=global_config["upgrade_simulation_params"],

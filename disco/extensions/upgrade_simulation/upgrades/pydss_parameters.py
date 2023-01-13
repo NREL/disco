@@ -11,7 +11,7 @@ from disco.exceptions import PyDssConvergenceError
 logger = logging.getLogger(__name__)
 
 
-def define_initial_pydss_settings(pydss_volt_var_model, pydss_controller_manager):
+def define_initial_pydss_settings(pydss_volt_var_model):
     settings = ProjectModel(
         max_control_iterations=50,
         error_tolerance=0.0001,

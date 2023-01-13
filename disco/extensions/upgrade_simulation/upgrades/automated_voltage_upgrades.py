@@ -23,8 +23,6 @@ logger = logging.getLogger(__name__)
 def determine_voltage_upgrades(
     job_name,
     master_path,
-    enable_pydss_solve,
-    pydss_volt_var_model,
     thermal_config,
     voltage_config,
     upgrade_simulation_params_config,
@@ -72,8 +70,10 @@ def determine_voltage_upgrades(
     if not os.path.exists(thermal_upgrades_dss_filepath):
         raise Exception(f"AutomatedThermalUpgrade did not produce thermal upgrades dss file")
     
-    initial_simulation_params = {"enable_pydss_solve": enable_pydss_solve, "pydss_volt_var_model": pydss_volt_var_model,
-                                "dc_ac_ratio": upgrade_simulation_params_config["dc_ac_ratio"], "max_control_iterations": voltage_config["max_control_iterations"]}
+    initial_simulation_params = {"enable_pydss_solve": upgrade_simulation_params_config["enable_pydss_controllers"],
+                                 "pydss_volt_var_model": upgrade_simulation_params_config["pydss_controllers"],
+                                 "dc_ac_ratio": upgrade_simulation_params_config["dc_ac_ratio"], 
+                                 "max_control_iterations": voltage_config["max_control_iterations"]}
     initial_simulation_params.update({"timepoint_multipliers": timepoint_multipliers, "multiplier_type": multiplier_type})
     if upgrade_simulation_params_config["timeseries_analysis"]:
         initial_simulation_params.update({"timeseries_analysis": upgrade_simulation_params_config["timeseries_analysis"]})
@@ -115,7 +115,7 @@ def determine_voltage_upgrades(
     feeder_stats["stage_results"].append( get_upgrade_stage_stats(dss, upgrade_stage="initial", upgrade_type="voltage", xfmr_loading_df=initial_xfmr_loading_df, line_loading_df=initial_line_loading_df, 
                                         bus_voltages_df=initial_bus_voltages_df, regcontrols_df=orig_regcontrols_df, capacitors_df=orig_capacitors_df) )
     dump_data(feeder_stats, feeder_stats_json_file, indent=2)
-    scenario = get_scenario_name(enable_pydss_solve, pydss_volt_var_model)
+    scenario = get_scenario_name(enable_pydss_solve=simulation_params["enable_pydss_solve"], pydss_volt_var_model=simulation_params["pydss_volt_var_model"])
     initial_results = UpgradeViolationResultModel(
         name = job_name, 
         scenario = scenario,

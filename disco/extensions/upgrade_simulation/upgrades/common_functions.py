@@ -77,8 +77,7 @@ def reload_dss_circuit(dss_file_list, commands_list=None,  **kwargs):
     enable_pydss_solve = kwargs.get("enable_pydss_solve", False)
     raise_exception = kwargs.get("raise_exception", True)
     if enable_pydss_solve:
-        pydss_params = define_initial_pydss_settings(pydss_volt_var_model=kwargs["pydss_volt_var_model"], 
-                                                     pydss_controller_manager=kwargs["pydss_controller_manager"])
+        pydss_params = define_initial_pydss_settings(pydss_volt_var_model=kwargs["pydss_volt_var_model"])
         kwargs.update(pydss_params)
         circuit_solve_and_check(raise_exception=raise_exception, **kwargs)
         return kwargs

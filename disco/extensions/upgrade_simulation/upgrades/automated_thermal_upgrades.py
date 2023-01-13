@@ -23,8 +23,6 @@ logger = logging.getLogger(__name__)
 def determine_thermal_upgrades(
     job_name,
     master_path,
-    enable_pydss_solve,
-    pydss_volt_var_model,
     thermal_config,
     upgrade_simulation_params_config,
     internal_upgrades_technical_catalog_filepath,
@@ -39,8 +37,9 @@ def determine_thermal_upgrades(
 ):
     start_time = time.time()
     logger.info( f"Simulation start time: {start_time}")   
-    initial_simulation_params = {"enable_pydss_solve": enable_pydss_solve, "pydss_volt_var_model": pydss_volt_var_model,
-                                "dc_ac_ratio": upgrade_simulation_params_config["dc_ac_ratio"]}
+    initial_simulation_params = {"enable_pydss_solve": upgrade_simulation_params_config["enable_pydss_controllers"], 
+                                 "pydss_volt_var_model": upgrade_simulation_params_config["pydss_controllers"],
+                                 "dc_ac_ratio": upgrade_simulation_params_config["dc_ac_ratio"]}
     create_plots = thermal_config["create_plots"]
     
     timepoint_multipliers = thermal_config["timepoint_multipliers"]
@@ -49,7 +48,6 @@ def determine_thermal_upgrades(
     else:
         multiplier_type = LoadMultiplierType.ORIGINAL
     initial_simulation_params.update({"timepoint_multipliers": timepoint_multipliers, "multiplier_type": multiplier_type})
-    
     if upgrade_simulation_params_config["timeseries_analysis"]:
         initial_simulation_params.update({"timeseries_analysis": upgrade_simulation_params_config["timeseries_analysis"]})
     logger.info("Initial simulation parameters: %s", initial_simulation_params)
@@ -57,7 +55,6 @@ def determine_thermal_upgrades(
     # start upgrades
     initial_dss_file_list = [master_path]
     simulation_params = reload_dss_circuit(dss_file_list=initial_dss_file_list, commands_list=None, **initial_simulation_params)
-    
     voltage_upper_limit = thermal_config["voltage_upper_limit"]
     voltage_lower_limit = thermal_config["voltage_lower_limit"]
     if thermal_config["read_external_catalog"]:
@@ -127,7 +124,7 @@ def determine_thermal_upgrades(
     else:
         upgrade_status = "Thermal Upgrades not Required"  # status - whether upgrades done or not
     logger.info(upgrade_status)
-    scenario = get_scenario_name(enable_pydss_solve, pydss_volt_var_model)
+    scenario = get_scenario_name(enable_pydss_solve=simulation_params["enable_pydss_solve"], pydss_volt_var_model=simulation_params["pydss_volt_var_model"])
     initial_results = UpgradeViolationResultModel(
         name=job_name,
         scenario=scenario,
