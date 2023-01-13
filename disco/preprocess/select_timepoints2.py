@@ -495,6 +495,7 @@ def main(
         compression_rate: ratio between the number of critical timepoints and the total number of timepoints in the timeseries
 
     """
+    critical_conditions = set(critical_conditions)
     if not destination_dir.exists():
         raise FileNotFoundError(f"destination_dir={destination_dir} does not exist")
 
