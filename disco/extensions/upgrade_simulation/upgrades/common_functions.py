@@ -352,12 +352,7 @@ def get_feeder_stats(dss):
     return data_dict
 
 
-def get_upgrade_stage_stats(dss, upgrade_stage, upgrade_type, xfmr_loading_df, line_loading_df, bus_voltages_df, **kwargs):
-    """This function gives upgrade stage stats for a feeder 
-    upgrade_stage can be Initial or Final
-    upgrade_type can be thermal or voltage
-    
-    """
+def get_feeder_data(dss, upgrade_stage, upgrade_type):
     final_dict = {"stage": upgrade_stage, "upgrade_type": upgrade_type}
     ckt_info_dict = get_circuit_info()
     final_dict["feeder_components"] = ckt_info_dict
@@ -370,8 +365,78 @@ def get_upgrade_stage_stats(dss, upgrade_stage, upgrade_type, xfmr_loading_df, l
                                         "num_capacitors": dss.Capacitors.Count(),
                                         "num_regulators": dss.RegControls.Count(),
                                         } )
+    
+    return final_dict
+
+def get_upgrade_stage_stats(dss, upgrade_stage, upgrade_type, xfmr_loading_df, line_loading_df, bus_voltages_df, **kwargs):
+    """This function gives upgrade stage stats for a feeder 
+    upgrade_stage can be Initial or Final
+    upgrade_type can be thermal or voltage
+    
+    """
+    final_dict = get_feeder_data(dss, upgrade_stage, upgrade_type)
     equipment_dict = combine_equipment_health_stats(xfmr_loading_df, line_loading_df, bus_voltages_df, **kwargs)
     final_dict.update(equipment_dict)
+    return final_dict
+
+
+def get_upgrade_stage_timeseries_stats(dss, upgrade_stage, upgrade_type, **kwargs):
+    """This function gives upgrade stage stats for a feeder 
+    upgrade_stage can be Initial or Final
+    upgrade_type can be thermal or voltage
+    
+    """
+    final_dict = get_feeder_data(dss, upgrade_stage, upgrade_type)
+    equipment_dict = combine_equipment_health_timeseries_stats(**kwargs)
+    final_dict.update(equipment_dict)
+    return final_dict
+
+
+def combine_equipment_health_timeseries_stats(**kwargs):
+    line_properties = kwargs.pop("line_properties", 
+                                 ['name', 'phases','normamps', 'kV', 'line_placement',  'length', 'units', 'max_amp_loading', 
+                                  'max_per_unit_loading', 'status'])
+    xfmr_properties = kwargs.pop("xfmr_properties", 
+                                 ['name', 'phases', 'windings', 'conns', 'kV', 'kVA', 'amp_limit_per_phase','max_amp_loading', 
+                                  'max_per_unit_loading', 'status']  )
+    voltage_properties = kwargs.pop("voltage_properties", 
+                                    ['name', 'max_per_unit_voltage', 'min_per_unit_voltage',  'overvoltage_violation', 
+                                     'max_voltage_deviation', 'undervoltage_violation', 'min_voltage_deviation'])
+    capacitors_df = kwargs.pop("capacitors_df", pd.DataFrame())
+    regcontrols_df = kwargs.pop("regcontrols_df", pd.DataFrame())
+    capacitor_properties = kwargs.pop("capacitor_properties", 
+                                      ['capacitor_name','capcontrol_present',  'capcontrol_type', 'capcontrol_name', 'kv', 'kvar',
+                                       'phases', 'DeadTime', 'Delay', 'OFFsetting', 'ONsetting'])
+    regcontrol_properties = kwargs.pop("regcontrol_properties", 
+                                       ['name', 'transformer', 'vreg', 'band', 'ptratio', 'delay', 'at_substation_xfmr_flag'])
+    
+    final_dict = {}
+    xfmr_dict = get_timeseries_thermal_comparison(equipment_type="transformer", compute_loading=True, upper_limit=kwargs["transformer_upper_limit"])
+    ref_xfmr_dict = {k:v.reset_index()[xfmr_properties].to_dict(orient="records") for k, v in xfmr_dict.items()}
+    
+    line_dict = get_timeseries_thermal_comparison(equipment_type="line", compute_loading=True, upper_limit=kwargs["line_upper_limit"])
+    ref_line_dict = {k:v.reset_index()[line_properties].to_dict(orient="records") for k, v in line_dict.items()}
+
+    voltage_upper_limit = kwargs.pop("voltage_upper_limit")
+    voltage_lower_limit = kwargs.pop("voltage_lower_limit")
+    voltage_dict = get_timeseries_voltage_comparison(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, raise_exception=False,
+                                                     equipment_type="voltage", **kwargs)
+    ref_voltage_dict = {k:v.reset_index()[voltage_properties].to_dict(orient="records") for k, v in voltage_dict.items()}
+    
+    # some file reformatting
+    # if "windings" in xfmr_properties:
+    #     xfmr_loading_df["windings"] = xfmr_loading_df["windings"].astype(int)
+    final_dict.update({"transformer": ref_xfmr_dict})
+    final_dict.update({"line": ref_line_dict})
+    final_dict.update({"bus_voltage": ref_voltage_dict})
+    if not capacitors_df.empty :
+        final_dict.update({"capacitor_control": capacitors_df[capacitor_properties].to_dict(orient="records")})
+    else :
+        final_dict.update({"capacitor_control": []})
+    if not regcontrols_df.empty:
+        final_dict.update({"regulator_control": regcontrols_df[regcontrol_properties].to_dict(orient="records")})
+    else:
+        final_dict.update({"regulator_control": []})
     return final_dict
 
 
@@ -1103,7 +1168,7 @@ def get_thermal_equipment_info(compute_loading, equipment_type, upper_limit=None
     timeseries_analysis = kwargs.get("timeseries_analysis", False)
     if timeseries_analysis:
         loading_df = apply_timeseries_thermal(equipment_type, compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch, 
-                                           deciding_column_name=deciding_column_name,**kwargs)
+                                           deciding_column_name=deciding_column_name, **kwargs)
         return loading_df
     
     timepoint_multipliers = kwargs.get("timepoint_multipliers", None)
@@ -1140,24 +1205,17 @@ def get_thermal_equipment_info(compute_loading, equipment_type, upper_limit=None
     return loading_df
 
 
-def apply_timeseries_thermal(equipment_type, **kwargs):
+def get_timeseries_thermal_comparison(equipment_type, compute_loading, upper_limit, ignore_switch=False):
     """
-    Time-series data used to determine thermal and voltage violations
-    
+    Time-series data used to determine thermal violations
     """
-    if (equipment_type.lower() == "transformer") or (equipment_type.lower() == "line"):
-        deciding_column_name = kwargs.get("deciding_column_name")
-        compute_loading = kwargs.get("compute_loading")
-        upper_limit = kwargs.get("upper_limit")
-        ignore_switch = kwargs.get("ignore_switch", False)
-    else:
+    if equipment_type.lower() not in ["line", "transformer"]:
         raise Exception(f"Incorrect equipment type {equipment_type} provided. Possible values: line, transformer.")
 
     comparison_dict = {}
     check_dss_run_command("Set mode=yearly number=1") # number=1, power flow per solve and stepsize remains the same
     startH = 0
     num_pts = len(dss.LoadShape.PMult())
-
     time_step = 1 
     for present_step in range(startH, num_pts, time_step):
         key_name = "timepoint_"+str(present_step)
@@ -1165,34 +1223,36 @@ def apply_timeseries_thermal(equipment_type, **kwargs):
         check_dss_run_command("Set Controlmode=Static") 
         check_dss_run_command(f"set hour = {present_step}")
         dss.Solution.Solve()  # solves for specific hour that has been set
-        # TODO Sherin remove these debbug statements
-        logger.debug(dss.LoadShape.Name())
-        logger.debug(dss.LoadShape.PMult()[present_step])
-        logger.debug(dss.Loads.Name())
-        logger.debug(sum(dss.CktElement.Powers()[::2]))
         if equipment_type.lower() == "line":
             loading_df = get_all_line_info_instance(compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch)
         elif equipment_type.lower() == "transformer":
             loading_df = get_all_transformer_info_instance(compute_loading=compute_loading, upper_limit=upper_limit)
         loading_df.set_index("name", inplace=True)
         comparison_dict[key_name] = loading_df
+    return comparison_dict
+
+
+def apply_timeseries_thermal(equipment_type, compute_loading, upper_limit, deciding_column_name, ignore_switch=False, **kwargs):
+    """
+    Time-series data used to determine thermal violations
+    
+    """
+    if equipment_type.lower() not in ["line", "transformer"]:
+        raise Exception(f"Incorrect equipment type {equipment_type} provided. Possible values: line, transformer.")
+
+    comparison_dict = get_timeseries_thermal_comparison(equipment_type, compute_loading, upper_limit, ignore_switch=ignore_switch)
 
     # compare all dataframe, and create one that contains all worst loading conditions (across all multiplier conditions)
     loading_df = compare_multiple_dataframes(comparison_dict, deciding_column_name, comparison_type="max")
     return loading_df
     
 
-def apply_timeseries_voltage(equipment_type, **kwargs):
+def get_timeseries_voltage_comparison(equipment_type, voltage_upper_limit, voltage_lower_limit, raise_exception,
+                                      **kwargs):
     """
-    Time-series data used to determine thermal and voltage violations
-    
+    Time-series data used to determine voltage violations
     """
-    if equipment_type == "voltage":  # pop out of dictionary since kwargs are also passed to voltage function
-        voltage_upper_limit = kwargs.pop("voltage_upper_limit")
-        voltage_lower_limit = kwargs.pop("voltage_lower_limit")
-        raise_exception = kwargs.pop("raise_exception")
-        deciding_column_dict = kwargs.pop("deciding_column_dict")
-    else:
+    if equipment_type != "voltage":  # pop out of dictionary since kwargs are also passed to voltage function
         raise Exception(f"Incorrect equipment type {equipment_type} provided. Possible values: voltage.")
 
     comparison_dict = {}
@@ -1207,24 +1267,24 @@ def apply_timeseries_voltage(equipment_type, **kwargs):
         check_dss_run_command("Set Controlmode=Static") 
         check_dss_run_command(f"set hour = {present_step}")
         dss.Solution.Solve()  # solves for specific hour that has been set
-        # TODO Sherin remove these debbug statements
-        logger.debug(dss.LoadShape.Name())
-        logger.debug(dss.LoadShape.PMult()[present_step])
-        logger.debug(dss.Loads.Name())
-        logger.debug(sum(dss.CktElement.Powers()[::2]))
         bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages_instance(
                     voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, raise_exception=raise_exception, **kwargs)
         bus_voltages_df.set_index("name", inplace=True)
         comparison_dict[key_name] = bus_voltages_df
+    return comparison_dict
 
-    # compare all dataframe, and create one that contains all worst loading conditions (across all multiplier conditions)
+
+def apply_timeseries_voltage(equipment_type, voltage_upper_limit, voltage_lower_limit,
+                             deciding_column_dict, raise_exception, **kwargs):
+    comparison_dict = get_timeseries_voltage_comparison(equipment_type, voltage_upper_limit, voltage_lower_limit, raise_exception,
+                                                        **kwargs)
+     # compare all dataframe, and create one that contains all worst loading conditions (across all multiplier conditions)
     bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, \
             buses_with_violations = compare_multiple_dataframes_voltage(
                 comparison_dict=comparison_dict, deciding_column_dict=deciding_column_dict, 
                 voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit)
     return bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, \
             buses_with_violations
-
 
 def get_regcontrol_info(correct_PT_ratio=False, nominal_voltage=None):
     """This collects enabled regulator control information.
@@ -1462,7 +1522,7 @@ def check_dss_run_command(command_string):
 
 
 @track_timing(timer_stats_collector)
-def get_bus_voltages(voltage_upper_limit, voltage_lower_limit, raise_exception=True, **kwargs):
+def get_bus_voltages(voltage_upper_limit, voltage_lower_limit, raise_exception=True, write_json=False, **kwargs):
     """This function determines the voltages, based on timepoint multiplier
 
     Returns
@@ -1476,7 +1536,7 @@ def get_bus_voltages(voltage_upper_limit, voltage_lower_limit, raise_exception=T
         bus_voltages_df, undervoltage_bus_list, \
             overvoltage_bus_list, buses_with_violations = apply_timeseries_voltage(deciding_column_dict=deciding_column_dict,
                 voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, 
-                equipment_type="voltage", raise_exception=True, **kwargs)
+                equipment_type="voltage", raise_exception=True, write_json=write_json, **kwargs)
 
         return bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations
     

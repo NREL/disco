@@ -109,8 +109,15 @@ def determine_thermal_upgrades(
     circuit_source = orig_ckt_info['source_bus']
     orig_regcontrols_df = get_regcontrol_info(correct_PT_ratio=False)
     orig_capacitors_df = get_capacitor_info(correct_PT_ratio=False)
+
     feeder_stats["stage_results"].append(get_upgrade_stage_stats(dss, upgrade_stage="initial", upgrade_type="thermal", xfmr_loading_df=initial_xfmr_loading_df, line_loading_df=initial_line_loading_df, 
-                                        bus_voltages_df=initial_bus_voltages_df, capacitors_df=orig_capacitors_df, regcontrols_df=orig_regcontrols_df) )
+                                    bus_voltages_df=initial_bus_voltages_df, capacitors_df=orig_capacitors_df, regcontrols_df=orig_regcontrols_df))
+    if upgrade_simulation_params_config["timeseries_analysis"]:
+        feeder_stats["timeseries_stage_results"] = []
+        timeseries_upgrade_stats = get_upgrade_stage_timeseries_stats(dss, upgrade_stage="initial", upgrade_type="thermal", capacitors_df=orig_capacitors_df, regcontrols_df=orig_regcontrols_df, 
+                                               transformer_upper_limit=thermal_config["transformer_upper_limit"], line_upper_limit=thermal_config["line_upper_limit"], 
+                                               voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
+        feeder_stats["timeseries_stage_results"].append(timeseries_upgrade_stats)
     dump_data(feeder_stats, feeder_stats_json_file, indent=2)   # save feeder stats
     if len(initial_overloaded_xfmr_list) > 0 or len(initial_overloaded_line_list) > 0:
         n = len(initial_overloaded_xfmr_list) +  len(initial_overloaded_line_list)
@@ -270,8 +277,14 @@ def determine_thermal_upgrades(
         feeder_stats = {}
     regcontrols_df = get_regcontrol_info(correct_PT_ratio=False)
     capacitors_df = get_capacitor_info(correct_PT_ratio=False)
-    feeder_stats["stage_results"].append( get_upgrade_stage_stats(dss, upgrade_stage="final", upgrade_type="thermal", xfmr_loading_df=xfmr_loading_df, line_loading_df=line_loading_df, 
-                                        bus_voltages_df=bus_voltages_df, capacitors_df=capacitors_df, regcontrols_df=regcontrols_df) )
+    feeder_stats["stage_results"].append(get_upgrade_stage_stats(dss, upgrade_stage="final", upgrade_type="thermal", xfmr_loading_df=xfmr_loading_df, line_loading_df=line_loading_df, 
+                                        bus_voltages_df=bus_voltages_df, capacitors_df=capacitors_df, regcontrols_df=regcontrols_df))
+    if upgrade_simulation_params_config["timeseries_analysis"]:
+        timeseries_upgrade_stats = get_upgrade_stage_timeseries_stats(dss, upgrade_stage="final", upgrade_type="thermal", capacitors_df=orig_capacitors_df, regcontrols_df=orig_regcontrols_df, 
+                                               transformer_upper_limit=thermal_config["transformer_upper_limit"], line_upper_limit=thermal_config["line_upper_limit"], 
+                                               voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
+        feeder_stats["timeseries_stage_results"].append(timeseries_upgrade_stats)
+
     dump_data(feeder_stats, feeder_stats_json_file, indent=2)
     end_time = time.time()
     logger.info(f"Simulation end time: {end_time}")

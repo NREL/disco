@@ -520,6 +520,11 @@ class UpgradeSimulationParamsModel(UpgradeParamsBaseModel):
         description="timeseries_analysis", 
         default=False
     )
+    timeseries_metadata: Optional[str] = Field(
+        title="timeseries_metadata", 
+        description="timeseries_metadata", 
+        default=""
+    )
     enable_pydss_controllers: Optional[bool] = Field(
         title="enable_pydss_controllers",
         description="Flag to enable/disable use of PyDSS controllers",

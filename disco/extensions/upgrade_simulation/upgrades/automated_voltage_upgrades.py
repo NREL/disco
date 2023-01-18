@@ -112,8 +112,13 @@ def determine_voltage_upgrades(
         feeder_stats = load_data(feeder_stats_json_file)
     else:
         feeder_stats = {"stage_results": []}
-    feeder_stats["stage_results"].append( get_upgrade_stage_stats(dss, upgrade_stage="initial", upgrade_type="voltage", xfmr_loading_df=initial_xfmr_loading_df, line_loading_df=initial_line_loading_df, 
+    feeder_stats["stage_results"].append(get_upgrade_stage_stats(dss, upgrade_stage="initial", upgrade_type="voltage", xfmr_loading_df=initial_xfmr_loading_df, line_loading_df=initial_line_loading_df, 
                                         bus_voltages_df=initial_bus_voltages_df, regcontrols_df=orig_regcontrols_df, capacitors_df=orig_capacitors_df) )
+    if upgrade_simulation_params_config["timeseries_analysis"]:
+        timeseries_upgrade_stats = get_upgrade_stage_timeseries_stats(dss, upgrade_stage="initial", upgrade_type="voltage", capacitors_df=orig_capacitors_df, regcontrols_df=orig_regcontrols_df, 
+                                               transformer_upper_limit=thermal_config["transformer_upper_limit"], line_upper_limit=thermal_config["line_upper_limit"], 
+                                               voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
+        feeder_stats["timeseries_stage_results"].append(timeseries_upgrade_stats)
     dump_data(feeder_stats, feeder_stats_json_file, indent=2)
     scenario = get_scenario_name(enable_pydss_solve=simulation_params["enable_pydss_solve"], pydss_volt_var_model=simulation_params["pydss_volt_var_model"])
     initial_results = UpgradeViolationResultModel(
@@ -289,6 +294,11 @@ def determine_voltage_upgrades(
         feeder_stats = {}
     feeder_stats["stage_results"].append( get_upgrade_stage_stats(dss, upgrade_stage="final", upgrade_type="voltage", xfmr_loading_df=xfmr_loading_df, line_loading_df=line_loading_df, 
                                         bus_voltages_df=bus_voltages_df, regcontrols_df=new_regcontrols_df, capacitors_df=new_capacitors_df) )
+    if upgrade_simulation_params_config["timeseries_analysis"]:
+        timeseries_upgrade_stats = get_upgrade_stage_timeseries_stats(dss, upgrade_stage="final", upgrade_type="voltage", capacitors_df=orig_capacitors_df, regcontrols_df=orig_regcontrols_df, 
+                                               transformer_upper_limit=thermal_config["transformer_upper_limit"], line_upper_limit=thermal_config["line_upper_limit"], 
+                                               voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
+        feeder_stats["timeseries_stage_results"].append(timeseries_upgrade_stats)
     dump_data(feeder_stats, feeder_stats_json_file, indent=2) 
     end_time = time.time()
     logger.info(f"Simulation end time: {end_time}")
