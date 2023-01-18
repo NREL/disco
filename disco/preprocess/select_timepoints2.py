@@ -533,9 +533,9 @@ def main(
 
 if __name__ == "__main__":
     path_to_master = Path(
-        r"C:\Users\KSEDZRO\Documents\Projects\LA-equity-resilience\data\P12U\sb9_p12uhs3_1247_trans_264--p12udt8475\Master.dss"
+        r"tests/data/generic-models/p1uhs23_1247/p1udt21301/PVDeployments/p1uhs23_1247__p1udt21301__random__2__15.dss"
     )
-    destination = Path(r"C:\Users\KSEDZRO\Documents\Projects\LA-equity-resilience\data\P12U")
+    destination = Path(r"test-output-timepoint")
     destination.mkdir(exist_ok=True)
     st = time.time()
     category_class_dict = {
