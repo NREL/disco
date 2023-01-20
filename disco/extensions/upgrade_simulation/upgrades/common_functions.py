@@ -42,8 +42,69 @@ DSS_UNIT_CONFIG = {1: "mi", 2: "kft", 3: "m", 4: "Ft", 5: "in", 6: "cm",
                     0: "none"  # 0 maps to none, which means impedance units and line length units match
                     }
 
+from pydantic import Field, BaseModel
+from typing import Any, List
+
+class CircuitSolve(BaseModel):
+    raise_exception: bool = Field(
+        title="raise_exception",
+        description="raise_exception",
+        default=True,
+    )
+    calcvoltagebases: bool = Field(
+        title="calcvoltagebases",
+        description="calcvoltagebases",
+        default=False,
+    )
+    enable_pydss_controllers: bool = Field(
+        title="enable_pydss_controllers",
+        description="enable_pydss_controllers",
+        default=False,
+    )
+    pydss_controller_manager: Any = Field(
+        title="pydss_controller_manager",
+        description="pydss_controller_manager",
+        default=None,
+    )
+
+
+class ReloadCircuit(BaseModel):
+    dss_file_list: List = Field(
+        title="dss_file_list",
+        description="dss_file_list",
+        default=None,
+    )
+    commands_list: List = Field(
+        title="commands_list",
+        description="commands_list",
+        default=None,
+    )
+    dc_ac_ratio: bool = Field(
+        title="dc_ac_ratio",
+        description="dc_ac_ratio",
+        default=None,
+    )
+    max_control_iterations: int = Field(
+        title="max_control_iterations",
+        description="max_control_iterations",
+        default=None,
+    )
+    pydss_volt_var_model: Any = Field(
+        title="pydss_volt_var_model",
+        description="pydss_volt_var_model",
+        default=None,
+    )
+    solve_params: CircuitSolve = Field(
+        title="solve_params",
+        description="solve_params",
+        default=CircuitSolve(),
+    )
+
 @track_timing(timer_stats_collector)
-def reload_dss_circuit(dss_file_list, commands_list=None,  **kwargs):
+# def reload_dss_circuit(dss_file_list, commands_list=None,  dc_ac_ratio=None, max_control_iterations=None, pydss_volt_var_model=None, 
+#                        enable_pydss_controllers=None, raise_exception=True, calcvoltagebases=False, pydss_controller_manager=None,
+#                        **kwargs):
+def reload_dss_circuit(Reload_Params=ReloadCircuit()):
     """This function clears the circuit and loads dss files and commands.
     Also solves the circuit and checks for convergence errors
 
@@ -56,37 +117,40 @@ def reload_dss_circuit(dss_file_list, commands_list=None,  **kwargs):
     -------
 
     """
+    breakpoint()
     logger.info("Reloading OpenDSS circuit")
-    if "solve" in kwargs.keys():
-        raise Exception("WRONG")
+    # if "solve" in kwargs.keys():
+    #     raise Exception("WRONG")
     check_dss_run_command("clear")
-    if dss_file_list is None:
+    if Reload_Params.dss_file_list is None:
         raise Exception("No OpenDSS files have been passed to be loaded.")
-    for dss_file in dss_file_list:
+    for dss_file in Reload_Params.dss_file_list:
         logger.info(f"Redirecting '{dss_file}'.")
         check_dss_run_command(f"Redirect '{dss_file}'")
-    dc_ac_ratio = kwargs.get('dc_ac_ratio', None)
-    if dc_ac_ratio is not None:
-        change_pv_pctpmpp(dc_ac_ratio=dc_ac_ratio)
-    if commands_list is not None:
-        logger.info(f"Running {len(commands_list)} dss commands")
-        for command_string in commands_list:
+    if Reload_Params.dc_ac_ratio is not None:
+        change_pv_pctpmpp(dc_ac_ratio=Reload_Params.dc_ac_ratio)
+    if Reload_Params.commands_list is not None:
+        logger.info(f"Running {len(Reload_Params.commands_list)} dss commands")
+        for command_string in Reload_Params.commands_list:
             check_dss_run_command(command_string)
             if "new " in command_string.lower():
                 check_dss_run_command("CalcVoltageBases")
-    enable_pydss_solve = kwargs.get("enable_pydss_solve", False)
-    raise_exception = kwargs.get("raise_exception", True)
-    if enable_pydss_solve:
-        pydss_params = define_initial_pydss_settings(pydss_volt_var_model=kwargs["pydss_volt_var_model"])
-        kwargs.update(pydss_params)
-        circuit_solve_and_check(raise_exception=raise_exception, **kwargs)
-        return kwargs
-    else:
-        max_control_iterations = kwargs.get("max_control_iterations", None)
-        if max_control_iterations is not None:
-            dss.Solution.MaxControlIterations(max_control_iterations)
-        circuit_solve_and_check(raise_exception=raise_exception)
-        return kwargs
+    if Reload_Params.max_control_iterations is not None:
+        dss.Solution.MaxControlIterations(Reload_Params.max_control_iterations)
+
+    if Reload_Params.solve_params.enable_pydss_controllers:
+        Reload_Params.solve_params.pydss_controller_manager = define_initial_pydss_settings(pydss_volt_var_model=Reload_Params.pydss_volt_var_model)
+        # kwargs.update(ReloadCircuit.pydss_params)
+        # Solveparams = CircuitSolve(raise_exception=Reload_params.raise_exception, calcvoltagebases=Reload_params.calcvoltagebases,
+        #                            pydss_controller_manager=Reload_params.pydss_controller_manager,
+        #                           enable_pydss_controllers=Reload_params.enable_pydss_controllers)
+        # circuit_solve_and_check(Reload_Params.solve_params)
+        # return Solveparams
+    # else:
+    #     Solveparams = CircuitSolve(raise_exception=Reload_Params.raise_exception)
+    circuit_solve_and_check( Reload_Params.solve_params )
+    breakpoint()
+    return Reload_Params.solve_params
 
 
 def run_selective_master_dss(master_filepath, **kwargs):
@@ -122,8 +186,9 @@ def run_selective_master_dss(master_filepath, **kwargs):
     return
 
 
+
 @track_timing(timer_stats_collector)
-def circuit_solve_and_check(raise_exception=False, **kwargs):
+def circuit_solve_and_check(solve_params=CircuitSolve()):
     """This function solves the circuit (both OpenDSS and PyDSS-if enabled)
     and can raise exception if convergence error occurs
 
@@ -136,14 +201,14 @@ def circuit_solve_and_check(raise_exception=False, **kwargs):
     -------
 
     """
-    calcvoltagebases = kwargs.pop("calcvoltagebases", False)
-    if calcvoltagebases:
+    if solve_params.calcvoltagebases:
         check_dss_run_command("CalcVoltageBases")
-    dss_pass_flag = dss_solve_and_check(raise_exception=raise_exception)
+    dss_pass_flag = dss_solve_and_check(raise_exception=solve_params.raise_exception)
     pass_flag = dss_pass_flag
-    enable_pydss_solve = kwargs.get("enable_pydss_solve", False)
-    if enable_pydss_solve:  # if pydss solver is also to be used
-        pydss_pass_flag = pydss_solve_and_check(raise_exception=raise_exception, **kwargs)
+    if solve_params.enable_pydss_controllers:  # if pydss solver is also to be used
+        if solve_params.pydss_controller_manager is None:
+            raise Exception("pydss_controller_manager should be defined.")
+        pydss_pass_flag = pydss_solve_and_check(solve_params.pydss_controller_manager, raise_exception=solve_params.raise_exception)
         pass_flag = dss_pass_flag and pydss_pass_flag
     return pass_flag
 
@@ -264,19 +329,19 @@ def convert_length_units(length, unit_in, unit_out):
     return length*LENGTH_CONVERSION[unit_in]/LENGTH_CONVERSION[unit_out]
 
 
-def get_scenario_name(enable_pydss_solve, pydss_volt_var_model):
+def get_scenario_name(enable_pydss_controllers, pydss_volt_var_model):
     """This function determines the controller scenario 
 
     Parameters
     ----------
-    enable_pydss_solve : bool
+    enable_pydss_controllers : bool
     pydss_volt_var_model 
 
     Returns
     -------
     str
     """
-    if enable_pydss_solve:
+    if enable_pydss_controllers:
         # scenario = pydss_volt_var_model.control1  # TODO can read in name instead
         scenario = "control_mode"
     else:
@@ -380,63 +445,69 @@ def get_upgrade_stage_stats(dss, upgrade_stage, upgrade_type, xfmr_loading_df, l
     return final_dict
 
 
-def get_upgrade_stage_timeseries_stats(dss, upgrade_stage, upgrade_type, **kwargs):
+def get_upgrade_stage_timeseries_stats(dss, upgrade_stage, upgrade_type, voltage_upper_limit, voltage_lower_limit, transformer_upper_limit, line_upper_limit,
+                                        capacitors_df=None, regcontrols_df=None, 
+                                        line_properties=None, xfmr_properties=None, voltage_properties=None, capacitor_properties=None,
+                                        regcontrol_properties=None, solve_params=None):
     """This function gives upgrade stage stats for a feeder 
     upgrade_stage can be Initial or Final
     upgrade_type can be thermal or voltage
     
     """
     final_dict = get_feeder_data(dss, upgrade_stage, upgrade_type)
-    equipment_dict = combine_equipment_health_timeseries_stats(**kwargs)
+    equipment_dict = combine_equipment_health_timeseries_stats(voltage_upper_limit, voltage_lower_limit, transformer_upper_limit, line_upper_limit, solve_params,
+                                                               capacitors_df, regcontrols_df, line_properties, xfmr_properties, voltage_properties, capacitor_properties,
+                                                               regcontrol_properties)
     final_dict.update(equipment_dict)
     return final_dict
 
 
-def combine_equipment_health_timeseries_stats(**kwargs):
-    line_properties = kwargs.pop("line_properties", 
-                                 ['name', 'phases','normamps', 'kV', 'line_placement',  'length', 'units', 'max_amp_loading', 
-                                  'max_per_unit_loading', 'status'])
-    xfmr_properties = kwargs.pop("xfmr_properties", 
-                                 ['name', 'phases', 'windings', 'conns', 'kV', 'kVA', 'amp_limit_per_phase','max_amp_loading', 
-                                  'max_per_unit_loading', 'status']  )
-    voltage_properties = kwargs.pop("voltage_properties", 
-                                    ['name', 'max_per_unit_voltage', 'min_per_unit_voltage',  'overvoltage_violation', 
-                                     'max_voltage_deviation', 'undervoltage_violation', 'min_voltage_deviation'])
-    capacitors_df = kwargs.pop("capacitors_df", pd.DataFrame())
-    regcontrols_df = kwargs.pop("regcontrols_df", pd.DataFrame())
-    capacitor_properties = kwargs.pop("capacitor_properties", 
-                                      ['capacitor_name','capcontrol_present',  'capcontrol_type', 'capcontrol_name', 'kv', 'kvar',
-                                       'phases', 'DeadTime', 'Delay', 'OFFsetting', 'ONsetting'])
-    regcontrol_properties = kwargs.pop("regcontrol_properties", 
-                                       ['name', 'transformer', 'vreg', 'band', 'ptratio', 'delay', 'at_substation_xfmr_flag'])
-    
+def combine_equipment_health_timeseries_stats(voltage_upper_limit, voltage_lower_limit, transformer_upper_limit, line_upper_limit, solve_params,
+                                              capacitors_df=None, regcontrols_df=None, 
+                                              line_properties=None, xfmr_properties=None, voltage_properties=None, capacitor_properties=None,
+                                              regcontrol_properties=None):
+    if line_properties is None:
+        line_properties = ['name', 'phases','normamps', 'kV', 'line_placement',  'length', 'units', 'max_amp_loading', 
+                                  'max_per_unit_loading', 'status']
+    if xfmr_properties is None:
+        xfmr_properties = ['name', 'phases', 'windings', 'conns', 'kV', 'kVA', 'amp_limit_per_phase','max_amp_loading', 
+                                  'max_per_unit_loading', 'status'] 
+    if voltage_properties is None:
+        voltage_properties = ['name', 'max_per_unit_voltage', 'min_per_unit_voltage',  'overvoltage_violation', 
+                                     'max_voltage_deviation', 'undervoltage_violation', 'min_voltage_deviation']
+    if capacitor_properties is None:
+        capacitor_properties = ['capacitor_name','capcontrol_present',  'capcontrol_type', 'capcontrol_name', 'kv', 'kvar',
+                                       'phases', 'DeadTime', 'Delay', 'OFFsetting', 'ONsetting']
+    if regcontrol_properties is None:
+        regcontrol_properties = ['name', 'transformer', 'vreg', 'band', 'ptratio', 'delay', 'at_substation_xfmr_flag']
+        
     final_dict = {}
-    xfmr_dict = get_timeseries_thermal_comparison(equipment_type="transformer", compute_loading=True, upper_limit=kwargs["transformer_upper_limit"])
+    if (capacitors_df is None) or capacitors_df.empty:
+        final_dict["capacitor_control"] = []
+    else:
+        final_dict["capacitor_control"] = capacitors_df[capacitor_properties].to_dict(orient="records")
+        
+    if (regcontrols_df is None) or regcontrols_df.empty:
+        final_dict["regulator_control"] = []
+    else:
+        final_dict["regulator_control"] = regcontrols_df[regcontrol_properties].to_dict(orient="records")
+
+    xfmr_dict = get_timeseries_thermal_comparison(equipment_type="transformer", compute_loading=True, upper_limit=transformer_upper_limit)
     ref_xfmr_dict = {k:v.reset_index()[xfmr_properties].to_dict(orient="records") for k, v in xfmr_dict.items()}
     
-    line_dict = get_timeseries_thermal_comparison(equipment_type="line", compute_loading=True, upper_limit=kwargs["line_upper_limit"])
+    line_dict = get_timeseries_thermal_comparison(equipment_type="line", compute_loading=True, upper_limit=line_upper_limit)
     ref_line_dict = {k:v.reset_index()[line_properties].to_dict(orient="records") for k, v in line_dict.items()}
 
-    voltage_upper_limit = kwargs.pop("voltage_upper_limit")
-    voltage_lower_limit = kwargs.pop("voltage_lower_limit")
     voltage_dict = get_timeseries_voltage_comparison(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, raise_exception=False,
-                                                     equipment_type="voltage", **kwargs)
+                                                     equipment_type="voltage", solve_params=solve_params)
     ref_voltage_dict = {k:v.reset_index()[voltage_properties].to_dict(orient="records") for k, v in voltage_dict.items()}
     
     # some file reformatting
     # if "windings" in xfmr_properties:
     #     xfmr_loading_df["windings"] = xfmr_loading_df["windings"].astype(int)
-    final_dict.update({"transformer": ref_xfmr_dict})
-    final_dict.update({"line": ref_line_dict})
-    final_dict.update({"bus_voltage": ref_voltage_dict})
-    if not capacitors_df.empty :
-        final_dict.update({"capacitor_control": capacitors_df[capacitor_properties].to_dict(orient="records")})
-    else :
-        final_dict.update({"capacitor_control": []})
-    if not regcontrols_df.empty:
-        final_dict.update({"regulator_control": regcontrols_df[regcontrol_properties].to_dict(orient="records")})
-    else:
-        final_dict.update({"regulator_control": []})
+    final_dict["transformer"] = ref_xfmr_dict
+    final_dict["line"] = ref_line_dict
+    final_dict["bus_voltage"] = ref_voltage_dict
     return final_dict
 
 
@@ -1227,6 +1298,8 @@ def get_timeseries_thermal_comparison(equipment_type, compute_loading, upper_lim
             loading_df = get_all_line_info_instance(compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch)
         elif equipment_type.lower() == "transformer":
             loading_df = get_all_transformer_info_instance(compute_loading=compute_loading, upper_limit=upper_limit)
+        else:
+            raise Exception(f"Not handled: {equipment_type}")
         loading_df.set_index("name", inplace=True)
         comparison_dict[key_name] = loading_df
     return comparison_dict
@@ -1247,8 +1320,8 @@ def apply_timeseries_thermal(equipment_type, compute_loading, upper_limit, decid
     return loading_df
     
 
-def get_timeseries_voltage_comparison(equipment_type, voltage_upper_limit, voltage_lower_limit, raise_exception,
-                                      **kwargs):
+def get_timeseries_voltage_comparison(equipment_type, voltage_upper_limit, voltage_lower_limit, 
+                                      solve_params):
     """
     Time-series data used to determine voltage violations
     """
@@ -1268,16 +1341,16 @@ def get_timeseries_voltage_comparison(equipment_type, voltage_upper_limit, volta
         check_dss_run_command(f"set hour = {present_step}")
         dss.Solution.Solve()  # solves for specific hour that has been set
         bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages_instance(
-                    voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, raise_exception=raise_exception, **kwargs)
+                    voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, solve_params=solve_params)
         bus_voltages_df.set_index("name", inplace=True)
         comparison_dict[key_name] = bus_voltages_df
     return comparison_dict
 
 
 def apply_timeseries_voltage(equipment_type, voltage_upper_limit, voltage_lower_limit,
-                             deciding_column_dict, raise_exception, **kwargs):
-    comparison_dict = get_timeseries_voltage_comparison(equipment_type, voltage_upper_limit, voltage_lower_limit, raise_exception,
-                                                        **kwargs)
+                             deciding_column_dict, solve_params):
+    comparison_dict = get_timeseries_voltage_comparison(equipment_type, voltage_upper_limit, voltage_lower_limit,
+                                                        solve_params)
      # compare all dataframe, and create one that contains all worst loading conditions (across all multiplier conditions)
     bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, \
             buses_with_violations = compare_multiple_dataframes_voltage(
@@ -1522,7 +1595,7 @@ def check_dss_run_command(command_string):
 
 
 @track_timing(timer_stats_collector)
-def get_bus_voltages(voltage_upper_limit, voltage_lower_limit, raise_exception=True, write_json=False, **kwargs):
+def get_bus_voltages(voltage_upper_limit, voltage_lower_limit, analysis_params, solve_params=CircuitSolve()):
     """This function determines the voltages, based on timepoint multiplier
 
     Returns
@@ -1531,27 +1604,29 @@ def get_bus_voltages(voltage_upper_limit, voltage_lower_limit, raise_exception=T
     """
     deciding_column_dict = {"max_per_unit_voltage": "max", "min_per_unit_voltage": "min"}
 
-    timeseries_analysis = kwargs.get("timeseries_analysis", False)
+    timeseries_analysis = analysis_params["timeseries_analysis"]
+    timepoint_multipliers = analysis_params["timepoint_multipliers"]
+    multiplier_type = analysis_params["multiplier_type"]
+    # timeseries_analysis = kwargs.get("timeseries_analysis", False)
     if timeseries_analysis:
         bus_voltages_df, undervoltage_bus_list, \
             overvoltage_bus_list, buses_with_violations = apply_timeseries_voltage(deciding_column_dict=deciding_column_dict,
                 voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, 
-                equipment_type="voltage", raise_exception=True, write_json=write_json, **kwargs)
+                equipment_type="voltage", solve_params=solve_params)
 
         return bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations
     
-    timepoint_multipliers = kwargs.get("timepoint_multipliers", None)
-    multiplier_type = kwargs.get("multiplier_type", LoadMultiplierType.ORIGINAL)
+    # timepoint_multipliers = kwargs.get("timepoint_multipliers", None)
+    # multiplier_type = kwargs.get("multiplier_type", LoadMultiplierType.ORIGINAL)
      
      # if there are no multipliers, run on rated load i.e. multiplier=1. 0
      # if compute_loading is false, then just run once (no need to check multipliers)
     if (timepoint_multipliers is None) or (multiplier_type == LoadMultiplierType.ORIGINAL): 
         if multiplier_type != LoadMultiplierType.ORIGINAL:
-            apply_uniform_timepoint_multipliers(multiplier_name=1, field="with_pv", **kwargs)
+            apply_uniform_timepoint_multipliers(multiplier_name=1, field="with_pv", solve_params=solve_params)
             # determine voltage violations after changes
         bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages_instance(
-            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, raise_exception=raise_exception, 
-            **kwargs)
+            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, solve_params=solve_params)
         return bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations
     if multiplier_type == LoadMultiplierType.UNIFORM:
         comparison_dict = {}
@@ -1560,9 +1635,9 @@ def get_bus_voltages(voltage_upper_limit, voltage_lower_limit, raise_exception=T
             for multiplier_name in timepoint_multipliers["load_multipliers"][pv_field]:
                 logger.debug("Multipler name: %s", multiplier_name)
                 # this changes the dss network load and pv
-                apply_uniform_timepoint_multipliers(multiplier_name=multiplier_name, field=pv_field, **kwargs)
+                apply_uniform_timepoint_multipliers(multiplier_name=multiplier_name, field=pv_field, solve_params=solve_params)
                 bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages_instance(
-                    voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, raise_exception=raise_exception, **kwargs)
+                    voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, solve_params=solve_params)
                 bus_voltages_df.set_index("name", inplace=True)
                 comparison_dict[pv_field+"_"+str(multiplier_name)] = bus_voltages_df
         # compare all dataframe, and create one that contains all worst loading conditions (across all multiplier conditions)
@@ -1576,14 +1651,14 @@ def get_bus_voltages(voltage_upper_limit, voltage_lower_limit, raise_exception=T
     
 
 @track_timing(timer_stats_collector)
-def get_bus_voltages_instance(voltage_upper_limit, voltage_lower_limit, raise_exception=True, **kwargs):
+def get_bus_voltages_instance(voltage_upper_limit, voltage_lower_limit, solve_params=CircuitSolve()):
     """This computes per unit voltages for all buses in network
 
     Returns
     -------
     DataFrame
     """
-    circuit_solve_and_check(raise_exception=raise_exception, **kwargs)  # this is added as a final check for convergence
+    circuit_solve_and_check(solve_params)  # this is added as a final check for convergence
     all_dict = {}
     all_bus_names = dss.Circuit.AllBusNames()
     for bus_name in all_bus_names:
@@ -1892,7 +1967,7 @@ def apply_timepoint_multipliers_dict(reformatted_dict, multiplier_name, property
     return reformatted_dict
 
 
-def apply_uniform_timepoint_multipliers(multiplier_name, field, **kwargs):
+def apply_uniform_timepoint_multipliers(multiplier_name, field, solve_params):
     """This function applies a uniform mulitplier to all elements. 
     Currently, the multiplier only does works on loads. But can be modified to accommodate other elements like PV as well.
     It has two options, 1) all pv is enabled. 2) all pv is disabled.
@@ -1909,5 +1984,5 @@ def apply_uniform_timepoint_multipliers(multiplier_name, field, **kwargs):
         raise Exception(f"Unknown parameter {field} passed in uniform timepoint multiplier dict."
                         f"Acceptable values are 'with_pv', 'without_pv'")
     check_dss_run_command(f"set LoadMult = {multiplier_name}")
-    circuit_solve_and_check(raise_exception=True, **kwargs)
+    circuit_solve_and_check(solve_params)
     return True

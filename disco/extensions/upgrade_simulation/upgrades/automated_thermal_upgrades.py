@@ -9,12 +9,12 @@ from jade.utils.utils import load_data, dump_data
 from .thermal_upgrade_functions import *
 from .voltage_upgrade_functions import plot_thermal_violations, plot_voltage_violations, plot_feeder
 
-from disco.models.upgrade_cost_analysis_generic_input_model import UpgradeTechnicalCatalogModel
+from disco.models.upgrade_cost_analysis_generic_input_model import UpgradeTechnicalCatalogModel, UpgradeSimulationParamsModel
 from disco.models.upgrade_cost_analysis_generic_output_model import UpgradeViolationResultModel, AllUpgradesTechnicalResultModel
 from disco import timer_stats_collector
 from disco.enums import LoadMultiplierType
 from disco.exceptions import UpgradesInvalidViolationIncrease
-
+from disco.extensions.upgrade_simulation.upgrades.common_functions import CircuitSolve, ReloadCircuit
 
 logger = logging.getLogger(__name__)
 
@@ -37,24 +37,46 @@ def determine_thermal_upgrades(
 ):
     start_time = time.time()
     logger.info( f"Simulation start time: {start_time}")   
-    initial_simulation_params = {"enable_pydss_solve": upgrade_simulation_params_config["enable_pydss_controllers"], 
-                                 "pydss_volt_var_model": upgrade_simulation_params_config["pydss_controllers"],
-                                 "dc_ac_ratio": upgrade_simulation_params_config["dc_ac_ratio"]}
+    
+    # initial_simulation_params = {"enable_pydss_controllers": upgrade_simulation_params_config["enable_pydss_controllers"], 
+    #                              "pydss_volt_var_model": upgrade_simulation_params_config["pydss_controllers"],
+    #                              "dc_ac_ratio": upgrade_simulation_params_config["dc_ac_ratio"]}
+    
+    analysis_params = {"timepoint_multipliers": upgrade_simulation_params_config["timepoint_multipliers"], 
+                        "multiplier_type": upgrade_simulation_params_config["multiplier_type"],
+                        "timeseries_analysis": upgrade_simulation_params_config["timeseries_analysis"]}
     create_plots = thermal_config["create_plots"]
+    # initial_simulation_params = upgrade_simulation_params_config
+    breakpoint()
     
-    timepoint_multipliers = thermal_config["timepoint_multipliers"]
-    if timepoint_multipliers is not None:
-        multiplier_type = LoadMultiplierType.UNIFORM
-    else:
-        multiplier_type = LoadMultiplierType.ORIGINAL
-    initial_simulation_params.update({"timepoint_multipliers": timepoint_multipliers, "multiplier_type": multiplier_type})
-    if upgrade_simulation_params_config["timeseries_analysis"]:
-        initial_simulation_params.update({"timeseries_analysis": upgrade_simulation_params_config["timeseries_analysis"]})
-    logger.info("Initial simulation parameters: %s", initial_simulation_params)
+    initial_solve_params = CircuitSolve(
+                    # raise_exception=upgrade_simulation_params_config.raise_exception, 
+                    # calcvoltagebases=upgrade_simulation_params_config.calcvoltagebases,
+                    pydss_controller_manager=upgrade_simulation_params_config["pydss_controller_manager"],
+                    enable_pydss_controllers=upgrade_simulation_params_config["enable_pydss_controllers"])
     
+    # timepoint_multipliers = thermal_config["timepoint_multipliers"]
+    # if timepoint_multipliers is not None:
+    #     multiplier_type = LoadMultiplierType.UNIFORM
+    # else:
+    #     multiplier_type = LoadMultiplierType.ORIGINAL
+    # initial_simulation_params.update({"timepoint_multipliers": timepoint_multipliers, "multiplier_type": multiplier_type})
+    # if upgrade_simulation_params_config["timeseries_analysis"]:
+    #     initial_simulation_params.update({"timeseries_analysis": upgrade_simulation_params_config["timeseries_analysis"]})
+    # logger.info("Initial simulation parameters: %s", initial_simulation_params)
+    
+    breakpoint()
     # start upgrades
     initial_dss_file_list = [master_path]
-    simulation_params = reload_dss_circuit(dss_file_list=initial_dss_file_list, commands_list=None, **initial_simulation_params)
+    reload_circuit_params = ReloadCircuit(dss_file_list=initial_dss_file_list, commands_list=None,
+                                        dc_ac_ratio=upgrade_simulation_params_config["dc_ac_ratio"],
+                                        pydss_volt_var_model=upgrade_simulation_params_config["pydss_controllers"],
+                                        solve_params=initial_solve_params,
+    )
+    solve_params = reload_dss_circuit(reload_circuit_params)
+    breakpoint()
+    # simulation_params = UpgradeSimulationParamsModel(**simulation_params)
+    
     voltage_upper_limit = thermal_config["voltage_upper_limit"]
     voltage_lower_limit = thermal_config["voltage_lower_limit"]
     if thermal_config["read_external_catalog"]:
@@ -94,12 +116,13 @@ def determine_thermal_upgrades(
         initial_undervoltage_bus_list,
         initial_overvoltage_bus_list,
         initial_buses_with_violations,
-    ) = get_bus_voltages(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
+    ) = get_bus_voltages(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, analysis_params=analysis_params,
+                         solve_params=solve_params)
     
     initial_xfmr_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["transformer_upper_limit"], 
-                                                         equipment_type="transformer", **simulation_params)
+                                                         equipment_type="transformer", analysis_params=analysis_params, solve_params=solve_params)
     initial_line_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["line_upper_limit"], 
-                                                         equipment_type="line", ignore_switch=ignore_switch, **simulation_params)
+                                                         equipment_type="line", ignore_switch=ignore_switch, analysis_params=analysis_params, solve_params=solve_params)
     
     initial_overloaded_xfmr_list = list(initial_xfmr_loading_df.loc[initial_xfmr_loading_df["status"] == 
                                                                     "overloaded"]["name"].unique())
@@ -116,7 +139,7 @@ def determine_thermal_upgrades(
         feeder_stats["timeseries_stage_results"] = []
         timeseries_upgrade_stats = get_upgrade_stage_timeseries_stats(dss, upgrade_stage="initial", upgrade_type="thermal", capacitors_df=orig_capacitors_df, regcontrols_df=orig_regcontrols_df, 
                                                transformer_upper_limit=thermal_config["transformer_upper_limit"], line_upper_limit=thermal_config["line_upper_limit"], 
-                                               voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
+                                               voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, solve_params=solve_params)
         feeder_stats["timeseries_stage_results"].append(timeseries_upgrade_stats)
     dump_data(feeder_stats, feeder_stats_json_file, indent=2)   # save feeder stats
     if len(initial_overloaded_xfmr_list) > 0 or len(initial_overloaded_line_list) > 0:
@@ -131,7 +154,7 @@ def determine_thermal_upgrades(
     else:
         upgrade_status = "Thermal Upgrades not Required"  # status - whether upgrades done or not
     logger.info(upgrade_status)
-    scenario = get_scenario_name(enable_pydss_solve=simulation_params["enable_pydss_solve"], pydss_volt_var_model=simulation_params["pydss_volt_var_model"])
+    scenario = get_scenario_name(enable_pydss_controllers=solve_params.enable_pydss_controllers, pydss_volt_var_model=reload_circuit_params.pydss_volt_var_model)
     initial_results = UpgradeViolationResultModel(
         name=job_name,
         scenario=scenario,
@@ -179,7 +202,7 @@ def determine_thermal_upgrades(
     while (len(overloaded_line_list) > 0 or len(overloaded_xfmr_list) > 0) and (
         iteration_counter < max_upgrade_iteration):
         line_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["line_upper_limit"], 
-                                                    equipment_type="line", ignore_switch=ignore_switch, **simulation_params)
+                                                    equipment_type="line", ignore_switch=ignore_switch, analysis_params=analysis_params, solve_params=solve_params)
         overloaded_line_list = list(line_loading_df.loc[line_loading_df["status"] == "overloaded"]["name"].unique())
         logger.info(f"Iteration_{iteration_counter}: Determined line loadings.")
         logger.info(f"Iteration_{iteration_counter}: Number of line violations: {len(overloaded_line_list)}")
@@ -195,7 +218,7 @@ def determine_thermal_upgrades(
             commands_list = commands_list + line_commands_list
             line_upgrades_df = pd.concat([line_upgrades_df, temp_line_upgrades_df])
         xfmr_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["transformer_upper_limit"], 
-                                                    equipment_type="transformer", **simulation_params)
+                                                    equipment_type="transformer", analysis_params=analysis_params, solve_params=solve_params)
         overloaded_xfmr_list = list(xfmr_loading_df.loc[xfmr_loading_df["status"] == "overloaded"]["name"].unique())
         logger.info(f"Iteration_{iteration_counter}: Determined xfmr loadings.")
         logger.info(f"Iteration_{iteration_counter}: Number of xfmr violations: {len(overloaded_xfmr_list)}")
@@ -212,10 +235,10 @@ def determine_thermal_upgrades(
             xfmr_upgrades_df = pd.concat([xfmr_upgrades_df, temp_xfmr_upgrades_df])
         # compute loading after upgrades
         xfmr_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["transformer_upper_limit"], 
-                                                    equipment_type="transformer",  **simulation_params)
+                                                    equipment_type="transformer",  analysis_params=analysis_params, solve_params=solve_params)
         overloaded_xfmr_list = list(xfmr_loading_df.loc[xfmr_loading_df["status"] == "overloaded"]["name"].unique())
         line_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["line_upper_limit"], 
-                                                    equipment_type="line", ignore_switch=ignore_switch, **simulation_params)
+                                                    equipment_type="line", ignore_switch=ignore_switch,  analysis_params=analysis_params, solve_params=solve_params)
         overloaded_line_list = list(line_loading_df.loc[line_loading_df["status"] == "overloaded"]["name"].unique())
         
         if len(overloaded_line_list) > before_upgrade_num_line_violations:
@@ -247,13 +270,19 @@ def determine_thermal_upgrades(
     redirect_command_list = create_upgraded_master_dss(dss_file_list=initial_dss_file_list + [thermal_upgrades_dss_filepath], upgraded_master_dss_filepath=upgraded_master_dss_filepath,
                                                        original_master_filename=os.path.basename(master_path))
     write_text_file(string_list=redirect_command_list, text_file_path=upgraded_master_dss_filepath)
-    reload_dss_circuit(dss_file_list=[upgraded_master_dss_filepath], commands_list=None, **simulation_params,)
+    final_reload_circuit_params = ReloadCircuit(dss_file_list=[upgraded_master_dss_filepath], commands_list=None,
+                                        dc_ac_ratio=reload_circuit_params.dc_ac_ratio,
+                                        pydss_volt_var_model=reload_circuit_params.pydss_controllers,
+                                        solve_params=solve_params,
+    )
+    reload_dss_circuit(final_reload_circuit_params)
     bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(voltage_upper_limit=voltage_upper_limit, 
-                                                                                                           voltage_lower_limit=voltage_lower_limit, **simulation_params)
+                                                                                                           voltage_lower_limit=voltage_lower_limit, 
+                                                                                                           analysis_params=analysis_params, solve_params=solve_params)
     xfmr_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["transformer_upper_limit"], 
-                                                equipment_type="transformer", **simulation_params)
+                                                equipment_type="transformer",  analysis_params=analysis_params, solve_params=solve_params)
     line_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["line_upper_limit"], 
-                                                equipment_type="line", ignore_switch=ignore_switch, **simulation_params)
+                                                equipment_type="line", ignore_switch=ignore_switch, analysis_params=analysis_params, solve_params=solve_params)
     overloaded_xfmr_list = list(xfmr_loading_df.loc[xfmr_loading_df["status"] == "overloaded"]["name"].unique())
     overloaded_line_list = list(line_loading_df.loc[line_loading_df["status"] == "overloaded"]["name"].unique())
     # same equipment could be upgraded(edited) multiple times. Only consider last upgrade edit done. original_equipment details are currently not used.
@@ -282,7 +311,7 @@ def determine_thermal_upgrades(
     if upgrade_simulation_params_config["timeseries_analysis"]:
         timeseries_upgrade_stats = get_upgrade_stage_timeseries_stats(dss, upgrade_stage="final", upgrade_type="thermal", capacitors_df=orig_capacitors_df, regcontrols_df=orig_regcontrols_df, 
                                                transformer_upper_limit=thermal_config["transformer_upper_limit"], line_upper_limit=thermal_config["line_upper_limit"], 
-                                               voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
+                                               voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit,solve_params=solve_params )
         feeder_stats["timeseries_stage_results"].append(timeseries_upgrade_stats)
 
     dump_data(feeder_stats, feeder_stats_json_file, indent=2)

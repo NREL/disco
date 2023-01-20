@@ -70,13 +70,15 @@ def determine_voltage_upgrades(
     if not os.path.exists(thermal_upgrades_dss_filepath):
         raise Exception(f"AutomatedThermalUpgrade did not produce thermal upgrades dss file")
     
-    initial_simulation_params = {"enable_pydss_solve": upgrade_simulation_params_config["enable_pydss_controllers"],
-                                 "pydss_volt_var_model": upgrade_simulation_params_config["pydss_controllers"],
-                                 "dc_ac_ratio": upgrade_simulation_params_config["dc_ac_ratio"], 
-                                 "max_control_iterations": voltage_config["max_control_iterations"]}
-    initial_simulation_params.update({"timepoint_multipliers": timepoint_multipliers, "multiplier_type": multiplier_type})
-    if upgrade_simulation_params_config["timeseries_analysis"]:
-        initial_simulation_params.update({"timeseries_analysis": upgrade_simulation_params_config["timeseries_analysis"]})
+    # initial_simulation_params = {"enable_pydss_controllers": upgrade_simulation_params_config["enable_pydss_controllers"],
+    #                              "pydss_volt_var_model": upgrade_simulation_params_config["pydss_controllers"],
+    #                              "dc_ac_ratio": upgrade_simulation_params_config["dc_ac_ratio"], 
+    #                              "max_control_iterations": voltage_config["max_control_iterations"]}
+    # initial_simulation_params.update({"timepoint_multipliers": timepoint_multipliers, "multiplier_type": multiplier_type})
+    # if upgrade_simulation_params_config["timeseries_analysis"]:
+    #     initial_simulation_params.update({"timeseries_analysis": upgrade_simulation_params_config["timeseries_analysis"]})
+    
+    
     initial_dss_file_list = [master_path, thermal_upgrades_dss_filepath]
     simulation_params = reload_dss_circuit(dss_file_list=initial_dss_file_list, commands_list=None, **initial_simulation_params)
     
@@ -120,7 +122,7 @@ def determine_voltage_upgrades(
                                                voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
         feeder_stats["timeseries_stage_results"].append(timeseries_upgrade_stats)
     dump_data(feeder_stats, feeder_stats_json_file, indent=2)
-    scenario = get_scenario_name(enable_pydss_solve=simulation_params["enable_pydss_solve"], pydss_volt_var_model=simulation_params["pydss_volt_var_model"])
+    scenario = get_scenario_name(enable_pydss_controllers=simulation_params["enable_pydss_controllers"], pydss_volt_var_model=simulation_params["pydss_volt_var_model"])
     initial_results = UpgradeViolationResultModel(
         name = job_name, 
         scenario = scenario,
