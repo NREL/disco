@@ -78,9 +78,26 @@ def determine_voltage_upgrades(
     # if upgrade_simulation_params_config["timeseries_analysis"]:
     #     initial_simulation_params.update({"timeseries_analysis": upgrade_simulation_params_config["timeseries_analysis"]})
     
+    initial_solve_params = CircuitSolve(
+                    # raise_exception=upgrade_simulation_params_config.raise_exception, 
+                    # calcvoltagebases=upgrade_simulation_params_config.calcvoltagebases,
+                    pydss_controller_manager=upgrade_simulation_params_config["pydss_controller_manager"],
+                    enable_pydss_controllers=upgrade_simulation_params_config["enable_pydss_controllers"])
     
+
+    analysis_params = {"timepoint_multipliers": upgrade_simulation_params_config["timepoint_multipliers"], 
+                        "multiplier_type": upgrade_simulation_params_config["multiplier_type"],
+                        "timeseries_analysis": upgrade_simulation_params_config["timeseries_analysis"]}
+
     initial_dss_file_list = [master_path, thermal_upgrades_dss_filepath]
-    simulation_params = reload_dss_circuit(dss_file_list=initial_dss_file_list, commands_list=None, **initial_simulation_params)
+    reload_circuit_params = ReloadCircuit(dss_file_list=initial_dss_file_list, commands_list=None,
+                                        dc_ac_ratio=upgrade_simulation_params_config["dc_ac_ratio"],
+                                        pydss_volt_var_model=upgrade_simulation_params_config["pydss_controllers"],
+                                        solve_params=initial_solve_params,
+    )
+    solve_params = reload_dss_circuit(reload_circuit_params)
+    
+    # simulation_params = reload_dss_circuit(dss_file_list=initial_dss_file_list, commands_list=None, **initial_simulation_params)
     
     # reading original objects (before upgrades)
     orig_ckt_info = get_circuit_info()
@@ -97,13 +114,13 @@ def determine_voltage_upgrades(
     voltage_lower_limit = voltage_config["initial_lower_limit"]
 
     initial_xfmr_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["transformer_upper_limit"], 
-                                                        equipment_type="transformer", **simulation_params)
+                                                        equipment_type="transformer", analysis_params=analysis_params, solve_params=solve_params)
     initial_line_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["line_upper_limit"], 
-                                                        equipment_type="line", ignore_switch=ignore_switch, **simulation_params)
+                                                        equipment_type="line", ignore_switch=ignore_switch, analysis_params=analysis_params, solve_params=solve_params)
     initial_bus_voltages_df, initial_undervoltage_bus_list, initial_overvoltage_bus_list, \
         initial_buses_with_violations = get_bus_voltages(
             voltage_upper_limit=thermal_config['voltage_upper_limit'], voltage_lower_limit=thermal_config['voltage_lower_limit'],
-            **simulation_params)
+            analysis_params=analysis_params, solve_params=solve_params)
 
     initial_overloaded_xfmr_list = list(initial_xfmr_loading_df.loc[initial_xfmr_loading_df['status'] ==
                                                                     'overloaded']['name'].unique())
@@ -119,10 +136,10 @@ def determine_voltage_upgrades(
     if upgrade_simulation_params_config["timeseries_analysis"]:
         timeseries_upgrade_stats = get_upgrade_stage_timeseries_stats(dss, upgrade_stage="initial", upgrade_type="voltage", capacitors_df=orig_capacitors_df, regcontrols_df=orig_regcontrols_df, 
                                                transformer_upper_limit=thermal_config["transformer_upper_limit"], line_upper_limit=thermal_config["line_upper_limit"], 
-                                               voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)
+                                               voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, solve_params=solve_params)
         feeder_stats["timeseries_stage_results"].append(timeseries_upgrade_stats)
     dump_data(feeder_stats, feeder_stats_json_file, indent=2)
-    scenario = get_scenario_name(enable_pydss_controllers=simulation_params["enable_pydss_controllers"], pydss_volt_var_model=simulation_params["pydss_volt_var_model"])
+    scenario = get_scenario_name(enable_pydss_controllers=solve_params.enable_pydss_controllers, pydss_volt_var_model=reload_circuit_params.pydss_volt_var_model)
     initial_results = UpgradeViolationResultModel(
         name = job_name, 
         scenario = scenario,
@@ -154,7 +171,7 @@ def determine_voltage_upgrades(
     dump_data(overall_outputs, overall_output_summary_filepath, indent=2, allow_nan=False)
     circuit_source = orig_ckt_info["source_bus"]
     bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
-                voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)    
+                voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, analysis_params=analysis_params, solve_params=solve_params)    
     logger.info(f"Number of overvoltage violations: {len(overvoltage_bus_list)}")
     logger.info(f"Number of undervoltage violations: {len(undervoltage_bus_list)}")
     # if there are no buses with violations based on initial check, don't get into upgrade process
@@ -173,7 +190,7 @@ def determine_voltage_upgrades(
         upgrade_status = 'Voltage Upgrades Required'  # status - whether voltage upgrades done or not
         logger.info("Voltage Upgrades Required.")
         comparison_dict = {"original": compute_voltage_violation_severity(
-            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)}
+            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, analysis_params=analysis_params, solve_params=solve_params)}
         best_setting_so_far = "original"
         # start with capacitors
         if voltage_config["capacitor_action_flag"] and len(orig_capacitors_df) > 0:

@@ -175,7 +175,7 @@ def find_line_connected_to_capacitor(capacitor_row, lines_df):
 
 @track_timing(timer_stats_collector)
 def sweep_capacitor_settings(voltage_config, initial_capacitors_df, default_capacitor_settings, voltage_upper_limit,
-                             voltage_lower_limit, **kwargs):
+                             voltage_lower_limit, solve_params):
     """This function sweeps through capacitor settings and returns dataframe of severity metrics for all the sweeps of capacitor controls with best settings.
        This function increases differences between cap ON and OFF voltages in user defined increments,
        default 1 volt, until upper and lower bounds are reached.
@@ -197,7 +197,9 @@ def sweep_capacitor_settings(voltage_config, initial_capacitors_df, default_capa
     capacitor_sweep_list = []  # this list will contain severity of each capacitor setting sweep
     # get severity index for original/initial capacitor settings (ie before the settings sweep)
     temp_dict = {'cap_on_setting': 'original setting', 'cap_off_setting': 'original setting'}
-    pass_flag = circuit_solve_and_check(raise_exception=False, **kwargs)
+    resolve_params = solve_params.copy()
+    resolve_params.raise_exception = False
+    pass_flag = circuit_solve_and_check(resolve_params)  # raise exception is False
     if not pass_flag:  # if there is convergence issue at this setting, go onto next setting and dont save
         temp_dict['converged'] = False
     else:
@@ -218,14 +220,14 @@ def sweep_capacitor_settings(voltage_config, initial_capacitors_df, default_capa
         for index, row in initial_capacitors_df.iterrows():  # apply settings to all capacitors
             check_dss_run_command(f"Edit CapControl.{row['capcontrol_name']} ONsetting={cap_on_setting} "
                             f"OFFsetting={cap_off_setting}")
-            pass_flag = circuit_solve_and_check(raise_exception=False, **kwargs)
+            pass_flag = circuit_solve_and_check(resolve_params)  # don't raise exception
             if not pass_flag:  # if there is convergence issue at this setting, go onto next setting and dont save
                 temp_dict['converged'] = False
                 break
             else:
                 temp_dict['converged'] = True
         bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
-            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, raise_exception=False, **kwargs)
+            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, analysis_params=analysis_params, solve_params=resolve_params)
         severity_dict = compute_voltage_violation_severity(
             voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit)
         temp_dict.update(severity_dict)
@@ -242,7 +244,7 @@ def sweep_capacitor_settings(voltage_config, initial_capacitors_df, default_capa
     return capacitor_sweep_df
 
 
-def choose_best_capacitor_sweep_setting(capacitor_sweep_df, initial_capacitors_df, deciding_field, **kwargs):
+def choose_best_capacitor_sweep_setting(capacitor_sweep_df, initial_capacitors_df, deciding_field, solve_params):
     """This function takes the dataframe containing severity metrics, identifies the best cap control setting out
     of all the sweeps and returns dataframe of capacitor controls with best settings
 
@@ -277,7 +279,7 @@ def choose_best_capacitor_sweep_setting(capacitor_sweep_df, initial_capacitors_d
                                                                            creation_action='Edit')
     for command_string in capacitor_settings_commands_list:
         check_dss_run_command(command_string)
-    circuit_solve_and_check(raise_exception=True, **kwargs)
+    circuit_solve_and_check(solve_params)  # raise exception should be true
     if setting_type == 'initial_setting':  # if initial settings are best, no need to return command with settings
         capacitor_settings_commands_list = []
     return capacitors_df, capacitor_settings_commands_list
@@ -308,7 +310,7 @@ def create_capcontrol_settings_commands(properties_list, capacitors_df, creation
 
 
 def determine_capacitor_upgrades(voltage_upper_limit, voltage_lower_limit, default_capacitor_settings, orig_capacitors_df, 
-                                 voltage_config, deciding_field, **kwargs):
+                                 voltage_config, deciding_field, analysis_params, solve_params):
     """This function corrects capacitor parameters, sweeps through capacitor settings and determines the best capacitor setting.
     It returns the dss commands associated with all these actions
     """
@@ -337,11 +339,11 @@ def determine_capacitor_upgrades(voltage_upper_limit, voltage_lower_limit, defau
         # choose best capacitor settings
         capacitors_df, capcontrol_settings_commands_list = choose_best_capacitor_sweep_setting(
             capacitor_sweep_df=capacitor_sweep_df, initial_capacitors_df=nosetting_changes_capacitors_df,
-            deciding_field=deciding_field, **kwargs)
+            deciding_field=deciding_field, solve_params=solve_params)
         capacitor_dss_commands = capacitor_dss_commands + capcontrol_settings_commands_list
     # determine voltage violations after capacitor changes
     bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
-        voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)   
+        voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit,  analysis_params=analysis_params, solve_params=solve_params)   
     if (fig_folder is not None) and create_plots:
             plot_voltage_violations(fig_folder=fig_folder, title=title+
                                     str(len(buses_with_violations)), buses_with_violations=buses_with_violations, circuit_source=circuit_source, enable_detailed=True)
@@ -422,7 +424,7 @@ def get_capacitor_upgrades(orig_capacitors_df, new_capacitors_df):
     return processed_outputs
 
 
-def compute_voltage_violation_severity(voltage_upper_limit, voltage_lower_limit, **kwargs):
+def compute_voltage_violation_severity(voltage_upper_limit, voltage_lower_limit, analysis_params, solve_params):
     """This function computes voltage violation severity metrics, based on bus voltages
 
     Parameters
@@ -433,8 +435,10 @@ def compute_voltage_violation_severity(voltage_upper_limit, voltage_lower_limit,
     -------
     Dict
     """
+    resolve_params = solve_params.copy()
+    resolve_params.raise_exception = False
     bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
-        voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, raise_exception=False, **kwargs)
+        voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, analysis_params=analysis_params, solve_params=resolve_params)
     deviation_severity = bus_voltages_df['min_voltage_deviation'].sum() + bus_voltages_df['max_voltage_deviation'].sum()
     undervoltage_bus_list = list(
         bus_voltages_df.loc[bus_voltages_df['undervoltage_violation'] == True]['name'].unique())
