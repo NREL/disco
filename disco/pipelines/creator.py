@@ -36,16 +36,22 @@ class SnapshotPipelineCreator(PipelineCreatorBase):
         return command
 
     def make_disco_config_command(self, section):
-        if self.template.preconfigured:
-            model_inputs = self.template.inputs
+        # self.template reads the file fresh every time.
+        # TODO: change the rest of this file to not constantly re-read it.
+        template = self.template
+        if template.preconfigured:
+            model_inputs = template.inputs
         else:
-            model_inputs = self.template.get_model_transform_output()
-        options = self.template.get_config_options(section)
+            model_inputs = template.get_model_transform_output()
+        options = template.get_config_options(section)
+        # The code that builds the option string excludes False values but we need it here.
+        if not template.get_config_params(TemplateSection.SIMULATION)["with_loadshape"]:
+            options += " --no-with-loadshape"
         reports_filename = "generated_snapshot_reports.toml"
-        dump_data(self.template.reports, reports_filename)
+        dump_data(template.reports, reports_filename)
         exports_filename = get_default_exports_file(
             SimulationType.SNAPSHOT,
-            AnalysisType(self.template.analysis_type),
+            AnalysisType(template.analysis_type),
         )
         command = (
             f"disco config snapshot {model_inputs} "
