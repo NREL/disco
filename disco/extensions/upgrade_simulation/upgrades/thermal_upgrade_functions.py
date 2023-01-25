@@ -12,7 +12,8 @@ from disco.models.upgrade_cost_analysis_generic_output_model import TransformerU
 logger = logging.getLogger(__name__)
 
 @track_timing(timer_stats_collector)
-def correct_line_violations(line_loading_df, line_design_pu, line_upgrade_options, parallel_lines_limit, **kwargs,):
+def correct_line_violations(line_loading_df, line_design_pu, line_upgrade_options, parallel_lines_limit, solve_params, 
+                            external_upgrades_technical_catalog=None):
     """This function determines line upgrades to correct line violations.
     It also updates the opendss model with upgrades.
 
@@ -27,6 +28,8 @@ def correct_line_violations(line_loading_df, line_design_pu, line_upgrade_option
     -------
 
     """
+    solve_params_true_exception = solve_params.copy()
+    solve_params_true_exception.raise_exception = True
     equipment_type = "Line"
     line_upgrades_df = pd.DataFrame()
     upgrades_dict = {}
@@ -73,7 +76,7 @@ def correct_line_violations(line_loading_df, line_design_pu, line_upgrade_option
                 temp_commands_list = []
                 # edit existing line
                 if (new_config_type == "geometry") or (new_config_type == "linecode"):
-                    external_upgrades_technical_catalog = kwargs.get("external_upgrades_technical_catalog", None)
+                    assert external_upgrades_technical_catalog is not None
                     command_string = ensure_line_config_exists(chosen_option, new_config_type, external_upgrades_technical_catalog)
                     if command_string is not None:  # if new line config definition had to be added
                         temp_commands_list.append(command_string)                                                    
@@ -103,12 +106,12 @@ def correct_line_violations(line_loading_df, line_design_pu, line_upgrade_option
                 # run command for upgraded equipment, that resolves overloading for one equipment
                 for command_item in temp_commands_list:
                     check_dss_run_command(command_item)
-                    circuit_solve_and_check(raise_exception=True, **kwargs)
+                    circuit_solve_and_check(solve_params_true_exception)  # raise_exception=True
                 commands_list = commands_list + temp_commands_list
             # if higher upgrade is not available or chosen line upgrade rating is much higher than required,
             # dont oversize. Instead, place lines in parallelma
             else:
-                external_upgrades_technical_catalog = kwargs.get("external_upgrades_technical_catalog", None)
+                assert external_upgrades_technical_catalog is not None
                 parallel_line_commands, temp_upgrades_dict_parallel = identify_parallel_lines(options=options, object_row=row,
                                                                                          parallel_lines_limit=parallel_lines_limit, 
                                                                                          external_upgrades_technical_catalog=external_upgrades_technical_catalog)
@@ -116,7 +119,7 @@ def correct_line_violations(line_loading_df, line_design_pu, line_upgrade_option
                 for command_item in parallel_line_commands:
                     check_dss_run_command(command_item)
                     check_dss_run_command('CalcVoltageBases')
-                    circuit_solve_and_check(raise_exception=True, **kwargs)
+                    circuit_solve_and_check(solve_params_true_exception)  # raise_exception=True
                 commands_list = commands_list + parallel_line_commands
                 upgrades_dict_parallel = upgrades_dict_parallel + temp_upgrades_dict_parallel  # parallel upgrades is stored in a list (since it has same original_equipment name)
         index_names = ["original_equipment_name", "parameter_type"]
@@ -129,14 +132,14 @@ def correct_line_violations(line_loading_df, line_design_pu, line_upgrade_option
              "original_equipment_name"]).reset_index()
     else:  # if there is no overloading
         logger.info("This case has no line violations")
-    circuit_solve_and_check(raise_exception=True, **kwargs)  # this is added as a final check for convergence
+    circuit_solve_and_check(solve_params_true_exception)  # raise_exception=True  # this is added as a final check for convergence
     output_fields =  list(LineUpgradesTechnicalResultModel.schema(True).get("properties").keys())  # get fields with alias
     line_upgrades_df = line_upgrades_df[output_fields]
     return commands_list, line_upgrades_df
 
 
 @track_timing(timer_stats_collector)
-def identify_parallel_lines(options, object_row, parallel_lines_limit, **kwargs):
+def identify_parallel_lines(options, object_row, parallel_lines_limit, external_upgrades_technical_catalog):
     """This function identifies parallel line solutions, when a direct upgrade solution is not available from catalogue
 
     Parameters
@@ -166,7 +169,6 @@ def identify_parallel_lines(options, object_row, parallel_lines_limit, **kwargs)
         raise ExceededParallelLinesLimit(f"Number of parallel lines required is {num_parallel_lines}, which exceeds limit of {parallel_lines_limit}."
                                           f" Increase parameter parallel_lines_limit in input config or ensure higher sized equipment is present in technical catalog.")
     new_config_type = chosen_option["line_definition_type"]
-    external_upgrades_technical_catalog = kwargs.get("external_upgrades_technical_catalog", None)
     upgrades_dict_parallel = []
     for i in range(0, num_parallel_lines):
         curr_time = str(time.time())
@@ -208,15 +210,11 @@ def identify_parallel_lines(options, object_row, parallel_lines_limit, **kwargs)
     return commands_list, upgrades_dict_parallel
 
 
-def define_line_object(line_name, chosen_option, action_type, **kwargs):
+def define_line_object(line_name, chosen_option, action_type, bus1, bus2, original_units, length):
     """This function is used to create a command string to define an opendss line object
     """
     command_string = f"{action_type} Line.{line_name} normamps={chosen_option['normamps']} emergamps={chosen_option['emergamps']}"
     if action_type == "New":
-        bus1 = kwargs.get("bus1", None)
-        bus2 = kwargs.get("bus2", None)
-        length = kwargs.get("length", None)
-        original_units = kwargs.get("original_units", None)
         if bus1 is None or bus2 is None or length is None or original_units is None:
             raise ValueError(f"Bus and length information is needed when defining a new line object.")
         if original_units != chosen_option["units"]:  # if units are different
@@ -316,7 +314,7 @@ def define_xfmr_object(xfmr_name, xfmr_info_series, action_type, buses_list=None
 
 @track_timing(timer_stats_collector)
 def correct_xfmr_violations(xfmr_loading_df, xfmr_design_pu, xfmr_upgrade_options,
-                            parallel_transformers_limit, **kwargs):
+                            parallel_transformers_limit, solve_params):
     """This function determines transformer upgrades to correct transformer violations.
     It also updates the opendss model with upgrades.
 
@@ -331,6 +329,8 @@ def correct_xfmr_violations(xfmr_loading_df, xfmr_design_pu, xfmr_upgrade_option
     -------
 
     """
+    solve_params_true_exception = solve_params.copy()
+    solve_params_true_exception.raise_exception = True
     equipment_type = "Transformer"
     xfmr_upgrades_df = pd.DataFrame()
     upgrades_dict = {}
@@ -404,7 +404,7 @@ def correct_xfmr_violations(xfmr_loading_df, xfmr_design_pu, xfmr_upgrade_option
                                                                     # "parameter_type": "new_equipment",
                                                                     "action": "add", "name": row["name"]})
                 check_dss_run_command(command_string)  # run command for upgraded equipment
-                circuit_solve_and_check(raise_exception=True, **kwargs)
+                circuit_solve_and_check(solve_params_true_exception)
             # if higher upgrade is not available or chosen upgrade rating is much higher than required,
             # dont oversize. Instead, place equipment in parallel
             else:
@@ -414,7 +414,7 @@ def correct_xfmr_violations(xfmr_loading_df, xfmr_design_pu, xfmr_upgrade_option
                 for command_item in parallel_xfmr_commands:
                     check_dss_run_command(command_item)
                     check_dss_run_command('CalcVoltageBases')
-                    circuit_solve_and_check(raise_exception=True, **kwargs)
+                    circuit_solve_and_check(solve_params_true_exception)
                 commands_list = commands_list + parallel_xfmr_commands
                 upgrades_dict_parallel = upgrades_dict_parallel + temp_upgrades_dict_parallel  # parallel upgrades is stored in a list (since it has same original_equipment name)
         index_names = ["original_equipment_name", "parameter_type"]
@@ -428,7 +428,7 @@ def correct_xfmr_violations(xfmr_loading_df, xfmr_design_pu, xfmr_upgrade_option
 
     else:  # if there is no overloading
         logger.info("This case has no transformer violations")
-    circuit_solve_and_check(raise_exception=True, **kwargs)  # this is added as a final check for convergence
+    circuit_solve_and_check(solve_params_true_exception)  # this is added as a final check for convergence
     output_fields =  list(TransformerUpgradesTechnicalResultModel.schema(True).get("properties").keys())  # get fields with alias
     xfmr_upgrades_df = xfmr_upgrades_df[output_fields]
     return commands_list, xfmr_upgrades_df

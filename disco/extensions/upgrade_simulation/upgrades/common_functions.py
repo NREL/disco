@@ -6,6 +6,8 @@ import pathlib
 import numpy as np
 import pandas as pd
 import opendssdirect as dss
+from pydantic import BaseModel, validator
+from typing import Any, List, Dict
 
 from .pydss_parameters import *
 from jade.utils.timing_utils import track_timing, Timer
@@ -42,8 +44,36 @@ DSS_UNIT_CONFIG = {1: "mi", 2: "kft", 3: "m", 4: "Ft", 5: "in", 6: "cm",
                     0: "none"  # 0 maps to none, which means impedance units and line length units match
                     }
 
+
+class CircuitSolveParams(BaseModel):
+    raise_exception: bool = True
+    calcvoltagebases: bool = False
+    enable_pydss_controllers: bool = False
+    pydss_controller_manager: Any = None
+
+
+class ReloadCircuitParams(BaseModel):
+    dc_ac_ratio: bool = None
+    max_control_iterations: int = None
+    pydss_volt_var_model: Any = None
+
+
+class SimulationParams(BaseModel):
+    timepoint_multipliers: Dict = None
+    timeseries_analysis: bool = False
+    multiplier_type: LoadMultiplierType = None
+    
+    @validator("multiplier_type")  # TODO this validator is not working??
+    def check_multiplier_type(cls, multiplier_type, values):
+        if values["timepoint_multipliers"] is not None:
+            multiplier_type = LoadMultiplierType.UNIFORM
+        else:
+            multiplier_type = LoadMultiplierType.ORIGINAL
+        return multiplier_type
+
+
 @track_timing(timer_stats_collector)
-def reload_dss_circuit(dss_file_list, commands_list=None,  **kwargs):
+def reload_dss_circuit(dss_file_list: List, solve_params: CircuitSolveParams, reload_circuit_params: ReloadCircuitParams, commands_list: List = None):
     """This function clears the circuit and loads dss files and commands.
     Also solves the circuit and checks for convergence errors
 
@@ -57,39 +87,29 @@ def reload_dss_circuit(dss_file_list, commands_list=None,  **kwargs):
 
     """
     logger.info("Reloading OpenDSS circuit")
-    if "solve" in kwargs.keys():
-        raise Exception("WRONG")
     check_dss_run_command("clear")
     if dss_file_list is None:
         raise Exception("No OpenDSS files have been passed to be loaded.")
     for dss_file in dss_file_list:
         logger.info(f"Redirecting '{dss_file}'.")
         check_dss_run_command(f"Redirect '{dss_file}'")
-    dc_ac_ratio = kwargs.get('dc_ac_ratio', None)
-    if dc_ac_ratio is not None:
-        change_pv_pctpmpp(dc_ac_ratio=dc_ac_ratio)
+    if reload_circuit_params.dc_ac_ratio is not None:
+        change_pv_pctpmpp(dc_ac_ratio=reload_circuit_params.dc_ac_ratio)
     if commands_list is not None:
         logger.info(f"Running {len(commands_list)} dss commands")
         for command_string in commands_list:
             check_dss_run_command(command_string)
             if "new " in command_string.lower():
                 check_dss_run_command("CalcVoltageBases")
-    enable_pydss_solve = kwargs.get("enable_pydss_solve", False)
-    raise_exception = kwargs.get("raise_exception", True)
-    if enable_pydss_solve:
-        pydss_params = define_initial_pydss_settings(pydss_volt_var_model=kwargs["pydss_volt_var_model"])
-        kwargs.update(pydss_params)
-        circuit_solve_and_check(raise_exception=raise_exception, **kwargs)
-        return kwargs
-    else:
-        max_control_iterations = kwargs.get("max_control_iterations", None)
-        if max_control_iterations is not None:
-            dss.Solution.MaxControlIterations(max_control_iterations)
-        circuit_solve_and_check(raise_exception=raise_exception)
-        return kwargs
+    if reload_circuit_params.max_control_iterations is not None:
+        dss.Solution.MaxControlIterations(reload_circuit_params.max_control_iterations)
+    if solve_params.enable_pydss_controllers:
+        solve_params.pydss_controller_manager = define_initial_pydss_settings(pydss_volt_var_model=reload_circuit_params.pydss_volt_var_model)
+    circuit_solve_and_check( solve_params )
+    return solve_params
 
 
-def run_selective_master_dss(master_filepath, **kwargs):
+def run_selective_master_dss(master_filepath, solve_params):
     """This function executes master.dss file line by line and ignores some commands that Solve yearly mode,
     export or plot data.
 
@@ -101,6 +121,8 @@ def run_selective_master_dss(master_filepath, **kwargs):
     -------
 
     """
+    solve_params_true_exception = solve_params.copy()
+    solve_params_true_exception.raise_exception = True
     run_dir = os.getcwd()
     check_dss_run_command("Clear")
     # logger.info("Redirecting master file:")
@@ -117,33 +139,32 @@ def run_selective_master_dss(master_filepath, **kwargs):
             continue
         else:
             check_dss_run_command(f"{line}")
-    circuit_solve_and_check(raise_exception=True, **kwargs)
+    circuit_solve_and_check(solve_params_true_exception)
     os.chdir(run_dir)
     return
 
 
+
 @track_timing(timer_stats_collector)
-def circuit_solve_and_check(raise_exception=False, **kwargs):
+def circuit_solve_and_check(solve_params=CircuitSolveParams()):
     """This function solves the circuit (both OpenDSS and PyDSS-if enabled)
     and can raise exception if convergence error occurs
 
     Parameters
     ----------
-    raise_exception
-    kwargs
-
+    solve_params
     Returns
     -------
 
     """
-    calcvoltagebases = kwargs.pop("calcvoltagebases", False)
-    if calcvoltagebases:
+    if solve_params.calcvoltagebases:
         check_dss_run_command("CalcVoltageBases")
-    dss_pass_flag = dss_solve_and_check(raise_exception=raise_exception)
+    dss_pass_flag = dss_solve_and_check(raise_exception=solve_params.raise_exception)
     pass_flag = dss_pass_flag
-    enable_pydss_solve = kwargs.get("enable_pydss_solve", False)
-    if enable_pydss_solve:  # if pydss solver is also to be used
-        pydss_pass_flag = pydss_solve_and_check(raise_exception=raise_exception, **kwargs)
+    if solve_params.enable_pydss_controllers:  # if pydss solver is also to be used
+        if solve_params.pydss_controller_manager is None:
+            raise Exception("pydss_controller_manager should be defined.")
+        pydss_pass_flag = pydss_solve_and_check(solve_params.pydss_controller_manager, raise_exception=solve_params.raise_exception)
         pass_flag = dss_pass_flag and pydss_pass_flag
     return pass_flag
 
@@ -176,7 +197,7 @@ def dss_run_command_list(command_list):
     return
 
 
-def write_text_file(string_list, text_file_path, **kwargs):
+def write_text_file(string_list, text_file_path, num_new_lines=2):
     """This function writes the string contents of a list to a text file
 
     Parameters
@@ -188,7 +209,6 @@ def write_text_file(string_list, text_file_path, **kwargs):
     -------
 
     """
-    num_new_lines = kwargs.get("num_new_lines", 2)
     breaks = "\n"*num_new_lines
     pathlib.Path(text_file_path).write_text(breaks.join(string_list))
 
@@ -264,19 +284,19 @@ def convert_length_units(length, unit_in, unit_out):
     return length*LENGTH_CONVERSION[unit_in]/LENGTH_CONVERSION[unit_out]
 
 
-def get_scenario_name(enable_pydss_solve, pydss_volt_var_model):
+def get_scenario_name(enable_pydss_controllers, pydss_volt_var_model):
     """This function determines the controller scenario 
 
     Parameters
     ----------
-    enable_pydss_solve : bool
+    enable_pydss_controllers : bool
     pydss_volt_var_model 
 
     Returns
     -------
     str
     """
-    if enable_pydss_solve:
+    if enable_pydss_controllers:
         # scenario = pydss_volt_var_model.control1  # TODO can read in name instead
         scenario = "control_mode"
     else:
@@ -352,7 +372,7 @@ def get_feeder_stats(dss):
     return data_dict
 
 
-def get_feeder_data(dss, upgrade_stage, upgrade_type):
+def get_feeder_data(upgrade_stage, upgrade_type):
     final_dict = {"stage": upgrade_stage, "upgrade_type": upgrade_type}
     ckt_info_dict = get_circuit_info()
     final_dict["feeder_components"] = ckt_info_dict
@@ -368,95 +388,113 @@ def get_feeder_data(dss, upgrade_stage, upgrade_type):
     
     return final_dict
 
-def get_upgrade_stage_stats(dss, upgrade_stage, upgrade_type, xfmr_loading_df, line_loading_df, bus_voltages_df, **kwargs):
+def get_upgrade_stage_stats(upgrade_stage, upgrade_type, xfmr_loading_df, line_loading_df, bus_voltages_df, 
+                            line_properties=None, xfmr_properties=None, voltage_properties=None, 
+                            capacitor_properties=None, regcontrol_properties=None, capacitors_df=None, regcontrols_df=None):
     """This function gives upgrade stage stats for a feeder 
     upgrade_stage can be Initial or Final
     upgrade_type can be thermal or voltage
     
     """
-    final_dict = get_feeder_data(dss, upgrade_stage, upgrade_type)
-    equipment_dict = combine_equipment_health_stats(xfmr_loading_df, line_loading_df, bus_voltages_df, **kwargs)
+    final_dict = get_feeder_data(upgrade_stage, upgrade_type)
+    equipment_dict = combine_equipment_health_stats(xfmr_loading_df=xfmr_loading_df, line_loading_df=line_loading_df, bus_voltages_df=bus_voltages_df,
+                                                    line_properties=line_properties, xfmr_properties=xfmr_properties, voltage_properties=voltage_properties, 
+                                                    capacitor_properties=capacitor_properties, regcontrol_properties=regcontrol_properties, capacitors_df=capacitors_df, 
+                                                    regcontrols_df=regcontrols_df)
     final_dict.update(equipment_dict)
     return final_dict
 
 
-def get_upgrade_stage_timeseries_stats(dss, upgrade_stage, upgrade_type, **kwargs):
+def get_upgrade_stage_timeseries_stats(upgrade_stage, upgrade_type, voltage_upper_limit, voltage_lower_limit, transformer_upper_limit, line_upper_limit, solve_params,
+                                       ignore_switch, capacitors_df=None, regcontrols_df=None, line_properties=None, xfmr_properties=None, voltage_properties=None, capacitor_properties=None,
+                                        regcontrol_properties=None, ):
     """This function gives upgrade stage stats for a feeder 
     upgrade_stage can be Initial or Final
     upgrade_type can be thermal or voltage
     
     """
-    final_dict = get_feeder_data(dss, upgrade_stage, upgrade_type)
-    equipment_dict = combine_equipment_health_timeseries_stats(**kwargs)
+    final_dict = get_feeder_data(upgrade_stage, upgrade_type)
+    equipment_dict = combine_equipment_health_timeseries_stats(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, transformer_upper_limit=transformer_upper_limit, 
+                                                               line_upper_limit=line_upper_limit, solve_params=solve_params, capacitors_df=capacitors_df, regcontrols_df=regcontrols_df,
+                                                               line_properties=line_properties, xfmr_properties=xfmr_properties, voltage_properties=voltage_properties, capacitor_properties=capacitor_properties,
+                                                               regcontrol_properties=regcontrol_properties, ignore_switch=ignore_switch)
     final_dict.update(equipment_dict)
     return final_dict
 
 
-def combine_equipment_health_timeseries_stats(**kwargs):
-    line_properties = kwargs.pop("line_properties", 
-                                 ['name', 'phases','normamps', 'kV', 'line_placement',  'length', 'units', 'max_amp_loading', 
-                                  'max_per_unit_loading', 'status'])
-    xfmr_properties = kwargs.pop("xfmr_properties", 
-                                 ['name', 'phases', 'windings', 'conns', 'kV', 'kVA', 'amp_limit_per_phase','max_amp_loading', 
-                                  'max_per_unit_loading', 'status']  )
-    voltage_properties = kwargs.pop("voltage_properties", 
-                                    ['name', 'max_per_unit_voltage', 'min_per_unit_voltage',  'overvoltage_violation', 
-                                     'max_voltage_deviation', 'undervoltage_violation', 'min_voltage_deviation'])
-    capacitors_df = kwargs.pop("capacitors_df", pd.DataFrame())
-    regcontrols_df = kwargs.pop("regcontrols_df", pd.DataFrame())
-    capacitor_properties = kwargs.pop("capacitor_properties", 
-                                      ['capacitor_name','capcontrol_present',  'capcontrol_type', 'capcontrol_name', 'kv', 'kvar',
-                                       'phases', 'DeadTime', 'Delay', 'OFFsetting', 'ONsetting'])
-    regcontrol_properties = kwargs.pop("regcontrol_properties", 
-                                       ['name', 'transformer', 'vreg', 'band', 'ptratio', 'delay', 'at_substation_xfmr_flag'])
-    
+def combine_equipment_health_timeseries_stats(voltage_upper_limit, voltage_lower_limit, transformer_upper_limit, line_upper_limit, solve_params,
+                                              ignore_switch, capacitors_df=None, regcontrols_df=None, 
+                                              line_properties=None, xfmr_properties=None, voltage_properties=None, capacitor_properties=None,
+                                              regcontrol_properties=None):
+    if line_properties is None:
+        line_properties = ['name', 'phases','normamps', 'kV', 'line_placement',  'length', 'units', 'max_amp_loading', 
+                                  'max_per_unit_loading', 'status']
+    if xfmr_properties is None:
+        xfmr_properties = ['name', 'phases', 'windings', 'conns', 'kV', 'kVA', 'amp_limit_per_phase','max_amp_loading', 
+                                  'max_per_unit_loading', 'status'] 
+    if voltage_properties is None:
+        voltage_properties = ['name', 'max_per_unit_voltage', 'min_per_unit_voltage',  'overvoltage_violation', 
+                                     'max_voltage_deviation', 'undervoltage_violation', 'min_voltage_deviation']
+    if capacitor_properties is None:
+        capacitor_properties = ['capacitor_name','capcontrol_present',  'capcontrol_type', 'capcontrol_name', 'kv', 'kvar',
+                                       'phases', 'DeadTime', 'Delay', 'OFFsetting', 'ONsetting']
+    if regcontrol_properties is None:
+        regcontrol_properties = ['name', 'transformer', 'vreg', 'band', 'ptratio', 'delay', 'at_substation_xfmr_flag']
+        
     final_dict = {}
-    xfmr_dict = get_timeseries_thermal_comparison(equipment_type="transformer", compute_loading=True, upper_limit=kwargs["transformer_upper_limit"])
+    if (capacitors_df is None) or capacitors_df.empty:
+        final_dict["capacitor_control"] = []
+    else:
+        final_dict["capacitor_control"] = capacitors_df[capacitor_properties].to_dict(orient="records")
+        
+    if (regcontrols_df is None) or regcontrols_df.empty:
+        final_dict["regulator_control"] = []
+    else:
+        final_dict["regulator_control"] = regcontrols_df[regcontrol_properties].to_dict(orient="records")
+
+    xfmr_dict = get_timeseries_thermal_comparison(equipment_type="transformer", compute_loading=True, upper_limit=transformer_upper_limit)
     ref_xfmr_dict = {k:v.reset_index()[xfmr_properties].to_dict(orient="records") for k, v in xfmr_dict.items()}
     
-    line_dict = get_timeseries_thermal_comparison(equipment_type="line", compute_loading=True, upper_limit=kwargs["line_upper_limit"])
+    line_dict = get_timeseries_thermal_comparison(equipment_type="line", compute_loading=True, upper_limit=line_upper_limit, ignore_switch=ignore_switch)
     ref_line_dict = {k:v.reset_index()[line_properties].to_dict(orient="records") for k, v in line_dict.items()}
 
-    voltage_upper_limit = kwargs.pop("voltage_upper_limit")
-    voltage_lower_limit = kwargs.pop("voltage_lower_limit")
-    voltage_dict = get_timeseries_voltage_comparison(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, raise_exception=False,
-                                                     equipment_type="voltage", **kwargs)
+    solve_params_no_exception = solve_params.copy()
+    solve_params_no_exception.raise_exception = False
+    voltage_dict = get_timeseries_voltage_comparison(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit,
+                                                     equipment_type="voltage", solve_params=solve_params_no_exception)
     ref_voltage_dict = {k:v.reset_index()[voltage_properties].to_dict(orient="records") for k, v in voltage_dict.items()}
     
     # some file reformatting
     # if "windings" in xfmr_properties:
     #     xfmr_loading_df["windings"] = xfmr_loading_df["windings"].astype(int)
-    final_dict.update({"transformer": ref_xfmr_dict})
-    final_dict.update({"line": ref_line_dict})
-    final_dict.update({"bus_voltage": ref_voltage_dict})
-    if not capacitors_df.empty :
-        final_dict.update({"capacitor_control": capacitors_df[capacitor_properties].to_dict(orient="records")})
-    else :
-        final_dict.update({"capacitor_control": []})
-    if not regcontrols_df.empty:
-        final_dict.update({"regulator_control": regcontrols_df[regcontrol_properties].to_dict(orient="records")})
-    else:
-        final_dict.update({"regulator_control": []})
+    final_dict["transformer"] = ref_xfmr_dict
+    final_dict["line"] = ref_line_dict
+    final_dict["bus_voltage"] = ref_voltage_dict
     return final_dict
 
 
-def combine_equipment_health_stats(xfmr_loading_df, line_loading_df, bus_voltages_df, **kwargs):
-    line_properties = kwargs.get("line_properties", 
-                                 ['name', 'phases','normamps', 'kV', 'line_placement',  'length', 'units', 'max_amp_loading', 
-                                  'max_per_unit_loading', 'status'])
-    xfmr_properties = kwargs.get("xfmr_properties", 
-                                 ['name', 'phases', 'windings', 'conns', 'kV', 'kVA', 'amp_limit_per_phase','max_amp_loading', 
-                                  'max_per_unit_loading', 'status']  )
-    voltage_properties = kwargs.get("voltage_properties", 
-                                    ['name', 'max_per_unit_voltage', 'min_per_unit_voltage',  'overvoltage_violation', 
-                                     'max_voltage_deviation', 'undervoltage_violation', 'min_voltage_deviation'])
-    capacitors_df = kwargs.get("capacitors_df", pd.DataFrame())
-    regcontrols_df = kwargs.get("regcontrols_df", pd.DataFrame())
-    capacitor_properties = kwargs.get("capacitor_properties", 
-                                      ['capacitor_name','capcontrol_present',  'capcontrol_type', 'capcontrol_name', 'kv', 'kvar',
-                                       'phases', 'DeadTime', 'Delay', 'OFFsetting', 'ONsetting'])
-    regcontrol_properties = kwargs.get("regcontrol_properties", 
-                                       ['name', 'transformer', 'vreg', 'band', 'ptratio', 'delay', 'at_substation_xfmr_flag'])
+def combine_equipment_health_stats(xfmr_loading_df, line_loading_df, bus_voltages_df, 
+                                   line_properties=None, xfmr_properties=None, voltage_properties=None, 
+                                   capacitor_properties=None, regcontrol_properties=None, capacitors_df=None, regcontrols_df=None, 
+                                ):
+    if line_properties is None:
+        line_properties = ['name', 'phases','normamps', 'kV', 'line_placement',  'length', 'units', 'max_amp_loading', 
+                                  'max_per_unit_loading', 'status']
+    if xfmr_properties is None:
+        xfmr_properties =['name', 'phases', 'windings', 'conns', 'kV', 'kVA', 'amp_limit_per_phase','max_amp_loading', 
+                                  'max_per_unit_loading', 'status']  
+    if voltage_properties is None:
+        voltage_properties = ['name', 'max_per_unit_voltage', 'min_per_unit_voltage',  'overvoltage_violation', 
+                                     'max_voltage_deviation', 'undervoltage_violation', 'min_voltage_deviation']
+    if capacitors_df is None:
+        capacitors_df = pd.DataFrame()
+    if regcontrols_df is None:
+        regcontrols_df = pd.DataFrame()
+    if capacitor_properties is None:
+        capacitor_properties = ['capacitor_name','capcontrol_present',  'capcontrol_type', 'capcontrol_name', 'kv', 'kvar',
+                                       'phases', 'DeadTime', 'Delay', 'OFFsetting', 'ONsetting']
+    if regcontrol_properties is None:
+        regcontrol_properties = ['name', 'transformer', 'vreg', 'band', 'ptratio', 'delay', 'at_substation_xfmr_flag']
     
     final_dict = {}
     # some file reformatting
@@ -506,10 +544,10 @@ def get_circuit_info():
     return data_dict
 
 
-def summarize_upgrades_outputs(overall_outputs, **kwargs):
+def summarize_upgrades_outputs(overall_outputs, job_name=None,):
     """This function creates summary of upgrades and costs results"""
     summary = {"results": {}}
-    summary["results"]["name"] = kwargs.get("job_name", None)
+    summary["results"]["name"] = job_name
     violation_summary = pd.DataFrame(overall_outputs["violation_summary"])
     thermal_violations = sum(violation_summary.loc[(violation_summary["stage"] == "final") & (violation_summary["upgrade_type"] == "thermal")][["num_line_violations", "num_transformer_violations"]].sum())
     voltage_violations = sum(violation_summary.loc[(violation_summary["stage"] == "final") & (violation_summary["upgrade_type"] == "voltage")][["num_voltage_violation_buses"]].sum())
@@ -683,13 +721,15 @@ def create_voltage_output_summary(all_original_equipment, all_latest_equipment, 
     return new_voltage_df
 
 
-def create_overall_output_file(feeder_stats, upgrades_dict, costs_dict, **kwargs):
+def create_overall_output_file(feeder_stats, upgrades_dict, costs_dict, thermal_equipment_type_list=None, voltage_equipment_type_list=None, job_name=None):
     """This function creates the overall output summary file
     Status can have values: unchanged, replaced, new, setting_changed
     """
     output_cols = UpgradesCostResultSummaryModel.schema(True).get("properties").keys()
-    thermal_equipment_type_list = kwargs.get("thermal_equipment_type_list", ["transformer", "line"])
-    voltage_equipment_type_list = kwargs.get("voltage_equipment_type_list", ["capacitor_control", "regulator_control"])
+    if thermal_equipment_type_list is None:
+        thermal_equipment_type_list = ["transformer", "line"]
+    if voltage_equipment_type_list is None:
+        voltage_equipment_type_list = ["capacitor_control", "regulator_control"]
     props_dict = {"transformer": {"identifier": "name", "parameter_list": ["kVA"], },
                  "line": {"identifier": "name", "parameter_list": ["normamps"], },
                  "capacitor_control": {"identifier": "capacitor_name", "parameter_list": ["ONsetting", "OFFsetting", "Delay"], "upgrades_file_string": "capacitor", 
@@ -714,7 +754,7 @@ def create_overall_output_file(feeder_stats, upgrades_dict, costs_dict, **kwargs
     voltage_summary_df = create_voltage_output_summary(all_original_equipment, all_latest_equipment, voltage_equipment_type_list,
                                                         props_dict, voltage_cost_df, upgrades_dict, output_cols)
     combined_df = pd.concat([thermal_summary_df, voltage_summary_df])
-    combined_df["name"] = kwargs.get("job_name", None)
+    combined_df["name"] = job_name
     return combined_df
 
 
@@ -918,7 +958,7 @@ def check_switch_property(all_df):
     return
 
 
-def get_all_transformer_info_instance(upper_limit=None, compute_loading=True):
+def get_snapshot_transformer_info(upper_limit=None, compute_loading=True):
     """This collects transformer information
 
     Returns
@@ -931,7 +971,7 @@ def get_all_transformer_info_instance(upper_limit=None, compute_loading=True):
         return pd.DataFrame()
     all_df["name"] = all_df.index.str.split(".").str[1]
     all_df["equipment_type"] = all_df.index.str.split(".").str[0]
-    # extract only enabled lines
+    # extract only enabled objects
     all_df = all_df.loc[all_df["enabled"].str.lower() == "yes"]
     all_df["conn"] = all_df["conn"].str.strip()  # remove trailing space from conn field
     # define empty new columns
@@ -1045,7 +1085,7 @@ def determine_line_placement(line_series):
     return info_dict
 
 
-def get_all_line_info_instance(upper_limit=None, compute_loading=True, ignore_switch=True):
+def get_snapshot_line_info(ignore_switch, upper_limit=None, compute_loading=True):
     """This collects line information.
     
     dss.Lines.Units() gives an integer. It can be mapped as below:
@@ -1062,7 +1102,7 @@ def get_all_line_info_instance(upper_limit=None, compute_loading=True, ignore_sw
     check_enabled_property(all_df, element_name="line")
     all_df["name"] = all_df.index.str.split(".").str[1]
     all_df["equipment_type"] = all_df.index.str.split(".").str[0]
-    # extract only enabled lines
+    # extract only enabled objects
     all_df = all_df.loc[all_df["enabled"].str.lower() == "yes"]
     all_df = add_info_line_definition_type(all_df)
     # define empty new columns
@@ -1156,62 +1196,78 @@ def compare_multiple_dataframes(comparison_dict, deciding_column_name, compariso
         
 
 @track_timing(timer_stats_collector)
-def get_thermal_equipment_info(compute_loading, equipment_type, upper_limit=None, ignore_switch=False, **kwargs):
+def get_thermal_equipment_info(compute_loading, equipment_type, analysis_params=None, solve_params=None, upper_limit=None, ignore_switch=True):
     """This function determines the thermal equipment loading (line, transformer), based on timepoint multiplier
 
     Returns
     -------
     DataFrame
     """
+    # if compute_loading is false, then just run once (no need to check multipliers)
+    if not compute_loading:
+        if equipment_type == "line":
+            loading_df = get_snapshot_line_info(compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch)
+        elif equipment_type == "transformer":
+            loading_df = get_snapshot_transformer_info(compute_loading=compute_loading, upper_limit=upper_limit)
+        else:
+            raise Exception(f"Unsupported equipment type {equipment_type}. Acceptable values are line, transformer.")
+        return loading_df
+    
+    # if loading is to be computed - look at the analysis params   
+    assert upper_limit is not None
+    assert analysis_params is not None
     deciding_column_name = "max_per_unit_loading"
 
-    timeseries_analysis = kwargs.get("timeseries_analysis", False)
-    if timeseries_analysis:
+    if analysis_params.timeseries_analysis:  # timeseries analysis
         loading_df = apply_timeseries_thermal(equipment_type, compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch, 
-                                           deciding_column_name=deciding_column_name, **kwargs)
+                                           deciding_column_name=deciding_column_name)
         return loading_df
-    
-    timepoint_multipliers = kwargs.get("timepoint_multipliers", None)
-    multiplier_type = kwargs.get("multiplier_type", LoadMultiplierType.ORIGINAL)
-    
-     # if there are no multipliers, run on rated load i.e. multiplier=1. 0
-     # if compute_loading is false, then just run once (no need to check multipliers)
-    if (timepoint_multipliers is None) or (not compute_loading) or (multiplier_type == LoadMultiplierType.ORIGINAL): 
-        if compute_loading and multiplier_type != LoadMultiplierType.ORIGINAL:
-            apply_uniform_timepoint_multipliers(multiplier_name=1, field="with_pv", **kwargs)
+
+    if analysis_params.multiplier_type == LoadMultiplierType.ORIGINAL:
+        assert analysis_params.timepoint_multipliers is None
+        # if no timepoint multipliers and original multiplier type, then dont make any changes to circuit, and directly compute loading
         if equipment_type == "line":
-            loading_df = get_all_line_info_instance(compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch)
+            loading_df = get_snapshot_line_info(compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch)
         elif equipment_type == "transformer":
-            loading_df = get_all_transformer_info_instance(compute_loading=compute_loading, upper_limit=upper_limit)
+            loading_df = get_snapshot_transformer_info(compute_loading=compute_loading, upper_limit=upper_limit)
         return loading_df
-    if multiplier_type == LoadMultiplierType.UNIFORM:
-        comparison_dict = {}
-        for pv_field in timepoint_multipliers["load_multipliers"].keys():
-            logger.debug(pv_field)
-            for multiplier_name in timepoint_multipliers["load_multipliers"][pv_field]:
-                logger.debug("Multipler name: %s", multiplier_name)
-                # this changes the dss network load and pv
-                apply_uniform_timepoint_multipliers(multiplier_name=multiplier_name, field=pv_field, **kwargs)
-                if equipment_type.lower() == "line":
-                    loading_df = get_all_line_info_instance(compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch)
-                elif equipment_type.lower() == "transformer":
-                    loading_df = get_all_transformer_info_instance(compute_loading=compute_loading, upper_limit=upper_limit)
-                loading_df.set_index("name", inplace=True)
-                comparison_dict[pv_field+"_"+str(multiplier_name)] = loading_df
-        # compare all dataframe, and create one that contains all worst loading conditions (across all multiplier conditions)
-        loading_df = compare_multiple_dataframes(comparison_dict, deciding_column_name, comparison_type="max")
+    elif analysis_params.multiplier_type == LoadMultiplierType.UNIFORM:  # apply timepoint multipliers
+        loading_df = determine_timepoint_multiplier_thermal_loading(equipment_type, compute_loading, upper_limit, ignore_switch, 
+                                                   deciding_column_name, solve_params, analysis_params.timepoint_multipliers)
+        return loading_df
     else:
-        raise Exception(f"Undefined multiplier_type {multiplier_type} passed.")   
+        raise Exception(f"Undefined multiplier_type {analysis_params.multiplier_type} passed.")   
+    
+
+def determine_timepoint_multiplier_thermal_loading(equipment_type, compute_loading, upper_limit, ignore_switch, 
+                                                   deciding_column_name, solve_params, timepoint_multipliers):
+    assert timepoint_multipliers is not None
+    assert solve_params is not None
+    comparison_dict = {}
+    for pv_field in timepoint_multipliers["load_multipliers"].keys():
+        logger.debug(pv_field)
+        for multiplier_name in timepoint_multipliers["load_multipliers"][pv_field]:
+            logger.debug("Multipler name: %s", multiplier_name)
+            # this changes the dss network load and pv
+            apply_uniform_timepoint_multipliers(multiplier_name=multiplier_name, field=pv_field, solve_params=solve_params)
+            if equipment_type.lower() == "line":
+                loading_df = get_snapshot_line_info(compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch)
+            elif equipment_type.lower() == "transformer":
+                loading_df = get_snapshot_transformer_info(compute_loading=compute_loading, upper_limit=upper_limit)
+            loading_df.set_index("name", inplace=True)
+            comparison_dict[pv_field+"_"+str(multiplier_name)] = loading_df
+    # compare all dataframe, and create one that contains all worst loading conditions (across all multiplier conditions)
+    loading_df = compare_multiple_dataframes(comparison_dict, deciding_column_name, comparison_type="max")
     return loading_df
 
-
-def get_timeseries_thermal_comparison(equipment_type, compute_loading, upper_limit, ignore_switch=False):
+def get_timeseries_thermal_comparison(equipment_type, compute_loading, upper_limit, ignore_switch=None):
     """
-    Time-series data used to determine thermal violations
+    Time-series data used to determine thermal violations for each timestep
     """
     if equipment_type.lower() not in ["line", "transformer"]:
         raise Exception(f"Incorrect equipment type {equipment_type} provided. Possible values: line, transformer.")
-
+    if equipment_type.lower() == "line":
+        assert ignore_switch is not None
     comparison_dict = {}
     check_dss_run_command("Set mode=yearly number=1") # number=1, power flow per solve and stepsize remains the same
     startH = 0
@@ -1223,16 +1279,22 @@ def get_timeseries_thermal_comparison(equipment_type, compute_loading, upper_lim
         check_dss_run_command("Set Controlmode=Static") 
         check_dss_run_command(f"set hour = {present_step}")
         dss.Solution.Solve()  # solves for specific hour that has been set
+        dss_pass_flag = dss.Solution.Converged()
+        if not dss_pass_flag:
+            logger.info(f"OpenDSS Convergence Error")
+            raise OpenDssConvergenceError("OpenDSS solution did not converge")
         if equipment_type.lower() == "line":
-            loading_df = get_all_line_info_instance(compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch)
+            loading_df = get_snapshot_line_info(compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch)
         elif equipment_type.lower() == "transformer":
-            loading_df = get_all_transformer_info_instance(compute_loading=compute_loading, upper_limit=upper_limit)
+            loading_df = get_snapshot_transformer_info(compute_loading=compute_loading, upper_limit=upper_limit)
+        else:
+            raise Exception(f"Not handled: {equipment_type}")
         loading_df.set_index("name", inplace=True)
         comparison_dict[key_name] = loading_df
     return comparison_dict
 
 
-def apply_timeseries_thermal(equipment_type, compute_loading, upper_limit, deciding_column_name, ignore_switch=False, **kwargs):
+def apply_timeseries_thermal(equipment_type, compute_loading, upper_limit, deciding_column_name, ignore_switch):
     """
     Time-series data used to determine thermal violations
     
@@ -1240,19 +1302,18 @@ def apply_timeseries_thermal(equipment_type, compute_loading, upper_limit, decid
     if equipment_type.lower() not in ["line", "transformer"]:
         raise Exception(f"Incorrect equipment type {equipment_type} provided. Possible values: line, transformer.")
 
-    comparison_dict = get_timeseries_thermal_comparison(equipment_type, compute_loading, upper_limit, ignore_switch=ignore_switch)
-
+    comparison_dict = get_timeseries_thermal_comparison(equipment_type, compute_loading, upper_limit, ignore_switch)
     # compare all dataframe, and create one that contains all worst loading conditions (across all multiplier conditions)
     loading_df = compare_multiple_dataframes(comparison_dict, deciding_column_name, comparison_type="max")
     return loading_df
     
 
-def get_timeseries_voltage_comparison(equipment_type, voltage_upper_limit, voltage_lower_limit, raise_exception,
-                                      **kwargs):
+def get_timeseries_voltage_comparison(equipment_type, voltage_upper_limit, voltage_lower_limit, 
+                                      solve_params):
     """
     Time-series data used to determine voltage violations
     """
-    if equipment_type != "voltage":  # pop out of dictionary since kwargs are also passed to voltage function
+    if equipment_type != "voltage":
         raise Exception(f"Incorrect equipment type {equipment_type} provided. Possible values: voltage.")
 
     comparison_dict = {}
@@ -1267,17 +1328,21 @@ def get_timeseries_voltage_comparison(equipment_type, voltage_upper_limit, volta
         check_dss_run_command("Set Controlmode=Static") 
         check_dss_run_command(f"set hour = {present_step}")
         dss.Solution.Solve()  # solves for specific hour that has been set
-        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages_instance(
-                    voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, raise_exception=raise_exception, **kwargs)
+        dss_pass_flag = dss.Solution.Converged()
+        if not dss_pass_flag:
+            logger.info(f"OpenDSS Convergence Error")
+            raise OpenDssConvergenceError("OpenDSS solution did not converge")
+        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_snapshot_bus_voltage_violations(
+                    voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, solve_params=solve_params)
         bus_voltages_df.set_index("name", inplace=True)
         comparison_dict[key_name] = bus_voltages_df
     return comparison_dict
 
 
 def apply_timeseries_voltage(equipment_type, voltage_upper_limit, voltage_lower_limit,
-                             deciding_column_dict, raise_exception, **kwargs):
-    comparison_dict = get_timeseries_voltage_comparison(equipment_type, voltage_upper_limit, voltage_lower_limit, raise_exception,
-                                                        **kwargs)
+                             deciding_column_dict, solve_params):
+    comparison_dict = get_timeseries_voltage_comparison(equipment_type, voltage_upper_limit, voltage_lower_limit,
+                                                        solve_params)
      # compare all dataframe, and create one that contains all worst loading conditions (across all multiplier conditions)
     bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, \
             buses_with_violations = compare_multiple_dataframes_voltage(
@@ -1522,68 +1587,68 @@ def check_dss_run_command(command_string):
 
 
 @track_timing(timer_stats_collector)
-def get_bus_voltages(voltage_upper_limit, voltage_lower_limit, raise_exception=True, write_json=False, **kwargs):
-    """This function determines the voltages, based on timepoint multiplier
+def get_bus_voltage_violations(voltage_upper_limit, voltage_lower_limit, analysis_params, solve_params):
+    """This function determines the bus voltages and violations
 
     Returns
     -------
     DataFrame
     """
     deciding_column_dict = {"max_per_unit_voltage": "max", "min_per_unit_voltage": "min"}
-
-    timeseries_analysis = kwargs.get("timeseries_analysis", False)
-    if timeseries_analysis:
+    if analysis_params.timeseries_analysis:
         bus_voltages_df, undervoltage_bus_list, \
             overvoltage_bus_list, buses_with_violations = apply_timeseries_voltage(deciding_column_dict=deciding_column_dict,
                 voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, 
-                equipment_type="voltage", raise_exception=True, write_json=write_json, **kwargs)
+                equipment_type="voltage", solve_params=solve_params)
 
         return bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations
     
-    timepoint_multipliers = kwargs.get("timepoint_multipliers", None)
-    multiplier_type = kwargs.get("multiplier_type", LoadMultiplierType.ORIGINAL)
-     
-     # if there are no multipliers, run on rated load i.e. multiplier=1. 0
-     # if compute_loading is false, then just run once (no need to check multipliers)
-    if (timepoint_multipliers is None) or (multiplier_type == LoadMultiplierType.ORIGINAL): 
-        if multiplier_type != LoadMultiplierType.ORIGINAL:
-            apply_uniform_timepoint_multipliers(multiplier_name=1, field="with_pv", **kwargs)
-            # determine voltage violations after changes
-        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages_instance(
-            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, raise_exception=raise_exception, 
-            **kwargs)
+     # if there are no multipliers, run on rated load
+    if analysis_params.multiplier_type == LoadMultiplierType.ORIGINAL:
+        assert analysis_params.timepoint_multipliers is None
+        # apply_uniform_timepoint_multipliers(multiplier_name=1, field="with_pv", solve_params=solve_params)
+        # determine voltage violations after changes
+        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_snapshot_bus_voltage_violations(
+            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, solve_params=solve_params)
         return bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations
-    if multiplier_type == LoadMultiplierType.UNIFORM:
-        comparison_dict = {}
-        for pv_field in timepoint_multipliers["load_multipliers"].keys():
-            logger.debug(pv_field)
-            for multiplier_name in timepoint_multipliers["load_multipliers"][pv_field]:
-                logger.debug("Multipler name: %s", multiplier_name)
-                # this changes the dss network load and pv
-                apply_uniform_timepoint_multipliers(multiplier_name=multiplier_name, field=pv_field, **kwargs)
-                bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages_instance(
-                    voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, raise_exception=raise_exception, **kwargs)
-                bus_voltages_df.set_index("name", inplace=True)
-                comparison_dict[pv_field+"_"+str(multiplier_name)] = bus_voltages_df
-        # compare all dataframe, and create one that contains all worst loading conditions (across all multiplier conditions)
-        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = compare_multiple_dataframes_voltage(comparison_dict=comparison_dict, 
-                                                                                                                                  deciding_column_dict=deciding_column_dict,
-                                                                                                                                  voltage_upper_limit=voltage_upper_limit,
-                                                                                                                                  voltage_lower_limit=voltage_lower_limit)
-    else:
-        raise Exception(f"Undefined multiplier_type {multiplier_type} passed.")    
-    return bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations
     
+    elif analysis_params.multiplier_type == LoadMultiplierType.UNIFORM:  # apply timepoint multipliers
+        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = determine_timepoint_multiplier_bus_voltage_violations(
+            voltage_upper_limit, voltage_lower_limit, solve_params, analysis_params.timepoint_multipliers, deciding_column_dict)
+        return bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations
+    else:
+        raise Exception(f"Undefined multiplier_type {analysis_params.multiplier_type} passed.")    
+    
+ 
+def determine_timepoint_multiplier_bus_voltage_violations(voltage_upper_limit, voltage_lower_limit, solve_params, timepoint_multipliers, deciding_column_dict):
+    comparison_dict = {}
+    for pv_field in timepoint_multipliers["load_multipliers"].keys():
+        logger.debug(pv_field)
+        for multiplier_name in timepoint_multipliers["load_multipliers"][pv_field]:
+            logger.debug("Multipler name: %s", multiplier_name)
+            # this changes the dss network load and pv
+            apply_uniform_timepoint_multipliers(multiplier_name=multiplier_name, field=pv_field, solve_params=solve_params)
+            bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_snapshot_bus_voltage_violations(
+                voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, solve_params=solve_params)
+            bus_voltages_df.set_index("name", inplace=True)
+            comparison_dict[pv_field+"_"+str(multiplier_name)] = bus_voltages_df
+    # compare all dataframe, and create one that contains all worst loading conditions (across all multiplier conditions)
+    bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = compare_multiple_dataframes_voltage(comparison_dict=comparison_dict, 
+                                                                                                                                deciding_column_dict=deciding_column_dict,
+                                                                                                                                voltage_upper_limit=voltage_upper_limit,
+                                                                                                                                voltage_lower_limit=voltage_lower_limit)
+    return bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations
+   
 
 @track_timing(timer_stats_collector)
-def get_bus_voltages_instance(voltage_upper_limit, voltage_lower_limit, raise_exception=True, **kwargs):
+def get_snapshot_bus_voltage_violations(voltage_upper_limit, voltage_lower_limit, solve_params):
     """This computes per unit voltages for all buses in network
 
     Returns
     -------
     DataFrame
     """
-    circuit_solve_and_check(raise_exception=raise_exception, **kwargs)  # this is added as a final check for convergence
+    circuit_solve_and_check(solve_params)  # this is added as a final check for convergence
     all_dict = {}
     all_bus_names = dss.Circuit.AllBusNames()
     for bus_name in all_bus_names:
@@ -1856,8 +1921,8 @@ def create_timepoint_multipliers_dict(timepoint_multipliers):
 
 
 @track_timing(timer_stats_collector)
-def apply_timepoint_multipliers_dict(reformatted_dict, multiplier_name, property_list=None, field="load_multipliers",
-                                     **kwargs):
+def apply_timepoint_multipliers_dict(reformatted_dict, multiplier_name, solve_params, field, property_list=None
+                                     ):
     """This uses a dictionary with the format of output received from create_timepoint_multipliers_dict
     Currently, it only does works loads. But can be modified to accommodate other elements like PV as well.
 
@@ -1870,6 +1935,8 @@ def apply_timepoint_multipliers_dict(reformatted_dict, multiplier_name, property
     -------
     dict
     """
+    solve_params_true_exception = solve_params.copy()
+    solve_params_true_exception.raise_exception = True
     name_list = list(reformatted_dict.keys())
     if property_list is None:
         property_list = list(reformatted_dict[name_list[0]].keys())
@@ -1886,13 +1953,14 @@ def apply_timepoint_multipliers_dict(reformatted_dict, multiplier_name, property
                     dss.Loads.kW(value)
                 else:
                     raise Exception(f"Property {property} not defined in multipliers dict")
-        circuit_solve_and_check(raise_exception=True, **kwargs)
+        
+        circuit_solve_and_check(solve_params_true_exception)
     else:
         raise Exception(f"Unsupported key in dictionary. Presently, load_multipliers is supported.")
     return reformatted_dict
 
 
-def apply_uniform_timepoint_multipliers(multiplier_name, field, **kwargs):
+def apply_uniform_timepoint_multipliers(multiplier_name, field, solve_params):
     """This function applies a uniform mulitplier to all elements. 
     Currently, the multiplier only does works on loads. But can be modified to accommodate other elements like PV as well.
     It has two options, 1) all pv is enabled. 2) all pv is disabled.
@@ -1909,5 +1977,5 @@ def apply_uniform_timepoint_multipliers(multiplier_name, field, **kwargs):
         raise Exception(f"Unknown parameter {field} passed in uniform timepoint multiplier dict."
                         f"Acceptable values are 'with_pv', 'without_pv'")
     check_dss_run_command(f"set LoadMult = {multiplier_name}")
-    circuit_solve_and_check(raise_exception=True, **kwargs)
+    circuit_solve_and_check(solve_params)
     return True
