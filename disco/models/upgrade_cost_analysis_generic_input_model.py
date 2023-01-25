@@ -501,11 +501,6 @@ class UpgradeSimulationParamsModel(UpgradeParamsBaseModel):
         title="timepoint_multipliers",
         description='Dictionary to provide timepoint multipliers. example: timepoint_multipliers={"load_multipliers": {"with_pv": [1.2], "without_pv": [0.6]}}',
     )
-    multiplier_type: LoadMultiplierType = Field(
-        title="multiplier_type",
-        description='multiplier_type',
-        default=None
-    )
     enable_pydss_controllers: bool = Field(
         title="enable_pydss_controllers",
         description="Flag to enable/disable use of PyDSS controllers",
@@ -516,16 +511,16 @@ class UpgradeSimulationParamsModel(UpgradeParamsBaseModel):
         description="If enable_pydss_controllers is True, these PyDSS controllers are applied to each corresponding element type.",
         default=PyDssControllerModels(),
     )
-    pydss_controller_manager: Optional[Any] = Field(
-        title="pydss_controller_manager",
-        description="pydss_controller_manager",
-        default=None,
-    )
-    pydss_volt_var_model: Optional[Any] = Field(
-        title="pydss_volt_var_model",
-        description="pydss_volt_var_model",
-        default=None,
-    )
+    # pydss_controller_manager: Optional[Any] = Field(
+    #     title="pydss_controller_manager",
+    #     description="pydss_controller_manager",
+    #     default=None,
+    # )
+    # pydss_volt_var_model: Optional[Any] = Field(
+    #     title="pydss_volt_var_model",
+    #     description="pydss_volt_var_model",
+    #     default=None,
+    # )
     @validator("upgrade_order")
     def check_upgrade_order(cls, upgrade_order):
         diff = set(upgrade_order).difference(_SUPPORTED_UPGRADE_TYPES)
@@ -542,15 +537,6 @@ class UpgradeSimulationParamsModel(UpgradeParamsBaseModel):
 
         """
         return self.pydss_controllers.pv_controller is not None
-    
-    @validator("multiplier_type")
-    def check_multiplier_type(cls, multiplier_type, values):
-        if values["timepoint_multipliers"] is not None:
-            multiplier_type = LoadMultiplierType.UNIFORM
-        else:
-            multiplier_type = LoadMultiplierType.ORIGINAL
-        return multiplier_type
-        
     
     @validator("timepoint_multipliers")
     def check_timepoint_multipliers(cls, timepoint_multipliers):

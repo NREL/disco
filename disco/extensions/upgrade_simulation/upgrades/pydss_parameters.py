@@ -22,7 +22,6 @@ def define_initial_pydss_settings(pydss_volt_var_model):
     # we dont need to define controller everytime we solve the circuit, unless we're reloading the circuit
     controller = CircuitElementController(pydss_volt_var_model)  # Use all elements.
     pydss_controller_manager = ControllerManager.create([controller], settings)
-    # pydss_settings = {"pydss_controller_manager": pydss_controller_manager, "pydss_volt_var_model": pydss_volt_var_model}
     return pydss_controller_manager
 
 

@@ -106,7 +106,7 @@ def compute_all_costs(
     dump_data(reordered_dict, overall_output_summary_filepath, indent=2, cls=ExtendedJSONEncoder, allow_nan=False) 
     
 
-def compute_transformer_costs(xfmr_upgrades_df, xfmr_cost_database, **kwargs):
+def compute_transformer_costs(xfmr_upgrades_df, xfmr_cost_database, backup_deciding_property="rated_kVA", misc_database=None):
     """This function computes the transformer costs.
     -Unit equipment cost for new_parallel and "upgrade" transformers are the same in the database.
     The difference would be the fixed costs added (if present in misc_database)
@@ -124,7 +124,6 @@ def compute_transformer_costs(xfmr_upgrades_df, xfmr_cost_database, **kwargs):
     ----------
     xfmr_upgrades_df
     xfmr_cost_database
-    kwargs
 
     Returns
     -------
@@ -135,8 +134,6 @@ def compute_transformer_costs(xfmr_upgrades_df, xfmr_cost_database, **kwargs):
     deciding_columns = ["rated_kVA", "phases", "primary_kV", "secondary_kV", "primary_connection_type",
                         "secondary_connection_type", "num_windings"]
     output_columns_list = ["type", output_count_field, output_cost_field, "comment", "equipment_parameters"]
-    backup_deciding_property = kwargs.get("backup_deciding_property", "rated_kVA")
-    misc_database = kwargs.get("misc_database", None)
     # choose which properties are to be saved
     upgrade_type_list = ["upgrade", "new_parallel"]
     added_xfmr_df = xfmr_upgrades_df.loc[(xfmr_upgrades_df["upgrade_type"].isin(upgrade_type_list)) & (xfmr_upgrades_df["action"] == "add")]
@@ -241,7 +238,7 @@ def reformat_xfmr_upgrades_file(xfmr_upgrades_df):
     return xfmr_upgrades_df
 
 
-def compute_line_costs(line_upgrades_df, line_cost_database, **kwargs):
+def compute_line_costs(line_upgrades_df, line_cost_database, backup_deciding_property="ampere_rating"):
     """This function computes the line costs.
     -Unit equipment cost for new_parallel and "upgrade" line are the not same in the database.
     There are different costs given for reconductored and new lines
@@ -259,7 +256,7 @@ def compute_line_costs(line_upgrades_df, line_cost_database, **kwargs):
     ----------
     line_upgrades_df
     line_cost_database
-    kwargs
+    
 
     Returns
     -------
@@ -269,7 +266,6 @@ def compute_line_costs(line_upgrades_df, line_cost_database, **kwargs):
     output_count_field = "count"
     deciding_columns = ["phases", "voltage_kV", "ampere_rating", "line_placement", "upgrade_type"]
     output_columns_list = ["type", output_count_field, output_cost_field, "comment", "equipment_parameters"]
-    backup_deciding_property = kwargs.get("backup_deciding_property", "ampere_rating")
     # choose which properties are to be saved
     upgrade_type_list = ["upgrade", "new_parallel"]
     
