@@ -958,7 +958,7 @@ def check_switch_property(all_df):
     return
 
 
-def get_all_transformer_info_instance(upper_limit=None, compute_loading=True):
+def get_snapshot_transformer_info(upper_limit=None, compute_loading=True):
     """This collects transformer information
 
     Returns
@@ -971,7 +971,7 @@ def get_all_transformer_info_instance(upper_limit=None, compute_loading=True):
         return pd.DataFrame()
     all_df["name"] = all_df.index.str.split(".").str[1]
     all_df["equipment_type"] = all_df.index.str.split(".").str[0]
-    # extract only enabled lines
+    # extract only enabled objects
     all_df = all_df.loc[all_df["enabled"].str.lower() == "yes"]
     all_df["conn"] = all_df["conn"].str.strip()  # remove trailing space from conn field
     # define empty new columns
@@ -1085,7 +1085,7 @@ def determine_line_placement(line_series):
     return info_dict
 
 
-def get_all_line_info_instance(ignore_switch, upper_limit=None, compute_loading=True):
+def get_snapshot_line_info(ignore_switch, upper_limit=None, compute_loading=True):
     """This collects line information.
     
     dss.Lines.Units() gives an integer. It can be mapped as below:
@@ -1102,7 +1102,7 @@ def get_all_line_info_instance(ignore_switch, upper_limit=None, compute_loading=
     check_enabled_property(all_df, element_name="line")
     all_df["name"] = all_df.index.str.split(".").str[1]
     all_df["equipment_type"] = all_df.index.str.split(".").str[0]
-    # extract only enabled lines
+    # extract only enabled objects
     all_df = all_df.loc[all_df["enabled"].str.lower() == "yes"]
     all_df = add_info_line_definition_type(all_df)
     # define empty new columns
@@ -1206,9 +1206,9 @@ def get_thermal_equipment_info(compute_loading, equipment_type, analysis_params=
     # if compute_loading is false, then just run once (no need to check multipliers)
     if not compute_loading:
         if equipment_type == "line":
-            loading_df = get_all_line_info_instance(compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch)
+            loading_df = get_snapshot_line_info(compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch)
         elif equipment_type == "transformer":
-            loading_df = get_all_transformer_info_instance(compute_loading=compute_loading, upper_limit=upper_limit)
+            loading_df = get_snapshot_transformer_info(compute_loading=compute_loading, upper_limit=upper_limit)
         else:
             raise Exception(f"Unsupported equipment type {equipment_type}. Acceptable values are line, transformer.")
         return loading_df
@@ -1227,9 +1227,9 @@ def get_thermal_equipment_info(compute_loading, equipment_type, analysis_params=
         assert analysis_params.timepoint_multipliers is None
         # if no timepoint multipliers and original multiplier type, then dont make any changes to circuit, and directly compute loading
         if equipment_type == "line":
-            loading_df = get_all_line_info_instance(compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch)
+            loading_df = get_snapshot_line_info(compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch)
         elif equipment_type == "transformer":
-            loading_df = get_all_transformer_info_instance(compute_loading=compute_loading, upper_limit=upper_limit)
+            loading_df = get_snapshot_transformer_info(compute_loading=compute_loading, upper_limit=upper_limit)
         return loading_df
     elif analysis_params.multiplier_type == LoadMultiplierType.UNIFORM:  # apply timepoint multipliers
         loading_df = determine_timepoint_multiplier_thermal_loading(equipment_type, compute_loading, upper_limit, ignore_switch, 
@@ -1251,9 +1251,9 @@ def determine_timepoint_multiplier_thermal_loading(equipment_type, compute_loadi
             # this changes the dss network load and pv
             apply_uniform_timepoint_multipliers(multiplier_name=multiplier_name, field=pv_field, solve_params=solve_params)
             if equipment_type.lower() == "line":
-                loading_df = get_all_line_info_instance(compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch)
+                loading_df = get_snapshot_line_info(compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch)
             elif equipment_type.lower() == "transformer":
-                loading_df = get_all_transformer_info_instance(compute_loading=compute_loading, upper_limit=upper_limit)
+                loading_df = get_snapshot_transformer_info(compute_loading=compute_loading, upper_limit=upper_limit)
             loading_df.set_index("name", inplace=True)
             comparison_dict[pv_field+"_"+str(multiplier_name)] = loading_df
     # compare all dataframe, and create one that contains all worst loading conditions (across all multiplier conditions)
@@ -1279,10 +1279,14 @@ def get_timeseries_thermal_comparison(equipment_type, compute_loading, upper_lim
         check_dss_run_command("Set Controlmode=Static") 
         check_dss_run_command(f"set hour = {present_step}")
         dss.Solution.Solve()  # solves for specific hour that has been set
+        dss_pass_flag = dss.Solution.Converged()
+        if not dss_pass_flag:
+            logger.info(f"OpenDSS Convergence Error")
+            raise OpenDssConvergenceError("OpenDSS solution did not converge")
         if equipment_type.lower() == "line":
-            loading_df = get_all_line_info_instance(compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch)
+            loading_df = get_snapshot_line_info(compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch)
         elif equipment_type.lower() == "transformer":
-            loading_df = get_all_transformer_info_instance(compute_loading=compute_loading, upper_limit=upper_limit)
+            loading_df = get_snapshot_transformer_info(compute_loading=compute_loading, upper_limit=upper_limit)
         else:
             raise Exception(f"Not handled: {equipment_type}")
         loading_df.set_index("name", inplace=True)
@@ -1324,7 +1328,11 @@ def get_timeseries_voltage_comparison(equipment_type, voltage_upper_limit, volta
         check_dss_run_command("Set Controlmode=Static") 
         check_dss_run_command(f"set hour = {present_step}")
         dss.Solution.Solve()  # solves for specific hour that has been set
-        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages_instance(
+        dss_pass_flag = dss.Solution.Converged()
+        if not dss_pass_flag:
+            logger.info(f"OpenDSS Convergence Error")
+            raise OpenDssConvergenceError("OpenDSS solution did not converge")
+        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_snapshot_bus_voltage_violations(
                     voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, solve_params=solve_params)
         bus_voltages_df.set_index("name", inplace=True)
         comparison_dict[key_name] = bus_voltages_df
@@ -1600,7 +1608,7 @@ def get_bus_voltage_violations(voltage_upper_limit, voltage_lower_limit, analysi
         assert analysis_params.timepoint_multipliers is None
         # apply_uniform_timepoint_multipliers(multiplier_name=1, field="with_pv", solve_params=solve_params)
         # determine voltage violations after changes
-        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages_instance(
+        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_snapshot_bus_voltage_violations(
             voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, solve_params=solve_params)
         return bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations
     
@@ -1620,7 +1628,7 @@ def determine_timepoint_multiplier_bus_voltage_violations(voltage_upper_limit, v
             logger.debug("Multipler name: %s", multiplier_name)
             # this changes the dss network load and pv
             apply_uniform_timepoint_multipliers(multiplier_name=multiplier_name, field=pv_field, solve_params=solve_params)
-            bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages_instance(
+            bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_snapshot_bus_voltage_violations(
                 voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, solve_params=solve_params)
             bus_voltages_df.set_index("name", inplace=True)
             comparison_dict[pv_field+"_"+str(multiplier_name)] = bus_voltages_df
@@ -1633,7 +1641,7 @@ def determine_timepoint_multiplier_bus_voltage_violations(voltage_upper_limit, v
    
 
 @track_timing(timer_stats_collector)
-def get_bus_voltages_instance(voltage_upper_limit, voltage_lower_limit, solve_params):
+def get_snapshot_bus_voltage_violations(voltage_upper_limit, voltage_lower_limit, solve_params):
     """This computes per unit voltages for all buses in network
 
     Returns

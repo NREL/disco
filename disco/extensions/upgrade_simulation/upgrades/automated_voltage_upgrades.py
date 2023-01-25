@@ -308,6 +308,9 @@ def determine_voltage_upgrades(
                                                transformer_upper_limit=thermal_config["transformer_upper_limit"], line_upper_limit=thermal_config["line_upper_limit"], 
                                                voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, solve_params=solve_params, ignore_switch=ignore_switch)
         feeder_stats["timeseries_stage_results"].append(timeseries_upgrade_stats)
+        if not "timeseries_metadata" in feeder_stats.keys():
+            if upgrade_simulation_params_config["timeseries_metadata"] is not None:
+                feeder_stats["timeseries_metadata"] = pd.read_csv(upgrade_simulation_params_config["timeseries_metadata"]).to_dict("records")
     dump_data(feeder_stats, feeder_stats_json_file, indent=2) 
     end_time = time.time()
     logger.info(f"Simulation end time: {end_time}")

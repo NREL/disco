@@ -460,9 +460,6 @@ class PyDssControllerModels(UpgradeParamsBaseModel):
     pv_controller: Optional[PvControllerModel] = Field(
         title="pv_controller", description="Settings for a PV controller"
     )
-    
-
-
 
 
 class UpgradeSimulationParamsModel(UpgradeParamsBaseModel):
@@ -472,7 +469,7 @@ class UpgradeSimulationParamsModel(UpgradeParamsBaseModel):
     #     description="If True, create plots of violations before and after simulation.",
     #     default=True,
     # )
-    upgrade_order: Optional[List[str]] = Field(
+    upgrade_order: List[str] = Field(
         description="Order of upgrade algorithm. 'thermal' or 'voltage' can be removed from the "
         "simulation by excluding them from this parameter.",
         default=_SUPPORTED_UPGRADE_TYPES,

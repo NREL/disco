@@ -1815,7 +1815,7 @@ def plot_feeder(fig_folder, title, circuit_source=None, enable_detailed=False):
     NodeLegend = {
         "Load": get_load_buses(dss), 
         "PV": get_pv_buses(dss), 
-        "Transformer": list(get_all_transformer_info_instance(compute_loading=False)['bus_names_only'].str[0].values),
+        "Transformer": list(get_snapshot_transformer_info(compute_loading=False)['bus_names_only'].str[0].values),
     }
     if circuit_source is not None:
         NodeLegend["Circuit Source"] = [circuit_source]
