@@ -69,11 +69,6 @@ def determine_voltage_upgrades(
     create_plots = voltage_config["create_plots"]
     analysis_params = SimulationParams(timepoint_multipliers=upgrade_simulation_params_config["timepoint_multipliers"], 
                                        timeseries_analysis=upgrade_simulation_params_config["timeseries_analysis"])
-    # TODO analysis params validator is not working
-    if analysis_params.timepoint_multipliers is not None:
-        analysis_params.multiplier_type = LoadMultiplierType.UNIFORM
-    else:
-        analysis_params.multiplier_type = LoadMultiplierType.ORIGINAL
     initial_solve_params = CircuitSolveParams(enable_pydss_controllers=upgrade_simulation_params_config["enable_pydss_controllers"])   
     reload_circuit_params = ReloadCircuitParams(
                                         dc_ac_ratio=upgrade_simulation_params_config["dc_ac_ratio"],
@@ -177,8 +172,9 @@ def determine_voltage_upgrades(
         best_setting_so_far = "original"
         # start with capacitors
         if voltage_config["capacitor_action_flag"] and len(orig_capacitors_df) > 0:
-            capacitor_dss_commands = determine_capacitor_upgrades(voltage_upper_limit, voltage_lower_limit, default_capacitor_settings, orig_capacitors_df, 
-                                                                  voltage_config, deciding_field, fig_folder=os.path.join(voltage_upgrades_directory, "interim"), 
+            capacitor_dss_commands = determine_capacitor_upgrades(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, 
+                                                                  default_capacitor_settings=default_capacitor_settings, orig_capacitors_df=orig_capacitors_df, 
+                                                                  voltage_config=voltage_config, deciding_field=deciding_field, fig_folder=os.path.join(voltage_upgrades_directory, "interim"), 
                                                                   create_plots=create_plots, circuit_source=circuit_source, analysis_params=analysis_params, 
                                                                   solve_params=solve_params, title="Bus violations after existing capacitor sweep module_")
            

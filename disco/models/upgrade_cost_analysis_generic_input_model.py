@@ -602,7 +602,7 @@ class UpgradeCostAnalysisSimulationModel(UpgradeSimulationParamsModel):
         title="upgrade_cost_database",
         description="Database containing costs for each equipment type",
     )
-    calculate_costs:Optional[bool] = Field(
+    calculate_costs: bool = Field(
         title="calculate_costs",
         description="If True, calculate upgrade costs from database.",
         default=True,

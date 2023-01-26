@@ -6,7 +6,7 @@ import pathlib
 import numpy as np
 import pandas as pd
 import opendssdirect as dss
-from pydantic import BaseModel, validator
+from pydantic import validator
 from typing import Any, List, Dict
 
 from .pydss_parameters import *
@@ -22,6 +22,7 @@ from disco.exceptions import (
     InvalidOpenDssElementError,
 )
 from disco.models.upgrade_cost_analysis_generic_input_model import (
+    UpgradeParamsBaseModel,
     _extract_specific_model_properties_, 
     LineCodeCatalogModel, LineGeometryCatalogModel,
     LineModel, LineCatalogModel,
@@ -45,20 +46,20 @@ DSS_UNIT_CONFIG = {1: "mi", 2: "kft", 3: "m", 4: "Ft", 5: "in", 6: "cm",
                     }
 
 
-class CircuitSolveParams(BaseModel):
+class CircuitSolveParams(UpgradeParamsBaseModel):
     raise_exception: bool = True
     calcvoltagebases: bool = False
     enable_pydss_controllers: bool = False
     pydss_controller_manager: Any = None
 
 
-class ReloadCircuitParams(BaseModel):
+class ReloadCircuitParams(UpgradeParamsBaseModel):
     dc_ac_ratio: bool = None
     max_control_iterations: int = None
     pydss_volt_var_model: Any = None
 
 
-class SimulationParams(BaseModel):
+class SimulationParams(UpgradeParamsBaseModel):
     timepoint_multipliers: Dict = None
     timeseries_analysis: bool = False
     multiplier_type: LoadMultiplierType = None
@@ -339,7 +340,7 @@ def change_pv_pctpmpp(dc_ac_ratio):
         dss.PVsystems.Next()
 
 
-def get_feeder_stats(dss):
+def get_feeder_stats():
     """This function gives metadata stats for a feeder 
 
     Parameters
@@ -372,20 +373,24 @@ def get_feeder_stats(dss):
     return data_dict
 
 
+def get_dss_object_counts():
+    data_dict = {
+    "num_nodes": dss.Circuit.NumNodes(),
+    "num_loads": dss.Loads.Count(),
+    "num_lines": dss.Lines.Count(),
+    "num_transformers": dss.Transformers.Count(),
+    "num_pv_systems": dss.PVsystems.Count(),
+    "num_capacitors": dss.Capacitors.Count(),
+    "num_regulators": dss.RegControls.Count(),
+    } 
+
+    return data_dict
+
 def get_feeder_data(upgrade_stage, upgrade_type):
     final_dict = {"stage": upgrade_stage, "upgrade_type": upgrade_type}
     ckt_info_dict = get_circuit_info()
     final_dict["feeder_components"] = ckt_info_dict
-    final_dict["feeder_components"].update({
-                                        "num_nodes": dss.Circuit.NumNodes(),
-                                        "num_loads": dss.Loads.Count(),
-                                        "num_lines": dss.Lines.Count(),
-                                        "num_transformers": dss.Transformers.Count(),
-                                        "num_pv_systems": dss.PVsystems.Count(),
-                                        "num_capacitors": dss.Capacitors.Count(),
-                                        "num_regulators": dss.RegControls.Count(),
-                                        } )
-    
+    final_dict["feeder_components"].update(get_dss_object_counts())
     return final_dict
 
 def get_upgrade_stage_stats(upgrade_stage, upgrade_type, xfmr_loading_df, line_loading_df, bus_voltages_df, 
@@ -1791,7 +1796,7 @@ def determine_available_xfmr_upgrades(xfmr_loading_df):
     return xfmr_upgrade_options
 
 
-def get_pv_buses(dss):
+def get_pv_buses():
     pv_buses = []
     flag = dss.PVsystems.First()
     while flag > 0:
@@ -1800,7 +1805,7 @@ def get_pv_buses(dss):
     return pv_buses
 
 
-def get_load_buses(dss):
+def get_load_buses():
     load_buses = []
     flag = dss.Loads.First()
     while flag > 0:

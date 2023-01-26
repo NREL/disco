@@ -35,6 +35,10 @@ class OpenDssConvergenceError(DiscoBaseException):
     """Raise when OpenDSS fails to converge"""
 
 
+class OpenDssModelDisconnectedError(DiscoBaseException):
+    """Raise when OpenDSS model has isolated elements"""
+
+
 class PyDssConvergenceError(DiscoBaseException):
     """Raise when PyDSS fails to converge"""
 

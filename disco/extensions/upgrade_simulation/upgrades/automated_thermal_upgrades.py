@@ -7,7 +7,7 @@ from jade.utils.timing_utils import track_timing, Timer
 from jade.utils.utils import load_data, dump_data
 
 from .thermal_upgrade_functions import *
-from .voltage_upgrade_functions import plot_thermal_violations, plot_voltage_violations, plot_feeder
+from .voltage_upgrade_functions import plot_thermal_violations, plot_voltage_violations, plot_feeder, generate_networkx_representation, check_network_connectivity
 
 from disco.models.upgrade_cost_analysis_generic_input_model import UpgradeTechnicalCatalogModel, UpgradeSimulationParamsModel
 from disco.models.upgrade_cost_analysis_generic_output_model import UpgradeViolationResultModel, AllUpgradesTechnicalResultModel
@@ -41,11 +41,6 @@ def determine_thermal_upgrades(
     logger.info( f"Simulation start time: {start_time}")   
     analysis_params = SimulationParams(timepoint_multipliers=upgrade_simulation_params_config["timepoint_multipliers"], 
                                        timeseries_analysis=upgrade_simulation_params_config["timeseries_analysis"])
-    # TODO analysis params validator is not working
-    if analysis_params.timepoint_multipliers is not None:
-        analysis_params.multiplier_type = LoadMultiplierType.UNIFORM
-    else:
-        analysis_params.multiplier_type = LoadMultiplierType.ORIGINAL
     create_plots = thermal_config["create_plots"]
     initial_solve_params = CircuitSolveParams(enable_pydss_controllers=upgrade_simulation_params_config["enable_pydss_controllers"])
     reload_circuit_params = ReloadCircuitParams(dc_ac_ratio=upgrade_simulation_params_config["dc_ac_ratio"],
@@ -54,7 +49,7 @@ def determine_thermal_upgrades(
     # start upgrades
     initial_dss_file_list = [master_path]
     solve_params = reload_dss_circuit(dss_file_list=initial_dss_file_list, commands_list=None, solve_params=initial_solve_params, reload_circuit_params=reload_circuit_params)
-    
+    G = generate_networkx_representation()
     voltage_upper_limit = thermal_config["voltage_upper_limit"]
     voltage_lower_limit = thermal_config["voltage_lower_limit"]
     if thermal_config["read_external_catalog"]:
@@ -88,7 +83,7 @@ def determine_thermal_upgrades(
         xfmr_upgrade_options = pd.DataFrame.from_dict(input_catalog_model.dict(by_alias=True)["transformer"])
     # get these feeder details before running powerflow
     feeder_stats = {"feeder_metadata": {}, "stage_results": []}
-    feeder_stats["feeder_metadata"].update(get_feeder_stats(dss))
+    feeder_stats["feeder_metadata"].update(get_feeder_stats())
     (
         initial_bus_voltages_df,
         initial_undervoltage_bus_list,

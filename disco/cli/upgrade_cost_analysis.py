@@ -285,7 +285,6 @@ def run_job(job, config, jobs_output_dir, file_log_level):
         ),
     )
     upgrade_simulation_params_names = list(UpgradeSimulationParamsModel.schema()["properties"].keys())
-    # create a global config dictionary
     global_config = {
         "thermal_upgrade_params": config.thermal_upgrade_params.dict(),
         "voltage_upgrade_params": config.voltage_upgrade_params.dict(),

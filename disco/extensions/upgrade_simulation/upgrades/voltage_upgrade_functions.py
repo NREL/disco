@@ -11,6 +11,7 @@ from sklearn.cluster import AgglomerativeClustering
 from .common_functions import *
 from .thermal_upgrade_functions import define_xfmr_object
 from disco import timer_stats_collector
+from disco.exceptions import OpenDssModelDisconnectedError
 from disco.models.upgrade_cost_analysis_generic_output_model import VoltageUpgradesTechnicalResultModel
 from opendssdirect import DSSException
 from jade.utils.timing_utils import track_timing, Timer
@@ -949,8 +950,10 @@ def determine_substation_ltc_upgrades(voltage_upper_limit, voltage_lower_limit, 
         if voltage_config["capacitor_action_flag"] and len(orig_capacitors_df) > 0:
             assert default_capacitor_settings is not None
             title = "Bus violations after subltc_vreg_cap sweep "
-            capacitor_dss_commands = determine_capacitor_upgrades(voltage_upper_limit, voltage_lower_limit, default_capacitor_settings, orig_capacitors_df, 
-                                                                  voltage_config, deciding_field, title=title, create_plots=create_plots, fig_folder=fig_folder)
+            capacitor_dss_commands = determine_capacitor_upgrades(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, 
+                                                                  default_capacitor_settings=default_capacitor_settings, orig_capacitors_df=orig_capacitors_df, 
+                                                                  voltage_config=voltage_config, deciding_field=deciding_field, title=title, create_plots=create_plots, 
+                                                                  fig_folder=fig_folder, solve_params=solve_params, analysis_params=analysis_params)
             subltc_upgrade_commands = subltc_upgrade_commands + capacitor_dss_commands
             comparison_dict["after_sub_ltc_vreg_cap_checking"] = compute_voltage_violation_severity(voltage_upper_limit=voltage_upper_limit, 
                                                                                                      voltage_lower_limit=voltage_lower_limit, 
@@ -1584,6 +1587,7 @@ def get_upper_triangular_dist(G, buses_with_violations):
     new_graph = G.to_undirected()
     calculated_buses = []
     upper_triang_paths_dict = {}
+    breakpoint()
     # Get upper triangular distance matrix - reduces computational time by half
     for bus1 in buses_with_violations:
         upper_triang_paths_dict[bus1] = []
@@ -1722,6 +1726,8 @@ def determine_new_regulator_location(circuit_source, initial_buses_with_violatio
 
     # prepare for clustering
     G = generate_networkx_representation()
+    breakpoint()
+    check_network_connectivity(G, raise_exception=True)
     upper_triang_paths_dict = get_upper_triangular_dist(G=G, buses_with_violations=initial_buses_with_violations)
     square_distance_df = get_full_distance_df(upper_triang_paths_dict=upper_triang_paths_dict)
     # if create_plots:
@@ -1813,8 +1819,8 @@ def plot_feeder(fig_folder, title, circuit_source=None, enable_detailed=False):
     default_node_color = 'black'
     
     NodeLegend = {
-        "Load": get_load_buses(dss), 
-        "PV": get_pv_buses(dss), 
+        "Load": get_load_buses(), 
+        "PV": get_pv_buses(), 
         "Transformer": list(get_snapshot_transformer_info(compute_loading=False)['bus_names_only'].str[0].values),
     }
     if circuit_source is not None:
@@ -1872,8 +1878,8 @@ def plot_voltage_violations(fig_folder, title, buses_with_violations, circuit_so
     nx.draw_networkx_nodes(Un_G, pos=position_dict, alpha=1.0, node_size=default_node_size, node_color=default_node_color)
     
     NodeLegend = {
-        # "Load": get_load_buses(dss), 
-        # "PV": get_pv_buses(dss), 
+        # "Load": get_load_buses(), 
+        # "PV": get_pv_buses(), 
         # "Transformer": list(get_all_transformer_info_instance(compute_loading=False)['bus_names_only'].str[0].values),
         "Violation": buses_with_violations,
     }
@@ -2050,6 +2056,8 @@ def get_graph_edges_dataframe(attr_fields):
     chosen_fields = ['bus1', 'bus2'] + attr_fields
     # prepare lines dataframe
     all_lines_df = get_thermal_equipment_info(compute_loading=False, equipment_type="line")
+    if all_lines_df.empty:
+        return pd.DataFrame()
     all_lines_df['bus1'] = all_lines_df['bus1'].str.split('.', expand=True)[0].str.lower()
     all_lines_df['bus2'] = all_lines_df['bus2'].str.split('.', expand=True)[0].str.lower()
     # convert length to metres
@@ -2119,7 +2127,19 @@ def generate_networkx_representation():
     if complete_flag:
         # these new buscoords could be written out to a file after correction
         G, commands_list = correct_node_coordinates(G=G)  # corrects node coordinates 
+    check_network_connectivity(G, raise_exception=True)
     return G
+
+
+def check_network_connectivity(G, raise_exception=True):
+    temp_graph = G.to_undirected()
+    connectivity_status = nx.is_connected(temp_graph)
+    if not connectivity_status:
+        isolated = list(nx.isolates(G))
+        msg = f"OpenDSS Circuit is disconnected. These are the isolated elements: {isolated} "
+    if raise_exception and not connectivity_status:
+        raise OpenDssModelDisconnectedError(msg)
+    return connectivity_status
 
 
 def check_buscoordinates_completeness(bus_coordinates_df, verbose=False):
