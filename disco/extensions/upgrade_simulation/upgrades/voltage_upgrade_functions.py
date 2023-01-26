@@ -1587,7 +1587,6 @@ def get_upper_triangular_dist(G, buses_with_violations):
     new_graph = G.to_undirected()
     calculated_buses = []
     upper_triang_paths_dict = {}
-    breakpoint()
     # Get upper triangular distance matrix - reduces computational time by half
     for bus1 in buses_with_violations:
         upper_triang_paths_dict[bus1] = []
@@ -1726,7 +1725,6 @@ def determine_new_regulator_location(circuit_source, initial_buses_with_violatio
 
     # prepare for clustering
     G = generate_networkx_representation()
-    breakpoint()
     check_network_connectivity(G, raise_exception=True)
     upper_triang_paths_dict = get_upper_triangular_dist(G=G, buses_with_violations=initial_buses_with_violations)
     square_distance_df = get_full_distance_df(upper_triang_paths_dict=upper_triang_paths_dict)
@@ -2055,7 +2053,7 @@ def get_graph_edges_dataframe(attr_fields):
     """
     chosen_fields = ['bus1', 'bus2'] + attr_fields
     # prepare lines dataframe
-    all_lines_df = get_thermal_equipment_info(compute_loading=False, equipment_type="line")
+    all_lines_df = get_thermal_equipment_info(compute_loading=False, equipment_type="line", ignore_switch=False)
     if all_lines_df.empty:
         return pd.DataFrame()
     all_lines_df['bus1'] = all_lines_df['bus1'].str.split('.', expand=True)[0].str.lower()
@@ -2127,7 +2125,6 @@ def generate_networkx_representation():
     if complete_flag:
         # these new buscoords could be written out to a file after correction
         G, commands_list = correct_node_coordinates(G=G)  # corrects node coordinates 
-    check_network_connectivity(G, raise_exception=True)
     return G
 
 
@@ -2137,8 +2134,8 @@ def check_network_connectivity(G, raise_exception=True):
     if not connectivity_status:
         isolated = list(nx.isolates(G))
         msg = f"OpenDSS Circuit is disconnected. These are the isolated elements: {isolated} "
-    if raise_exception and not connectivity_status:
-        raise OpenDssModelDisconnectedError(msg)
+        if raise_exception:
+            raise OpenDssModelDisconnectedError(msg)
     return connectivity_status
 
 

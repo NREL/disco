@@ -1201,7 +1201,7 @@ def compare_multiple_dataframes(comparison_dict, deciding_column_name, compariso
         
 
 @track_timing(timer_stats_collector)
-def get_thermal_equipment_info(compute_loading, equipment_type, analysis_params=None, solve_params=None, upper_limit=None, ignore_switch=True):
+def get_thermal_equipment_info(compute_loading, equipment_type, analysis_params=None, solve_params=None, upper_limit=None, ignore_switch=False):
     """This function determines the thermal equipment loading (line, transformer), based on timepoint multiplier
 
     Returns
