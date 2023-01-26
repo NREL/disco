@@ -494,9 +494,10 @@ class UpgradeSimulationParamsModel(UpgradeParamsBaseModel):
         description="timeseries_metadata", 
         default=""
     )
-    timepoint_multipliers: Optional[Dict] = Field(
+    timepoint_multipliers: Dict = Field(
         title="timepoint_multipliers",
         description='Dictionary to provide timepoint multipliers. example: timepoint_multipliers={"load_multipliers": {"with_pv": [1.2], "without_pv": [0.6]}}',
+        default = {}
     )
     enable_pydss_controllers: bool = Field(
         title="enable_pydss_controllers",
@@ -508,16 +509,7 @@ class UpgradeSimulationParamsModel(UpgradeParamsBaseModel):
         description="If enable_pydss_controllers is True, these PyDSS controllers are applied to each corresponding element type.",
         default=PyDssControllerModels(),
     )
-    # pydss_controller_manager: Optional[Any] = Field(
-    #     title="pydss_controller_manager",
-    #     description="pydss_controller_manager",
-    #     default=None,
-    # )
-    # pydss_volt_var_model: Optional[Any] = Field(
-    #     title="pydss_volt_var_model",
-    #     description="pydss_volt_var_model",
-    #     default=None,
-    # )
+
     @validator("upgrade_order")
     def check_upgrade_order(cls, upgrade_order):
         diff = set(upgrade_order).difference(_SUPPORTED_UPGRADE_TYPES)
@@ -537,7 +529,7 @@ class UpgradeSimulationParamsModel(UpgradeParamsBaseModel):
     
     @validator("timepoint_multipliers")
     def check_timepoint_multipliers(cls, timepoint_multipliers):
-        if timepoint_multipliers is None:
+        if not timepoint_multipliers:
             return timepoint_multipliers
         if "load_multipliers" not in timepoint_multipliers:
             raise ValueError("load_multipliers must be defined in timepoint_multipliers")

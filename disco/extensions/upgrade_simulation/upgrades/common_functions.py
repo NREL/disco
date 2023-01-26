@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import opendssdirect as dss
 from pydantic import validator
-from typing import Any, List, Dict
+from typing import Any, List, Dict, Optional
 
 from .pydss_parameters import *
 from jade.utils.timing_utils import track_timing, Timer
@@ -60,13 +60,13 @@ class ReloadCircuitParams(UpgradeParamsBaseModel):
 
 
 class SimulationParams(UpgradeParamsBaseModel):
-    timepoint_multipliers: Dict = None
+    timepoint_multipliers: Dict = {}
     timeseries_analysis: bool = False
-    multiplier_type: LoadMultiplierType = None
+    multiplier_type: Optional[LoadMultiplierType]
     
-    @validator("multiplier_type")  # TODO this validator is not working??
+    @validator("multiplier_type")
     def check_multiplier_type(cls, multiplier_type, values):
-        if values["timepoint_multipliers"] is not None:
+        if values["timepoint_multipliers"]:
             multiplier_type = LoadMultiplierType.UNIFORM
         else:
             multiplier_type = LoadMultiplierType.ORIGINAL
@@ -1229,7 +1229,7 @@ def get_thermal_equipment_info(compute_loading, equipment_type, analysis_params=
         return loading_df
 
     if analysis_params.multiplier_type == LoadMultiplierType.ORIGINAL:
-        assert analysis_params.timepoint_multipliers is None
+        assert not analysis_params.timepoint_multipliers
         # if no timepoint multipliers and original multiplier type, then dont make any changes to circuit, and directly compute loading
         if equipment_type == "line":
             loading_df = get_snapshot_line_info(compute_loading=compute_loading, upper_limit=upper_limit, ignore_switch=ignore_switch)
@@ -1246,7 +1246,7 @@ def get_thermal_equipment_info(compute_loading, equipment_type, analysis_params=
 
 def determine_timepoint_multiplier_thermal_loading(equipment_type, compute_loading, upper_limit, ignore_switch, 
                                                    deciding_column_name, solve_params, timepoint_multipliers):
-    assert timepoint_multipliers is not None
+    assert timepoint_multipliers
     assert solve_params is not None
     comparison_dict = {}
     for pv_field in timepoint_multipliers["load_multipliers"].keys():
@@ -1610,7 +1610,7 @@ def get_bus_voltage_violations(voltage_upper_limit, voltage_lower_limit, analysi
     
      # if there are no multipliers, run on rated load
     if analysis_params.multiplier_type == LoadMultiplierType.ORIGINAL:
-        assert analysis_params.timepoint_multipliers is None
+        assert not analysis_params.timepoint_multipliers
         # apply_uniform_timepoint_multipliers(multiplier_name=1, field="with_pv", solve_params=solve_params)
         # determine voltage violations after changes
         bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_snapshot_bus_voltage_violations(
