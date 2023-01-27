@@ -7,10 +7,10 @@ import numpy as np
 import pandas as pd
 import opendssdirect as dss
 from pydantic import validator
-from typing import Any, List, Dict, Optional
+from typing import Any, List, Dict
 
 from .pydss_parameters import *
-from jade.utils.timing_utils import track_timing, Timer
+from jade.utils.timing_utils import track_timing
 
 from disco import timer_stats_collector
 from disco.enums import LoadMultiplierType
@@ -54,7 +54,7 @@ class CircuitSolveParams(UpgradeParamsBaseModel):
 
 
 class ReloadCircuitParams(UpgradeParamsBaseModel):
-    dc_ac_ratio: bool = None
+    dc_ac_ratio: float = None
     max_control_iterations: int = None
     pydss_volt_var_model: Any = None
 
@@ -62,7 +62,7 @@ class ReloadCircuitParams(UpgradeParamsBaseModel):
 class SimulationParams(UpgradeParamsBaseModel):
     timepoint_multipliers: Dict = {}
     timeseries_analysis: bool = False
-    multiplier_type: Optional[LoadMultiplierType]
+    multiplier_type: LoadMultiplierType = LoadMultiplierType.ORIGINAL
     
     @validator("multiplier_type")
     def check_multiplier_type(cls, multiplier_type, values):

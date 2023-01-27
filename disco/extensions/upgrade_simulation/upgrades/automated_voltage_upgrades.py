@@ -34,10 +34,7 @@ def determine_voltage_upgrades(
     voltage_upgrades_directory,
     overall_output_summary_filepath,
     ignore_switch=True,
-    verbose=False
 ):
-    if verbose:
-        logging.level = logging.DEBUG
     start_time = time.time()
     logger.info(f"Simulation Start time: {start_time}")
     # default_capacitor settings and customization
@@ -77,6 +74,8 @@ def determine_voltage_upgrades(
     # start upgrades
     initial_dss_file_list = [master_path, thermal_upgrades_dss_filepath]
     solve_params = reload_dss_circuit(dss_file_list=initial_dss_file_list, commands_list=None, solve_params=initial_solve_params, reload_circuit_params=reload_circuit_params)
+    G = generate_networkx_representation()  # check if circuit is disconnected
+    check_network_connectivity(G, raise_exception=True)
     # reading original objects (before upgrades)
     orig_ckt_info = get_circuit_info()
     orig_xfmrs_df =  get_thermal_equipment_info(compute_loading=False, equipment_type="transformer")

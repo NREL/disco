@@ -1725,7 +1725,6 @@ def determine_new_regulator_location(circuit_source, initial_buses_with_violatio
 
     # prepare for clustering
     G = generate_networkx_representation()
-    check_network_connectivity(G, raise_exception=True)
     upper_triang_paths_dict = get_upper_triangular_dist(G=G, buses_with_violations=initial_buses_with_violations)
     square_distance_df = get_full_distance_df(upper_triang_paths_dict=upper_triang_paths_dict)
     # if create_plots:
@@ -2119,7 +2118,6 @@ def generate_networkx_representation():
     G = add_graph_bus_nodes(G=G, bus_coordinates_df=bus_coordinates_df)  # add buses as nodes to the graph
     attr_fields = ['phases', 'length', 'name', 'equipment_type']  # define edge attributes
     edges_df = get_graph_edges_dataframe(attr_fields=attr_fields)  # get edges dataframe (from lines and transformers)
-    # add edges to graph
     G = add_graph_edges(G=G, edges_df=edges_df, attr_fields=attr_fields, source='bus1', target='bus2')
     complete_flag = check_buscoordinates_completeness(bus_coordinates_df, verbose=True)  # check if sufficient buscoordinates data is available
     if complete_flag:
@@ -2136,6 +2134,8 @@ def check_network_connectivity(G, raise_exception=True):
         msg = f"OpenDSS Circuit is disconnected. These are the isolated elements: {isolated} "
         if raise_exception:
             raise OpenDssModelDisconnectedError(msg)
+    else:
+        logging.info("Feeder model has no isolated nodes.")
     return connectivity_status
 
 

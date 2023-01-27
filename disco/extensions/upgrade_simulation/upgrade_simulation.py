@@ -118,7 +118,6 @@ class UpgradeSimulation:
         voltage_config,
         upgrade_simulation_params_config,
         cost_database_filepath,
-        verbose=False
     ):  
         determine_thermal_upgrades(
             job_name = self.job.name,
@@ -132,7 +131,6 @@ class UpgradeSimulation:
             feeder_stats_json_file = self.get_feeder_stats_json_file(),
             thermal_upgrades_directory=self.get_thermal_upgrades_directory(),
             overall_output_summary_filepath=self.get_overall_output_summary_file(),
-            verbose=verbose
         )
         determine_voltage_upgrades(
             job_name = self.job.name,
@@ -147,7 +145,6 @@ class UpgradeSimulation:
             feeder_stats_json_file = self.get_feeder_stats_json_file(),
             voltage_upgrades_directory=self.get_voltage_upgrades_directory(),
             overall_output_summary_filepath=self.get_overall_output_summary_file(),
-            verbose=verbose
         )
         compute_all_costs(
             job_name = self.job.name,

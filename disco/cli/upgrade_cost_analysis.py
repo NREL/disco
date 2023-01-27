@@ -218,7 +218,7 @@ def run(
         start = time.time()
         ret = EXIT_CODE_GOOD
         try:
-            run_job(job, config, jobs_output_dir, file_log_level)
+            run_job(job, config, jobs_output_dir)
             all_failed = False
         except DiscoBaseException as exc:
             logger.exception("Unexpected DISCO error in upgrade cost analysis job=%s", job.name)
@@ -273,7 +273,7 @@ def _get_return_code_filename(output_dir, job_name):
     return output_dir / job_name / "return_code"
 
 
-def run_job(job, config, jobs_output_dir, file_log_level):
+def run_job(job, config, jobs_output_dir):
     job_output_dir = jobs_output_dir / job.name
     job_output_dir.mkdir(exist_ok=True)
     job = UpgradeParameters(
@@ -305,7 +305,6 @@ def run_job(job, config, jobs_output_dir, file_log_level):
         voltage_config=global_config["voltage_upgrade_params"],
         upgrade_simulation_params_config=global_config["upgrade_simulation_params"],
         cost_database_filepath=global_config["upgrade_cost_database"],
-        verbose=file_log_level == logging.DEBUG,
     )
 
 

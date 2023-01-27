@@ -33,12 +33,9 @@ def determine_thermal_upgrades(
     thermal_upgrades_directory,
     overall_output_summary_filepath,
     ignore_switch=True,
-    verbose=False
 ):
-    if verbose:
-        logging.level = logging.DEBUG
     start_time = time.time()
-    logger.info( f"Simulation start time: {start_time}")   
+    logger.info( f"Simulation start time: {start_time}")  
     analysis_params = SimulationParams(timepoint_multipliers=upgrade_simulation_params_config["timepoint_multipliers"], 
                                        timeseries_analysis=upgrade_simulation_params_config["timeseries_analysis"])
     create_plots = thermal_config["create_plots"]
@@ -49,7 +46,8 @@ def determine_thermal_upgrades(
     # start upgrades
     initial_dss_file_list = [master_path]
     solve_params = reload_dss_circuit(dss_file_list=initial_dss_file_list, commands_list=None, solve_params=initial_solve_params, reload_circuit_params=reload_circuit_params)
-    G = generate_networkx_representation()
+    G = generate_networkx_representation()  # check if circuit is disconnected
+    check_network_connectivity(G, raise_exception=True)
     voltage_upper_limit = thermal_config["voltage_upper_limit"]
     voltage_lower_limit = thermal_config["voltage_lower_limit"]
     if thermal_config["read_external_catalog"]:
