@@ -11,6 +11,7 @@ from sklearn.cluster import AgglomerativeClustering
 from .common_functions import *
 from .thermal_upgrade_functions import define_xfmr_object
 from disco import timer_stats_collector
+from disco.exceptions import OpenDssModelDisconnectedError
 from disco.models.upgrade_cost_analysis_generic_output_model import VoltageUpgradesTechnicalResultModel
 from opendssdirect import DSSException
 from jade.utils.timing_utils import track_timing, Timer
@@ -65,8 +66,8 @@ def edit_capacitor_settings_for_convergence(voltage_config=None, control_command
     return new_control_command
 
 
-def correct_capacitor_parameters(default_capacitor_settings, orig_capacitors_df, nominal_voltage,
-                                 **kwargs):
+def correct_capacitor_parameters(default_capacitor_settings, orig_capacitors_df, nominal_voltage, 
+                                 solve_params):
     """Corrects cap control parameters: change to voltage controlled, correct PT ratio. Add cap control if not present
 
     Parameters
@@ -79,6 +80,8 @@ def correct_capacitor_parameters(default_capacitor_settings, orig_capacitors_df,
     -------
 
     """
+    resolve_params = solve_params.copy()
+    resolve_params.raise_exception = False
     # correct capacitor settings
     default_capcontrol_command = f"Type={default_capacitor_settings['cap_control']} " \
                                  f"ONsetting={default_capacitor_settings['capON']} " \
@@ -97,12 +100,12 @@ def correct_capacitor_parameters(default_capacitor_settings, orig_capacitors_df,
             command_string = f"Edit CapControl.{row['capcontrol_name']} PTRatio={row['PTratio']} " \
                              f"{default_capcontrol_command}"
             check_dss_run_command(command_string)
-            pass_flag = circuit_solve_and_check(raise_exception=False, **kwargs)
+            pass_flag = circuit_solve_and_check(resolve_params)  # raise exception=False
             if not pass_flag:
                 command_string = edit_capacitor_settings_for_convergence(command_string)
                 check_dss_run_command(command_string)
                 # raise exception if no convergence even after change
-                circuit_solve_and_check(raise_exception=True, **kwargs)
+                circuit_solve_and_check(solve_params)  # raise exception =True
             capacitors_commands_list.append(command_string)
        
         # if it is already voltage controlled, modify PT ratio if new is different after re-computation
@@ -112,7 +115,7 @@ def correct_capacitor_parameters(default_capacitor_settings, orig_capacitors_df,
             command_string = f"Edit CapControl.{row['capcontrol_name']} PTRatio={row['PTratio']}" + orig_string
             check_dss_run_command(command_string)
             # this does not change original settings, so should not cause convergence
-            circuit_solve_and_check(raise_exception=True, **kwargs)
+            circuit_solve_and_check(solve_params)  # raise exception =True
             capacitors_commands_list.append(command_string)
             
     # if there are capacitors without cap control, add a voltage-controlled cap control
@@ -129,12 +132,12 @@ def correct_capacitor_parameters(default_capacitor_settings, orig_capacitors_df,
                          f"terminal={default_capacitor_settings['terminal']} capacitor={row['capacitor_name']} " \
                          f"PTRatio={default_pt_ratio} {default_capcontrol_command}"
         check_dss_run_command(command_string)
-        pass_flag = circuit_solve_and_check(raise_exception=False, **kwargs)
+        pass_flag = circuit_solve_and_check(resolve_params)  # raise exception =False
         if not pass_flag:
             command_string = edit_capacitor_settings_for_convergence(command_string)
             check_dss_run_command(command_string)
             # raise exception if no convergence even after change
-            circuit_solve_and_check(raise_exception=True, **kwargs)
+            circuit_solve_and_check(solve_params)  # raise exception =True
         capacitors_commands_list.append(command_string)
     return capacitors_commands_list
 
@@ -175,7 +178,7 @@ def find_line_connected_to_capacitor(capacitor_row, lines_df):
 
 @track_timing(timer_stats_collector)
 def sweep_capacitor_settings(voltage_config, initial_capacitors_df, default_capacitor_settings, voltage_upper_limit,
-                             voltage_lower_limit, **kwargs):
+                             voltage_lower_limit, solve_params, analysis_params):
     """This function sweeps through capacitor settings and returns dataframe of severity metrics for all the sweeps of capacitor controls with best settings.
        This function increases differences between cap ON and OFF voltages in user defined increments,
        default 1 volt, until upper and lower bounds are reached.
@@ -197,13 +200,15 @@ def sweep_capacitor_settings(voltage_config, initial_capacitors_df, default_capa
     capacitor_sweep_list = []  # this list will contain severity of each capacitor setting sweep
     # get severity index for original/initial capacitor settings (ie before the settings sweep)
     temp_dict = {'cap_on_setting': 'original setting', 'cap_off_setting': 'original setting'}
-    pass_flag = circuit_solve_and_check(raise_exception=False, **kwargs)
+    resolve_params = solve_params.copy()
+    resolve_params.raise_exception = False
+    pass_flag = circuit_solve_and_check(resolve_params)  # raise exception is False
     if not pass_flag:  # if there is convergence issue at this setting, go onto next setting and dont save
         temp_dict['converged'] = False
     else:
         temp_dict['converged'] = True
-    severity_dict = compute_voltage_violation_severity(
-        voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit)
+    severity_dict = compute_voltage_violation_severity(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, 
+                                                       analysis_params=analysis_params, solve_params=solve_params)
     temp_dict.update(severity_dict)
     capacitor_sweep_list.append(temp_dict)
     # start settings sweep
@@ -218,16 +223,16 @@ def sweep_capacitor_settings(voltage_config, initial_capacitors_df, default_capa
         for index, row in initial_capacitors_df.iterrows():  # apply settings to all capacitors
             check_dss_run_command(f"Edit CapControl.{row['capcontrol_name']} ONsetting={cap_on_setting} "
                             f"OFFsetting={cap_off_setting}")
-            pass_flag = circuit_solve_and_check(raise_exception=False, **kwargs)
+            pass_flag = circuit_solve_and_check(resolve_params)  # don't raise exception
             if not pass_flag:  # if there is convergence issue at this setting, go onto next setting and dont save
                 temp_dict['converged'] = False
                 break
             else:
                 temp_dict['converged'] = True
-        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
-            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, raise_exception=False, **kwargs)
+        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltage_violations(
+            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, analysis_params=analysis_params, solve_params=resolve_params)  # raise exception is false
         severity_dict = compute_voltage_violation_severity(
-            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit)
+            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, analysis_params=analysis_params, solve_params=solve_params)
         temp_dict.update(severity_dict)
         capacitor_sweep_list.append(temp_dict)
         if (cap_on_setting - cap_control_gap / 2) <= (voltage_lower_limit * voltage_config["nominal_voltage"]):
@@ -242,7 +247,7 @@ def sweep_capacitor_settings(voltage_config, initial_capacitors_df, default_capa
     return capacitor_sweep_df
 
 
-def choose_best_capacitor_sweep_setting(capacitor_sweep_df, initial_capacitors_df, deciding_field, **kwargs):
+def choose_best_capacitor_sweep_setting(capacitor_sweep_df, initial_capacitors_df, deciding_field, solve_params):
     """This function takes the dataframe containing severity metrics, identifies the best cap control setting out
     of all the sweeps and returns dataframe of capacitor controls with best settings
 
@@ -277,7 +282,7 @@ def choose_best_capacitor_sweep_setting(capacitor_sweep_df, initial_capacitors_d
                                                                            creation_action='Edit')
     for command_string in capacitor_settings_commands_list:
         check_dss_run_command(command_string)
-    circuit_solve_and_check(raise_exception=True, **kwargs)
+    circuit_solve_and_check(solve_params)  # raise exception should be true
     if setting_type == 'initial_setting':  # if initial settings are best, no need to return command with settings
         capacitor_settings_commands_list = []
     return capacitors_df, capacitor_settings_commands_list
@@ -308,23 +313,23 @@ def create_capcontrol_settings_commands(properties_list, capacitors_df, creation
 
 
 def determine_capacitor_upgrades(voltage_upper_limit, voltage_lower_limit, default_capacitor_settings, orig_capacitors_df, 
-                                 voltage_config, deciding_field, **kwargs):
+                                 voltage_config, deciding_field, analysis_params, solve_params, 
+                                 fig_folder=None, create_plots=False, circuit_source=None, title=None):
+    
     """This function corrects capacitor parameters, sweeps through capacitor settings and determines the best capacitor setting.
     It returns the dss commands associated with all these actions
     """
-    fig_folder = kwargs.get("fig_folder", None)
-    create_plots = kwargs.get("create_plots", False)
-    circuit_source = kwargs.get("circuit_source", None)
-    title = kwargs.get("title", "Bus violations after existing capacitor sweep module_")
-    
+    if create_plots:
+        assert title is not None
+        assert fig_folder is not None
     capacitor_dss_commands = []
     logger.info("Capacitors are present in the network. Perform capacitor bank control modifications.")
     capcontrol_parameter_commands_list = correct_capacitor_parameters(
         default_capacitor_settings=default_capacitor_settings, orig_capacitors_df=orig_capacitors_df,
-        nominal_voltage=voltage_config['nominal_voltage'], **kwargs)
+        nominal_voltage=voltage_config['nominal_voltage'], solve_params=solve_params)
     capacitor_dss_commands = capacitor_dss_commands + capcontrol_parameter_commands_list
-    bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
-        voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
+    bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltage_violations(
+        voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, analysis_params=analysis_params, solve_params=solve_params)
     if len(buses_with_violations) > 0:
         # get capacitors dataframe before any settings changes are made
         nosetting_changes_capacitors_df = get_capacitor_info(correct_PT_ratio=False)
@@ -333,18 +338,18 @@ def determine_capacitor_upgrades(voltage_upper_limit, voltage_lower_limit, defau
                                                         initial_capacitors_df=nosetting_changes_capacitors_df,
                                                         default_capacitor_settings=default_capacitor_settings,
                                                         voltage_upper_limit=voltage_upper_limit,
-                                                        voltage_lower_limit=voltage_lower_limit, **kwargs)
+                                                        voltage_lower_limit=voltage_lower_limit, analysis_params=analysis_params, solve_params=solve_params)
         # choose best capacitor settings
         capacitors_df, capcontrol_settings_commands_list = choose_best_capacitor_sweep_setting(
             capacitor_sweep_df=capacitor_sweep_df, initial_capacitors_df=nosetting_changes_capacitors_df,
-            deciding_field=deciding_field, **kwargs)
+            deciding_field=deciding_field, solve_params=solve_params)
         capacitor_dss_commands = capacitor_dss_commands + capcontrol_settings_commands_list
     # determine voltage violations after capacitor changes
-    bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
-        voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)   
-    if (fig_folder is not None) and create_plots:
-            plot_voltage_violations(fig_folder=fig_folder, title=title+
-                                    str(len(buses_with_violations)), buses_with_violations=buses_with_violations, circuit_source=circuit_source, enable_detailed=True)
+    bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltage_violations(
+        voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit,  analysis_params=analysis_params, solve_params=solve_params)   
+    if create_plots:
+        plot_voltage_violations(fig_folder=fig_folder, title=title+
+                                str(len(buses_with_violations)), buses_with_violations=buses_with_violations, circuit_source=circuit_source, enable_detailed=True)
     
     return capacitor_dss_commands
 
@@ -422,7 +427,7 @@ def get_capacitor_upgrades(orig_capacitors_df, new_capacitors_df):
     return processed_outputs
 
 
-def compute_voltage_violation_severity(voltage_upper_limit, voltage_lower_limit, **kwargs):
+def compute_voltage_violation_severity(voltage_upper_limit, voltage_lower_limit, analysis_params, solve_params):
     """This function computes voltage violation severity metrics, based on bus voltages
 
     Parameters
@@ -433,8 +438,10 @@ def compute_voltage_violation_severity(voltage_upper_limit, voltage_lower_limit,
     -------
     Dict
     """
-    bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
-        voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, raise_exception=False, **kwargs)
+    resolve_params = solve_params.copy()
+    resolve_params.raise_exception = False
+    bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltage_violations(
+        voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, analysis_params=analysis_params, solve_params=resolve_params)
     deviation_severity = bus_voltages_df['min_voltage_deviation'].sum() + bus_voltages_df['max_voltage_deviation'].sum()
     undervoltage_bus_list = list(
         bus_voltages_df.loc[bus_voltages_df['undervoltage_violation'] == True]['name'].unique())
@@ -447,7 +454,7 @@ def compute_voltage_violation_severity(voltage_upper_limit, voltage_lower_limit,
     return severity_dict
 
 
-def correct_regcontrol_parameters(orig_regcontrols_df, **kwargs):
+def correct_regcontrol_parameters(orig_regcontrols_df, solve_params):
     """This function corrects regcontrol ptratio is different from original. And generates commands list
 
     Parameters
@@ -458,6 +465,8 @@ def correct_regcontrol_parameters(orig_regcontrols_df, **kwargs):
     -------
     list
     """
+    solve_params_true = solve_params.copy()
+    solve_params_true.raise_exception = True
     # correct regcontrol parameters settings
     default_regcontrol_command = " enabled=Yes"
     orig_string = ' !original, corrected PTratio only'
@@ -467,7 +476,7 @@ def correct_regcontrol_parameters(orig_regcontrols_df, **kwargs):
             command_string = f"Edit RegControl.{row['name']} ptratio={row['ptratio']}" + default_regcontrol_command\
                              + orig_string
             check_dss_run_command(command_string)
-            circuit_solve_and_check(raise_exception=True, **kwargs)
+            circuit_solve_and_check(solve_params_true)  # raise exception is true
             # this does not change original settings, so should not cause convergence issues
             regcontrols_commands_list.append(command_string)
     return regcontrols_commands_list
@@ -475,7 +484,7 @@ def correct_regcontrol_parameters(orig_regcontrols_df, **kwargs):
 
 @track_timing(timer_stats_collector)
 def sweep_regcontrol_settings(voltage_config, initial_regcontrols_df, voltage_upper_limit, voltage_lower_limit,
-                              exclude_sub_ltc=True, only_sub_ltc=False, **kwargs):
+                              analysis_params, solve_params, exclude_sub_ltc=True, only_sub_ltc=False):
     """This function increases differences vreg in user defined increments, until upper and lower bounds are reached.
     At a time, same settings are applied to all regulator controls
 
@@ -493,21 +502,28 @@ def sweep_regcontrol_settings(voltage_config, initial_regcontrols_df, voltage_up
 
     """
     if exclude_sub_ltc:
+        assert not only_sub_ltc
+    if only_sub_ltc:
+        assert not exclude_sub_ltc
+    solve_params_no_exception = solve_params.copy()
+    solve_params_no_exception.raise_exception = False
+    if exclude_sub_ltc:
         initial_df = initial_regcontrols_df.loc[initial_regcontrols_df['at_substation_xfmr_flag'] == False]
     if only_sub_ltc:
         initial_df = initial_regcontrols_df.loc[initial_regcontrols_df['at_substation_xfmr_flag'] == True]
     regcontrol_sweep_list = []  # this list will contain severity of each setting sweep
     # get severity index for original/initial settings (ie before the settings sweep)
     temp_dict = {'setting': 'original'}
-    bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
-        voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, raise_exception=False, **kwargs)
-    pass_flag = circuit_solve_and_check(raise_exception=False, **kwargs)
+    bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltage_violations(
+        voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, analysis_params=analysis_params,
+        solve_params=solve_params_no_exception)
+    pass_flag = circuit_solve_and_check(solve_params_no_exception)  # raise exception = False
     if not pass_flag:  # if there is convergence issue at this setting, go onto next setting and dont save
         temp_dict['converged'] = False
     else:
         temp_dict['converged'] = True
     severity_dict = compute_voltage_violation_severity(
-        voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit)
+        voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, analysis_params=analysis_params, solve_params=solve_params)
     temp_dict.update(severity_dict)
     regcontrol_sweep_list.append(temp_dict)
     # generate list of voltage setpoints
@@ -524,29 +540,29 @@ def sweep_regcontrol_settings(voltage_config, initial_regcontrols_df, voltage_up
             for index, row in initial_df.iterrows():
                 logger.debug(f"{vreg}_{band}")
                 check_dss_run_command(f"Edit RegControl.{row['name']} vreg={vreg} band={band}")
-                pass_flag = circuit_solve_and_check(raise_exception=False, **kwargs)
+                pass_flag = circuit_solve_and_check(solve_params_no_exception)  # raise exception = False
                 if not pass_flag:  # if there is convergence issue at this setting, go onto next setting and dont save
                     temp_dict['converged'] = False
                     break
                 else:
                     temp_dict['converged'] = True
                     try:
-                        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
+                        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltage_violations(
                             voltage_upper_limit=voltage_upper_limit,
-                            voltage_lower_limit=voltage_lower_limit, **kwargs)
+                            voltage_lower_limit=voltage_lower_limit, analysis_params=analysis_params, solve_params=solve_params)
                     except:  # catch convergence error
                         temp_dict['converged'] = False
                         break
                     severity_dict = compute_voltage_violation_severity(
-                        voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit)
+                        voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, analysis_params=analysis_params, solve_params=solve_params)
                     temp_dict.update(severity_dict)
                 regcontrol_sweep_list.append(temp_dict)
     regcontrol_sweep_df = pd.DataFrame(regcontrol_sweep_list)
     return regcontrol_sweep_df
 
 
-def choose_best_regcontrol_sweep_setting(regcontrol_sweep_df, initial_regcontrols_df, deciding_field, exclude_sub_ltc=True,
-                                         only_sub_ltc=False, **kwargs):
+def choose_best_regcontrol_sweep_setting(regcontrol_sweep_df, initial_regcontrols_df, deciding_field, solve_params, exclude_sub_ltc=True,
+                                         only_sub_ltc=False):
     """This function takes the dataframe containing severity metrics, identifies the best regcontrol setting out
     of all the sweeps and returns dataframe of regcontrols with best settings
 
@@ -559,6 +575,8 @@ def choose_best_regcontrol_sweep_setting(regcontrol_sweep_df, initial_regcontrol
     -------
     DataFrame
     """
+    solve_params_exception_true = solve_params.copy()
+    solve_params_exception_true.raise_exception = True
     if exclude_sub_ltc:
         initial_df = initial_regcontrols_df.loc[initial_regcontrols_df['at_substation_xfmr_flag'] == False]
     if only_sub_ltc:
@@ -583,7 +601,7 @@ def choose_best_regcontrol_sweep_setting(regcontrol_sweep_df, initial_regcontrol
                                                                             creation_action='Edit')
     for command_string in regcontrol_settings_commands_list:
         check_dss_run_command(command_string)
-    circuit_solve_and_check(raise_exception=True, **kwargs)
+    circuit_solve_and_check(solve_params_exception_true)  # raise exception = True
     if setting_type == 'original':  # if original settings, no need to add to upgrades commands list
         regcontrol_settings_commands_list = []
         logger.info("Original Regulator control settings are the best.")
@@ -614,7 +632,7 @@ def create_regcontrol_settings_commands(properties_list, regcontrols_df, creatio
     return regcontrol_commands_list
 
 
-def add_new_regcontrol_command(xfmr_info_series, default_regcontrol_settings, nominal_voltage, action_type='New', **kwargs):
+def add_new_regcontrol_command(xfmr_info_series, default_regcontrol_settings, nominal_voltage, solve_params, action_type='New'):
     """This function runs and returns the dss command to add regulator control at a transformer.
     It also solves the circuit and calculates voltage bases after the regulator has been added to the circuit.
     It calls another function to create the dss command.
@@ -629,6 +647,9 @@ def add_new_regcontrol_command(xfmr_info_series, default_regcontrol_settings, no
     -------
 
     """
+    solve_params_specific = solve_params.copy()
+    solve_params_specific.raise_exception = False
+    solve_params_specific.calcvoltagebases = True
     command_list = []
     regcontrol_info_series = pd.Series(default_regcontrol_settings)
     regcontrol_info_series['transformer'] = xfmr_info_series['name']
@@ -670,7 +691,7 @@ def add_new_regcontrol_command(xfmr_info_series, default_regcontrol_settings, no
     check_dss_run_command(new_regcontrol_command)  # run command
     check_dss_run_command('CalcVoltageBases')
     # max control iterations could exceed here as well, when adding a new regulator
-    pass_flag = circuit_solve_and_check(raise_exception=False, calcvoltagebases=True, **kwargs)  # solve circuit
+    pass_flag = circuit_solve_and_check(solve_params_specific)  # solve circuit
     command_list.append(new_regcontrol_command)
     return {'command_list': command_list, 'new_regcontrol_name': regcontrol_info_series['regcontrol_name'], 'pass_flag': pass_flag}
 
@@ -705,8 +726,11 @@ def define_regcontrol_object(regcontrol_name, action_type, regcontrol_info_serie
 
 
 def sweep_and_choose_regcontrol_setting(voltage_config, initial_regcontrols_df, upper_limit, lower_limit, 
-                                        dss_file_list, deciding_field, correct_parameters=False, exclude_sub_ltc=True, 
-                                        only_sub_ltc=False, previous_dss_commands_list=None, **kwargs):
+                                        dss_file_list, deciding_field, solve_params, analysis_params, reload_circuit_params, previous_dss_commands_list,
+                                        create_plots=False, fig_folder=None, title=None, circuit_source=None, 
+                                        correct_parameters=False, exclude_sub_ltc=True, 
+                                        only_sub_ltc=False, 
+                                        ):
     """This function combines the regcontrol settings sweep and choosing of best setting.
 
     Parameters
@@ -724,50 +748,61 @@ def sweep_and_choose_regcontrol_setting(voltage_config, initial_regcontrols_df, 
     -------
 
     """
-    fig_folder = kwargs.get("fig_folder", None)
-    create_plots = kwargs.get("create_plots", False)
-    circuit_source = kwargs.get("circuit_source", None)
-    title = kwargs.get("title", None)
+    if create_plots:
+        assert title is not None
+        assert fig_folder is not None
+        
+    if exclude_sub_ltc:
+        assert not only_sub_ltc
     
+    if only_sub_ltc:
+        assert not exclude_sub_ltc
+
     reg_sweep_commands_list = []
     if correct_parameters:
         # first correct regcontrol parameters (ptratio) including substation LTC, if present
         regcontrols_parameter_command_list = correct_regcontrol_parameters(orig_regcontrols_df=initial_regcontrols_df,
-                                                                            **kwargs)
+                                                                           solve_params=solve_params)
         reg_sweep_commands_list = regcontrols_parameter_command_list
     # sweep through settings and identify best setting
     regcontrol_sweep_df = sweep_regcontrol_settings(voltage_config=voltage_config,
                                                     initial_regcontrols_df=initial_regcontrols_df,
                                                     voltage_upper_limit=upper_limit, voltage_lower_limit=lower_limit,
                                                     exclude_sub_ltc=exclude_sub_ltc, only_sub_ltc=only_sub_ltc,
-                                                    **kwargs)
+                                                    analysis_params=analysis_params, solve_params=solve_params)
     # reload circuit after settings sweep
-    reload_dss_circuit(dss_file_list=dss_file_list, commands_list=previous_dss_commands_list+reg_sweep_commands_list, **kwargs)
+    reload_dss_circuit(dss_file_list=dss_file_list, commands_list=previous_dss_commands_list+reg_sweep_commands_list, solve_params=solve_params, reload_circuit_params=reload_circuit_params)
     # choose best setting
     regcontrols_df, regcontrol_settings_commands_list = choose_best_regcontrol_sweep_setting(
         regcontrol_sweep_df=regcontrol_sweep_df, initial_regcontrols_df=initial_regcontrols_df,
-        exclude_sub_ltc=exclude_sub_ltc, only_sub_ltc=only_sub_ltc, deciding_field=deciding_field, **kwargs)
+        exclude_sub_ltc=exclude_sub_ltc, only_sub_ltc=only_sub_ltc, deciding_field=deciding_field, solve_params=solve_params)
     reg_sweep_commands_list = reg_sweep_commands_list + regcontrol_settings_commands_list
-    if (fig_folder is not None) and create_plots and (title is not None):
-        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
-            voltage_upper_limit=upper_limit, voltage_lower_limit=lower_limit, **kwargs)
-        plot_voltage_violations(fig_folder=fig_folder, title=title+
-                                    str(len(buses_with_violations)), buses_with_violations=buses_with_violations, circuit_source=circuit_source, enable_detailed=True)
+    if create_plots:
+        assert fig_folder is not None
+        assert title is not None
+        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltage_violations(
+            voltage_upper_limit=upper_limit, voltage_lower_limit=lower_limit, analysis_params=analysis_params, solve_params=solve_params)
+        plot_voltage_violations(fig_folder=fig_folder, title=title+str(len(buses_with_violations)), 
+                                buses_with_violations=buses_with_violations, circuit_source=circuit_source, enable_detailed=True)
 
     return regcontrols_df, reg_sweep_commands_list
 
 
 def determine_substation_ltc_upgrades(voltage_upper_limit, voltage_lower_limit, orig_regcontrols_df, orig_ckt_info, circuit_source, 
                                       default_subltc_settings, voltage_config, dss_file_list, comparison_dict, deciding_field, 
-                                      previous_dss_commands_list, best_setting_so_far, **kwargs):
+                                      previous_dss_commands_list, best_setting_so_far, analysis_params, solve_params, reload_circuit_params, fig_folder=None, create_plots=False,
+                                      default_capacitor_settings=None):
     """Function determine substation LTC upgrades:
     # Use this block for adding a substation LTC, correcting its settings and running a sub LTC settings sweep.
         # if LTC exists, first try to correct its non set point simulation settings.
         # If this does not correct everything, correct its set points through a sweep.
         # If LTC does not exist, add one including a xfmr if required, then do a settings sweep if required
     """
-    fig_folder = kwargs.get("fig_folder", None)
-    create_plots = kwargs.get("create_plots", False)
+    if create_plots:
+        assert fig_folder is not None
+    
+    solve_params_true_exception = solve_params.copy()
+    solve_params_true_exception.raise_exception = True
     
     results_dict = {}
     all_commands_list = previous_dss_commands_list
@@ -783,61 +818,75 @@ def determine_substation_ltc_upgrades(voltage_upper_limit, voltage_lower_limit, 
         logger.info("Substation transformer does not exist. So adding transformer and regcontrol on it.")
         # check add substation transformer and add ltc reg control on it
         new_subxfmr_added_dict = add_new_node_and_xfmr(action_type='New', node=circuit_source, circuit_source=circuit_source, 
-                                                    xfmr_conn_type="wye" ,**kwargs)
+                                                    xfmr_conn_type="wye", solve_params=solve_params)
         add_subxfmr_commands = new_subxfmr_added_dict['commands_list']
         comparison_dict["temp_afterxfmr"] = compute_voltage_violation_severity(voltage_upper_limit=voltage_upper_limit, 
-                                                                               voltage_lower_limit=voltage_lower_limit, **kwargs)
+                                                                               voltage_lower_limit=voltage_lower_limit, 
+                                                                               analysis_params=analysis_params, solve_params=solve_params)
         updated_ckt_info = get_circuit_info()
-        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(voltage_upper_limit=voltage_upper_limit, 
-                                                                                                               voltage_lower_limit=voltage_lower_limit, **kwargs)
+        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltage_violations(voltage_upper_limit=voltage_upper_limit, 
+                                                                                                               voltage_lower_limit=voltage_lower_limit, analysis_params=analysis_params, 
+                                                                                                               solve_params=solve_params)
         new_subltc_added_dict = add_new_regcontrol_command(
             xfmr_info_series=pd.Series(updated_ckt_info['substation_xfmr']),
             default_regcontrol_settings=default_subltc_settings,
-            nominal_voltage=voltage_config["nominal_voltage"], **kwargs)
-        comparison_dict["temp_afterltc"] = compute_voltage_violation_severity(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
+            nominal_voltage=voltage_config["nominal_voltage"], solve_params=solve_params)
+        comparison_dict["temp_afterltc"] = compute_voltage_violation_severity(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, 
+                                                                              analysis_params=analysis_params, solve_params=solve_params)
         add_subltc_commands = new_subltc_added_dict["command_list"]
         if not new_subltc_added_dict["pass_flag"]:
             logger.info("No convergence after adding regulator control at substation LTC. "
                         "Check if there is any setting that has convergence. Else remove substation LTC")
+            solve_params_specific = solve_params.copy()
+            solve_params_specific.calcvoltagebases=True
             reload_dss_circuit(dss_file_list=dss_file_list, commands_list=all_commands_list + add_subxfmr_commands + add_subltc_commands,
-                                calcvoltagebases=True, **kwargs)
+                               solve_params=solve_params, reload_circuit_params=reload_circuit_params)
         # this needs to be collected again, since a new regulator control might have been added at the substation
         initial_sub_regcontrols_df = get_regcontrol_info(correct_PT_ratio=True,
                                                             nominal_voltage=voltage_config["nominal_voltage"])
         # sweep through settings and identify best setting
+        title = "Bus violations after subltc sweep with new subxfmr, LTC "
         subltc_controls_df, subltc_control_settings_commands_list = sweep_and_choose_regcontrol_setting(
             voltage_config=voltage_config, initial_regcontrols_df=initial_sub_regcontrols_df, deciding_field=deciding_field,
             upper_limit=voltage_upper_limit, lower_limit=voltage_lower_limit, exclude_sub_ltc=False,
             only_sub_ltc=True, dss_file_list=dss_file_list,
-            previous_dss_commands_list=all_commands_list + add_subxfmr_commands + add_subltc_commands, **kwargs)
-        circuit_solve_and_check(raise_exception=True, **kwargs)
+            previous_dss_commands_list=all_commands_list + add_subxfmr_commands + add_subltc_commands, analysis_params=analysis_params, 
+            solve_params=solve_params, reload_circuit_params=reload_circuit_params,
+            fig_folder=fig_folder, create_plots=create_plots, title=title, circuit_source=circuit_source)
+        circuit_solve_and_check(solve_params=solve_params_true_exception)  # raise exception=True
         subltc_upgrade_commands = add_subxfmr_commands + add_subltc_commands + subltc_control_settings_commands_list
         all_commands_list = all_commands_list + subltc_upgrade_commands
     # if substation transformer is present but there are no regulator controls on the subltc
     elif (orig_ckt_info['substation_xfmr'] is not None) and (not subltc_present_flag):
         logger.info("Substation transformer exists, but there are no regulator controls on it. Adding..")
-        
+
         new_subltc_added_dict = add_new_regcontrol_command(
             xfmr_info_series=pd.Series(updated_ckt_info['substation_xfmr']),
             default_regcontrol_settings=default_subltc_settings,
-            nominal_voltage=voltage_config["nominal_voltage"], **kwargs)
-        comparison_dict["temp_afterltc"] = compute_voltage_violation_severity(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
+            nominal_voltage=voltage_config["nominal_voltage"], solve_params=solve_params)
+        comparison_dict["temp_afterltc"] = compute_voltage_violation_severity(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, 
+                                                                              analysis_params=analysis_params, solve_params=solve_params)
         add_subltc_commands = new_subltc_added_dict["command_list"]
         if not new_subltc_added_dict["pass_flag"]:
             logger.info("No convergence after adding regulator control at substation LTC. "
                         "Check if there is any setting that has convergence. Else remove substation LTC")
             reload_dss_circuit(dss_file_list=dss_file_list, commands_list=all_commands_list + add_subltc_commands,
-                                **kwargs)
+                               solve_params=solve_params, reload_circuit_params=reload_circuit_params)
         # this needs to be collected again, since a new regulator control might have been added at the substation
         initial_sub_regcontrols_df = get_regcontrol_info(correct_PT_ratio=True,
                                                             nominal_voltage=voltage_config["nominal_voltage"])
         # sweep through settings and identify best setting
+        title = "Bus violations after subltc sweep with new LTC "
         subltc_controls_df, subltc_control_settings_commands_list = sweep_and_choose_regcontrol_setting(
             voltage_config=voltage_config, initial_regcontrols_df=initial_sub_regcontrols_df, deciding_field=deciding_field,
             upper_limit=voltage_upper_limit, lower_limit=voltage_lower_limit, exclude_sub_ltc=False,
             only_sub_ltc=True, dss_file_list=dss_file_list,
-            previous_dss_commands_list=all_commands_list + add_subltc_commands, **kwargs)
-        circuit_solve_and_check(raise_exception=True, **kwargs)
+            previous_dss_commands_list=all_commands_list + add_subltc_commands, analysis_params=analysis_params, 
+            solve_params=solve_params, reload_circuit_params=reload_circuit_params,
+            fig_folder=fig_folder, create_plots=create_plots, title=title, circuit_source=circuit_source)
+        solve_params_specific = solve_params.copy()
+        solve_params_specific.raise_exception = True
+        circuit_solve_and_check(solve_params_specific)
         subltc_upgrade_commands = add_subltc_commands + subltc_control_settings_commands_list
         all_commands_list = all_commands_list + subltc_upgrade_commands
     # if substation transformer, and reg controls are both present
@@ -846,30 +895,35 @@ def determine_substation_ltc_upgrades(voltage_upper_limit, voltage_lower_limit, 
         initial_sub_regcontrols_df = get_regcontrol_info(correct_PT_ratio=True,
                                                             nominal_voltage=voltage_config["nominal_voltage"])
         # sweep through settings and identify best setting
+        title = "Bus violations after subltc setting sweep "
         subltc_controls_df, subltc_control_settings_commands_list = sweep_and_choose_regcontrol_setting(
             voltage_config=voltage_config, initial_regcontrols_df=initial_sub_regcontrols_df, deciding_field=deciding_field,
             upper_limit=voltage_upper_limit, lower_limit=voltage_lower_limit, exclude_sub_ltc=False,
             only_sub_ltc=True, dss_file_list=dss_file_list,
-            previous_dss_commands_list=all_commands_list, **kwargs)
-        circuit_solve_and_check(raise_exception=True, **kwargs)
+            previous_dss_commands_list=all_commands_list, analysis_params=analysis_params, solve_params=solve_params, reload_circuit_params=reload_circuit_params,
+            fig_folder=fig_folder, create_plots=create_plots, title=title, circuit_source=circuit_source)
+        circuit_solve_and_check(solve_params=solve_params_true_exception)  # raise exception=True
         subltc_upgrade_commands = subltc_control_settings_commands_list
         all_commands_list = all_commands_list + subltc_upgrade_commands
     
-    reload_dss_circuit(dss_file_list=dss_file_list, commands_list=all_commands_list, calcvoltagebases=True, **kwargs)
+    solve_params_specific = solve_params.copy()
+    solve_params_specific.calcvoltagebases=True
+    reload_dss_circuit(dss_file_list=dss_file_list, commands_list=all_commands_list, solve_params=solve_params_specific, reload_circuit_params=reload_circuit_params)
     # determine voltage violations after changes
-    bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
-        voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
+    bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltage_violations(
+        voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, solve_params=solve_params, analysis_params=analysis_params)
     comparison_dict["after_sub_ltc_checking"] = compute_voltage_violation_severity(voltage_upper_limit=voltage_upper_limit, 
-                                                                                    voltage_lower_limit=voltage_lower_limit, **kwargs)
+                                                                                    voltage_lower_limit=voltage_lower_limit, 
+                                                                                    analysis_params=analysis_params, solve_params=solve_params)
     if comparison_dict["after_sub_ltc_checking"][deciding_field] < comparison_dict[best_setting_so_far][deciding_field]:
         best_setting_so_far = "after_sub_ltc_checking"
-        if (fig_folder is not None) and create_plots:
+        if create_plots:
             plot_voltage_violations(fig_folder=fig_folder, title="Bus violations after substation ltc module_"+
                                     str(len(buses_with_violations)), buses_with_violations=buses_with_violations, circuit_source=circuit_source, enable_detailed=True)
     else:
         all_commands_list = list(set(all_commands_list) - set(subltc_upgrade_commands))
         subltc_upgrade_commands = []
-        reload_dss_circuit(dss_file_list=dss_file_list, commands_list=all_commands_list, **kwargs)
+        reload_dss_circuit(dss_file_list=dss_file_list, commands_list=all_commands_list, solve_params=solve_params, reload_circuit_params=reload_circuit_params)
     
     if (best_setting_so_far == "after_sub_ltc_checking") and (len(buses_with_violations) > 0):
         # after this, also run settings sweep on all vregs (other than substation LTC), since this can impact those settings too.
@@ -877,30 +931,36 @@ def determine_substation_ltc_upgrades(voltage_upper_limit, voltage_lower_limit, 
         orig_regcontrols_df = orig_regcontrols_df.loc[orig_regcontrols_df['at_substation_xfmr_flag'] == False]
         if (not orig_regcontrols_df.empty) and voltage_config["existing_regulator_sweep_action"]:
             logger.info("After substation LTC module, settings sweep for existing reg control devices (excluding substation LTC).")
-            kwargs["title"] = "Bus violations after subltc and vreg sweep"
+            title = "Bus violations after subltc_vreg sweep "
             regcontrols_df, reg_sweep_commands_list = sweep_and_choose_regcontrol_setting(voltage_config=voltage_config, initial_regcontrols_df=orig_regcontrols_df, 
                                                         upper_limit=voltage_upper_limit, lower_limit=voltage_lower_limit, 
                                                         dss_file_list=dss_file_list, deciding_field=deciding_field, correct_parameters=False, 
-                                                        exclude_sub_ltc=True, only_sub_ltc=False, previous_dss_commands_list=all_commands_list, 
-                                                        **kwargs)
+                                                        exclude_sub_ltc=True, only_sub_ltc=False, previous_dss_commands_list=all_commands_list, title=title,
+                                                        create_plots=create_plots, fig_folder=fig_folder,
+                                                        analysis_params=analysis_params, solve_params=solve_params, reload_circuit_params=reload_circuit_params)
             comparison_dict["after_sub_ltc_and_vreg_checking"] = compute_voltage_violation_severity(voltage_upper_limit=voltage_upper_limit, 
-                                                                                                     voltage_lower_limit=voltage_lower_limit, **kwargs)
+                                                                                                     voltage_lower_limit=voltage_lower_limit, 
+                                                                                                     analysis_params=analysis_params, 
+                                                                                                     solve_params=solve_params)
             best_setting_so_far = "after_sub_ltc_and_vreg_checking"
             # added to commands list
             subltc_upgrade_commands = subltc_upgrade_commands + reg_sweep_commands_list
         
         orig_capacitors_df = get_capacitor_info(correct_PT_ratio=True, nominal_voltage=voltage_config['nominal_voltage'])
         if voltage_config["capacitor_action_flag"] and len(orig_capacitors_df) > 0:
-            default_capacitor_settings = kwargs.pop("default_capacitor_settings", None)
-            kwargs["title"] = "Bus violations after subltc_vreg_cap sweep"
-            capacitor_dss_commands = determine_capacitor_upgrades(voltage_upper_limit, voltage_lower_limit, default_capacitor_settings, orig_capacitors_df, 
-                                                                  voltage_config, deciding_field, **kwargs)
+            assert default_capacitor_settings is not None
+            title = "Bus violations after subltc_vreg_cap sweep "
+            capacitor_dss_commands = determine_capacitor_upgrades(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, 
+                                                                  default_capacitor_settings=default_capacitor_settings, orig_capacitors_df=orig_capacitors_df, 
+                                                                  voltage_config=voltage_config, deciding_field=deciding_field, title=title, create_plots=create_plots, 
+                                                                  fig_folder=fig_folder, solve_params=solve_params, analysis_params=analysis_params)
             subltc_upgrade_commands = subltc_upgrade_commands + capacitor_dss_commands
             comparison_dict["after_sub_ltc_vreg_cap_checking"] = compute_voltage_violation_severity(voltage_upper_limit=voltage_upper_limit, 
-                                                                                                     voltage_lower_limit=voltage_lower_limit, **kwargs)
+                                                                                                     voltage_lower_limit=voltage_lower_limit, 
+                                                                                                     analysis_params=analysis_params, 
+                                                                                                     solve_params=solve_params)
             best_setting_so_far = "after_sub_ltc_vreg_cap_checking"
             
-    
     results_dict["comparison_dict"] = comparison_dict
     results_dict["best_setting_so_far"] = best_setting_so_far
     results_dict["subltc_upgrade_commands"] = subltc_upgrade_commands
@@ -909,9 +969,12 @@ def determine_substation_ltc_upgrades(voltage_upper_limit, voltage_lower_limit, 
 
 def determine_new_regulator_upgrades(voltage_config, buses_with_violations, voltage_upper_limit, voltage_lower_limit, deciding_field,
                                      circuit_source, default_regcontrol_settings, comparison_dict, best_setting_so_far, dss_file_list, 
-                                     previous_dss_commands_list, fig_folder=None, create_plots=False, **kwargs):
+                                     previous_dss_commands_list, analysis_params, solve_params, reload_circuit_params,
+                                     fig_folder=None, create_plots=False):
     """Function to determine dss upgrade commands if new regulator is to be placed to resolve voltage violations in circuit.
     """
+    if create_plots:
+        assert fig_folder is not None
     dss_commands_list = previous_dss_commands_list
     new_reg_upgrade_commands = []
     logger.info("Place new regulators.")
@@ -920,23 +983,26 @@ def determine_new_regulator_upgrades(voltage_config, buses_with_violations, volt
                                                                     circuit_source=circuit_source,
                                                                     initial_buses_with_violations=buses_with_violations,
                                                                     voltage_upper_limit=voltage_upper_limit,
-                                                                    voltage_lower_limit=voltage_lower_limit, create_plots=create_plots,
+                                                                    voltage_lower_limit=voltage_lower_limit,
                                                                     voltage_config=voltage_config,
                                                                     default_regcontrol_settings=default_regcontrol_settings, 
                                                                     deciding_field=deciding_field,
-                                                                    fig_folder=fig_folder, **kwargs)
+                                                                    fig_folder=fig_folder, create_plots=create_plots, analysis_params=analysis_params,
+                                                                    solve_params=solve_params)
                 
     if not regcontrol_cluster_commands:  # if there are no regcontrol commands
-        reload_dss_circuit(dss_file_list=dss_file_list, commands_list=previous_dss_commands_list, **kwargs)
+        reload_dss_circuit(dss_file_list=dss_file_list, commands_list=previous_dss_commands_list, solve_params=solve_params, reload_circuit_params=reload_circuit_params)
         comparison_dict["after_addition_new_regcontrol"] = compute_voltage_violation_severity(
-            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
+            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, analysis_params=analysis_params, solve_params=solve_params)
         return {"new_reg_upgrade_commands": [], "comparison_dict": comparison_dict, "best_setting_so_far": best_setting_so_far}
 
-    reg_upgrade_commands = get_newly_added_regulator_settings(dss_file_list, previous_dss_commands_list, regcontrol_cluster_commands, voltage_lower_limit, voltage_upper_limit,
-                                       voltage_config, deciding_field, **kwargs)
+    reg_upgrade_commands = get_newly_added_regulator_settings(dss_file_list=dss_file_list, previous_dss_commands_list=previous_dss_commands_list, 
+                                                              regcontrol_cluster_commands=regcontrol_cluster_commands, voltage_lower_limit=voltage_lower_limit, 
+                                                              voltage_upper_limit=voltage_upper_limit, voltage_config=voltage_config, deciding_field=deciding_field, 
+                                                              analysis_params=analysis_params, solve_params=solve_params, reload_circuit_params=reload_circuit_params)
     dss_commands_list = previous_dss_commands_list + reg_upgrade_commands
     comparison_dict["after_addition_new_regcontrol"] = compute_voltage_violation_severity(
-        voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
+        voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, analysis_params=analysis_params, solve_params=solve_params)
     if comparison_dict["after_addition_new_regcontrol"][deciding_field] < comparison_dict[best_setting_so_far][deciding_field]:
         best_setting_so_far = "after_addition_new_regcontrol"
         new_reg_upgrade_commands = reg_upgrade_commands
@@ -946,15 +1012,16 @@ def determine_new_regulator_upgrades(voltage_config, buses_with_violations, volt
         if remove_commands_list:
             dss_commands_list = [i for i in dss_commands_list if i not in remove_commands_list]
 
-        reload_dss_circuit(dss_file_list=dss_file_list, commands_list=dss_commands_list, **kwargs)
+        reload_dss_circuit(dss_file_list=dss_file_list, commands_list=dss_commands_list, solve_params=solve_params, reload_circuit_params=reload_circuit_params)
         comparison_dict["disabled_new_regcontrol"] = compute_voltage_violation_severity(
-                                                        voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
+                                                        voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, 
+                                                        analysis_params=analysis_params, solve_params=solve_params)
 
     return {"new_reg_upgrade_commands": new_reg_upgrade_commands, "comparison_dict": comparison_dict, "best_setting_so_far": best_setting_so_far}
 
 
 def get_newly_added_regulator_settings(dss_file_list, previous_dss_commands_list, regcontrol_cluster_commands, voltage_lower_limit, voltage_upper_limit,
-                                       voltage_config, deciding_field, **kwargs):
+                                       voltage_config, deciding_field, analysis_params, solve_params, reload_circuit_params):
     """this function finalizes the settings with the newly added voltage regulator. 
     It also takes into account errors encountered due to max control iterations being exceeded.
     """
@@ -965,26 +1032,30 @@ def get_newly_added_regulator_settings(dss_file_list, previous_dss_commands_list
         regcontrol_sweep_df = sweep_regcontrol_settings(voltage_config=voltage_config,
                                                         initial_regcontrols_df=regcontrol_df,
                                                         voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit,
-                                                        exclude_sub_ltc=True, only_sub_ltc=False, **kwargs)
+                                                        exclude_sub_ltc=True, only_sub_ltc=False, analysis_params=analysis_params, solve_params=solve_params)
         regcontrols_df, regcontrol_settings_commands_list = choose_best_regcontrol_sweep_setting(deciding_field=deciding_field,
-            regcontrol_sweep_df=regcontrol_sweep_df, initial_regcontrols_df=regcontrol_df, **kwargs)
-        reload_dss_circuit(dss_file_list=dss_file_list, commands_list=previous_dss_commands_list + regcontrol_cluster_commands + regcontrol_settings_commands_list, **kwargs)  # reload circuit after settings sweep
+            regcontrol_sweep_df=regcontrol_sweep_df, initial_regcontrols_df=regcontrol_df, solve_params=solve_params, exclude_sub_ltc=True, only_sub_ltc=False)
+        reload_dss_circuit(dss_file_list=dss_file_list, commands_list=previous_dss_commands_list + regcontrol_cluster_commands + regcontrol_settings_commands_list, 
+                           solve_params=solve_params, reload_circuit_params=reload_circuit_params)  # reload circuit after settings sweep
         reg_upgrade_commands = regcontrol_cluster_commands + regcontrol_settings_commands_list
     except DSSException as err:  # if there is an error: dss._cffi_api_util.DSSException: (#485)
         if err.args[0] != 485:
             raise
         logger.info(f"First attempt at regulator settings sweep failed with error: {err}.")
-        reload_dss_circuit(dss_file_list=dss_file_list, commands_list=previous_dss_commands_list, **kwargs)  # reload circuit before clustering        
+        reload_dss_circuit(dss_file_list=dss_file_list, commands_list=previous_dss_commands_list, solve_params=solve_params, reload_circuit_params=reload_circuit_params)  # reload circuit before clustering        
         temp = []
         for command in regcontrol_cluster_commands:  # extract only new addition commands
             if "edit regcontrol." not in command.lower():
                 temp.append(command)        
         # control iterations are exceeded
-        max_control_iterations = kwargs.get("max_control_iterations", dss.Solution.MaxControlIterations())  # get setting
+        max_control_iterations = reload_circuit_params.max_control_iterations
+        if max_control_iterations is None:
+            max_control_iterations = dss.Solution.MaxControlIterations()
         increase_control_iterations = max_control_iterations + 50  # here iterations are increased by 50, to reach a solution
-        logger.info(f"Increased MaxControlIterations from {dss.Solution.MaxControlIterations()} to {increase_control_iterations}")
+        logger.info(f"Increased MaxControlIterations from {max_control_iterations} to {increase_control_iterations}")
         dss.Solution.MaxControlIterations(increase_control_iterations)
-        kwargs["max_control_iterations"] = max_control_iterations
+        # reload_circuit_params_new = reload_circuit_params.copy()
+        reload_circuit_params.max_control_iterations = increase_control_iterations
         # The usual reason for exceeding MaxControlIterations is conflicting controls i.e., one or more RegControl devices are oscillating between taps
         # so try increasing band of reg control
         new_voltage_config = voltage_config.copy()
@@ -992,26 +1063,27 @@ def get_newly_added_regulator_settings(dss_file_list, previous_dss_commands_list
         try:
             # First try for regulator controls (without subLTC)
             logger.info(f"Retrying settings sweep for existing reg control devices (other than sub LTC) with increased band to resolve error.")
-            reload_dss_circuit(dss_file_list=dss_file_list, commands_list=previous_dss_commands_list+temp, **kwargs)  # reload circuit before settings edits
+            reload_dss_circuit(dss_file_list=dss_file_list, commands_list=previous_dss_commands_list+temp, reload_circuit_params=reload_circuit_params, solve_params=solve_params)  # reload circuit before settings edits
             regcontrol_df = get_regcontrol_info()
             regcontrol_sweep_df = sweep_regcontrol_settings(voltage_config=new_voltage_config,
                                                             initial_regcontrols_df=regcontrol_df,
                                                             voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit,
-                                                            exclude_sub_ltc=True, only_sub_ltc=False, **kwargs)
+                                                            exclude_sub_ltc=True, only_sub_ltc=False, analysis_params=analysis_params, solve_params=solve_params)
             regcontrols_df, regcontrol_settings_commands_list = choose_best_regcontrol_sweep_setting(deciding_field=deciding_field,
-                regcontrol_sweep_df=regcontrol_sweep_df, initial_regcontrols_df=regcontrol_df, **kwargs)
-            reload_dss_circuit(dss_file_list=dss_file_list, commands_list=previous_dss_commands_list+temp+regcontrol_settings_commands_list, **kwargs)  # reload circuit after settings sweep
-            bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
-                voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
+                regcontrol_sweep_df=regcontrol_sweep_df, initial_regcontrols_df=regcontrol_df, solve_params=solve_params, exclude_sub_ltc=True, only_sub_ltc=False)
+            reload_dss_circuit(dss_file_list=dss_file_list, commands_list=previous_dss_commands_list+temp+regcontrol_settings_commands_list, 
+                               solve_params=solve_params, reload_circuit_params=reload_circuit_params)  # reload circuit after settings sweep
+            bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltage_violations(
+                voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, analysis_params=analysis_params, solve_params=solve_params)
             reg_upgrade_commands =  temp + regcontrol_settings_commands_list
             if len(buses_with_violations) > 0:
                 regcontrol_df = get_regcontrol_info()
                 regcontrol_sweep_df = sweep_regcontrol_settings(voltage_config=new_voltage_config,
                                                                 initial_regcontrols_df=regcontrol_df,
                                                                 voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit,
-                                                                exclude_sub_ltc=False, only_sub_ltc=True, **kwargs)
+                                                                exclude_sub_ltc=False, only_sub_ltc=True, analysis_params=analysis_params, solve_params=solve_params)
                 regcontrols_df, subltc_settings_commands_list = choose_best_regcontrol_sweep_setting(deciding_field=deciding_field,
-                    regcontrol_sweep_df=regcontrol_sweep_df, initial_regcontrols_df=regcontrol_df, **kwargs)
+                    regcontrol_sweep_df=regcontrol_sweep_df, initial_regcontrols_df=regcontrol_df, exclude_sub_ltc=False, only_sub_ltc=True, solve_params=solve_params)
                 reg_upgrade_commands =  reg_upgrade_commands + subltc_settings_commands_list
                 
         except DSSException as err:
@@ -1019,21 +1091,22 @@ def get_newly_added_regulator_settings(dss_file_list, previous_dss_commands_list
                 raise
             # next try for sub LTC only (if it exists)
             logger.info(f"Control iterations exceeded. Retrying settings sweep for sub LTC with increased band to resolve error.")
-            reload_dss_circuit(dss_file_list=dss_file_list, commands_list=previous_dss_commands_list+temp, **kwargs)  # reload circuit before settings edits
+            reload_dss_circuit(dss_file_list=dss_file_list, commands_list=previous_dss_commands_list+temp, 
+                               solve_params=solve_params, reload_circuit_params=reload_circuit_params)  # reload circuit before settings edits
             regcontrol_df = get_regcontrol_info()
             regcontrol_sweep_df = sweep_regcontrol_settings(voltage_config=new_voltage_config,
                                                             initial_regcontrols_df=regcontrol_df,
                                                             voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit,
-                                                            exclude_sub_ltc=False, only_sub_ltc=True, **kwargs)
+                                                            exclude_sub_ltc=False, only_sub_ltc=True, analysis_params=analysis_params, solve_params=solve_params)
             regcontrols_df, regcontrol_settings_commands_list = choose_best_regcontrol_sweep_setting(deciding_field=deciding_field,
-                regcontrol_sweep_df=regcontrol_sweep_df, initial_regcontrols_df=regcontrol_df, **kwargs)
-            reload_dss_circuit(dss_file_list=dss_file_list, commands_list=previous_dss_commands_list+temp+regcontrol_settings_commands_list, **kwargs)  # reload circuit after settings sweep
+                regcontrol_sweep_df=regcontrol_sweep_df, initial_regcontrols_df=regcontrol_df, exclude_sub_ltc=False, only_sub_ltc=True, solve_params=solve_params)
+            reload_dss_circuit(dss_file_list=dss_file_list, commands_list=previous_dss_commands_list+temp+regcontrol_settings_commands_list, solve_params=solve_params, 
+                               reload_circuit_params=reload_circuit_params)  # reload circuit after settings sweep
             reg_upgrade_commands =  temp + regcontrol_settings_commands_list
     return reg_upgrade_commands
 
 
-def add_new_node_and_xfmr(node, circuit_source, xfmr_conn_type=None, action_type='New',
-                          **kwargs):
+def add_new_node_and_xfmr(node, circuit_source, solve_params, xfmr_conn_type=None, action_type='New'):
     """This function adds a new transformer by creating a new node
     (before or after a line, depending on whether it is a substation xfmr)
     action_type parameter is 'New' by default, unless we're redefining, and the 'Edit' has to be passed.
@@ -1048,6 +1121,10 @@ def add_new_node_and_xfmr(node, circuit_source, xfmr_conn_type=None, action_type
     -------
 
     """
+    solve_params_specific = solve_params.copy()
+    solve_params.raise_exception = True
+    solve_params.calcvoltagebases = True
+    
     substation_node_flag = False
     commands_list = []
     node = node.lower()
@@ -1153,13 +1230,13 @@ def add_new_node_and_xfmr(node, circuit_source, xfmr_conn_type=None, action_type
     commands_list.append(edit_line_command_string)
     commands_list.append(new_xfmr_command_string)
     commands_list.append(f"// new node added {new_node.split('.')[0]},{x},{y}")
-    circuit_solve_and_check(raise_exception=True, calcvoltagebases=True, **kwargs)
+    circuit_solve_and_check(solve_params_specific)  # taise exception=True, calcvoltagebases=True
     info_dict = {'commands_list': commands_list, 'new_xfmr_name': xfmr_name,
                  'modified_line_name': chosen_line_info["name"]}
     return info_dict
 
 
-def disable_new_xfmr_and_edit_line(transformer_name_to_disable, line_name_to_modify, **kwargs):
+def disable_new_xfmr_and_edit_line(transformer_name_to_disable, line_name_to_modify, solve_params):
     """This function disables an added transformer in the feeder.
     since OpenDSS disables by transformer by opening the circuit instead of creating a short circuit,
     this function will remove the transformer by first disabling it, then it will connect the line properly to
@@ -1174,6 +1251,8 @@ def disable_new_xfmr_and_edit_line(transformer_name_to_disable, line_name_to_mod
     -------
 
     """
+    solve_params_specific = solve_params.copy()
+    solve_params_specific.raise_exception = True
     commands_list = []
     # for regulators, added transformer is always placed after the line (i.e. after 'to' node of line)
     # i.e. for this transformer: primary bus: newly created node, secondary bus: existing node
@@ -1202,11 +1281,11 @@ def disable_new_xfmr_and_edit_line(transformer_name_to_disable, line_name_to_mod
     check_dss_run_command(command_string)
     # Update system admittance matrix
     check_dss_run_command("CalcVoltageBases")
-    circuit_solve_and_check(raise_exception=True, **kwargs)
+    circuit_solve_and_check(solve_params_specific)
     return commands_list
 
 
-def add_new_regcontrol_at_node(node, default_regcontrol_settings, nominal_voltage, **kwargs):
+def add_new_regcontrol_at_node(node, default_regcontrol_settings, nominal_voltage, solve_params):
     """This function adds a new regcontrol at a node. It identifies the correct transformer and places regcontrol there.
     Identify whether or not a reg contrl exists at the transformer connected to this bus - if not, place new regcontrol
 
@@ -1241,7 +1320,7 @@ def add_new_regcontrol_at_node(node, default_regcontrol_settings, nominal_voltag
     else:  # if enabled regcontrol does not exist on transformer
         # this runs the command and returns the command list
         new_regcontrol_dict = add_new_regcontrol_command(xfmr_info_series=chosen_xfmr, default_regcontrol_settings=default_regcontrol_settings,
-                                                         nominal_voltage=nominal_voltage, **kwargs)
+                                                         nominal_voltage=nominal_voltage, solve_params=solve_params)
     return new_regcontrol_dict
 
 
@@ -1286,7 +1365,7 @@ def identify_common_upstream_nodes(G, buses_list):
 
 def test_new_regulator_placement_on_common_nodes(voltage_upper_limit, voltage_lower_limit, nominal_voltage,
                                                  common_upstream_nodes_list, circuit_source,
-                                                 default_regcontrol_settings, deciding_field, **kwargs):
+                                                 default_regcontrol_settings, deciding_field, solve_params, analysis_params):
     """ In each cluster group, place a new regulator control at each common upstream node, unless it is the source bus
     (since that already contains the LTC) or if it has a distribution transformer.
 
@@ -1326,26 +1405,29 @@ def test_new_regulator_placement_on_common_nodes(voltage_upper_limit, voltage_lo
             logger.debug("Distribution transformer already exists on this node. Skip.")
             continue
         # add new transformer at this node
-        new_xfmr_added_dict = add_new_node_and_xfmr(action_type='New', node=node, circuit_source=circuit_source, **kwargs)
+        new_xfmr_added_dict = add_new_node_and_xfmr(action_type='New', node=node, circuit_source=circuit_source, solve_params=solve_params)
         if new_xfmr_added_dict is None:  # if new transformer elements were not added, continue
             logger.debug("New transformer elements could not be added on this node.")
             continue
         # add new regulator control at this node
         # These are just default settings and do not have to be written in the output file
         new_regcontrol_dict = add_new_regcontrol_at_node(node=node, default_regcontrol_settings=default_regcontrol_settings,
-                                                         nominal_voltage=nominal_voltage, **kwargs)
+                                                         nominal_voltage=nominal_voltage, solve_params=solve_params)
         if new_regcontrol_dict is None:
             logger.debug("New regulator elements could not be added on this node.")
             if new_xfmr_added_dict is not None:
                 disable_new_xfmr_and_edit_line(transformer_name_to_disable=new_xfmr_added_dict['new_xfmr_name'],
-                                               line_name_to_modify=new_xfmr_added_dict['modified_line_name'])
+                                               line_name_to_modify=new_xfmr_added_dict['modified_line_name'], solve_params=solve_params)
             continue
         intra_cluster_group_severity_dict[node] = {}
         intra_cluster_group_severity_dict[node]['add_new_devices_command_list'] = new_xfmr_added_dict['commands_list'] + \
             new_regcontrol_dict['command_list']
-        pass_flag = circuit_solve_and_check(raise_exception=False, **kwargs)
+        solve_params_specific = solve_params.copy()
+        solve_params_specific.raise_exception = False
+        pass_flag = circuit_solve_and_check(solve_params_specific)  # raise_exception=False
         intra_cluster_group_severity_dict[node]['converged'] = pass_flag
-        severity_dict = compute_voltage_violation_severity(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
+        severity_dict = compute_voltage_violation_severity(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit,
+                                                            analysis_params=analysis_params, solve_params=solve_params)
         intra_cluster_group_severity_dict[node].update(severity_dict)
         intra_cluster_group_severity_dict[node].update({'new_xfmr_name': new_xfmr_added_dict['new_xfmr_name'], 'modified_line_name': new_xfmr_added_dict['modified_line_name'],
                                                         'new_regcontrol_name': new_regcontrol_dict['new_regcontrol_name']})
@@ -1354,7 +1436,7 @@ def test_new_regulator_placement_on_common_nodes(voltage_upper_limit, voltage_lo
         check_dss_run_command(command_string)
         intra_cluster_group_severity_dict[node]['disable_new_devices_command_list'] = disable_new_xfmr_and_edit_line(transformer_name_to_disable=new_xfmr_added_dict['new_xfmr_name'],
                                                                                                                      line_name_to_modify=new_xfmr_added_dict['modified_line_name'],
-                                                                                                                     **kwargs)
+                                                                                                                     solve_params=solve_params)
         if intra_cluster_group_severity_dict[node][deciding_field] == 0:
             break
     # For a given list of common nodes in a cluster, identify the node which leads to minimum number of violations
@@ -1372,7 +1454,9 @@ def test_new_regulator_placement_on_common_nodes(voltage_upper_limit, voltage_lo
     chosen_node_dict = intra_cluster_group_severity_dict[chosen_node]
     chosen_node_dict['node'] = chosen_node
     re_enable_added_regcontrol_objects(chosen_node_dict)
-    circuit_solve_and_check(raise_exception=True, **kwargs)    
+    solve_params_specific = solve_params.copy()
+    solve_params_specific.raise_exception = True
+    circuit_solve_and_check(solve_params_specific)    
     return chosen_node_dict
 
 
@@ -1548,7 +1632,7 @@ def perform_clustering(num_clusters, square_distance_array, buses_with_violation
 
 
 def per_cluster_group_regulator_analysis(G, buses_list, voltage_config, voltage_upper_limit, voltage_lower_limit, 
-                                         default_regcontrol_settings, circuit_source, deciding_field, **kwargs):
+                                         default_regcontrol_settings, circuit_source, deciding_field, analysis_params, solve_params):
     """This function performs analysis on one cluster group of buses with violations. 
     It determines the common upstream buses for all the buses with violations in that cluster group. 
     It places regulators on each of these common noeds, and determines the best node to place the regulator for that group.
@@ -1565,7 +1649,7 @@ def per_cluster_group_regulator_analysis(G, buses_list, voltage_config, voltage_
     chosen_node_dict = test_new_regulator_placement_on_common_nodes(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit,
                                                                     nominal_voltage=nominal_voltage, deciding_field=deciding_field,
                                                                     common_upstream_nodes_list=common_upstream_nodes_list, circuit_source=circuit_source,
-                                                                    default_regcontrol_settings=default_regcontrol_settings, **kwargs)
+                                                                    default_regcontrol_settings=default_regcontrol_settings, solve_params=solve_params, analysis_params=analysis_params)
     
     if chosen_node_dict is None:  # if there is no common node on which regulator can be placed (for this cluster group)
         return None
@@ -1575,12 +1659,13 @@ def per_cluster_group_regulator_analysis(G, buses_list, voltage_config, voltage_
     init_regcontrols_df = get_regcontrol_info(correct_PT_ratio=True, nominal_voltage=nominal_voltage)
     regcontrol_sweep_df = sweep_regcontrol_settings(voltage_config=voltage_config, initial_regcontrols_df=init_regcontrols_df,
                                                     voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit,
-                                                    exclude_sub_ltc=True, only_sub_ltc=False, **kwargs)
+                                                    exclude_sub_ltc=True, only_sub_ltc=False, analysis_params=analysis_params, solve_params=solve_params)
     regcontrols_df, regcontrol_settings_commands_list = choose_best_regcontrol_sweep_setting(
         regcontrol_sweep_df=regcontrol_sweep_df, initial_regcontrols_df=init_regcontrols_df, deciding_field=deciding_field, exclude_sub_ltc=True,
-        only_sub_ltc=False, **kwargs)
+        only_sub_ltc=False, solve_params=solve_params)
     # determine violation severity after changes
-    severity_dict = compute_voltage_violation_severity(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
+    severity_dict = compute_voltage_violation_severity(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit,
+                                                        analysis_params=analysis_params, solve_params=solve_params)
     cluster_group_info_dict.update(severity_dict)
     cluster_group_info_dict['settings_commands_list'] = regcontrol_settings_commands_list
     return cluster_group_info_dict
@@ -1589,12 +1674,15 @@ def per_cluster_group_regulator_analysis(G, buses_list, voltage_config, voltage_
 def cluster_and_place_regulator(G, square_distance_df, initial_buses_with_violations, num_clusters,
                                 voltage_config, voltage_upper_limit, voltage_lower_limit,
                                 default_regcontrol_settings, circuit_source, deciding_field,
-                                **kwargs):
+                                analysis_params, solve_params,
+                                fig_folder=None, create_plots=False,
+                                ):
     """ This function performs clustering on buses with violations, then iterates through each cluster group, performs regulator placement analysis
     Returns the best regulator placement for each cluster group, in the form of a dict.
     """
-    fig_folder = kwargs.get("fig_folder", None)
-    create_plots = kwargs.get("create_plots", False)
+    if create_plots:
+        assert fig_folder is not None
+    
     if len(initial_buses_with_violations) == 1:  # if there is only one violation, then clustering cant be performed. So directly assign bus to cluster
         clusters_dict = {0: initial_buses_with_violations}
     else:
@@ -1608,14 +1696,15 @@ def cluster_and_place_regulator(G, square_distance_df, initial_buses_with_violat
         cluster_group_info_dict[cluster_id] = per_cluster_group_regulator_analysis(G=G, buses_list=buses_list, voltage_config=voltage_config,
                                                                                    voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, 
                                                                                    default_regcontrol_settings=default_regcontrol_settings,
-                                                                                   circuit_source=circuit_source, deciding_field=deciding_field, **kwargs)
+                                                                                   circuit_source=circuit_source, deciding_field=deciding_field, 
+                                                                                   analysis_params=analysis_params, solve_params=solve_params)
         if cluster_group_info_dict[cluster_id] is None:
             logger.debug("There is no common node on which regulator can be placed (for this cluster group)")
             return cluster_group_info_dict         
         cluster_group_info_dict[cluster_id].update({"buses_list": buses_list,})
         # determine voltage violations after changes
-        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
-            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
+        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltage_violations(
+            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, analysis_params=analysis_params, solve_params=solve_params)
         if (len(buses_with_violations)) == 0:
             logger.info("All nodal violations have been removed successfully by new regulator placement.")
             break
@@ -1626,19 +1715,19 @@ def cluster_and_place_regulator(G, square_distance_df, initial_buses_with_violat
 
 @track_timing(timer_stats_collector)
 def determine_new_regulator_location(circuit_source, initial_buses_with_violations, voltage_upper_limit, voltage_lower_limit, 
-                                     voltage_config, default_regcontrol_settings, max_regs, deciding_field,
-                                     **kwargs):
+                                     voltage_config, default_regcontrol_settings, max_regs, deciding_field, analysis_params, solve_params,
+                                     fig_folder=None, create_plots=False
+                                     ):
     """Function to determine new regulator location. This decision is made after testing out various clustering and placement options.
     """
-    fig_folder = kwargs.get("fig_folder", None)
-    create_plots = kwargs.get("create_plots", False)
+    if create_plots:
+        assert fig_folder is not None
 
     # prepare for clustering
     G = generate_networkx_representation()
     upper_triang_paths_dict = get_upper_triangular_dist(G=G, buses_with_violations=initial_buses_with_violations)
     square_distance_df = get_full_distance_df(upper_triang_paths_dict=upper_triang_paths_dict)
     # if create_plots:
-    #     fig_folder = kwargs.get('fig_folder', None)
     #     plot_heatmap_distmatrix(square_array=square_distance_df, fig_folder=fig_folder)  # currently not used
 
     options_dict = {}
@@ -1652,15 +1741,15 @@ def determine_new_regulator_location(circuit_source, initial_buses_with_violatio
                                                 initial_buses_with_violations=initial_buses_with_violations, num_clusters=option_num,
                                                 voltage_config=voltage_config, voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit,
                                                 default_regcontrol_settings=default_regcontrol_settings, circuit_source=circuit_source,
-                                                **kwargs)
+                                                analysis_params=analysis_params, solve_params=solve_params)
         options_dict[cluster_option_name] = {}
         options_dict[cluster_option_name]["details"] = temp_dict
         # get severity for this option 
         severity_dict = compute_voltage_violation_severity(
-            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
+            voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, analysis_params=analysis_params, solve_params=solve_params)
         # determine voltage violations after changes
-        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
-                voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **kwargs)
+        bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltage_violations(
+                voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, analysis_params=analysis_params, solve_params=solve_params)
         if (fig_folder is not None) and create_plots:
             plot_voltage_violations(fig_folder=fig_folder, title="Bus violations for "+cluster_option_name+" voltage regulators"+"_"+
                                     str(len(buses_with_violations)), buses_with_violations=buses_with_violations, circuit_source=circuit_source, enable_detailed=True)
@@ -1727,9 +1816,9 @@ def plot_feeder(fig_folder, title, circuit_source=None, enable_detailed=False):
     default_node_color = 'black'
     
     NodeLegend = {
-        "Load": get_load_buses(dss), 
-        "PV": get_pv_buses(dss), 
-        "Transformer": list(get_all_transformer_info_instance(compute_loading=False)['bus_names_only'].str[0].values),
+        "Load": get_load_buses(), 
+        "PV": get_pv_buses(), 
+        "Transformer": list(get_snapshot_transformer_info(compute_loading=False)['bus_names_only'].str[0].values),
     }
     if circuit_source is not None:
         NodeLegend["Circuit Source"] = [circuit_source]
@@ -1786,8 +1875,8 @@ def plot_voltage_violations(fig_folder, title, buses_with_violations, circuit_so
     nx.draw_networkx_nodes(Un_G, pos=position_dict, alpha=1.0, node_size=default_node_size, node_color=default_node_color)
     
     NodeLegend = {
-        # "Load": get_load_buses(dss), 
-        # "PV": get_pv_buses(dss), 
+        # "Load": get_load_buses(), 
+        # "PV": get_pv_buses(), 
         # "Transformer": list(get_all_transformer_info_instance(compute_loading=False)['bus_names_only'].str[0].values),
         "Violation": buses_with_violations,
     }
@@ -1963,7 +2052,9 @@ def get_graph_edges_dataframe(attr_fields):
     """
     chosen_fields = ['bus1', 'bus2'] + attr_fields
     # prepare lines dataframe
-    all_lines_df = get_thermal_equipment_info(compute_loading=False, equipment_type="line")
+    all_lines_df = get_thermal_equipment_info(compute_loading=False, equipment_type="line", ignore_switch=False)
+    if all_lines_df.empty:
+        return pd.DataFrame()
     all_lines_df['bus1'] = all_lines_df['bus1'].str.split('.', expand=True)[0].str.lower()
     all_lines_df['bus2'] = all_lines_df['bus2'].str.split('.', expand=True)[0].str.lower()
     # convert length to metres
@@ -2017,7 +2108,6 @@ def generate_networkx_representation():
 
     Parameters
     ----------
-    kwargs
 
     Returns
     -------
@@ -2028,13 +2118,25 @@ def generate_networkx_representation():
     G = add_graph_bus_nodes(G=G, bus_coordinates_df=bus_coordinates_df)  # add buses as nodes to the graph
     attr_fields = ['phases', 'length', 'name', 'equipment_type']  # define edge attributes
     edges_df = get_graph_edges_dataframe(attr_fields=attr_fields)  # get edges dataframe (from lines and transformers)
-    # add edges to graph
     G = add_graph_edges(G=G, edges_df=edges_df, attr_fields=attr_fields, source='bus1', target='bus2')
     complete_flag = check_buscoordinates_completeness(bus_coordinates_df, verbose=True)  # check if sufficient buscoordinates data is available
     if complete_flag:
         # these new buscoords could be written out to a file after correction
         G, commands_list = correct_node_coordinates(G=G)  # corrects node coordinates 
     return G
+
+
+def check_network_connectivity(G, raise_exception=True):
+    temp_graph = G.to_undirected()
+    connectivity_status = nx.is_connected(temp_graph)
+    if not connectivity_status:
+        isolated = list(nx.isolates(G))
+        msg = f"OpenDSS Circuit is disconnected. These are the isolated elements: {isolated} "
+        if raise_exception:
+            raise OpenDssModelDisconnectedError(msg)
+    else:
+        logging.info("Feeder model has no isolated nodes.")
+    return connectivity_status
 
 
 def check_buscoordinates_completeness(bus_coordinates_df, verbose=False):
