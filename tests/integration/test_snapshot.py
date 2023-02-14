@@ -46,7 +46,7 @@ def test_snapshot_basic(cleanup):
     assert len(results) == 18
     result = results[0]
     pydss_results = analysis.read_results(result.name)
-    assert len(pydss_results.scenarios) == 1
+    assert len(pydss_results.scenarios) == 2
 
 
 def test_snapshot_basic_with_loadshape_no_pf1(cleanup):

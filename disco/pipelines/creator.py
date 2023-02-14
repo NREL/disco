@@ -36,16 +36,22 @@ class SnapshotPipelineCreator(PipelineCreatorBase):
         return command
 
     def make_disco_config_command(self, section):
-        if self.template.preconfigured:
-            model_inputs = self.template.inputs
+        # self.template reads the file fresh every time.
+        # TODO: change the rest of this file to not constantly re-read it.
+        template = self.template
+        if template.preconfigured:
+            model_inputs = template.inputs
         else:
-            model_inputs = self.template.get_model_transform_output()
-        options = self.template.get_config_options(section)
+            model_inputs = template.get_model_transform_output()
+        options = template.get_config_options(section)
+        # The code that builds the option string excludes False values but we need it here.
+        if not template.get_config_params(TemplateSection.SIMULATION)["with_loadshape"]:
+            options += " --no-with-loadshape"
         reports_filename = "generated_snapshot_reports.toml"
-        dump_data(self.template.reports, reports_filename)
+        dump_data(template.reports, reports_filename)
         exports_filename = get_default_exports_file(
             SimulationType.SNAPSHOT,
-            AnalysisType(self.template.analysis_type),
+            AnalysisType(template.analysis_type),
         )
         command = (
             f"disco config snapshot {model_inputs} "
@@ -76,21 +82,17 @@ class SnapshotPipelineCreator(PipelineCreatorBase):
                 pf1 = config_params["pf1"]
                 base_cmd = f"disco-internal compute-hosting-capacity {inputs}"
                 plot_cmd = f"disco-internal plot {inputs}"
-                if with_loadshape:
-                    scenarios = [CONTROL_MODE_SCENARIO]
-                    if pf1:
-                        scenarios.append(PF1_SCENARIO)
-                    if auto_select_time_points:
-                        for scenario in scenarios:
-                            for mode in SnapshotTimePointSelectionMode:
-                                if mode != SnapshotTimePointSelectionMode.NONE:
-                                    commands.append(f"{base_cmd} --scenario={scenario} --time-point={mode.value}")
-                    else:
-                        for scenario in scenarios:
-                            commands.append(f"{base_cmd} --scenario={scenario}")
+                scenarios = [CONTROL_MODE_SCENARIO]
+                if pf1:
+                    scenarios.append(PF1_SCENARIO)
+                if with_loadshape and auto_select_time_points:
+                    for scenario in scenarios:
+                        for mode in SnapshotTimePointSelectionMode:
+                            if mode != SnapshotTimePointSelectionMode.NONE:
+                                commands.append(f"{base_cmd} --scenario={scenario} --time-point={mode.value}")
                 else:
-                    commands.append(f"{base_cmd} --scenario=scenario")
-                    scenarios = ["scenario"]
+                    for scenario in scenarios:
+                        commands.append(f"{base_cmd} --scenario={scenario}")
             
                 # Plot
                 for scenario in scenarios:

@@ -236,8 +236,12 @@ def get_voltage_metrics(results: PyDssResults, job_info: JobInfo):
 
 def get_snapshot_time_points_table(results: PyDssResults, job_info: JobInfo):
     """Return the snapshot time points determined by each job."""
-    snapshot_time_points_table = []
-    data = json.loads(results.read_file(f"Exports/snapshot_time_points.json"))
+    try:
+        data = json.loads(results.read_file(f"Exports/snapshot_time_points.json"))
+    except KeyError:
+        # Time points are only available if load shapes are used.
+        return []
+
     row = {"name": job_info.name}
     for time_point in SNAPSHOT_TIME_POINT_MAPPING:
         timestamp = data.get(SNAPSHOT_TIME_POINT_MAPPING[time_point])

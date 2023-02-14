@@ -1,0 +1,20 @@
+{
+  "pv_systems": [
+    {
+      "name": "small_p1ulv31790_1_2_pv",
+      "pydss_controller": {
+        "controller_type": "PvController",
+        "name": "volt_var_ieee_1547_2018_catB"
+      },
+      "customer_type": "residential"
+    },
+    {
+      "name": "small_p1ulv62436_1_2_pv",
+      "pydss_controller": {
+        "controller_type": "PvController",
+        "name": "volt_var_ieee_1547_2018_catB"
+      },
+      "customer_type": "residential"
+    }
+  ]
+}

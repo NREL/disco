@@ -174,9 +174,15 @@ class PyDssScenarioParser(ParserBase):
         return self._parse_scenarios_from_config_file(config_file)
     
     def _parse_scenarios_from_snapshot_time_points(self, snapshot_time_points_table):
-        mapping = {job["name"]: job for job in self.jobs}
-        df = pd.read_csv(snapshot_time_points_table)
-        time_points = {item["name"]: item for item in df.to_dict(orient="records")}
+        df = None
+        try:
+            df = pd.read_csv(snapshot_time_points_table)
+        except pd.errors.EmptyDataError:
+            pass
+        if df is None or df.empty:
+            time_points = {}
+        else:
+            time_points = {item["name"]: item for item in df.to_dict(orient="records")}
         
         scenarios = []
         for job in self.jobs:
@@ -193,7 +199,7 @@ class PyDssScenarioParser(ParserBase):
                         "job_id": job["id"],
                         "simulation_type": "snapshot",
                         "name": _scenario_name,
-                        "start_time": tp[mode.value],
+                        "start_time": tp.get(mode.value),
                         "end_time": None
                     })
         return scenarios
@@ -421,8 +427,11 @@ class SnapshotTimePointsParser(ParserBase, TableParserMixin):
     def parse(self, output):
         """Parse time points data for snapshot simulation"""
         logger.info("Parsing data - 'snapshot_time_points'...")
-        df = pd.read_csv(output.snapshot_time_points_table)
-        data = df.to_dict(orient="records")
+        try:
+            df = pd.read_csv(output.snapshot_time_points_table)
+            data = df.to_dict(orient="records")
+        except pd.errors.EmptyDataError:
+            data = {}
         data = self._set_record_index(data)
         return data
 
