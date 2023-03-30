@@ -50,3 +50,16 @@ percent_p_cutout = 10
 Efficiency = 100
 Priority = "Var"
 DampCoef = 0.8
+
+[volt_watt]
+Control1 = "VW"
+Control2 = "None"
+Control3 = "None"
+DampCoef = 0.8
+PFlim = 0.9
+PminVW = 20
+Priority = "Watt"
+QlimPU = 0.44
+VWtype = "Available Power"
+uMaxC = 1.1
+uMinC = 1.04
