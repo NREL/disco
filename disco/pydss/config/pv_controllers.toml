@@ -62,4 +62,4 @@ Priority = "Watt"
 QlimPU = 0.44
 VWtype = "Available Power"
 uMaxC = 1.1
-uMinC = 1.04
+uMinC = 1.06
