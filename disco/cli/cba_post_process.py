@@ -16,14 +16,12 @@ def add_curtailment_columns(filename, curtailment_tolerance):
         """Calculate curtailment."""
         if pf1 == 0:
             return 0
-
-        # We may need to consider using this tolerance in the future.
         if pf1 < curtailment_tolerance:
             return 0
         diff = pf1 - control_mode
         if diff < 0 and abs(diff) < curtailment_tolerance:
             return 0
-        return diff #/ pf1
+        return diff
 
     for (substation, feeder, placement, sample, penetration_level), tdf in df.groupby(by=columns):
         for customer_type in ("commercial", "residential"):
@@ -50,8 +48,6 @@ def add_curtailment_columns(filename, curtailment_tolerance):
 
 @click.command()
 @click.argument("output_dir")
-# This is disabled because we don't know the best tolerance for these customer-type
-# aggregations. Leaving it in the code in case we need it in the future.
 @click.option(
    "-d", "--curtailment-tolerance",
    default=0.001,
