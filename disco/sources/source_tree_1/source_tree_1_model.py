@@ -824,7 +824,7 @@ def get_pydss_controller_and_profiles(pv_configs):
                     pv_config["pydss_controller"]
                 )
                 pydss_controllers.add(ctrl)
-        pv_profiles[pv_config["name"]] = pv_config["pv_profile"]
+        pv_profiles[pv_config["name"]] = pv_config.get("pv_profile")
 
     if len(pydss_controllers) > 1:
         raise Exception(

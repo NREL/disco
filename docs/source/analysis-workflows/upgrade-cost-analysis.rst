@@ -130,7 +130,7 @@ Single Execution Mode
 ~~~~~~~~~~~~~~~~~~~~~
 1. Configure the simulation parameters and in an input JSON file called ``upgrades.json``.
 Refer to this
-`file <https://github.com/NREL/disco/blob/main/tests/data/test_upgrade_cost_analysis_generic.json>`_
+`file <https://github.com/NREL/disco/blob/main/tests/data/upgrade_cost_analysis_generic.json>`_
 as an example. The JSON schemas are defined in :ref:`upgrade_cost_analysis_schemas`.
 
 Each job represents one OpenDSS network and one upgrade simulation.

@@ -266,6 +266,7 @@ class PipelineCreatorBase(ABC):
         text_file = self.get_postprocess_auto_config_text_file()
         with open(text_file, "w") as f:
             f.write(auto_config_command)
+            f.write("\n")
         return text_file
     
     def create_postprocess_command_text_file(self):
@@ -273,6 +274,7 @@ class PipelineCreatorBase(ABC):
         command = self.make_postprocess_command()
         with open(text_file, "w") as f:
             f.write(command)
+            f.write("\n")
         return text_file
 
     def make_prescreen_stage(self):
