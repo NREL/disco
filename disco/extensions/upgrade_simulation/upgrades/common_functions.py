@@ -1562,7 +1562,8 @@ def determine_available_xfmr_upgrades(xfmr_loading_df):
 
 
 def remove_duplicate_line_upgrades(line_upgrades_df):
-    
+    if line_upgrades_df.empty:
+        return line_upgrades_df
     upgrades_subset = line_upgrades_df.loc[line_upgrades_df["action"] == "add"]
     duplicate_equip = list(upgrades_subset[upgrades_subset.final_equipment_name.duplicated()].final_equipment_name.unique())
     if not duplicate_equip:
@@ -1585,7 +1586,8 @@ def remove_duplicate_line_upgrades(line_upgrades_df):
     
     
 def remove_duplicate_transformer_upgrades(xfmr_upgrades_df):
-    
+    if xfmr_upgrades_df.empty:
+        return xfmr_upgrades_df
     upgrades_subset = xfmr_upgrades_df.loc[xfmr_upgrades_df["action"] == "add"]
     duplicate_equip = list(upgrades_subset[upgrades_subset.final_equipment_name.duplicated()].final_equipment_name.unique())
     if not duplicate_equip:
