@@ -41,3 +41,10 @@ def smart_ds_substations():
     return os.path.join(
         os.path.dirname(__file__), "data", "smart-ds", "substations"
     )
+
+
+@pytest.fixture
+def smart_ds_substations_no_loadshapes():
+    return os.path.join(
+        os.path.dirname(__file__), "data", "smart-ds", "substations-no-load-shapes"
+    )

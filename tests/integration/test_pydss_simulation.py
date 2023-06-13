@@ -31,7 +31,7 @@ def test_pydss_simulation(cleanup):
     analysis = PyDssAnalysis(OUTPUT, config)
     result = analysis.list_results()[1]
     pydss_results = analysis.read_results(result.name)
-    assert len(pydss_results.scenarios) == 1
+    assert len(pydss_results.scenarios) == 2
     scenario = pydss_results.scenarios[0]
     lines = scenario.list_element_names("Lines", "Currents")
     df = scenario.get_dataframe("Lines", "Currents", lines[0])

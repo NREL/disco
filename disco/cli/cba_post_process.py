@@ -12,18 +12,16 @@ def add_curtailment_columns(filename, curtailment_tolerance):
     df["PVSystems__Curtailment__residential (kWh)"] = 0.0
     columns = ["substation", "feeder", "placement", "sample", "penetration_level"]
 
-    def calc_curtailment(pf1, control_mode):
+    def calc_energy_curtailed(pf1, control_mode):
         """Calculate curtailment."""
         if pf1 == 0:
             return 0
-
-        # We may need to consider using this tolerance in the future.
-        # if pf1 < curtailment_tolerance:
-        #    return 0
+        if pf1 < curtailment_tolerance:
+            return 0
         diff = pf1 - control_mode
-        #if diff < 0 and abs(diff) < curtailment_tolerance:
-        #    return 0
-        return diff / pf1
+        if diff < 0 and abs(diff) < curtailment_tolerance:
+            return 0
+        return diff
 
     for (substation, feeder, placement, sample, penetration_level), tdf in df.groupby(by=columns):
         for customer_type in ("commercial", "residential"):
@@ -33,7 +31,7 @@ def add_curtailment_columns(filename, curtailment_tolerance):
                 if sim_vals.empty:
                     continue
                 pf1 = tdf.query("scenario == 'pf1'")[power_col]
-                curtailment = pf1.combine(sim_vals, calc_curtailment)
+                curtailment = pf1.combine(sim_vals, calc_energy_curtailed)
                 cond = lambda x: (
                     (x["substation"] == substation)
                     & (x["feeder"] == feeder)
@@ -50,15 +48,13 @@ def add_curtailment_columns(filename, curtailment_tolerance):
 
 @click.command()
 @click.argument("output_dir")
-# This is disabled because we don't know the best tolerance for these customer-type
-# aggregations. Leaving it in the code in case we need it in the future.
-# @click.option(
-#    "-d", "--curtailment-tolerance",
-#    default=0.0001,
-#    show_default=True,
-#    help="Set curtailment to 0 if the diff is less than this value.",
-# )
-def cba_post_process(output_dir, curtailment_tolerance=0.0001):
+@click.option(
+   "-d", "--curtailment-tolerance",
+   default=0.001,
+   show_default=True,
+   help="Set curtailment to 0 if the diff is less than this value.",
+)
+def cba_post_process(output_dir, curtailment_tolerance=0.001):
     """Perform post-processing of CBA tables."""
     add_curtailment_columns(output_dir, curtailment_tolerance)
 
