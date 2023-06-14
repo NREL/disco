@@ -248,9 +248,9 @@ def determine_thermal_upgrades(
                                                 equipment_type="line", ignore_switch=ignore_switch, **simulation_params)
     overloaded_xfmr_list = list(xfmr_loading_df.loc[xfmr_loading_df["status"] == "overloaded"]["name"].unique())
     overloaded_line_list = list(line_loading_df.loc[line_loading_df["status"] == "overloaded"]["name"].unique())
-    # same equipment could be upgraded(edited) multiple times. Only consider last upgrade edit done. original_equipment details are currently not used.
-    line_upgrades_df = line_upgrades_df.drop_duplicates(subset=["upgrade_type", "action", "final_equipment_name"], keep="last")  
-    xfmr_upgrades_df = xfmr_upgrades_df.drop_duplicates(subset=["upgrade_type", "action", "final_equipment_name"], keep="last") 
+    # same equipment could be upgraded(edited) multiple times. Only consider highest capacity upgrade done. original_equipment details are currently not used.
+    line_upgrades_df = remove_duplicate_line_upgrades(line_upgrades_df)
+    xfmr_upgrades_df = remove_duplicate_transformer_upgrades(xfmr_upgrades_df)
     # validate upgrades output models
     m = AllUpgradesTechnicalResultModel(line=line_upgrades_df.to_dict('records'), transformer=xfmr_upgrades_df.to_dict('records'))
     temp = m.dict(by_alias=True)
