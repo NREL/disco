@@ -1,4 +1,3 @@
-import fileinput
 import logging
 import os
 import shutil
@@ -10,7 +9,6 @@ import click
 from jade.loggers import setup_logging
 from jade.utils.utils import get_cli_string
 from disco.ev.feeder_EV_HC import run
-from disco import timer_stats_collector
 
 
 logger = logging.getLogger(__name__)
@@ -24,10 +22,13 @@ def ev():
 @click.command()
 @click.argument("master_file", type=click.Path(exists=True), callback=lambda *x: Path(x[2]))
 @click.option(
-    "-l", "--lower-voltage-limit", default=0.95, type=float, help="Lower voltage limit (P.U.)"
+    "-c", "--num-cpus", type=int, help="Number of CPUs to use, default is all."
 )
 @click.option(
-    "-u", "--upper-voltage-limit", default=1.05, type=float, help="Upper voltage limit (P.U.)"
+    "-l", "--lower-voltage-limit", default=0.95, show_default=True, type=float, help="Lower voltage limit (P.U.)"
+)
+@click.option(
+    "-u", "--upper-voltage-limit", default=1.05, show_default=True, type=float, help="Upper voltage limit (P.U.)"
 )
 @click.option(
     "-v",
@@ -47,21 +48,29 @@ def ev():
 )
 @click.option(
     "-e",
-    "--extra-percentages-for-existing-overloads",
-    default=(2.0,),
+    "--extra-percentage-for-existing-overloads",
+    default=2.0,
     type=float,
-    multiple=True,
     show_default=True,
-    help="Considers extra percentages for already overloaded elements",
+    help="Considers extra percentage for already overloaded elements",
 )
 @click.option(
     "-T",
-    "--thermal-loading-limits",
-    default=(100.0,),
+    "--thermal-loading-limit",
+    default=100.0,
     type=float,
-    multiple=True,
     show_default=True,
-    help="Limits for thermal overloads",
+    help="Limit for thermal overloads",
+)
+@click.option(
+    "--thermal-tolerance",
+    type=float,
+    help="Tolerance to use when finding lowest thermal violations. Uses --kw-step-thermal-violation by default",
+)
+@click.option(
+    "--voltage-tolerance",
+    type=float,
+    help="Tolerance to use when finding lowest voltage violations. Uses --kw-step-voltage-violation by default",
 )
 @click.option(
     "--export-circuit-elements/--no-export-circuit-elements",
@@ -85,8 +94,7 @@ def ev():
     help="Output directory",
 )
 @click.option(
-    "-f",
-    "--force",
+    "--overwrite",
     is_flag=True,
     default=False,
     show_default=True,
@@ -100,29 +108,34 @@ def ev():
 )
 def hosting_capacity(
     master_file: Path,
+    num_cpus: int | None,
     lower_voltage_limit: float,
     upper_voltage_limit: float,
     kw_step_voltage_violation: float,
     kw_step_thermal_violation: float,
-    extra_percentages_for_existing_overloads: tuple[float],
-    thermal_loading_limits: tuple[float],
+    extra_percentage_for_existing_overloads: float,
+    thermal_loading_limit: float,
+    voltage_tolerance: float,
+    thermal_tolerance: float,
     export_circuit_elements: bool,
     # plot_heatmap: bool,
     output: Path,
-    force: bool,
+    overwrite: bool,
     verbose: bool,
 ):
     """Compute hosting capacity for a feeder."""
     if output.exists():
-        if force:
+        if overwrite:
             shutil.rmtree(output)
         else:
             print(
-                f"output directory {output} already exists. Choose a different path or pass --force.",
+                f"{output} already exists. Choose a different path or pass --overwrite.",
                 file=sys.stderr,
             )
             sys.exit(1)
     output.mkdir()
+    thermal_tolerance = thermal_tolerance or kw_step_thermal_violation
+    voltage_tolerance = voltage_tolerance or kw_step_voltage_violation
 
     level = logging.DEBUG if verbose else logging.INFO
     filename = output / "ev_hosting_capacity.log"
@@ -131,30 +144,20 @@ def hosting_capacity(
     )
     logger.info(get_cli_string())
 
-    backup_file = master_file.with_suffix(".bk")
-    shutil.copyfile(master_file, backup_file)
-    with fileinput.input(files=[master_file], inplace=True) as f:
-        for line in f:
-            if not line.strip().lower().startswith("solve"):
-                print(line, end="")
-        print("Solve mode=snapshot")
-
-    try:
-        shutil.copyfile(master_file, output / "Master.dss")
-        run(
-            master_file,
-            lower_voltage_limit,
-            upper_voltage_limit,
-            kw_step_voltage_violation,
-            kw_step_thermal_violation,
-            extra_percentages_for_existing_overloads,
-            thermal_loading_limits,
-            export_circuit_elements,
-            output,
-        )
-    finally:
-        os.rename(backup_file, master_file)
-        timer_stats_collector.log_stats(clear=True)
+    run(
+        master_file=master_file,
+        lower_voltage_limit=lower_voltage_limit,
+        upper_voltage_limit=upper_voltage_limit,
+        kw_step_voltage_violation=kw_step_voltage_violation,
+        voltage_tolerance=voltage_tolerance,
+        kw_step_thermal_violation=kw_step_thermal_violation,
+        thermal_tolerance=thermal_tolerance,
+        extra_percentage_for_existing_overloads=extra_percentage_for_existing_overloads,
+        thermal_loading_limit=thermal_loading_limit,
+        export_circuit_elements=export_circuit_elements,
+        output_dir=output,
+        num_cpus=num_cpus,
+    )
 
 
 ev.add_command(hosting_capacity)

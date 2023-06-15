@@ -14,30 +14,32 @@ import matplotlib.pyplot as plt
 logger = logging.getLogger(__name__)
 
 
-def plot_capacity_V(file, caseA, caseB, caseC, caseD, output_dir: Path):
-    fig, ax1 = plt.subplots(nrows=1, figsize=(14, 8))  # figsize=(18,12)
-    vplot1 = ax1.plot(range(len(file)), file[caseA], c="k", marker="o", label="Initial load")
-    vplot2 = ax1.plot(
+def plot_capacity_V(file, caseA, caseB, output_dir: Path, caseC=None, caseD=None):
+    _, ax1 = plt.subplots(nrows=1, figsize=(14, 8))  # figsize=(18,12)
+    ax1.plot(range(len(file)), file[caseA], c="k", marker="o", label="Initial load")
+    ax1.plot(
         range(len(file)),
         file[caseB],
         c="r",
         marker="+",
-        label="Volt violation MW [range:(0.95, 1.05)]",
+        label=f"Volt violation MW [range:({caseB})]",  # TODO: not a range
     )
-    vplot3 = ax1.plot(
-        range(len(file)),
-        file[caseC],
-        c="g",
-        marker="*",
-        label="Volt violation MW [range:(0.975, 1.05)]",
-    )
-    vplot4 = ax1.plot(
-        range(len(file)),
-        file[caseD],
-        c="b",
-        marker=".",
-        label="Volt violation MW [range:(0.985, 1.05)]",
-    )
+    if caseC is not None:
+        ax1.plot(
+            range(len(file)),
+            file[caseC],
+            c="g",
+            marker="*",
+            label=f"Volt violation MW [range:({caseC})]",  # TODO: not a range
+        )
+    if caseD is not None:
+        ax1.plot(
+            range(len(file)),
+            file[caseD],
+            c="b",
+            marker=".",
+            label=f"Volt violation MW [range:({caseD})]",  # TODO: not a range
+        )
     ax1.margins(x=0)
     ax1.tick_params(axis="both", which="major", labelsize=33)
     ax1.tick_params(axis="both", which="minor", labelsize=33)
@@ -85,11 +87,9 @@ def plot_capacity_thermal_2(file, caseA, caseB, caseC, output_dir: Path):
 
 
 def plot_capacity_thermal_1(file, caseA, caseB, output_dir: Path, extra):
-    fig, ax1 = plt.subplots(nrows=1, figsize=(14, 8))
-    thplot1 = ax1.plot(range(len(file)), file[caseA], c="k", marker="o", label="Initial load")
-    thplot2 = ax1.plot(
-        range(len(file)), file[caseB], c="r", marker="+", label="Thermal violation MW"
-    )
+    _, ax1 = plt.subplots(nrows=1, figsize=(14, 8))
+    ax1.plot(range(len(file)), file[caseA], c="k", marker="o", label="Initial load")
+    ax1.plot( range(len(file)), file[caseB], c="r", marker="+", label="Thermal violation MW")
     ax1.margins(x=0)
     ax1.tick_params(axis="both", which="major", labelsize=33)
     ax1.tick_params(axis="both", which="minor", labelsize=33)
@@ -102,7 +102,7 @@ def plot_capacity_thermal_1(file, caseA, caseB, output_dir: Path, extra):
     )  # ax1.set_xlabel('Load indices, according to distance from SS \n(load #' + str(len(file)) + ' is the furthest from SS)', fontsize=40)
     # fig.tight_layout()
     plt.savefig(
-        output_dir / "Cap_by_thermal_limit_" + str(extra) + ".png", bbox_inches="tight", dpi=150
+        output_dir / f"Cap_by_thermal_limit_{extra}.png", bbox_inches="tight", dpi=150
     )
 
 
