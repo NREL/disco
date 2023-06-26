@@ -7,7 +7,7 @@ from jade.utils.timing_utils import track_timing, Timer
 from jade.utils.utils import load_data, dump_data
 
 from .thermal_upgrade_functions import *
-from .voltage_upgrade_functions import plot_thermal_violations, plot_voltage_violations, plot_feeder
+from .voltage_upgrade_functions import plot_thermal_violations, plot_voltage_violations, plot_feeder, check_circuit
 
 from disco.models.upgrade_cost_analysis_generic_input_model import UpgradeTechnicalCatalogModel
 from disco.models.upgrade_cost_analysis_generic_output_model import UpgradeViolationResultModel, AllUpgradesTechnicalResultModel
@@ -156,6 +156,7 @@ def determine_thermal_upgrades(
     dump_data(overall_outputs, overall_output_summary_filepath, indent=2, allow_nan=False)
     title = "Feeder"
     plot_feeder(fig_folder=thermal_upgrades_directory, title=title, circuit_source=circuit_source, enable_detailed=True)
+    check_circuit(initial_results=initial_results)  # check circuit before running upgrades
     # Mitigate thermal violations
     iteration_counter = 0
     # if number of violations is very high,  limit it to a small number

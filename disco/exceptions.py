@@ -33,6 +33,10 @@ class OpenDssCompileError(DiscoBaseException):
 
 class OpenDssConvergenceError(DiscoBaseException):
     """Raise when OpenDSS fails to converge"""
+    
+
+class OpenDSSModelError(DiscoBaseException):
+    """Raise when OpenDSS network model has issues"""
 
 
 class PyDssConvergenceError(DiscoBaseException):
@@ -123,6 +127,12 @@ EXCEPTIONS_TO_ERROR_CODES = {
         "corrective_action": "This could happen in cases when lines or transformers are extremely overloaded. Check and "
         "modify OpenDSS model for such instances.",
         "error_code": 125,
+    },
+    OpenDSSModelError: {
+        "description": "Issues identified in OpenDSS Network Model.",
+        "corrective_action": "This could happen in cases when voltage bases are incorrectly defined, network has isolated nodes, or lines/transformers are extremely overloaded. Check and "
+        "modify OpenDSS model for such instances.",
+        "error_code": 126,
     },
 }
 
