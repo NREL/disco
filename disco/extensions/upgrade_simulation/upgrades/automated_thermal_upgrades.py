@@ -56,6 +56,8 @@ def determine_thermal_upgrades(
     
     voltage_upper_limit = thermal_config["voltage_upper_limit"]
     voltage_lower_limit = thermal_config["voltage_lower_limit"]
+    perform_thermal_upgrades = thermal_config["perform_thermal_upgrades"]
+    
     if thermal_config["read_external_catalog"]:
         with open(thermal_config["external_catalog"]) as json_file:
             external_upgrades_technical_catalog = json.load(json_file)
@@ -110,7 +112,7 @@ def determine_thermal_upgrades(
     orig_capacitors_df = get_capacitor_info(correct_PT_ratio=False)
     feeder_stats["stage_results"].append(get_upgrade_stage_stats(dss, upgrade_stage="initial", upgrade_type="thermal", xfmr_loading_df=initial_xfmr_loading_df, line_loading_df=initial_line_loading_df, 
                                         bus_voltages_df=initial_bus_voltages_df, capacitors_df=orig_capacitors_df, regcontrols_df=orig_regcontrols_df) )
-    dump_data(feeder_stats, feeder_stats_json_file, indent=2)   # save feeder stats
+    dump_data(feeder_stats, feeder_stats_json_file, indent=2)   # save feeder stats        
     if len(initial_overloaded_xfmr_list) > 0 or len(initial_overloaded_line_list) > 0:
         n = len(initial_overloaded_xfmr_list) +  len(initial_overloaded_line_list)
         equipment_with_violations = {"Transformer": initial_xfmr_loading_df, "Line": initial_line_loading_df}
@@ -169,73 +171,79 @@ def determine_thermal_upgrades(
     xfmr_upgrades_df = pd.DataFrame()
     overloaded_line_list = initial_overloaded_line_list
     overloaded_xfmr_list = initial_overloaded_xfmr_list
-    while (len(overloaded_line_list) > 0 or len(overloaded_xfmr_list) > 0) and (
-        iteration_counter < max_upgrade_iteration):
-        line_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["line_upper_limit"], 
-                                                    equipment_type="line", ignore_switch=ignore_switch, **simulation_params)
-        overloaded_line_list = list(line_loading_df.loc[line_loading_df["status"] == "overloaded"]["name"].unique())
-        logger.info(f"Iteration_{iteration_counter}: Determined line loadings.")
-        logger.info(f"Iteration_{iteration_counter}: Number of line violations: {len(overloaded_line_list)}")
-        before_upgrade_num_line_violations = len(overloaded_line_list)
-        if len(overloaded_line_list) > 0:            
-            line_commands_list, temp_line_upgrades_df = correct_line_violations(
-                line_loading_df=line_loading_df,
-                line_design_pu=thermal_config["line_design_pu"],
-                line_upgrade_options=line_upgrade_options.copy(deep=True),
-                parallel_lines_limit=thermal_config["parallel_lines_limit"],
-                external_upgrades_technical_catalog=external_upgrades_technical_catalog,)
-            logger.info(f"Iteration_{iteration_counter}: Corrected line violations.")
-            commands_list = commands_list + line_commands_list
-            line_upgrades_df = pd.concat([line_upgrades_df, temp_line_upgrades_df])
-        xfmr_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["transformer_upper_limit"], 
-                                                    equipment_type="transformer", **simulation_params)
-        overloaded_xfmr_list = list(xfmr_loading_df.loc[xfmr_loading_df["status"] == "overloaded"]["name"].unique())
-        logger.info(f"Iteration_{iteration_counter}: Determined xfmr loadings.")
-        logger.info(f"Iteration_{iteration_counter}: Number of xfmr violations: {len(overloaded_xfmr_list)}")
-        before_upgrade_num_xfmr_violations = len(overloaded_xfmr_list)
+    if perform_thermal_upgrades:
         
-        if len(overloaded_xfmr_list) > 0:
-            xfmr_commands_list, temp_xfmr_upgrades_df = correct_xfmr_violations(
-                xfmr_loading_df=xfmr_loading_df,
-                xfmr_design_pu=thermal_config["transformer_design_pu"],
-                xfmr_upgrade_options=xfmr_upgrade_options.copy(deep=True),
-                parallel_transformers_limit=thermal_config["parallel_transformers_limit"])
-            logger.info(f"Iteration_{iteration_counter}: Corrected xfmr violations.")
-            commands_list = commands_list + xfmr_commands_list
-            xfmr_upgrades_df = pd.concat([xfmr_upgrades_df, temp_xfmr_upgrades_df])
-        # compute loading after upgrades
-        xfmr_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["transformer_upper_limit"], 
-                                                    equipment_type="transformer",  **simulation_params)
-        overloaded_xfmr_list = list(xfmr_loading_df.loc[xfmr_loading_df["status"] == "overloaded"]["name"].unique())
-        line_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["line_upper_limit"], 
-                                                    equipment_type="line", ignore_switch=ignore_switch, **simulation_params)
-        overloaded_line_list = list(line_loading_df.loc[line_loading_df["status"] == "overloaded"]["name"].unique())
-        
-        if len(overloaded_line_list) > before_upgrade_num_line_violations:
-            logger.debug(overloaded_line_list)
-            logger.info("Write upgrades till this step to debug upgrades")
-            write_text_file(string_list=commands_list, text_file_path=thermal_upgrades_dss_filepath)
-            raise UpgradesInvalidViolationIncrease(f"Line violations increased from {before_upgrade_num_line_violations} to {len(overloaded_line_list)} "
-                f"during upgrade process")
-        if len(overloaded_xfmr_list) > before_upgrade_num_xfmr_violations:
-            logger.info("Write upgrades till this step to debug upgrades")
-            write_text_file(string_list=commands_list, text_file_path=thermal_upgrades_dss_filepath)
-            raise UpgradesInvalidViolationIncrease(f"Xfmr violations increased from {before_upgrade_num_xfmr_violations} to {len(overloaded_xfmr_list)} "
-                f"during upgrade process")
+        while (len(overloaded_line_list) > 0 or len(overloaded_xfmr_list) > 0) and (
+            iteration_counter < max_upgrade_iteration):
+            line_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["line_upper_limit"], 
+                                                        equipment_type="line", ignore_switch=ignore_switch, **simulation_params)
+            overloaded_line_list = list(line_loading_df.loc[line_loading_df["status"] == "overloaded"]["name"].unique())
+            logger.info(f"Iteration_{iteration_counter}: Determined line loadings.")
+            logger.info(f"Iteration_{iteration_counter}: Number of line violations: {len(overloaded_line_list)}")
+            before_upgrade_num_line_violations = len(overloaded_line_list)
+            if len(overloaded_line_list) > 0:            
+                line_commands_list, temp_line_upgrades_df = correct_line_violations(
+                    line_loading_df=line_loading_df,
+                    line_design_pu=thermal_config["line_design_pu"],
+                    line_upgrade_options=line_upgrade_options.copy(deep=True),
+                    parallel_lines_limit=thermal_config["parallel_lines_limit"],
+                    external_upgrades_technical_catalog=external_upgrades_technical_catalog,)
+                logger.info(f"Iteration_{iteration_counter}: Corrected line violations.")
+                commands_list = commands_list + line_commands_list
+                line_upgrades_df = pd.concat([line_upgrades_df, temp_line_upgrades_df])
+            xfmr_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["transformer_upper_limit"], 
+                                                        equipment_type="transformer", **simulation_params)
+            overloaded_xfmr_list = list(xfmr_loading_df.loc[xfmr_loading_df["status"] == "overloaded"]["name"].unique())
+            logger.info(f"Iteration_{iteration_counter}: Determined xfmr loadings.")
+            logger.info(f"Iteration_{iteration_counter}: Number of xfmr violations: {len(overloaded_xfmr_list)}")
+            before_upgrade_num_xfmr_violations = len(overloaded_xfmr_list)
+            
+            if len(overloaded_xfmr_list) > 0:
+                xfmr_commands_list, temp_xfmr_upgrades_df = correct_xfmr_violations(
+                    xfmr_loading_df=xfmr_loading_df,
+                    xfmr_design_pu=thermal_config["transformer_design_pu"],
+                    xfmr_upgrade_options=xfmr_upgrade_options.copy(deep=True),
+                    parallel_transformers_limit=thermal_config["parallel_transformers_limit"])
+                logger.info(f"Iteration_{iteration_counter}: Corrected xfmr violations.")
+                commands_list = commands_list + xfmr_commands_list
+                xfmr_upgrades_df = pd.concat([xfmr_upgrades_df, temp_xfmr_upgrades_df])
+            # compute loading after upgrades
+            xfmr_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["transformer_upper_limit"], 
+                                                        equipment_type="transformer",  **simulation_params)
+            overloaded_xfmr_list = list(xfmr_loading_df.loc[xfmr_loading_df["status"] == "overloaded"]["name"].unique())
+            line_loading_df = get_thermal_equipment_info(compute_loading=True, upper_limit=thermal_config["line_upper_limit"], 
+                                                        equipment_type="line", ignore_switch=ignore_switch, **simulation_params)
+            overloaded_line_list = list(line_loading_df.loc[line_loading_df["status"] == "overloaded"]["name"].unique())
+            
+            if len(overloaded_line_list) > before_upgrade_num_line_violations:
+                logger.debug(overloaded_line_list)
+                logger.info("Write upgrades till this step to debug upgrades")
+                write_text_file(string_list=commands_list, text_file_path=thermal_upgrades_dss_filepath)
+                raise UpgradesInvalidViolationIncrease(f"Line violations increased from {before_upgrade_num_line_violations} to {len(overloaded_line_list)} "
+                    f"during upgrade process")
+            if len(overloaded_xfmr_list) > before_upgrade_num_xfmr_violations:
+                logger.info("Write upgrades till this step to debug upgrades")
+                write_text_file(string_list=commands_list, text_file_path=thermal_upgrades_dss_filepath)
+                raise UpgradesInvalidViolationIncrease(f"Xfmr violations increased from {before_upgrade_num_xfmr_violations} to {len(overloaded_xfmr_list)} "
+                    f"during upgrade process")
 
-        logger.info(f"Iteration_{iteration_counter}: Number of devices with violations after this iteration: Transformers:{len(overloaded_xfmr_list)}, Lines: {len(overloaded_line_list)}")
-        iteration_counter += 1
-        if iteration_counter > max_upgrade_iteration:
-            logger.info(f"Max iterations limit reached, quitting algorithm. This means all thermal violations were not resolved with these limited iterations."
-                        f"You can increase the Iteration limit in the thermal_config['upgrade_iteration_threshold']")
-            break
-    if iteration_counter > 1:
-        logger.info(f"Multiple iterations ({iteration_counter}) were needed to resolve thermal violations."
-                    f"This indicates that feeder was extremely overloaded to start with.")
+            logger.info(f"Iteration_{iteration_counter}: Number of devices with violations after this iteration: Transformers:{len(overloaded_xfmr_list)}, Lines: {len(overloaded_line_list)}")
+            iteration_counter += 1
+            if iteration_counter > max_upgrade_iteration:
+                logger.info(f"Max iterations limit reached, quitting algorithm. This means all thermal violations were not resolved with these limited iterations."
+                            f"You can increase the Iteration limit in the thermal_config['upgrade_iteration_threshold']")
+                break
+        if iteration_counter > 1:
+            logger.info(f"Multiple iterations ({iteration_counter}) were needed to resolve thermal violations."
+                        f"This indicates that feeder was extremely overloaded to start with.")
+        
+        if any("new " in string.lower() for string in commands_list):  # if new equipment is added.
+            commands_list.append("CalcVoltageBases")
+        commands_list.append("Solve")
+    else:
+        commands_list =  []
+        logger.info(f" Thermal upgrades disabled - upgrades not performed.")
     
-    if any("new " in string.lower() for string in commands_list):  # if new equipment is added.
-        commands_list.append("CalcVoltageBases")
-    commands_list.append("Solve")
     write_text_file(string_list=commands_list, text_file_path=thermal_upgrades_dss_filepath)
     redirect_command_list = create_upgraded_master_dss(dss_file_list=initial_dss_file_list + [thermal_upgrades_dss_filepath], upgraded_master_dss_filepath=upgraded_master_dss_filepath,
                                                        original_master_filename=os.path.basename(master_path))
