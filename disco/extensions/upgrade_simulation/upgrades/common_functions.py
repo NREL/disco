@@ -575,7 +575,7 @@ def create_thermal_output_summary(all_original_equipment, all_latest_equipment, 
         original_equipment_df = original_equipment_df.rename(columns={props_dict[equipment_type]["identifier"]: "equipment_name"})
         temp_upgrade_df = upgrades_dict[equipment_type]
         temp_upgrade_df = temp_upgrade_df.rename(columns={"final_equipment_name": "equipment_name"})
-        if (temp_upgrade_df.empty) and (original_equipment_df.empty):  # if there are no equipment for voltage controls
+        if (temp_upgrade_df.empty) and (original_equipment_df.empty):  # if there are no equipment of that type
             continue 
         new_df = latest_equipment_df.copy(deep=True)
         new_df = pd.concat([new_df, pd.DataFrame(columns=list(set(output_cols)-set(new_df.columns)))], axis=1)
@@ -594,6 +594,8 @@ def create_thermal_output_summary(all_original_equipment, all_latest_equipment, 
             # add cost
             temp_cost_df.set_index("equipment_name", inplace=True)
             new_df.set_index("equipment_name", inplace=True)
+            if len(temp_cost_df[temp_cost_df.index.duplicated()]) > 0:
+                raise Exception("Duplicates upgrades shouldn't exist. Review logic for this feeder model case.")
             new_df.loc[new_df.index.isin(temp_cost_df.index), "total_cost_usd"] = temp_cost_df.total_cost_usd
         else:
             new = []
@@ -1796,7 +1798,55 @@ def determine_available_xfmr_upgrades(xfmr_loading_df):
     return xfmr_upgrade_options
 
 
-def get_pv_buses():
+def remove_duplicate_line_upgrades(line_upgrades_df):
+    if line_upgrades_df.empty:
+        return line_upgrades_df
+    upgrades_subset = line_upgrades_df.loc[line_upgrades_df["action"] == "add"]
+    duplicate_equip = list(upgrades_subset[upgrades_subset.final_equipment_name.duplicated()].final_equipment_name.unique())
+    if not duplicate_equip:
+        return line_upgrades_df
+    upgrades_subset = upgrades_subset.groupby('final_equipment_name', group_keys=False).apply(lambda df: df.fillna(method='ffill'))
+    upgrades_subset = upgrades_subset.loc[upgrades_subset["final_equipment_name"].duplicated(keep=False)]
+    duplicates_final = upgrades_subset.loc[upgrades_subset["upgrade_type"] == "upgrade"]
+    duplicates_final = duplicates_final.sort_values("normamps", ascending=False)
+    duplicates_final = duplicates_final.drop_duplicates(subset=["upgrade_type", "action", "final_equipment_name"], keep="first")  # drop any duplicate rows, keeping highest rating
+    duplicates_final["upgrade_type"] = "new_parallel"
+    duplicates_final = duplicates_final.drop(columns=["original_equipment_name"])
+    # get original equipment name : 
+    og = upgrades_subset.loc[upgrades_subset["upgrade_type"] == "new_parallel"].set_index("final_equipment_name")[["original_equipment_name"]]
+    duplicates_final = pd.concat([duplicates_final.set_index("final_equipment_name"), og], axis=1).reset_index()
+    
+    # keep all non-duplicated
+    final_line_upgrades_df = line_upgrades_df.loc[~(line_upgrades_df["final_equipment_name"].isin(duplicate_equip))]
+    final_line_upgrades_df = pd.concat([final_line_upgrades_df, duplicates_final])
+    return final_line_upgrades_df
+    
+    
+def remove_duplicate_transformer_upgrades(xfmr_upgrades_df):
+    if xfmr_upgrades_df.empty:
+        return xfmr_upgrades_df
+    upgrades_subset = xfmr_upgrades_df.loc[xfmr_upgrades_df["action"] == "add"]
+    duplicate_equip = list(upgrades_subset[upgrades_subset.final_equipment_name.duplicated()].final_equipment_name.unique())
+    if not duplicate_equip:
+        return xfmr_upgrades_df
+    upgrades_subset = upgrades_subset.groupby('final_equipment_name', group_keys=False).apply(lambda df: df.fillna(method='ffill'))
+    upgrades_subset = upgrades_subset.loc[upgrades_subset["final_equipment_name"].duplicated(keep=False)]
+    duplicates_final = upgrades_subset.loc[upgrades_subset["upgrade_type"] == "upgrade"]
+    duplicates_final = duplicates_final.sort_values("kVA", ascending=False)
+    duplicates_final = duplicates_final.drop_duplicates(subset=["upgrade_type", "action", "final_equipment_name"], keep="first")  # drop any duplicate rows, keeping highest rating
+    duplicates_final["upgrade_type"] = "new_parallel"
+    duplicates_final = duplicates_final.drop(columns="original_equipment_name")
+    # get original equipment name : 
+    og = upgrades_subset.loc[upgrades_subset["upgrade_type"] == "new_parallel"].set_index("final_equipment_name")[["original_equipment_name"]]
+    duplicates_final = pd.concat([duplicates_final.set_index("final_equipment_name"), og], axis=1).reset_index()
+    
+    # keep all non-duplicated
+    final_xfmr_upgrades_df = xfmr_upgrades_df.loc[~(xfmr_upgrades_df["final_equipment_name"].isin(duplicate_equip))]
+    final_xfmr_upgrades_df = pd.concat([final_xfmr_upgrades_df, duplicates_final])
+    return final_xfmr_upgrades_df
+
+
+def get_pv_buses(dss):
     pv_buses = []
     flag = dss.PVsystems.First()
     while flag > 0:

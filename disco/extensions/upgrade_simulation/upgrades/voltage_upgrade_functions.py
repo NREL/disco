@@ -401,12 +401,13 @@ def get_capacitor_upgrades(orig_capacitors_df, new_capacitors_df):
                 # if control type in original controller is voltage, only settings are changed
                 if orig_capcontrols[cap_name]["capcontrol_type"].lower().startswith("volt"):
                     final_cap_upgrades["ctrl_added"] = False
-                # if original controller type was current, new controller (voltage type) is said to be added
-                elif orig_capcontrols[cap_name]["capcontrol_type"].lower().startswith("current"):
+                # if original controller type was different (current or time), new controller (voltage type) is said to be added
+                else:
                     final_cap_upgrades["ctrl_added"] = True
             # if there are new controllers
             elif cap_name in new_addition:
                 final_cap_upgrades["ctrl_added"] = True
+            # else:  # TODO else condition to be added?
         processed_outputs.append(
             VoltageUpgradesTechnicalResultModel(**{
                 "equipment_type": final_cap_upgrades["cap_name"].split(".")[0],
@@ -1993,6 +1994,8 @@ def plot_created_clusters(fig_folder, clusters_dict, circuit_source=None):
     G = generate_networkx_representation()
     bus_coordinates_df = get_bus_coordinates()
     complete_flag = check_buscoordinates_completeness(bus_coordinates_df)  # check if sufficient buscoordinates data is available
+    num_clusters = len(clusters_dict.keys())
+    title = f"all_bus_violations_grouped_in_{num_clusters}_clusters"
     if not complete_flag:  # feeder cannot be plotted if sufficient buscoordinates data is unavailable
         logger.warning(f"Unable to plot {title} because feeder model bus coordinates are not provided.")
         return
@@ -2007,7 +2010,6 @@ def plot_created_clusters(fig_folder, clusters_dict, circuit_source=None):
         nx.draw_networkx_nodes(G, pos=filter_dictionary(dict_data=position_dict, wanted_keys=[circuit_source]),
                                 nodelist=[circuit_source], node_size=NODE_COLORLEGEND[key]["node_size"], 
                                 node_color=NODE_COLORLEGEND[key]["node_color"], alpha=NODE_COLORLEGEND[key]["alpha"], label=NODE_COLORLEGEND[key]["label"])
-    num_clusters = len(clusters_dict.keys())
     col = 0
     for key, values in clusters_dict.items():
         buses_list = values["buses_list"]
@@ -2024,7 +2026,6 @@ def plot_created_clusters(fig_folder, clusters_dict, circuit_source=None):
                                label=f"Voltage Regulator_cluster{key}")
         col += 1
     
-    title = f"all_bus_violations_grouped_in_{num_clusters}_clusters"
     plt.title(title, fontsize=50)
     plt.legend(fontsize=50)
     title = title.lower()
