@@ -34,17 +34,24 @@ There are several actions here related to PV deployments manipulation, including
 
 Redirect PVShapes
 -----------------
-Before performing PV deployments, we need to ensure the ``PVShapes.dss`` is redirected in the master 
-file located in substation and feeder directories. Two steps are required:
+This workflow will generate OpenDSS files with varying counts and sizes of PVSystems. It will
+assign load shape profiles to those PVSystems from a pool of profiles. You must define these
+profiles in a ``PVShapes.dss`` file and copy that files to all substation and/or feeder
+directories.
 
-First, you need to generate the PV profiles into a ``PVShapes.dss`` file on your own, and then
-copy the ``PVShapes.dss`` into each substation and feeder directories.
+All ``Master.dss`` need to redirect to ``PVShapes.dss``. We recommend that you add these lines to
+your files. If you do that, you can skip to the next section.
 
-Second, run the command below.
+If your directory structure aligns with the ``source-tree-1`` expectations, the disco CLI command
+below will add the redirects automatically.
+
+.. todo:: Make this code handle all cases generically.
+
+Run this command:
 
 .. code-block:: bash
 
-    $ disco pv-deployments source-tree-1 -a direct-pvshapes -h <hierarchy> INPUT_PATH
+    $ disco pv-deployments source-tree-1 -a redirect-pvshapes -h <hierarchy> INPUT_PATH
 
 
 Transform Loads

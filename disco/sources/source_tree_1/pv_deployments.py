@@ -117,10 +117,11 @@ class PVDSSInstance:
     def load_feeder(self) -> None:
         """OpenDSS redirect master DSS file"""
         dss.Text.Command("Clear")
-        logger.info("OpenDSS loads feeder - %s", self.master_file)
-        r = dss.Text.Command(f"Redirect '{self.master_file}'")
-        if r is not None:
-            logger.exception("OpenDSSError: %s. Feeder: %s", str(r), self.master_file)
+        logger.info("OpenDSS load feeder - %s", self.master_file)
+        try:
+            dss.Text.Command(f"Redirect '{self.master_file}'")
+        except Exception:
+            logger.exception(f"OpenDSSError: master_file={self.master_file}")
             raise
 
     def search_head_line(self) -> None:
@@ -330,8 +331,7 @@ class PVScenarioGeneratorBase(abc.ABC):
         """Return the full path of master file"""
         master_file = os.path.join(input_path, self.config.master_filename)
         if not os.path.exists(master_file):
-            logger.exception("'%s' not found in '%s'. System exits!", self.config.master_filename, self.feeder_path)
-            raise
+            raise FileNotFoundError(f"{self.config.master_filename} not found in {self.feeder_path}")
         return master_file
 
     def load_pvdss_instance(self) -> PVDSSInstance:
@@ -351,7 +351,7 @@ class PVScenarioGeneratorBase(abc.ABC):
                 flag = pvdss_instance.ensure_energy_meter()
                 if flag:
                     pvdss_instance.load_feeder()  # Need to reload after master file updated.
-        except Exception as error:
+        except Exception:
             logger.exception("Failed to load master file - %s", master_file)
             raise
         return pvdss_instance
@@ -365,12 +365,10 @@ class PVScenarioGeneratorBase(abc.ABC):
         total_loads = pvdss_instance.get_total_loads()
         feeder_stats = pvdss_instance.get_feeder_stats(total_loads)
         if total_loads.total_load <= 0:
-            feeder_stats_string = json.dumps(feeder_stats.__dict__)
-            logger.exception(
-                "Failed to generate PV scenarios on feeder - %s, stats: %s",
-                feeder_name, feeder_stats_string
+            stats_str = json.dumps(feeder_stats.__dict__)
+            raise ValueError(
+                f"Failed to generate PV scenarios on feeder - {feeder_name}, stats: {stats_str}"
             )
-            raise
 
         # combined bus distance
         customer_distance = pvdss_instance.get_customer_distance()
@@ -393,12 +391,11 @@ class PVScenarioGeneratorBase(abc.ABC):
         feeder_stats = pvdss_instance.get_feeder_stats(total_loads, existing_pvs)
         if feeder_stats.pcent_base_pv > self.config.max_penetration:
             feeder_stats_string = json.dumps(feeder_stats.__dict__)
-            logger.exception(
-                "Failed to generate PV scenarios on feeder - %s. \
-                The existing PV amount exceeds the maximum penetration level of %s\%. Stats: %s",
-                feeder_name, self.cofig.max_penetration, feeder_stats_string
+            raise ValueError(
+                f"Failed to generate PV scenarios on feeder - {feeder_name}. "
+                f"The existing PV amount exceeds the maximum penetration level of "
+                f"{self.config.max_penetration}%. Stats: {feeder_stats_string}",
             )
-            raise
 
         snum = self.config.sample_number + 1
         start = self.config.min_penetration
@@ -596,12 +593,11 @@ class PVScenarioGeneratorBase(abc.ABC):
         all_remaining_pv_to_install = total_pv - data.total_existing_pv
         if all_remaining_pv_to_install <= 0:
             minimum_penetration = (data.total_existing_pv * 100) / max(0.0001, data.total_load)
-            logger.exception(
-                "Failed to generate PV scenarios on feeder - %s. \
-                The system has more than the target PV penetration. \
-                Please increase penetration to at least %s.", self.feeder_path, minimum_penetration
+            raise ValueError(
+                f"Failed to generate PV scenarios on feeder - {self.feeder_path}. "
+                "The system has more than the target PV penetration. "
+                f"Please increase penetration to at least {minimum_penetration}."
             )
-            raise
         return all_remaining_pv_to_install
 
     def get_priority_buses(self, data: SimpleNamespace) -> list:
@@ -650,7 +646,10 @@ class PVScenarioGeneratorBase(abc.ABC):
         pv_name = self.generate_pv_name(bus, pv_type)
         dss.Circuit.SetActiveBus(bus)
         node_list = bus.split(".")
-        ph = len(node_list) - 1
+        if len(node_list) == 1:
+            ph = 3
+        else:
+            ph = len(node_list) - 1
         if ph == 3:
             conn = "delta"
             kv = round(dss.Bus.kVBase()*(3)**0.5, 4)
@@ -731,7 +730,7 @@ class PVScenarioGeneratorBase(abc.ABC):
         pv_shapes_file = os.path.join(input_path, PV_SHAPES_FILENAME)
         return pv_shapes_file
 
-    def create_all_pv_configs(self) -> None:
+    def create_all_pv_configs(self, control_name, limit) -> None:
         """Create PV configs JSON file"""
         root_path = self.get_pv_deployments_path()
         if not os.path.exists(root_path):
@@ -760,7 +759,7 @@ class PVScenarioGeneratorBase(abc.ABC):
                         continue
                     pv_systems_file = os.path.join(pen_dir, PV_SYSTEMS_FILENAME)
                     if os.path.exists(pv_systems_file):
-                        pv_conf, pv_prof = self.assign_profile(pv_systems_file, pv_shapes_file, pv_systems)
+                        pv_conf, pv_prof = self.assign_profile(pv_systems_file, pv_shapes_file, pv_systems, control_name, limit)
                         pv_configs += pv_conf
                         pv_profiles.update(pv_prof)
                         self.attach_profile(pv_systems_file, pv_profiles)
@@ -782,16 +781,17 @@ class PVScenarioGeneratorBase(abc.ABC):
         
         bus_key = "bus1="
         shape_key = "yearly="
-        load_key = "Load."
+        load_key = "load."
 
         bus_customer_types, load_customer_types = {}, {}
         with open(loads_file, "r") as f:
             for line in f.readlines():
-                if bus_key not in line.lower():
+                lowered = line.lower().strip()
+                if bus_key not in lowered:
                     continue
-                bus = line.split(bus_key)[1].split(" ")[0].split(".")[0]
-                shape_name = line.split(shape_key)[1].split(" ")[0]
-                load = line.split(load_key)[1].split(" ")[0]
+                bus = lowered.split(bus_key)[1].split(" ")[0].split(".")[0]
+                shape_name = lowered.split(shape_key)[1].split(" ")[0]
+                load = lowered.split(load_key)[1].split(" ")[0]
                 if "com_" in shape_name:
                     customer_type = "commercial"
                 elif "res_" in shape_name:
@@ -813,7 +813,8 @@ class PVScenarioGeneratorBase(abc.ABC):
         pv_systems_file: str,
         pv_shapes_file: str,
         pv_systems: set,
-        limit: int = 5
+        control_name: str,
+        limit: int,
     ) -> dict:
         """Assign PV profile to PV systems."""
         pv_dict = self.get_pvsys(pv_systems_file)
@@ -823,9 +824,7 @@ class PVScenarioGeneratorBase(abc.ABC):
             pv_value = value["pmpp"]
             if pv_name in pv_systems:
                 continue
-            if float(pv_value) > limit:
-                control_name = "volt_var_ieee_1547_2018_catB"
-            else:
+            if float(pv_value) <= limit:
                 control_name = "pf1"
             pv_profile = random.choice(shape_list)
 
@@ -1242,13 +1241,11 @@ class PVDataManager(PVDataStorage):
 
     def redirect(self, input_path: str) -> bool:
         """Given a path, update the master file by redirecting PVShapes.dss"""
-        pv_shapes_file = os.path.join(input_path, PV_SHAPES_FILENAME)
         self._copy_pv_shapes_file(input_path)
         
         master_file = os.path.join(input_path, self.config.master_filename)
         if not os.path.exists(master_file):
-            logger.exception("'%s' not found in '%s'. System exits!", self.config.master_filename, input_path)
-            raise
+            raise FileNotFoundError(f"{self.config.master_filename} not found in {input_path}")
         
         index = 0
         with open(master_file, "r") as fr:
@@ -1299,7 +1296,8 @@ class PVDataManager(PVDataStorage):
         substation_paths = self.get_substation_paths()
         logger.info("Running PVShapes redirect in %s substation directories...", len(substation_paths))
         with ProcessPoolExecutor() as executor:
-            executor.map(self.redirect, substation_paths)
+            for _ in executor.map(self.redirect, substation_paths):
+                pass
         logger.info("Substation PVShapes redirect done!")
     
     def redirect_feeder_pv_shapes(self) -> None:
@@ -1307,7 +1305,8 @@ class PVDataManager(PVDataStorage):
         feeder_paths = self.get_feeder_paths()
         logger.info("Running PVShapes redirect in %s feeder directories...", len(feeder_paths))
         with ProcessPoolExecutor() as executor:
-            executor.map(self.redirect, feeder_paths)
+            for _ in executor.map(self.redirect, feeder_paths):
+                pass
         logger.info("Feeder PVShapes redirect done!")
     
     def rename(self, feeder_path: str) -> None:
@@ -1345,7 +1344,8 @@ class PVDataManager(PVDataStorage):
             deployed.append(feeder_path)
         
         with ProcessPoolExecutor() as executor:
-            executor.map(self.rename, deployed)
+            for _ in executor.map(self.rename, deployed):
+                pass
         logger.info("Feeder Loads rename done, total %s", len(deployed))
     
     def revert(self, feeder_path: str):
@@ -1370,7 +1370,8 @@ class PVDataManager(PVDataStorage):
     def revert_master_files(self, feeder_paths: list) -> None:
         """Revert master files with LoadShapes.dss redirect enabled"""
         with ProcessPoolExecutor() as executor:
-            executor.map(self.revert, feeder_paths)
+            for _ in executor.map(self.revert, feeder_paths):
+                pass
         logger.info("Feeder Redirect LoadShapes.dss enabled in master files, total %s", len(feeder_paths))
     
     def restore_feeder_data(self) -> None:
@@ -1427,6 +1428,7 @@ class PVDataManager(PVDataStorage):
         
         shutil.copyfile(loads_file, original_loads_file)
         try:
+            # TODO DT: remove these
             os.chmod(original_loads_file, 0o666)
         except Exception:
             pass
@@ -1479,7 +1481,11 @@ class PVDataManager(PVDataStorage):
             kw = self.get_attribute(line, "kw=")
             kvar = self.get_attribute(line, "kvar=")
             kva = self.get_attribute(line, "kva=")
-            phases = self.get_attribute(line, "phases=")
+            if "phases=" in line:
+                phases = self.get_attribute(line, "phases=")
+            else:
+                # Kwami says that this is a safe default if the line does not define the value.
+                phases = 3
             init_name = self.get_attribute(line, "new load.")
             
             if "." in bus_node:
@@ -1514,10 +1520,9 @@ class PVDataManager(PVDataStorage):
                     load_dict[bus, name]["kvar"] = kvar
                 if "kva=" in lowered_line:
                     load_dict[bus, name]["kva"] = kva
-                if "phases=" in lowered_line:
-                    load_dict[bus, name]["phases"] = phases
                 load_dict[bus,name]["line_idx"] = idx 
                 load_dict[bus,name]["kv"] = kv
+            load_dict[bus, name]["phases"] = phases
         
         rekeyed_load_dict = {v["line_idx"]: v for k, v in load_dict.items()}
         return rekeyed_load_dict
@@ -1560,7 +1565,8 @@ class PVDataManager(PVDataStorage):
         feeder_paths = self.get_feeder_paths()
         logger.info("Transforming loads files in %s feeders...", len(feeder_paths))
         with ProcessPoolExecutor() as executor:
-            executor.map(self.transform, feeder_paths)
+            for _ in executor.map(self.transform, feeder_paths):
+                pass
         logger.info("Feeder Loads transformed, total %s feeders.", len(feeder_paths))
 
 
@@ -1732,13 +1738,13 @@ class PVConfigManager(PVDataStorage):
         """
         super().__init__(input_path, hierarchy, config)
 
-    def generate_pv_configs(self) -> list:
+    def generate_pv_configs(self, control_name="volt_var_ieee_1547_2018_catB", limit=5) -> list:
         """Generate pv config JSON files based on PV deployments"""
         config_files = []
         feeder_paths = self.get_feeder_paths()
         for feeder_path in feeder_paths:
             generator = get_pv_scenario_generator(feeder_path, self.config)
-            result = generator.create_all_pv_configs()
+            result = generator.create_all_pv_configs(control_name, limit)
             config_files.extend(result)
             
             generator.create_pv_systems_sum_group_file(pv_config_files=result)

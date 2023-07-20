@@ -37,7 +37,7 @@ def create_pv_deployments(input_path: str, hierarchy: str, config: dict):
     print(json.dumps(summary, indent=2))
 
 
-def create_pv_configs(input_path: str, hierarchy: str, config: dict):
+def create_pv_configs(input_path: str, hierarchy: str, config: dict, control_name: str, limit: int):
     """A method for generating pv config JSON files """
     hierarchy = DeploymentHierarchy(hierarchy)
     config = SimpleNamespace(**config)
@@ -46,7 +46,7 @@ def create_pv_configs(input_path: str, hierarchy: str, config: dict):
         print(f"'-p' or '--placement' option is ignored for this action.")
     
     manager = PVConfigManager(input_path, hierarchy, config)
-    config_files = manager.generate_pv_configs()
+    config_files = manager.generate_pv_configs(control_name=control_name, limit=limit)
     print(f"PV configs created! Total: {len(config_files)}")
 
 
@@ -112,8 +112,12 @@ def redirect_pv_shapes(input_path: str, hierarchy: str, config: dict):
     hierarchy = DeploymentHierarchy(hierarchy)
     config = SimpleNamespace(**config)
     manager = PVDataManager(input_path, hierarchy, config)
-    manager.redirect_substation_pv_shapes()
-    manager.redirect_feeder_pv_shapes()
+    if hierarchy == DeploymentHierarchy.SUBSTATION:
+        manager.redirect_substation_pv_shapes()
+    elif hierarchy == DeploymentHierarchy.FEEDER:
+        manager.redirect_feeder_pv_shapes()
+    else:
+        raise NotImplementedError(f"{hierarchy=}")
 
 
 def generate_pv_deployment_jobs(input_path: str, hierarchy: str, config: dict):
@@ -171,10 +175,26 @@ def pv_deployments():
     help="Choose the action related to pv deployments"
 )
 @click.option(
+    "-c", "--control-name",
+    type=click.STRING,
+    default="volt_var_ieee_1547_2018_catB",
+    show_default=True,
+    help="Choose the control name to assign to pv configs in the action create-configs."
+)
+@click.option(
     "-h", "--hierarchy",
     type=click.Choice(HIERARCHY_CHOICE, case_sensitive=False),
     required=True,
     help="Choose the deployment hierarchy."
+)
+@click.option(
+    "-l", "--kw-limit",
+    type=click.FLOAT,
+    default=5,
+    show_default=True,
+    help="Capacity threshold to use for assigning the value of --control-name. The action "
+    "create-configs will only assign a control if a PV's capacity is greater than this value in "
+    "kW.",
 )
 @click.option(
     "-p", "--placement",
@@ -280,7 +300,9 @@ def pv_deployments():
 def source_tree_1(
     input_path,
     action,
+    control_name,
     hierarchy,
+    kw_limit,
     placement,
     category,
     master_filename,
@@ -322,7 +344,11 @@ def source_tree_1(
         "random_seed": random_seed
     }
     action_function = ACTION_MAPPING[action]
-    action_function(input_path, hierarchy, config)
+    args = [input_path, hierarchy, config]
+    if action == "create-configs":
+        args.append(control_name)
+        args.append(kw_limit)
+    action_function(*args)
 
 
 pv_deployments.add_command(source_tree_1)
