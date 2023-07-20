@@ -19,6 +19,8 @@ from disco.cli.pv_deployments import pv_deployments
 from disco.cli.create_pipeline import create_pipeline
 from disco.cli.ingest_tables import ingest_tables
 from disco.cli.make_summary_tables import make_summary_tables
+from disco.cli.compute_hosting_capacity import compute_hosting_capacity
+from disco.cli.plots import plot
 from disco.cli.summarize_hosting_capacity import summarize_hosting_capacity
 from disco.cli.config_generic_models import config_generic_models
 from disco.cli.upgrade_cost_analysis import upgrade_cost_analysis
@@ -55,3 +57,5 @@ cli.add_command(make_summary_tables)
 cli.add_command(summarize_hosting_capacity)
 cli.add_command(upgrade_cost_analysis)
 cli.add_command(hosting_capacity_by_timestep)
+cli.add_command(compute_hosting_capacity)
+cli.add_command(plot)

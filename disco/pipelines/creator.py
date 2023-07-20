@@ -80,8 +80,8 @@ class SnapshotPipelineCreator(PipelineCreatorBase):
                 with_loadshape = config_params["with_loadshape"]
                 auto_select_time_points = config_params["auto_select_time_points"]
                 pf1 = config_params["pf1"]
-                base_cmd = f"disco-internal compute-hosting-capacity {inputs}"
-                plot_cmd = f"disco-internal plot {inputs}"
+                base_cmd = f"disco compute-hosting-capacity {inputs}"
+                plot_cmd = f"disco plot {inputs}"
                 scenarios = [CONTROL_MODE_SCENARIO]
                 if pf1:
                     scenarios.append(PF1_SCENARIO)
@@ -192,10 +192,10 @@ class TimeSeriesPipelineCreator(PipelineCreatorBase):
             commands.append(f"disco make-summary-tables {inputs}")
             if hosting_capacity:
                 for scenario in TIME_SERIES_SCENARIOS:
-                    commands.append(f"disco-internal compute-hosting-capacity {inputs} --scenario={scenario}")
+                    commands.append(f"disco compute-hosting-capacity {inputs} --scenario={scenario}")
                 
                 for scenario in TIME_SERIES_SCENARIOS:
-                    commands.append(f"disco-internal plot {inputs} --scenario={scenario}")
+                    commands.append(f"disco plot {inputs} --scenario={scenario}")
             
             # Postprocess to ingest results into sqlite database
             task_name = self.template.data["task_name"]
