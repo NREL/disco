@@ -10,6 +10,7 @@ from sklearn.cluster import AgglomerativeClustering
 
 from .common_functions import *
 from .thermal_upgrade_functions import define_xfmr_object
+from disco.exceptions import OpenDSSModelError
 from disco import timer_stats_collector
 from disco.models.upgrade_cost_analysis_generic_output_model import VoltageUpgradesTechnicalResultModel
 from opendssdirect import DSSException
@@ -27,6 +28,22 @@ NODE_COLORLEGEND = {'Load': {'node_color': 'blue', 'node_size': 20, "alpha": 1, 
                 'Voltage Regulator': {'node_color': 'cyan', 'node_size': 1000, "alpha": 0.75, "label": "Voltage Regulator"},                
                 }
 EDGE_COLORLEGEND = {'Violation': {'edge_color': 'violet', 'edge_size': 75, 'alpha': 0.75, "label": "Line Violation"}}
+
+
+def check_circuit(initial_results):
+    # raise flag is there are issues with network model
+    min_voltage_threshold = 0.6
+    max_voltage_threshold = 2
+    
+    G = generate_networkx_representation()
+    isolated = list(nx.isolates(G))
+    if isolated:
+        raise OpenDSSModelError(f"OpenDSS model has isolated nodes: {isolated}")
+    if initial_results.min_bus_voltage < min_voltage_threshold:
+        raise OpenDSSModelError(f"Minimum bus voltage is less than {min_voltage_threshold}")
+    if initial_results.max_bus_voltage > max_voltage_threshold:
+        raise OpenDSSModelError(f"Maximum bus voltage is greater than {max_voltage_threshold}")
+    return
 
 
 def edit_capacitor_settings_for_convergence(voltage_config=None, control_command=''):
