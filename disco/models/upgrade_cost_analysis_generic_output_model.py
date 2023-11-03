@@ -374,6 +374,7 @@ class ExtendedEnum(enum.Enum):
 
 class CapacitorControllerResultType(ExtendedEnum):
     """Possible values for capacitor upgrade type"""
+    # replace_cap_controller = "Replace Capacitor controller"  # this is not used currently
     add_new_cap_controller = "Capacitor controller"
     change_cap_control = "Capacitor controller setting change"
    

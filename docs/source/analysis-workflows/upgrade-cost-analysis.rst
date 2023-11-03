@@ -48,7 +48,6 @@ Here are optional parameters that you can customize in the same file:
     parallel_transformers_limit = 4
     parallel_lines_limit = 4
     upgrade_iteration_threshold = 5
-    timepoint_multipliers = {}
 
     [voltage_upgrade_params]
     capacitor_sweep_voltage_gap = 1.0
@@ -57,7 +56,6 @@ Here are optional parameters that you can customize in the same file:
     max_regulators = 4
     place_new_regulators = true
     use_ltc_placement = true
-    timepoint_multipliers = {}
     capacitor_action_flag = true
     existing_regulator_sweep_action = true
 

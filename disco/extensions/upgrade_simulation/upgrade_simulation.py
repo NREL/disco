@@ -114,20 +114,16 @@ class UpgradeSimulation:
 
     def run(
         self,
-        enable_pydss_solve,
-        pydss_controller_model,
-        dc_ac_ratio,
         thermal_config,
         voltage_config,
+        upgrade_simulation_params_config,
         cost_database_filepath,
-        verbose=False
     ):  
         determine_thermal_upgrades(
             job_name = self.job.name,
             master_path=self.model.deployment.deployment_file,
-            enable_pydss_solve=enable_pydss_solve,
             thermal_config=thermal_config,
-            pydss_volt_var_model=pydss_controller_model,
+            upgrade_simulation_params_config=upgrade_simulation_params_config,
             internal_upgrades_technical_catalog_filepath=self.internal_upgrades_technical_catalog_filepath(),
             thermal_upgrades_dss_filepath=self.get_thermal_upgrades_dss_file(),
             upgraded_master_dss_filepath=self.get_upgraded_master_dss_file(),
@@ -135,16 +131,13 @@ class UpgradeSimulation:
             feeder_stats_json_file = self.get_feeder_stats_json_file(),
             thermal_upgrades_directory=self.get_thermal_upgrades_directory(),
             overall_output_summary_filepath=self.get_overall_output_summary_file(),
-            dc_ac_ratio=dc_ac_ratio,
-            verbose=verbose
         )
         determine_voltage_upgrades(
             job_name = self.job.name,
             master_path=self.model.deployment.deployment_file,
-            enable_pydss_solve=enable_pydss_solve,
-            pydss_volt_var_model=pydss_controller_model,
             thermal_config=thermal_config,
             voltage_config=voltage_config,
+            upgrade_simulation_params_config=upgrade_simulation_params_config,
             thermal_upgrades_dss_filepath=self.get_thermal_upgrades_dss_file(),
             voltage_upgrades_dss_filepath=self.get_voltage_upgrades_dss_file(),
             upgraded_master_dss_filepath=self.get_upgraded_master_dss_file(),
@@ -152,8 +145,6 @@ class UpgradeSimulation:
             feeder_stats_json_file = self.get_feeder_stats_json_file(),
             voltage_upgrades_directory=self.get_voltage_upgrades_directory(),
             overall_output_summary_filepath=self.get_overall_output_summary_file(),
-            dc_ac_ratio=dc_ac_ratio,
-            verbose=verbose
         )
         compute_all_costs(
             job_name = self.job.name,

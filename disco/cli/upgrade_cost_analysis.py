@@ -20,7 +20,7 @@ from disco.cli.make_upgrade_tables import get_upgrade_tables, combine_job_output
 from disco.exceptions import DiscoBaseException, get_error_code_from_exception
 from disco.models.base import OpenDssDeploymentModel
 from disco.models.upgrade_cost_analysis_generic_input_model import (
-    UpgradeCostAnalysisSimulationModel
+    UpgradeCostAnalysisSimulationModel, UpgradeSimulationParamsModel
 )
 from disco.models.upgrade_cost_analysis_generic_output_model import (
     JobUpgradeSummaryOutputModel,
@@ -218,7 +218,7 @@ def run(
         start = time.time()
         ret = EXIT_CODE_GOOD
         try:
-            run_job(job, config, jobs_output_dir, file_log_level)
+            run_job(job, config, jobs_output_dir)
             all_failed = False
         except DiscoBaseException as exc:
             logger.exception("Unexpected DISCO error in upgrade cost analysis job=%s", job.name)
@@ -273,7 +273,7 @@ def _get_return_code_filename(output_dir, job_name):
     return output_dir / job_name / "return_code"
 
 
-def run_job(job, config, jobs_output_dir, file_log_level):
+def run_job(job, config, jobs_output_dir):
     job_output_dir = jobs_output_dir / job.name
     job_output_dir.mkdir(exist_ok=True)
     job = UpgradeParameters(
@@ -284,21 +284,16 @@ def run_job(job, config, jobs_output_dir, file_log_level):
             feeder="NA",
         ),
     )
-
+    upgrade_simulation_params_names = list(UpgradeSimulationParamsModel.schema()["properties"].keys())
     global_config = {
         "thermal_upgrade_params": config.thermal_upgrade_params.dict(),
         "voltage_upgrade_params": config.voltage_upgrade_params.dict(),
-        "upgrade_simulation_params": {
-            "enable_pydss_controller": config.enable_pydss_controllers,
-        },
+        "upgrade_simulation_params": dict((k, config.dict()[k]) for k in upgrade_simulation_params_names),
         "upgrade_cost_database": config.upgrade_cost_database,
-        "dc_ac_ratio": config.dc_ac_ratio,
     }
-    global_config["upgrade_simulation_params"]["pydss_controller"] = None
-    if (config.pydss_controllers.pv_controller is not None) and config.enable_pydss_controllers:
-        global_config["upgrade_simulation_params"]["pydss_controller"] = (
-            config.pydss_controllers.pv_controller.dict(),
-        )
+    # replace PyDSS PV Controller dictionary with Model
+    if (global_config["upgrade_simulation_params"]["pydss_controllers"]["pv_controller"] is not None) and global_config["upgrade_simulation_params"]["enable_pydss_controllers"]:
+        global_config["upgrade_simulation_params"]["pydss_controllers"] = config.pydss_controllers.pv_controller
 
     simulation = UpgradeSimulation(
         job=job,
@@ -306,13 +301,10 @@ def run_job(job, config, jobs_output_dir, file_log_level):
         output=jobs_output_dir,
     )
     simulation.run(
-        dc_ac_ratio=global_config["dc_ac_ratio"],
-        enable_pydss_solve=global_config["upgrade_simulation_params"]["enable_pydss_controller"],
-        pydss_controller_model=config.pydss_controllers.pv_controller,
         thermal_config=global_config["thermal_upgrade_params"],
         voltage_config=global_config["voltage_upgrade_params"],
+        upgrade_simulation_params_config=global_config["upgrade_simulation_params"],
         cost_database_filepath=global_config["upgrade_cost_database"],
-        verbose=file_log_level == logging.DEBUG,
     )
 
 
