@@ -59,6 +59,13 @@ logger = logging.getLogger(__name__)
     help="Generation-based devices to use in time-point selection algorithm",
 )
 @click.option(
+    "--feederhead-only",
+    default=False,
+    # is_flag=True,
+    show_default=True,
+    help="Select critical timepoints for feederhead bus only.",
+)
+@click.option(
     "-o",
     "--output",
     default="output_time_points",
@@ -100,6 +107,7 @@ def select_time_points(
     demand_categories,
     generation_categories,
     critical_conditions,
+    feederhead_only,
     output,
     create_new_circuit,
     fix_master_file,
@@ -132,6 +140,7 @@ def select_time_points(
         master_file,
         categories=categories,
         critical_conditions=critical_conditions,
+        feederhead_only=feederhead_only,
         destination_dir=output,
         create_new_circuit=create_new_circuit,
         fix_master_file=fix_master_file,
