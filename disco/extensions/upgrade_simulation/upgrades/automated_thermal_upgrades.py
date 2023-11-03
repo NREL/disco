@@ -38,6 +38,8 @@ def determine_thermal_upgrades(
     logger.info( f"Simulation start time: {start_time}")  
     analysis_params = SimulationParams(timepoint_multipliers=upgrade_simulation_params_config["timepoint_multipliers"], 
                                        timeseries_analysis=upgrade_simulation_params_config["timeseries_analysis"])
+    logger.info( f"Analysis Parameters: {analysis_params}")  
+    
     create_plots = thermal_config["create_plots"]
     initial_solve_params = CircuitSolveParams(enable_pydss_controllers=upgrade_simulation_params_config["enable_pydss_controllers"])
     reload_circuit_params = ReloadCircuitParams(dc_ac_ratio=upgrade_simulation_params_config["dc_ac_ratio"],
@@ -280,10 +282,10 @@ def determine_thermal_upgrades(
                                                transformer_upper_limit=thermal_config["transformer_upper_limit"], line_upper_limit=thermal_config["line_upper_limit"], 
                                                voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit,solve_params=solve_params, ignore_switch=ignore_switch )
         feeder_stats["timeseries_stage_results"].append(timeseries_upgrade_stats)
+        # TODO: add description about this file required. this is to be added to input config: timeseries_analysis
         if not "timeseries_metadata" in feeder_stats.keys():
-            if upgrade_simulation_params_config["timeseries_metadata"] is not None:
-                feeder_stats["timeseries_metadata"] = pd.read_csv(upgrade_simulation_params_config["timeseries_metadata"]).to_dict("records")
-
+            metadata_filename = os.path.join(os.path.dirname(master_path), "..", "metadata.csv")
+            feeder_stats["timeseries_metadata"] = pd.read_csv(metadata_filename).to_dict("records")
     dump_data(feeder_stats, feeder_stats_json_file, indent=2)
     end_time = time.time()
     logger.info(f"Simulation end time: {end_time}")

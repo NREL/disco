@@ -70,8 +70,8 @@ def load_feeder(path_to_master: Path, destination_dir: Path, fix_master_file: bo
 
 def make_fixes_to_master(master_file):
     suffix = master_file.suffix
-    new_master = master_file.parent / master_file.name.replace(suffix, f"_new{suffix}")
-
+    # TODO this is being saved in the wrong location
+    new_master = master_file.parent / master_file.name.replace(suffix, f"_snapshot{suffix}")
     def has_invalid_command(line):
         for command in _DISALLOWED_OPEN_DSS_COMMANDS:
             if line.startswith(command):
@@ -87,7 +87,6 @@ def make_fixes_to_master(master_file):
                 else:
                     f_out.write(line)
             f_out.write(_SOLVE_LINE)
-
     return new_master
 
 
@@ -328,6 +327,7 @@ def aggregate_series(
     bus_data,
     profile_data,
     critical_conditions,
+    feederhead_only,
     recreate_profiles,
     destination_dir,
     create_new_circuit,
@@ -401,14 +401,17 @@ def aggregate_series(
     if CriticalCondition.MAX_NET_GENERATION in critical_conditions:
         max_netgen_idx = np.where(net_total_gen == np.amax(net_total_gen))[0].tolist()[0]
         head_critical_time_indices.append(max_netgen_idx)
-
-    critical_time_indices = [
-        t
-        for bus, dic in ag_series.items()
-        for t in dic["critical_time_idx"]
-        if "critical_time_idx" in dic
-    ]
-    critical_time_indices += head_critical_time_indices
+        
+    if feederhead_only:
+        critical_time_indices = head_critical_time_indices
+    else:
+        critical_time_indices = [
+            t
+            for bus, dic in ag_series.items()
+            for t in dic["critical_time_idx"]
+            if "critical_time_idx" in dic
+        ]
+        critical_time_indices += head_critical_time_indices
     critical_time_indices = sorted(set(critical_time_indices))
     compression_rate = 0
     if recreate_profiles:
@@ -428,7 +431,7 @@ def aggregate_series(
         reset_profile_data(used_profiles, critical_time_indices)
         before_path = destination_dir / "power_flow_results_before"
         after_path = destination_dir / "power_flow_results_after"
-        destination_model_dir = destination_dir / "new_model"
+        destination_model_dir = destination_dir / "reduced_model"
         destination_model_dir.mkdir()
         save_circuit(destination_model_dir)
         master_file = destination_model_dir / "Master.dss"
@@ -439,7 +442,7 @@ def aggregate_series(
     return ag_series, head_critical_time_indices, critical_time_indices, compression_rate
 
 
-def get_metadata(ag_series, head_critical_time_indices, critical_conditions):
+def get_metadata(ag_series, head_critical_time_indices, critical_conditions, feederhead_only):
     """
     This function exports metadata associated with selected timepoints.
     INPUT:
@@ -451,13 +454,20 @@ def get_metadata(ag_series, head_critical_time_indices, critical_conditions):
     buses_list = []
     critical_timepoint_list = []
     condition_list = []
-    for bus, dic in ag_series.items():
-        buses_list.append(bus)
-        critical_timepoint_list.append(dic["critical_time_idx"])
-        condition_list.append(dic["condition"])
+
+    # for feeder head
     buses_list.append("feederhead")
     critical_timepoint_list.append(head_critical_time_indices)
     condition_list.append(critical_conditions)
+    
+    if not feederhead_only:
+        for bus, dic in ag_series.items():
+            buses_list.append(bus)
+            critical_timepoint_list.append(dic["critical_time_idx"])
+            condition_list.append(dic["condition"])
+    # buses_list.append("feederhead")
+    # critical_timepoint_list.append(head_critical_time_indices)
+    # condition_list.append(critical_conditions)
     df = pd.DataFrame(
         list(zip(buses_list, critical_timepoint_list, condition_list)),
         columns=["buses_list", "critical_timepoint_list", "condition_list"],
@@ -474,6 +484,7 @@ def main(
     path_to_master: Path,
     categories,
     critical_conditions=tuple(x for x in CriticalCondition),
+    feederhead_only=False,
     recreate_profiles=False,
     destination_dir=None,
     create_new_circuit=True,
@@ -505,18 +516,19 @@ def main(
         for param_class in param_classes:
             bus_data = get_param_values(param_class, bus_data, category)
     profile_data = get_profile_data()
-    ag_series, head_time_indices, critical_time_indices, compression_rate = aggregate_series(
+    ag_series, head_critical_time_indices, critical_time_indices, compression_rate = aggregate_series(
         bus_data,
         profile_data,
         critical_conditions,
+        feederhead_only,
         recreate_profiles,
         destination_dir,
         create_new_circuit,
     )
-    metadata_df = get_metadata(ag_series, head_time_indices, critical_conditions)
+    metadata_df = get_metadata(ag_series, head_critical_time_indices, critical_conditions, feederhead_only)
     metadata_df.to_csv(destination_dir / "metadata.csv")
 
-    logger.info("head_time_indices = %s length = %s", head_time_indices, len(head_time_indices))
+    logger.info("head_time_indices = %s length = %s", head_critical_time_indices, len(head_critical_time_indices))
     logger.info(
         "critical_time_indices = %s length = %s", critical_time_indices, len(critical_time_indices)
     )
@@ -525,17 +537,20 @@ def main(
         bus_data,
         profile_data,
         ag_series,
-        head_time_indices,
+        head_critical_time_indices,
         critical_time_indices,
         compression_rate,
     )
 
 
 if __name__ == "__main__":
+    # path_to_master = Path(
+    #     r"tests/data/generic-models/p1uhs23_1247/p1udt21301/PVDeployments/p1uhs23_1247__p1udt21301__random__2__15.dss"
+    # )
     path_to_master = Path(
-        r"tests/data/generic-models/p1uhs23_1247/p1udt21301/PVDeployments/p1uhs23_1247__p1udt21301__random__2__15.dss"
+    r"C:\Users\SABRAHAMs\Desktop\NREL\current_projects\BlocPowerIthaca\feeder_model\baseline\OpenDSS\dss_files\Master_run.dss"
     )
-    destination = Path(r"test-output-timepoint")
+    destination = Path(r"C:\Users\SABRAHAMs\Desktop\NREL\current_projects\BlocPowerIthaca\feeder_model\baseline\OpenDSS\dss_files\test-output-timepoint")
     destination.mkdir(exist_ok=True)
     st = time.time()
     category_class_dict = {
@@ -543,18 +558,20 @@ if __name__ == "__main__":
         "generation": [GenerationCategory.PV_SYSTEM],
     }
     critical_conditions = [CriticalCondition.MAX_DEMAND, CriticalCondition.MAX_NET_GENERATION]
+    feederhead_only = True
 
     (
         bus_data,
         profile_data,
         ag_series,
-        head_time_indices,
+        head_critical_time_indices,
         critical_time_indices,
         compression_rate,
     ) = main(
         path_to_master,
         category_class_dict,
         critical_conditions=critical_conditions,
+        feederhead_only=feederhead_only,
         destination_dir=destination,
         recreate_profiles=True,
     )

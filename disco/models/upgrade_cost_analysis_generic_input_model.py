@@ -489,11 +489,6 @@ class UpgradeSimulationParamsModel(UpgradeParamsBaseModel):
         description="timeseries_analysis", 
         default=False
     )
-    timeseries_metadata: str = Field(
-        title="timeseries_metadata", 
-        description="timeseries_metadata", 
-        default=""
-    )
     timepoint_multipliers: Dict = Field(
         title="timepoint_multipliers",
         description='Dictionary to provide timepoint multipliers. example: timepoint_multipliers={"load_multipliers": {"with_pv": [1.2], "without_pv": [0.6]}}',

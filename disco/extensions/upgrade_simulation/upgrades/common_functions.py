@@ -1846,7 +1846,7 @@ def remove_duplicate_transformer_upgrades(xfmr_upgrades_df):
     return final_xfmr_upgrades_df
 
 
-def get_pv_buses(dss):
+def get_pv_buses():
     pv_buses = []
     flag = dss.PVsystems.First()
     while flag > 0:

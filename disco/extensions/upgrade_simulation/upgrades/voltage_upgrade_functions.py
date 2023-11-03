@@ -395,12 +395,13 @@ def get_capacitor_upgrades(orig_capacitors_df, new_capacitors_df):
             final_cap_upgrades["cap_on"] = new_capcontrols[cap_name]["ONsetting"]
             final_cap_upgrades["cap_off"] = new_capcontrols[cap_name]["OFFsetting"]
             final_cap_upgrades["ctrl_type"] = new_capcontrols[cap_name]["capcontrol_type"]
-            final_cap_upgrades["cap_settings"] = True
+            final_cap_upgrades["cap_settings"] = False
             # if there are differences between original and new controllers
             if cap_name in modified_capacitors:
                 # if control type in original controller is voltage, only settings are changed
                 if orig_capcontrols[cap_name]["capcontrol_type"].lower().startswith("volt"):
                     final_cap_upgrades["ctrl_added"] = False
+                    final_cap_upgrades["cap_settings"] = True
                 # if original controller type was different (current or time), new controller (voltage type) is said to be added
                 else:
                     final_cap_upgrades["ctrl_added"] = True
@@ -408,23 +409,23 @@ def get_capacitor_upgrades(orig_capacitors_df, new_capacitors_df):
             elif cap_name in new_addition:
                 final_cap_upgrades["ctrl_added"] = True
             # else:  # TODO else condition to be added?
-        processed_outputs.append(
-            VoltageUpgradesTechnicalResultModel(**{
-                "equipment_type": final_cap_upgrades["cap_name"].split(".")[0],
-                "name": final_cap_upgrades["cap_name"].split(".")[1],
-                "new_controller_added": final_cap_upgrades["ctrl_added"],
-                "controller_settings_modified": final_cap_upgrades["cap_settings"],
-                "final_settings": {
-                    "kvar": final_cap_upgrades["cap_kvar"],
-                    "kv": final_cap_upgrades["cap_kv"],
-                    "capcontrol_name": final_cap_upgrades["ctrl_name"],
-                    "capcontrol_type": final_cap_upgrades["ctrl_type"],
-                    "ONsetting": final_cap_upgrades["cap_on"],
-                    "OFFsetting": final_cap_upgrades["cap_off"]
-                     },
-                "new_transformer_added": False,
-                "at_substation": False,
-        }))
+            processed_outputs.append(
+                VoltageUpgradesTechnicalResultModel(**{
+                    "equipment_type": final_cap_upgrades["cap_name"].split(".")[0],
+                    "name": final_cap_upgrades["cap_name"].split(".")[1],
+                    "new_controller_added": final_cap_upgrades["ctrl_added"],
+                    "controller_settings_modified": final_cap_upgrades["cap_settings"],
+                    "final_settings": {
+                        "kvar": final_cap_upgrades["cap_kvar"],
+                        "kv": final_cap_upgrades["cap_kv"],
+                        "capcontrol_name": final_cap_upgrades["ctrl_name"],
+                        "capcontrol_type": final_cap_upgrades["ctrl_type"],
+                        "ONsetting": final_cap_upgrades["cap_on"],
+                        "OFFsetting": final_cap_upgrades["cap_off"]
+                        },
+                    "new_transformer_added": False,
+                    "at_substation": False,
+            }))
     return processed_outputs
 
 
@@ -860,9 +861,8 @@ def determine_substation_ltc_upgrades(voltage_upper_limit, voltage_lower_limit, 
     # if substation transformer is present but there are no regulator controls on the subltc
     elif (orig_ckt_info['substation_xfmr'] is not None) and (not subltc_present_flag):
         logger.info("Substation transformer exists, but there are no regulator controls on it. Adding..")
-
         new_subltc_added_dict = add_new_regcontrol_command(
-            xfmr_info_series=pd.Series(updated_ckt_info['substation_xfmr']),
+            xfmr_info_series=pd.Series(orig_ckt_info['substation_xfmr']),
             default_regcontrol_settings=default_subltc_settings,
             nominal_voltage=voltage_config["nominal_voltage"], solve_params=solve_params)
         comparison_dict["temp_afterltc"] = compute_voltage_violation_severity(voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, 

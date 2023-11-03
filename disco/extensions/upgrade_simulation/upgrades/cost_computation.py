@@ -367,7 +367,7 @@ def compute_capcontrol_cost(voltage_upgrades_df, controls_cost_database, keyword
                          "change_cap_control": "controller_settings_modified"}
     cost_database_fields = {"add_new_cap_controller": "Add new capacitor controller",
                             "change_cap_control": "Change capacitor controller settings",
-                            "replace_cap_controller": "Replace capacitor controller"
+                            "replace_cap_controller": "Replace capacitor controller"  # this is not used currently
                             }
     empty_cap_cost_dict = {"type": type_rows,
                            "count": [0] * len(type_rows),  "total_cost_usd": [0] * len(type_rows)}
@@ -379,15 +379,15 @@ def compute_capcontrol_cost(voltage_upgrades_df, controls_cost_database, keyword
     if cap_upgrades_df.empty:  # if there are no capacitor control upgrades
         return zero_cost_df
     cap_cost = []
-    # if there are new capacitor controller 
+    # if there are new capacitor controller
     count_new_controller = cap_upgrades_df[capcontrol_upgrade_fields["add_new_cap_controller"]].sum()
     unit_cost_new_controller = controls_cost_database.loc[controls_cost_database["type"]
                                                           == cost_database_fields["add_new_cap_controller"]]["cost"].values[0]
     total_cost_new_controller = count_new_controller * unit_cost_new_controller
+    
     cap_cost.append( {"type": CapacitorControllerResultType.add_new_cap_controller.value,
                  "count": count_new_controller, "total_cost_usd": total_cost_new_controller}
     )
-    
     # if there are setting changes
     count_setting_changes = cap_upgrades_df[capcontrol_upgrade_fields["change_cap_control"]].sum()
     unit_cost_setting_changes = controls_cost_database.loc[controls_cost_database["type"] ==
