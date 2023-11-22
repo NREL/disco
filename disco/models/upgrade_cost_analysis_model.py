@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic.fields import Field
+from pydantic.v1 import Field
 
 from disco.models.base import (
     BaseAnalysisModel,

@@ -5,10 +5,8 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Optional, Union, Set
 
-from pydantic.class_validators import validator, root_validator
-from pydantic.fields import Field
-from pydantic.main import BaseModel
-from pydantic.types import DirectoryPath, FilePath
+from pydantic.v1 import validator, root_validator, Field, BaseModel
+from pydantic.v1.types import DirectoryPath, FilePath
 
 from jade.utils.utils import ExtendedJSONEncoder, standardize_timestamp
 from PyDSS.common import ControllerType

@@ -1,5 +1,6 @@
 from typing import List, Optional, Set, Dict
-from pydantic import Field, root_validator, validator, ValidationError
+from pydantic.v1 import Field, root_validator, validator
+from pydantic.v1.error_wrappers import ValidationError
 
 import pandas as pd
 
