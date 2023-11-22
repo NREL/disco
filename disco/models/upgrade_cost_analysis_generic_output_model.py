@@ -1,7 +1,7 @@
 import enum
 import logging
 from typing import List, Optional, Set, Dict, Any
-from pydantic import Field
+from pydantic.v1 import Field
 
 from disco.models.upgrade_cost_analysis_equipment_model import UpgradeParamsBaseModel, ExtraLineParams, ExtraTransformerParams
 from disco.models.upgrade_cost_analysis_generic_input_model import OpenDSSLineModel, OpenDSSTransformerModel

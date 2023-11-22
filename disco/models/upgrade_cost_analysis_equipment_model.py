@@ -3,7 +3,7 @@ import numpy as np
 from typing import Any
 from pathlib import Path
 from typing import Optional, List
-from pydantic import BaseModel, Field, validator
+from pydantic.v1 import BaseModel, Field, validator
 
 from jade.utils.utils import load_data
 
