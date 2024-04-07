@@ -63,16 +63,16 @@ install_requires = [
     "NREL-jade~=0.10.0",
     "chevron~=0.14.0",
     "click~=8.0",
-    "dsspy~=3.0.0",
+    "dsspy==3.0.2",  # 3.0.4 has a breaking change
     "filelock~=3.8",
     "matplotlib~=3.6",
     "networkx~=2.8",
     "opendssdirect.py~=0.8.4",
     "openpyxl~=3.0",
-    "pandas~=1.5.0",
+    "pandas >= 2, < 3",
     "pydantic~=2.5.2",
     "seaborn~=0.12.1",
-    "scikit-learn~=1.1",
+    "scikit-learn >= 1.1, < 1.4",  # 1.4 removes the parameter affinity from AgglomerativeClustering
     "sqlalchemy~=1.4",
     "toml~=0.10.0",
 ]
