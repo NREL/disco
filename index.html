@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DISCO Documentation &mdash; DISCO 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/documentation_options.js?v=2709fde1"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation" href="installation.html" />
+    <link href="_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            DISCO
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#conda-installation">Conda Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#developer-installation">Developer Installation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#data-sources">Data Sources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#transform-model">Transform Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#config-jobs">Config Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#submit-jobs">Submit Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#result-analysis">Result Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quick-start.html">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#source-data">Source Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#transform-model">Transform Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#config-jobs">Config Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#submit-jobs">Submit Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#result-analysis">Result Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="data-sources.html">Data Sources</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data-sources.html#generic-power-flow-models">Generic Power Flow Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-sources.html#sourcetree1-model">SourceTree1 Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-sources.html#sourcetree2-model">SourceTree2 Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-sources.html#gem-model">GEM Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-sources.html#epri-model">EPRI Model</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pv-deployments.html">PV Deployments</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pv-deployments.html#sourcetree1-pv-deployments">SourceTree1 PV Deployments</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="transform-models.html">Transform Models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="transform-models.html#transform-model-help">Transform Model Help</a></li>
+<li class="toctree-l2"><a class="reference internal" href="transform-models.html#disco-model-in-depth">DISCO Model in Depth</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="analysis-workflows.html">Analysis Workflows</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="analysis-workflows/hosting-capacity-analysis.html">Hosting Capacity Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis-workflows/upgrade-cost-analysis.html">Upgrade Cost Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis-workflows/impact-analysis.html">Impact Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pipelines.html">Pipelines</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pipelines.html#sourcetree1model">SourceTree1Model</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="debugging-issues.html">Debugging Issues</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="debugging-issues.html#disco-return-codes">DISCO Return Codes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="debugging-issues.html#using-jade">Using JADE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="debugging-issues.html#using-pydss">Using PyDSS</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="data-ingestion.html">Data Ingestion</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data-ingestion.html#ingest-to-new-database">Ingest to New Database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-ingestion.html#ingest-to-existing-database">Ingest to Existing Database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-ingestion.html#run-database-queries">Run Database Queries</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="advanced-guide.html">Advanced Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="advanced-guide/upgrade-cost-analysis-generic-models.html">Upgrade Cost Analysis JSON Schemas</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="build-docs.html">Build docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">DISCO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">DISCO Documentation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="disco-documentation">
+<h1>DISCO Documentation<a class="headerlink" href="#disco-documentation" title="Link to this heading">¶</a></h1>
+<p>DISCO (Distribution Integration Solution Cost Options) is an NREL-developed,
+python-based software tool for conducting scalable, repeatable distribution analyses.
+While DISCO was originally developed to support photovoltaic (PV) impact analyses,
+it can also be used to understand the impact of other distributed energy resources (DER)
+and load changes on distribution systems. Analysis modules currently included in DISCO are:</p>
+<ul class="simple">
+<li><p>Snapshot hosting capacity analysis, in which hosting capacity is based on a
+traditional definition of if operating thresholds are exceeded for
+worst-case/bounding snapshots in time</p></li>
+<li><p>Snapshot impact analysis, which calculates the same impact metrics as
+hosting capacity, but for specific user-defined PV deployment scenarios</p></li>
+<li><p>Dynamic hosting capacity analysis, in which hosting capacity is calculating
+using quasi-static time-series (QSTS) simulations and dynamic impact metrics
+for voltage and thermal loading. PV curtailment,
+number of device (voltage regulator, capacitor switch) operations, and
+energy losses are also calculated as part of this analysis because excessive
+PV curtailment, increases in device operations and associated replacement
+cost increases, and energy losses can also serve to limit how much PV can
+be economically interconnected to a given feeder.</p></li>
+<li><p>Dynamic impact analysis, which is to dynamic hosting capacity analysis as
+snapshot impact analysis is to snapshot hosting capacity analyses.</p></li>
+</ul>
+<p>DISCO analysis is based on power flow modeling with OpenDSS used as the simulation engine.
+PyDSS (<a class="reference external" href="https://nrel.github.io/PyDSS">https://nrel.github.io/PyDSS</a>) is used to interface with OpenDSS
+and provide additional control layers.</p>
+<p>The benefit of using DISCO instead of just directly using OpenDSS or PyDSS is two-fold:</p>
+<ul class="simple">
+<li><p>DISCO provides the infrastructure required to run a large number of analyses
+by managing job submission and execution through JADE (<a class="reference external" href="https://nrel.github.io/jade/">https://nrel.github.io/jade/</a>).</p></li>
+<li><p>DISCO provides ready-made, tested code to calculate snapshot and dynamic impact
+metrics, allowing for repeatable analyses across projects and teams without
+having to re-create code to process OpenDSS results.</p></li>
+</ul>
+<p>Examples of how DISCO has been or is currently being used are:</p>
+<ul class="simple">
+<li><p>Evaluating curtailment risk associated with using advanced inverter controls
+and flexible interconnection options for PV grid integration on 100’s of circuits.</p></li>
+</ul>
+<p>DISCO does not yet have the ability to conduct end-to-end techno-economic analyses
+of different distribution integration solutions, including looking at impact on
+customer bills, utility revenue, or the economic impact to customers and utilities
+of reduced electricity demand. Thus, this is not a tool for comprehensive
+techno-economic analysis.</p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick-start.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data-sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pv-deployments.html">PV Deployments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="transform-models.html">Transform Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="analysis-workflows.html">Analysis Workflows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipelines.html">Pipelines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="debugging-issues.html">Debugging Issues</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data-ingestion.html">Data Ingestion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced-guide.html">Advanced Guide</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Contribution</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="build-docs.html">Build docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+</div>
+<section id="indices-and-tables">
+<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="installation.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2019, NREL.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

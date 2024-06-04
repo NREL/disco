@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Impact Analysis &mdash; DISCO 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/documentation_options.js?v=2709fde1"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Pipelines" href="../pipelines.html" />
+    <link rel="prev" title="Upgrade Cost Analysis" href="upgrade-cost-analysis.html" />
+    <link href="../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            DISCO
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../installation.html#conda-installation">Conda Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../installation.html#developer-installation">Developer Installation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../overview.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../overview.html#data-sources">Data Sources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../overview.html#transform-model">Transform Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../overview.html#config-jobs">Config Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../overview.html#submit-jobs">Submit Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../overview.html#result-analysis">Result Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../quick-start.html">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../quick-start.html#source-data">Source Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../quick-start.html#transform-model">Transform Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../quick-start.html#config-jobs">Config Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../quick-start.html#submit-jobs">Submit Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../quick-start.html#result-analysis">Result Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../data-sources.html">Data Sources</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../data-sources.html#generic-power-flow-models">Generic Power Flow Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data-sources.html#sourcetree1-model">SourceTree1 Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data-sources.html#sourcetree2-model">SourceTree2 Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data-sources.html#gem-model">GEM Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data-sources.html#epri-model">EPRI Model</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../pv-deployments.html">PV Deployments</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../pv-deployments.html#sourcetree1-pv-deployments">SourceTree1 PV Deployments</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../transform-models.html">Transform Models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../transform-models.html#transform-model-help">Transform Model Help</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../transform-models.html#disco-model-in-depth">DISCO Model in Depth</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="../analysis-workflows.html">Analysis Workflows</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="hosting-capacity-analysis.html">Hosting Capacity Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="upgrade-cost-analysis.html">Upgrade Cost Analysis</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Impact Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../pipelines.html">Pipelines</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines.html#sourcetree1model">SourceTree1Model</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../debugging-issues.html">Debugging Issues</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../debugging-issues.html#disco-return-codes">DISCO Return Codes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../debugging-issues.html#using-jade">Using JADE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../debugging-issues.html#using-pydss">Using PyDSS</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../data-ingestion.html">Data Ingestion</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../data-ingestion.html#ingest-to-new-database">Ingest to New Database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data-ingestion.html#ingest-to-existing-database">Ingest to Existing Database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data-ingestion.html#run-database-queries">Run Database Queries</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../advanced-guide.html">Advanced Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../advanced-guide/upgrade-cost-analysis-generic-models.html">Upgrade Cost Analysis JSON Schemas</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../build-docs.html">Build docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DISCO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../analysis-workflows.html">Analysis Workflows</a></li>
+      <li class="breadcrumb-item active">Impact Analysis</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/analysis-workflows/impact-analysis.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="impact-analysis">
+<h1>Impact Analysis<a class="headerlink" href="#impact-analysis" title="Link to this heading">¶</a></h1>
+<p>This section shows how to perform customized analysis with time-series simulations on a set of input models.
+Note that you could generally substitute “snapshot” for “time-series” for that type of simulation.</p>
+<p>Other sections of this documentation describe workflows that rely on DISCO/PyDSS to collect
+specific metrics from each simulation. For example, the dynamic hosting capacity analysis workflow
+collects metrics for max instantaneous and moving-average line and transformer loading violations.
+It does not store values for every line and transformer at every time point because of the amount
+of storage space that requires. This section shows how to collect all of the data.</p>
+<section id="transform-model">
+<h2>Transform Model<a class="headerlink" href="#transform-model" title="Link to this heading">¶</a></h2>
+<p>As with earlier sections this assumes that you have cloned the disco repo to the <code class="docutils literal notranslate"><span class="pre">~/disco</span></code> directory.
+Transform the source models into DISCO models with this command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>transform-model<span class="w"> </span>~/disco/tests/data/smart-ds/substations/<span class="w"> </span>time-series
+Transformed<span class="w"> </span>data<span class="w"> </span>from<span class="w"> </span>~/disco/tests/data/smart-ds/substations/<span class="w"> </span>to<span class="w"> </span>time-series-feeder-models<span class="w"> </span><span class="k">for</span><span class="w"> </span>TimeSeries<span class="w"> </span>Analysis.
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For your own models you will likely need to set <code class="docutils literal notranslate"><span class="pre">--start</span></code>, <code class="docutils literal notranslate"><span class="pre">--end</span></code>, and <code class="docutils literal notranslate"><span class="pre">--resolution</span></code>.</p>
+</div>
+</section>
+<section id="config-jobs">
+<h2>Config Jobs<a class="headerlink" href="#config-jobs" title="Link to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p>Copy this text into a file called <code class="docutils literal notranslate"><span class="pre">exports.toml</span></code>. This will instruct PyDSS to store each of these
+properties for each element at each time point.</p></li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">Loads</span><span class="o">.</span><span class="n">Powers</span><span class="p">]</span>
+<span class="n">store_values_type</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span>
+
+<span class="p">[</span><span class="n">PVSystems</span><span class="o">.</span><span class="n">Powers</span><span class="p">]</span>
+<span class="n">store_values_type</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span>
+
+<span class="p">[</span><span class="n">Circuits</span><span class="o">.</span><span class="n">TotalPower</span><span class="p">]</span>
+<span class="n">store_values_type</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span>
+
+<span class="p">[</span><span class="n">Circuits</span><span class="o">.</span><span class="n">LineLosses</span><span class="p">]</span>
+<span class="n">store_values_type</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span>
+
+<span class="p">[</span><span class="n">Circuits</span><span class="o">.</span><span class="n">Losses</span><span class="p">]</span>
+<span class="n">store_values_type</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span>
+
+<span class="p">[</span><span class="n">Lines</span><span class="o">.</span><span class="n">Currents</span><span class="p">]</span>
+<span class="n">store_values_type</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span>
+
+<span class="p">[</span><span class="n">Lines</span><span class="o">.</span><span class="n">Losses</span><span class="p">]</span>
+<span class="n">store_values_type</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span>
+
+<span class="p">[</span><span class="n">Lines</span><span class="o">.</span><span class="n">Powers</span><span class="p">]</span>
+<span class="n">store_values_type</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p>Create the configuration with all reports disabled, custom exports, all data exported, a custom
+DC-AC ratio, and a specific volt-var curve.</p></li>
+</ol>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you’re using a Windows terminal, the <code class="docutils literal notranslate"><span class="pre">\</span></code> characters used here for line breaks probably won’t work.</p>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>config<span class="w"> </span>time-series<span class="w"> </span>time-series-feeder-models<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config-file<span class="w"> </span>time-series-config.json<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--volt-var-curve<span class="w"> </span>volt_var_ieee_1547_2018_catB<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--dc-ac-ratio<span class="o">=</span><span class="m">1</span>.0<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--exports-filename<span class="w"> </span>exports.toml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--export-data-tables<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--store-all-time-points<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--store-per-element-data<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--thermal-metrics<span class="o">=</span><span class="nb">true</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--voltage-metrics<span class="o">=</span><span class="nb">true</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--feeder-losses<span class="o">=</span><span class="nb">true</span>
+</pre></div>
+</div>
+</section>
+<section id="submit-jobs">
+<h2>Submit Jobs<a class="headerlink" href="#submit-jobs" title="Link to this heading">¶</a></h2>
+<p>Run the jobs with JADE. Two examples are shown: one on a local machine and one on an HPC.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>jade<span class="w"> </span>submit-jobs<span class="w"> </span>--local<span class="w"> </span>time-series-config.json<span class="w"> </span>-o<span class="w"> </span>time-series-output
+$<span class="w"> </span>jade<span class="w"> </span>submit-jobs<span class="w"> </span>-h<span class="w"> </span>hpc_config.toml<span class="w"> </span>time-series-config.json<span class="w"> </span>-o<span class="w"> </span>time-series-output
+</pre></div>
+</div>
+<p>Confirm that all jobs passed.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>jade<span class="w"> </span>show-results<span class="w"> </span>-o<span class="w"> </span>time-series-output
+</pre></div>
+</div>
+</section>
+<section id="view-output-files">
+<h2>View Output Files<a class="headerlink" href="#view-output-files" title="Link to this heading">¶</a></h2>
+<p>Each job’s outputs will be stored in <code class="docutils literal notranslate"><span class="pre">time-series-output/job-outputs/&lt;job-name&gt;/pydss_project/project.zip</span></code>.
+Extract one zip file. You will see exported data for all element properties. For example, this file
+contains bus voltages for the volt-var scenario: <code class="docutils literal notranslate"><span class="pre">Exports/control_mode/Buses__puVmagAngle.csv</span></code>.
+<code class="docutils literal notranslate"><span class="pre">Exports/control_mode/CktElement__ExportLoadingsMetric.csv</span></code> contains thermal loading values.
+The same files will exist for the pf1 scenario.</p>
+<p>Summary files will be available for thermal and voltage metrics. Refer to <code class="docutils literal notranslate"><span class="pre">Reports/thermal_metrics.json</span></code>
+and <code class="docutils literal notranslate"><span class="pre">Reports/voltage_metrics.json</span></code>.</p>
+</section>
+<section id="make-metric-table-files">
+<h2>Make metric table files<a class="headerlink" href="#make-metric-table-files" title="Link to this heading">¶</a></h2>
+<p>Run this command to convert the thermal and voltage metrics into tabular form.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>make-summary-tables<span class="w"> </span>time-series-output
+</pre></div>
+</div>
+</section>
+<section id="access-results-programmatically">
+<h2>Access Results Programmatically<a class="headerlink" href="#access-results-programmatically" title="Link to this heading">¶</a></h2>
+<p>DISCO includes analysis code to help look at thermal loading and voltage violations. Here is
+some example code:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">jade.loggers</span> <span class="kn">import</span> <span class="n">setup_logging</span>
+<span class="kn">from</span> <span class="nn">disco.pydss.pydss_analysis</span> <span class="kn">import</span> <span class="n">PyDssAnalysis</span><span class="p">,</span> <span class="n">PyDssScenarioAnalysis</span>
+<span class="kn">from</span> <span class="nn">disco.extensions.pydss_simulation.pydss_configuration</span> <span class="kn">import</span> <span class="n">PyDssConfiguration</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">setup_logging</span><span class="p">(</span><span class="s2">&quot;config&quot;</span><span class="p">,</span> <span class="s2">&quot;log.txt&quot;</span><span class="p">,</span> <span class="n">console_level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="n">output_dir</span> <span class="o">=</span> <span class="s2">&quot;time-series-output&quot;</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">PyDssConfiguration</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="s2">&quot;config.json&quot;</span><span class="p">))</span>
+<span class="n">analysis</span> <span class="o">=</span> <span class="n">PyDssAnalysis</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+<span class="n">analysis</span><span class="o">.</span><span class="n">show_results</span><span class="p">()</span>
+
+<span class="c1"># Copy name from the output of show_results().</span>
+<span class="n">name</span> <span class="o">=</span> <span class="n">analysis</span><span class="o">.</span><span class="n">list_results</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
+
+<span class="c1"># Look up job-specific parameters.</span>
+<span class="n">job</span> <span class="o">=</span> <span class="n">analysis</span><span class="o">.</span><span class="n">get_job</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">deployment</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">deployment</span><span class="o">.</span><span class="n">project_data</span><span class="p">)</span>
+
+<span class="n">simulation</span> <span class="o">=</span> <span class="n">analysis</span><span class="o">.</span><span class="n">get_simulation</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+<span class="c1"># Get access to result dataframes.</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">analysis</span><span class="o">.</span><span class="n">read_results</span><span class="p">(</span><span class="n">simulation</span><span class="p">)</span>
+<span class="n">scenario</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">scenarios</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">scenario_analysis</span> <span class="o">=</span> <span class="n">PyDssScenarioAnalysis</span><span class="p">(</span><span class="n">simulation</span><span class="p">,</span> <span class="n">results</span><span class="p">,</span> <span class="n">scenario</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+<span class="c1"># Get list of voltage magnitudes for each bus.</span>
+<span class="n">voltages_per_bus</span> <span class="o">=</span> <span class="n">scenario_analysis</span><span class="o">.</span><span class="n">get_pu_bus_voltage_magnitudes</span><span class="p">()</span>
+
+<span class="c1"># Get loading percentages.</span>
+<span class="n">line_loading</span> <span class="o">=</span> <span class="n">scenario_analysis</span><span class="o">.</span><span class="n">get_line_loading_percentages</span><span class="p">()</span>
+<span class="n">transformer_loading</span> <span class="o">=</span> <span class="n">scenario_analysis</span><span class="o">.</span><span class="n">get_transformer_loading_percentages</span><span class="p">()</span>
+
+<span class="c1"># Find out what classes and properties are available.</span>
+<span class="k">for</span> <span class="n">element_class</span> <span class="ow">in</span> <span class="n">scenario</span><span class="o">.</span><span class="n">list_element_classes</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">scenario</span><span class="o">.</span><span class="n">list_element_properties</span><span class="p">(</span><span class="n">element_class</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">element_class</span><span class="p">,</span> <span class="n">prop</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">scenario</span><span class="o">.</span><span class="n">list_element_names</span><span class="p">(</span><span class="s2">&quot;Lines&quot;</span><span class="p">,</span> <span class="s2">&quot;Currents&quot;</span><span class="p">):</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">scenario</span><span class="o">.</span><span class="n">get_dataframe</span><span class="p">(</span><span class="s2">&quot;Lines&quot;</span><span class="p">,</span> <span class="s2">&quot;Currents&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
+
+<span class="c1"># Browse static element information.</span>
+<span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">scenario</span><span class="o">.</span><span class="n">list_element_info_files</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">scenario</span><span class="o">.</span><span class="n">read_element_info_file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
+
+<span class="c1"># Use class names to read specific element infomation.</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">scenario</span><span class="o">.</span><span class="n">read_element_info_file</span><span class="p">(</span><span class="s2">&quot;Loads&quot;</span><span class="p">)</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">scenario</span><span class="o">.</span><span class="n">read_element_info_file</span><span class="p">(</span><span class="s2">&quot;PVSystems&quot;</span><span class="p">)</span>
+
+<span class="c1"># Read events from the OpenDSS event log.</span>
+<span class="n">event_log</span> <span class="o">=</span> <span class="n">scenario</span><span class="o">.</span><span class="n">read_event_log</span><span class="p">()</span>
+
+<span class="c1"># Get the count of each capacitor&#39;s state changes from the event log.</span>
+<span class="n">capacitor_changes</span> <span class="o">=</span> <span class="n">scenario</span><span class="o">.</span><span class="n">read_capacitor_changes</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="use-the-pydss-data-viewer">
+<h2>Use the PyDSS Data Viewer<a class="headerlink" href="#use-the-pydss-data-viewer" title="Link to this heading">¶</a></h2>
+<p>PyDSS includes a data viewer that makes it easy to plot circuit element values in a Jupyter
+notebook. Refer to its <a class="reference external" href="https://nrel.github.io/PyDSS/tutorial.html#data-viewer">docs</a>.</p>
+</section>
+<section id="generic-models">
+<h2>Generic Models<a class="headerlink" href="#generic-models" title="Link to this heading">¶</a></h2>
+<p>This section follows the same workflow except that it uses pre-defined OpenDSS models. Unlike
+the previous example, DISCO will not make any changes to the model files.</p>
+<p>Refer to <a class="reference internal" href="../data-sources.html#genericpowerflowmodels"><span class="std std-ref">Generic Power Flow Models</span></a> for specific details about the input file
+<code class="docutils literal notranslate"><span class="pre">time_series_generic.json</span></code>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>config-generic-models<span class="w"> </span>time-series<span class="w"> </span>~/disco/tests/data/time_series_generic.json<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config-file<span class="w"> </span>time-series-config.json<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--volt-var-curve<span class="w"> </span>volt_var_ieee_1547_2018_catB<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--exports-filename<span class="w"> </span>exports.toml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--export-data-tables<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--store-all-time-points<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--store-per-element-data<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--thermal-metrics<span class="o">=</span><span class="nb">true</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--voltage-metrics<span class="o">=</span><span class="nb">true</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--feeder-losses<span class="o">=</span><span class="nb">true</span>
+</pre></div>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>jade<span class="w"> </span>submit-jobs<span class="w"> </span>--local<span class="w"> </span>time-series-config.json<span class="w"> </span>-o<span class="w"> </span>time-series-output
+</pre></div>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>jade<span class="w"> </span>show-results<span class="w"> </span>-o<span class="w"> </span>time-series-output
+</pre></div>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>make-summary-tables<span class="w"> </span>time-series-output
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="upgrade-cost-analysis.html" class="btn btn-neutral float-left" title="Upgrade Cost Analysis" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../pipelines.html" class="btn btn-neutral float-right" title="Pipelines" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2019, NREL.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

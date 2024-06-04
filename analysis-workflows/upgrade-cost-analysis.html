@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upgrade Cost Analysis &mdash; DISCO 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/documentation_options.js?v=2709fde1"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Impact Analysis" href="impact-analysis.html" />
+    <link rel="prev" title="Hosting Capacity Analysis" href="hosting-capacity-analysis.html" />
+    <link href="../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            DISCO
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../installation.html#conda-installation">Conda Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../installation.html#developer-installation">Developer Installation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../overview.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../overview.html#data-sources">Data Sources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../overview.html#transform-model">Transform Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../overview.html#config-jobs">Config Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../overview.html#submit-jobs">Submit Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../overview.html#result-analysis">Result Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../quick-start.html">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../quick-start.html#source-data">Source Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../quick-start.html#transform-model">Transform Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../quick-start.html#config-jobs">Config Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../quick-start.html#submit-jobs">Submit Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../quick-start.html#result-analysis">Result Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../data-sources.html">Data Sources</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../data-sources.html#generic-power-flow-models">Generic Power Flow Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data-sources.html#sourcetree1-model">SourceTree1 Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data-sources.html#sourcetree2-model">SourceTree2 Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data-sources.html#gem-model">GEM Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data-sources.html#epri-model">EPRI Model</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../pv-deployments.html">PV Deployments</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../pv-deployments.html#sourcetree1-pv-deployments">SourceTree1 PV Deployments</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../transform-models.html">Transform Models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../transform-models.html#transform-model-help">Transform Model Help</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../transform-models.html#disco-model-in-depth">DISCO Model in Depth</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="../analysis-workflows.html">Analysis Workflows</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="hosting-capacity-analysis.html">Hosting Capacity Analysis</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Upgrade Cost Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="impact-analysis.html">Impact Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../pipelines.html">Pipelines</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines.html#sourcetree1model">SourceTree1Model</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../debugging-issues.html">Debugging Issues</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../debugging-issues.html#disco-return-codes">DISCO Return Codes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../debugging-issues.html#using-jade">Using JADE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../debugging-issues.html#using-pydss">Using PyDSS</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../data-ingestion.html">Data Ingestion</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../data-ingestion.html#ingest-to-new-database">Ingest to New Database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data-ingestion.html#ingest-to-existing-database">Ingest to Existing Database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data-ingestion.html#run-database-queries">Run Database Queries</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../advanced-guide.html">Advanced Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../advanced-guide/upgrade-cost-analysis-generic-models.html">Upgrade Cost Analysis JSON Schemas</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../build-docs.html">Build docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DISCO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../analysis-workflows.html">Analysis Workflows</a></li>
+      <li class="breadcrumb-item active">Upgrade Cost Analysis</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/analysis-workflows/upgrade-cost-analysis.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="upgrade-cost-analysis">
+<h1>Upgrade Cost Analysis<a class="headerlink" href="#upgrade-cost-analysis" title="Link to this heading">¶</a></h1>
+<p>This chapter introduces the workflow for conducting <em>upgrade cost analysis</em> by using DISCO commands
+step by step or DISCO pipeline, where the pipeline chains the individual steps and runs upgrade cost
+analysis seamlessly. In the following two sections we will introduce the two methods separately.</p>
+<p>There is a third method that bypasses the normal DISCO processes. This generic workflow allows you
+to run the upgrade simulations on existing, non-standardized OpenDSS models without any transformations.</p>
+<p>The following commands run with default options. If you need any customization, please run <code class="docutils literal notranslate"><span class="pre">--help</span></code> on
+the commands to see the available options.</p>
+<section id="step-by-step-workflow">
+<h2>Step-by-Step Workflow<a class="headerlink" href="#step-by-step-workflow" title="Link to this heading">¶</a></h2>
+<p><strong>1. Transform Model</strong></p>
+<p>Prepare the model with PV deployments by using DISCO model transformation.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>transform-model<span class="w"> </span>tests/data/smart-ds/substations<span class="w"> </span>upgrade<span class="w"> </span>-o<span class="w"> </span>upgrade-models
+</pre></div>
+</div>
+<p>Load shape profiles for <code class="docutils literal notranslate"><span class="pre">Load</span></code> elements are not used by the upgrade module, and so we recommend that
+you remove them from the models in order to speed-up the simulations. Do so with this option:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>transform-model<span class="w"> </span>tests/data/smart-ds/substations<span class="w"> </span>upgrade<span class="w"> </span>--exclude-load-profile<span class="w"> </span>-o<span class="w"> </span>upgrade-models
+</pre></div>
+</div>
+<p><strong>2. Create Config</strong></p>
+<p>With the transformed model, create the <cite>config.json</cite> file with submittable jobs.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>config<span class="w"> </span>upgrade<span class="w"> </span>upgrade-models
+</pre></div>
+</div>
+<p>DISCO will use default upgrade parameters if the option <code class="docutils literal notranslate"><span class="pre">--params-file</span></code> is not specified.
+If <code class="docutils literal notranslate"><span class="pre">--params-file</span></code> is specified, that file must contain all required parameters.</p>
+<p>Here are optional parameters that you can customize in the same file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">thermal_upgrade_params</span><span class="p">]</span>
+<span class="n">parallel_transformers_limit</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">parallel_lines_limit</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">upgrade_iteration_threshold</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">timepoint_multipliers</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="p">[</span><span class="n">voltage_upgrade_params</span><span class="p">]</span>
+<span class="n">capacitor_sweep_voltage_gap</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="n">reg_control_bands</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="n">reg_v_delta</span> <span class="o">=</span> <span class="mf">0.5</span>
+<span class="n">max_regulators</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">place_new_regulators</span> <span class="o">=</span> <span class="n">true</span>
+<span class="n">use_ltc_placement</span> <span class="o">=</span> <span class="n">true</span>
+<span class="n">timepoint_multipliers</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">capacitor_action_flag</span> <span class="o">=</span> <span class="n">true</span>
+<span class="n">existing_regulator_sweep_action</span> <span class="o">=</span> <span class="n">true</span>
+</pre></div>
+</div>
+<p><strong>3. Submit Jobs</strong></p>
+<p>Submit jobs by using JADE and conduct upgrade cost analysis within each job.
+This command assumes that you are running on a local system. Please remove the option
+<code class="docutils literal notranslate"><span class="pre">--local</span></code> if you run on an HPC.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>jade<span class="w"> </span>submit-jobs<span class="w"> </span>config.json<span class="w"> </span>--local
+</pre></div>
+</div>
+<p>This step will generate the directory <code class="docutils literal notranslate"><span class="pre">output</span></code>, which contains all upgrade results.</p>
+<p><strong>4. Upgrade Analysis</strong></p>
+<p>Run post-processing to aggregate upgrade cost analysis results and create analysis CSV tables.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco-internal<span class="w"> </span>make-upgrade-tables<span class="w"> </span>output
+</pre></div>
+</div>
+<p>If everything succeeds, it produces aggregated json file: <code class="docutils literal notranslate"><span class="pre">upgrade_summary.json</span></code></p>
+</section>
+<section id="pipeline-workflow">
+<h2>Pipeline Workflow<a class="headerlink" href="#pipeline-workflow" title="Link to this heading">¶</a></h2>
+<p><strong>1. Create Template</strong></p>
+<p>Create a DISCO pipeline template file. By default, the output file is <code class="docutils literal notranslate"><span class="pre">pipeline-template.toml</span></code>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>create-pipeline<span class="w"> </span>template<span class="w"> </span>--task-name<span class="w"> </span>UpgradeTask<span class="w"> </span>--simulation-type<span class="w"> </span>upgrade<span class="w"> </span>--upgrade-analysis<span class="w"> </span>~/Workspace/disco/tests/data/smart-ds/substations
+</pre></div>
+</div>
+<p>Here, we need to enable the <code class="docutils literal notranslate"><span class="pre">--upgrade-analysis</span></code> option.</p>
+<p><strong>2. Config Pipeline</strong></p>
+<p>Update the pipeline template file for customization if needed. Then create the pipeline config file
+<code class="docutils literal notranslate"><span class="pre">pipeline.json</span></code> with this command.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>create-pipeline<span class="w"> </span>config<span class="w"> </span>pipeline-template.toml
+</pre></div>
+</div>
+<p><strong>3. Submit Pipeline</strong></p>
+<p>Submit the pipeline with JADE</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>jade<span class="w"> </span>pipeline<span class="w"> </span>submit<span class="w"> </span>pipeline.json
+</pre></div>
+</div>
+<p>If everything succeeds, it produces same aggregated upgrade tables in <code class="docutils literal notranslate"><span class="pre">output-stage1</span></code>.</p>
+</section>
+<section id="generic-workflow">
+<h2>Generic Workflow<a class="headerlink" href="#generic-workflow" title="Link to this heading">¶</a></h2>
+<p>Let’s assume that you have multiple networks defined in OpenDSS model files where each network has
+its own <code class="docutils literal notranslate"><span class="pre">Master.dss</span></code>.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">./custom_models/model1/Master.dss</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">./custom_models/model2/Master.dss</span></code></p></li>
+</ul>
+<section id="single-execution-mode">
+<h3>Single Execution Mode<a class="headerlink" href="#single-execution-mode" title="Link to this heading">¶</a></h3>
+<p>1. Configure the simulation parameters and in an input JSON file called <code class="docutils literal notranslate"><span class="pre">upgrades.json</span></code>.
+Refer to this
+<a class="reference external" href="https://github.com/NREL/disco/blob/main/tests/data/upgrade_cost_analysis_generic.json">file</a>
+as an example. The JSON schemas are defined in <a class="reference internal" href="../advanced-guide/upgrade-cost-analysis-generic-models.html#upgrade-cost-analysis-schemas"><span class="std std-ref">Upgrade Cost Analysis JSON Schemas</span></a>.</p>
+<p>Each job represents one OpenDSS network and one upgrade simulation.</p>
+<ol class="arabic simple" start="2">
+<li><p>Run the simulation.</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>upgrade-cost-analysis<span class="w"> </span>run<span class="w"> </span>upgrades.json
+</pre></div>
+</div>
+<p>Refer to <code class="docutils literal notranslate"><span class="pre">disco</span> <span class="pre">upgrade-cost-analysis</span> <span class="pre">run</span> <span class="pre">--help</span></code> for additional options.</p>
+</section>
+<section id="parallel-execution-mode-through-jade">
+<h3>Parallel Execution Mode through JADE<a class="headerlink" href="#parallel-execution-mode-through-jade" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p>Configure <code class="docutils literal notranslate"><span class="pre">upgrades.json</span></code> as described in the previous step.</p></li>
+<li><p>Create the JADE configuration file.</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>upgrade-cost-analysis<span class="w"> </span>config<span class="w"> </span>upgrades.json
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p>Modify the generated <code class="docutils literal notranslate"><span class="pre">config.json</span></code> if necessary.</p></li>
+<li><p>Run the jobs through JADE. This will aggregate results across all jobs.
+This example assumes local-mode execution.</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>jade<span class="w"> </span>submit-jobs<span class="w"> </span>--local<span class="w"> </span>config.json
+</pre></div>
+</div>
+</section>
+</section>
+<section id="technical-details">
+<h2>Technical Details<a class="headerlink" href="#technical-details" title="Link to this heading">¶</a></h2>
+<p>The automated upgrades module consists of three components as shown in the figure: it performs traditional infrastructure upgrades to resolve both thermal and voltage violations,
+and then computes the costs associated with each of those upgrades.</p>
+<a class="reference internal image-reference" href="../_images/upgrades.png"><img alt="../_images/upgrades.png" src="../_images/upgrades.png" style="width: 250px;" /></a>
+<p>A high level overview of thermal and voltage upgrades considerations is shown below:</p>
+<a class="reference internal image-reference" href="../_images/thermal_upgrades.png"><img alt="../_images/thermal_upgrades.png" src="../_images/thermal_upgrades.png" style="width: 250px;" /></a>
+<a class="reference internal image-reference" href="../_images/voltage_upgrades.png"><img alt="../_images/voltage_upgrades.png" src="../_images/voltage_upgrades.png" style="width: 250px;" /></a>
+<p><strong>1. Thermal Upgrades Workflow</strong></p>
+<p>In this sub-module, the thermal equipment (lines and transformers) violations are identified, and upgrades are determined as per the flowchart given below.</p>
+<a class="reference internal image-reference" href="../_images/thermal_workflow.png"><img alt="../_images/thermal_workflow.png" src="../_images/thermal_workflow.png" style="height: 650px;" /></a>
+<p>The technical equipment database is a catalog of available lines and transformers and can optionally be provided as an input.
+All the equipment in this database will be considered as available options while determining thermal upgrades.
+If this file is not provided, a technical database will be automatically generated from the given feeder model.
+This would provide the thermal upgrades module with a limited set of upgrade options.
+Refer to this <a class="reference external" href="https://github.com/NREL/disco/blob/main/disco/extensions/upgrade_simulation/upgrades/technical_catalog.json">sample technical equipment catalog</a>
+for more information.</p>
+<p>For an overloaded equipment, if a higher rated equipment of similar configuration is available in the technical catalog, that is considered as an upgrade and is chosen.
+Else, similar configuration equipment are added in parallel to resolve the observed violations.
+Sometimes, extreme thermal equipment overloaded can also cause voltage issues. So, it can be seen that thermal upgrades also resolve some undervoltage violations.</p>
+<p><strong>2. Voltage Upgrades Workflow</strong></p>
+<p>In this sub-module, the voltage violations present in the feeder are identified, and are resolved as shown in flowchart below:</p>
+<a class="reference internal image-reference" href="../_images/voltage_workflow.png"><img alt="../_images/voltage_workflow.png" src="../_images/voltage_workflow.png" style="width: 250px;" /></a>
+<p><em>a.  Existing Capacitors:</em></p>
+<ul>
+<li><p>If capacitors are present</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>If capacitor control is present for a capacitor: correct capacitor control parameters i.e. PT ratio is checked and corrected (if needed)</p></li>
+<li><p>If capacitor control is present, it is changed to voltage-controlled (if it is of any other kind)</p></li>
+<li><p>If capacitor control is not present, voltage-controlled capacitor control is added and default control settings are applied to any newly added controller</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>A settings sweep is performed through all capacitor settings, and setting with least number of violations is chosen. If initial settings are best, no changes are made. In the capacitor settings sweep method, same settings are applied to all capacitors.</p></li>
+</ul>
+<p><em>b.  Existing Regulators:</em></p>
+<ul class="simple">
+<li><p>If voltage regulators are present, regulator control parameters (like ptratio) are corrected (if needed), including for substation LTC.</p></li>
+<li><dl class="simple">
+<dt>A settings sweep is performed for existing regulator control devices (excluding substation LTC).</dt><dd><ul>
+<li><p>In this settings sweep method, same settings are applied to all regulators</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<p><em>c. Add new Regulator:</em></p>
+<ul class="simple">
+<li><p>A new regulator is added by clustering nearby buses with violations and testing regulator placement (one at a time) on each of the common upstream nodes. The placement option with least number of violations is chosen.</p></li>
+</ul>
+<p><strong>3. Upgrades Cost computation</strong>
+A unit cost database is used to determine the total costs associated thermal and voltage upgrades determined through the workflows described above.
+Sample input cost database can be found <a class="reference external" href="https://github.com/NREL/disco/blob/main/disco/extensions/upgrade_simulation/upgrades/Generic_DISCO_cost_database_v2.xlsx">here</a></p>
+<section id="input-parameters">
+<h3>Input parameters<a class="headerlink" href="#input-parameters" title="Link to this heading">¶</a></h3>
+<p>In order to run this simulation, the following inputs are needed. For required fields, example inputs are provided, and for optional parameters, default inputs are shown.</p>
+<p><em>1. Thermal Upgrade Inputs</em></p>
+<p>The input parameters for thermal upgrades are shown in table below. For required fields, example inputs are provided, and for optional parameters, default inputs are shown.</p>
+<table class="docutils align-default" id="id1">
+<caption><span class="caption-text">Thermal Upgrade Inputs</span><a class="headerlink" href="#id1" title="Link to this table">¶</a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Input Parameter</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Required/Optional</p></th>
+<th class="head"><p>Default/Example</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>transformer_upper_limit</p></td>
+<td><p>float</p></td>
+<td><p>Transformer upper limit in per unit</p></td>
+<td><p>Required</p></td>
+<td><p>1.25</p></td>
+</tr>
+<tr class="row-odd"><td><p>line_upper_limit</p></td>
+<td><p>float</p></td>
+<td><p>Line upper limit in per unit</p></td>
+<td><p>Required</p></td>
+<td><p>1.25</p></td>
+</tr>
+<tr class="row-even"><td><p>line_design_pu</p></td>
+<td><p>float</p></td>
+<td><p>Line design in per unit</p></td>
+<td><p>Required</p></td>
+<td><p>0.75</p></td>
+</tr>
+<tr class="row-odd"><td><p>transformer_design_pu</p></td>
+<td><p>float</p></td>
+<td><p>Transformer design in per unit</p></td>
+<td><p>Required</p></td>
+<td><p>0.75</p></td>
+</tr>
+<tr class="row-even"><td><p>voltage_upper_limit</p></td>
+<td><p>float</p></td>
+<td><p>Voltage upper limit in per unit</p></td>
+<td><p>Required</p></td>
+<td><p>1.05</p></td>
+</tr>
+<tr class="row-odd"><td><p>voltage_lower_limit</p></td>
+<td><p>float</p></td>
+<td><p>Voltage lower limit in per unit</p></td>
+<td><p>Required</p></td>
+<td><p>0.95</p></td>
+</tr>
+<tr class="row-even"><td><p>read_external_catalog</p></td>
+<td><p>bool</p></td>
+<td><p>Flag to determine whether external catalog is to be used</p></td>
+<td><p>Required</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>external_catalog</p></td>
+<td><p>str</p></td>
+<td><p>Location to external upgrades technical catalog json file. Can be empty string, if read_external_catalog is False</p></td>
+<td><p>Required</p></td>
+<td><p>“”</p></td>
+</tr>
+<tr class="row-even"><td><p>create_plots</p></td>
+<td><p>bool</p></td>
+<td><p>Flag to enable or disable figure creation</p></td>
+<td><p>Optional</p></td>
+<td><p>TRUE</p></td>
+</tr>
+<tr class="row-odd"><td><p>parallel_transformer_limit</p></td>
+<td><p>int</p></td>
+<td><p>Parallel transformer limit</p></td>
+<td><p>Optional</p></td>
+<td><p>4</p></td>
+</tr>
+<tr class="row-even"><td><p>parallel_lines_limit</p></td>
+<td><p>int</p></td>
+<td><p>Parallel lines limit</p></td>
+<td><p>Optional</p></td>
+<td><p>4</p></td>
+</tr>
+<tr class="row-odd"><td><p>upgrade_iteration_threshold</p></td>
+<td><p>int</p></td>
+<td><p>Upgrade iteration threshold</p></td>
+<td><p>Optional</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-even"><td><p>timepoint_multipliers</p></td>
+<td><p>dict</p></td>
+<td><p>Dictionary to provide timepoint multipliers</p></td>
+<td><p>Optional</p></td>
+<td><p>None</p></td>
+</tr>
+</tbody>
+</table>
+<p><em>2. Voltage Upgrade Inputs</em></p>
+<p>The input parameters for voltage upgrades are shown in table below.</p>
+<table class="docutils align-default" id="id2">
+<caption><span class="caption-text">Voltage Upgrade Inputs</span><a class="headerlink" href="#id2" title="Link to this table">¶</a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Input Parameter</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Required/Optional</p></th>
+<th class="head"><p>Default/Example</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>initial_upper_limit</p></td>
+<td><p>float</p></td>
+<td><p>Initial upper limit in per unit</p></td>
+<td><p>Required</p></td>
+<td><p>1.05</p></td>
+</tr>
+<tr class="row-odd"><td><p>initial_lower_limit</p></td>
+<td><p>float</p></td>
+<td><p>Initial lower limit in per unit</p></td>
+<td><p>Required</p></td>
+<td><p>0.95</p></td>
+</tr>
+<tr class="row-even"><td><p>final_upper_limit</p></td>
+<td><p>float</p></td>
+<td><p>Final upper limit in per unit</p></td>
+<td><p>Required</p></td>
+<td><p>1.05</p></td>
+</tr>
+<tr class="row-odd"><td><p>final_lower_limit</p></td>
+<td><p>float</p></td>
+<td><p>Final lower limit in per unit</p></td>
+<td><p>Required</p></td>
+<td><p>0.95</p></td>
+</tr>
+<tr class="row-even"><td><p>nominal_voltage</p></td>
+<td><p>float</p></td>
+<td><p>Nominal voltage (volts)</p></td>
+<td><p>Required</p></td>
+<td><p>120</p></td>
+</tr>
+<tr class="row-odd"><td><p>create_plots</p></td>
+<td><p>bool</p></td>
+<td><p>Flag to enable or disable figure creation</p></td>
+<td><p>Optional</p></td>
+<td><p>TRUE</p></td>
+</tr>
+<tr class="row-even"><td><p>capacitor_sweep_voltage_gap</p></td>
+<td><p>float</p></td>
+<td><p>Capacitor sweep voltage gap</p></td>
+<td><p>Optional</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>reg_control_bands</p></td>
+<td><p>list(int)</p></td>
+<td><p>Regulator control bands</p></td>
+<td><p>Optional</p></td>
+<td><p>[1,2]</p></td>
+</tr>
+<tr class="row-even"><td><p>reg_v_delta</p></td>
+<td><p>float</p></td>
+<td><p>Regulator voltage delta</p></td>
+<td><p>Optional</p></td>
+<td><p>0.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>max_regulators</p></td>
+<td><p>int</p></td>
+<td><p>Maximum number of new regulators that can be placed</p></td>
+<td><p>Optional</p></td>
+<td><p>4</p></td>
+</tr>
+<tr class="row-even"><td><p>place_new_regulators</p></td>
+<td><p>bool</p></td>
+<td><p>Flag to enable or disable new regulator placement</p></td>
+<td><p>Optional</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>use_ltc_placement</p></td>
+<td><p>bool</p></td>
+<td><p>Flag to enable or disable substation LTC upgrades module</p></td>
+<td><p>Optional</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>capacitor_action_flag</p></td>
+<td><p>bool</p></td>
+<td><p>Flag to enable or disable capacitor controls settings sweep module</p></td>
+<td><p>Optional</p></td>
+<td><p>TRUE</p></td>
+</tr>
+<tr class="row-odd"><td><p>existing_regulator_sweep_action</p></td>
+<td><p>bool</p></td>
+<td><p>Flag to enable or disable existing regulator controls settings sweep module</p></td>
+<td><p>Optional</p></td>
+<td><p>TRUE</p></td>
+</tr>
+<tr class="row-even"><td><p>timepoint_multipliers</p></td>
+<td><p>dict</p></td>
+<td><p>Dictionary to provide timepoint multipliers</p></td>
+<td><p>Optional</p></td>
+<td><p>None</p></td>
+</tr>
+</tbody>
+</table>
+<p><em>3. Simulation Input Parameters</em></p>
+<p>In addition to the thermal and voltage input parameters, there are a few other simulation parameters which need to be provided.</p>
+<table class="docutils align-default" id="id3">
+<caption><span class="caption-text">Simulation input parameters</span><a class="headerlink" href="#id3" title="Link to this table">¶</a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Input Parameter</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Required/Optional</p></th>
+<th class="head"><p>Default/Example</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>upgrade_cost_database</p></td>
+<td><p>string</p></td>
+<td><p>Final lower limit in per unit</p></td>
+<td><p>Required</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>pydss_controllers</p></td>
+<td><p>PyDSSControllerModel</p></td>
+<td><p>If enable_pydss_controllers is True, these PyDSS controllers are applied to each corresponding element type</p></td>
+<td><p>Required</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>enable_pydss_controllers</p></td>
+<td><p>bool</p></td>
+<td><p>Flag to enable/disable use of PyDSS controllers</p></td>
+<td><p>Required</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>include_pf1</p></td>
+<td><p>bool</p></td>
+<td><p>Include PF1 scenario (no controls) if pydss_controllers are defined.</p></td>
+<td><p>Required</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>dc_ac_ratio</p></td>
+<td><p>float</p></td>
+<td><p>Apply DC-AC ratio for PV Systems</p></td>
+<td><p>Optional</p></td>
+<td><p>None</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="outputs">
+<h3>Outputs<a class="headerlink" href="#outputs" title="Link to this heading">¶</a></h3>
+<p><em>1. Costs</em></p>
+<table class="docutils align-default" id="id4">
+<caption><span class="caption-text">Output costs</span><a class="headerlink" href="#id4" title="Link to this table">¶</a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Output Parameter</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>name</p></td>
+<td><p>str</p></td>
+<td><p>Job name</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td><p>str</p></td>
+<td><p>Equipment type</p></td>
+</tr>
+<tr class="row-even"><td><p>count</p></td>
+<td><p>str</p></td>
+<td><p>Count of upgraded equipment</p></td>
+</tr>
+<tr class="row-odd"><td><p>total_cost_usd</p></td>
+<td><p>float</p></td>
+<td><p>Total cost in US dollars</p></td>
+</tr>
+</tbody>
+</table>
+<p><em>2. Summary</em></p>
+<table class="docutils align-default" id="id5">
+<caption><span class="caption-text">Output summary</span><a class="headerlink" href="#id5" title="Link to this table">¶</a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Output Parameter</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>name</p></td>
+<td><p>str</p></td>
+<td><p>Job name that produced the result</p></td>
+</tr>
+<tr class="row-odd"><td><p>upgrade_type</p></td>
+<td><p>str</p></td>
+<td><p>Type of upgrade: thermal or voltage</p></td>
+</tr>
+<tr class="row-even"><td><p>scenario</p></td>
+<td><p>str</p></td>
+<td><p>Simulation scenario describing the controls being used</p></td>
+</tr>
+<tr class="row-odd"><td><p>stage</p></td>
+<td><p>str</p></td>
+<td><p>Stage of upgrades: Initial (before upgrades) or Final (after upgrades)</p></td>
+</tr>
+<tr class="row-even"><td><p>simulation_time_s</p></td>
+<td><p>float</p></td>
+<td><p>Simulation time to perform upgrades (seconds). This will be present when stage=Final</p></td>
+</tr>
+<tr class="row-odd"><td><p>thermal_violations_present</p></td>
+<td><p>bool</p></td>
+<td><p>Flag indicating whether thermal violations are present</p></td>
+</tr>
+<tr class="row-even"><td><p>voltage_violations_present</p></td>
+<td><p>bool</p></td>
+<td><p>Flag indicating whether voltage violations are present</p></td>
+</tr>
+<tr class="row-odd"><td><p>max_bus_voltage</p></td>
+<td><p>float</p></td>
+<td><p>Maximum voltage recorded on any bus</p></td>
+</tr>
+<tr class="row-even"><td><p>min_bus_voltage</p></td>
+<td><p>float</p></td>
+<td><p>Minimum voltage recorded on any bus</p></td>
+</tr>
+<tr class="row-odd"><td><p>num_voltage_violation_buses</p></td>
+<td><p>int</p></td>
+<td><p>Number of buses with voltage violations</p></td>
+</tr>
+<tr class="row-even"><td><p>num_overvoltage_violation_buses</p></td>
+<td><p>int</p></td>
+<td><p>Number of buses with voltage above voltage_upper_limit</p></td>
+</tr>
+<tr class="row-odd"><td><p>voltage_upper_limit</p></td>
+<td><p>float</p></td>
+<td><p>Voltage upper limit, the threshold considered for determining overvoltages</p></td>
+</tr>
+<tr class="row-even"><td><p>num_undervoltage_violation_buses</p></td>
+<td><p>int</p></td>
+<td><p>Number of buses with voltage below voltage_lower_limit</p></td>
+</tr>
+<tr class="row-odd"><td><p>voltage_lower_limit</p></td>
+<td><p>float</p></td>
+<td><p>Voltage lower limit, the threshold considered for determining undervoltages</p></td>
+</tr>
+<tr class="row-even"><td><p>max_line_loading</p></td>
+<td><p>float</p></td>
+<td><p>Maximum line loading</p></td>
+</tr>
+<tr class="row-odd"><td><p>max_transformer_loading</p></td>
+<td><p>float</p></td>
+<td><p>Maximum transformer loading</p></td>
+</tr>
+<tr class="row-even"><td><p>num_line_violations</p></td>
+<td><p>int</p></td>
+<td><p>Number of lines with loading above line upper limit</p></td>
+</tr>
+<tr class="row-odd"><td><p>line_upper_limit</p></td>
+<td><p>float</p></td>
+<td><p>Line upper limit, the threshold considered for determining line overloading</p></td>
+</tr>
+<tr class="row-even"><td><p>num_transformer_violations</p></td>
+<td><p>int</p></td>
+<td><p>Number of transformers with loading above transformer upper limit</p></td>
+</tr>
+<tr class="row-odd"><td><p>transformer_upper_limit</p></td>
+<td><p>float</p></td>
+<td><p>Transformer upper limit, the threshold considered for determining transformer overloading</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="example">
+<h3>Example<a class="headerlink" href="#example" title="Link to this heading">¶</a></h3>
+<p>For a feeder with thermal and voltage violations, the following figures show the violations in a feeder before and after upgrades.</p>
+<a class="reference internal image-reference" href="../_images/feeder.png"><img alt="../_images/feeder.png" src="../_images/feeder.png" style="width: 400px;" /></a>
+<p><em>1. Thermal Upgrades</em></p>
+<p>The following figures show the thermal violations in a feeder before and after thermal upgrades:</p>
+<a class="reference internal image-reference" href="../_images/thermalbefore_thermalupgrades.png"><img alt="../_images/thermalbefore_thermalupgrades.png" src="../_images/thermalbefore_thermalupgrades.png" style="width: 400px;" /></a>
+<a class="reference internal image-reference" href="../_images/thermalafter_thermalupgrades.png"><img alt="../_images/thermalafter_thermalupgrades.png" src="../_images/thermalafter_thermalupgrades.png" style="width: 400px;" /></a>
+<p>The following figures show the voltage violations in a feeder before and after thermal upgrades:</p>
+<a class="reference internal image-reference" href="../_images/voltagebefore_thermalupgrades.png"><img alt="../_images/voltagebefore_thermalupgrades.png" src="../_images/voltagebefore_thermalupgrades.png" style="width: 400px;" /></a>
+<a class="reference internal image-reference" href="../_images/voltageafter_thermalupgrades.png"><img alt="../_images/voltageafter_thermalupgrades.png" src="../_images/voltageafter_thermalupgrades.png" style="width: 400px;" /></a>
+<p><em>2. Voltage Upgrades</em></p>
+<p>The following figures show the voltage violations in a feeder before and after voltage upgrades:</p>
+<a class="reference internal image-reference" href="../_images/voltagebefore_voltageupgrades.png"><img alt="../_images/voltagebefore_voltageupgrades.png" src="../_images/voltagebefore_voltageupgrades.png" style="width: 400px;" /></a>
+<a class="reference internal image-reference" href="../_images/voltageafter_voltageupgrades.png"><img alt="../_images/voltageafter_voltageupgrades.png" src="../_images/voltageafter_voltageupgrades.png" style="width: 400px;" /></a>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="hosting-capacity-analysis.html" class="btn btn-neutral float-left" title="Hosting Capacity Analysis" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="impact-analysis.html" class="btn btn-neutral float-right" title="Impact Analysis" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2019, NREL.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

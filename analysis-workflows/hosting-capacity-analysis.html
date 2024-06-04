@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hosting Capacity Analysis &mdash; DISCO 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/documentation_options.js?v=2709fde1"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Upgrade Cost Analysis" href="upgrade-cost-analysis.html" />
+    <link rel="prev" title="Analysis Workflows" href="../analysis-workflows.html" />
+    <link href="../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            DISCO
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../installation.html#conda-installation">Conda Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../installation.html#developer-installation">Developer Installation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../overview.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../overview.html#data-sources">Data Sources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../overview.html#transform-model">Transform Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../overview.html#config-jobs">Config Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../overview.html#submit-jobs">Submit Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../overview.html#result-analysis">Result Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../quick-start.html">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../quick-start.html#source-data">Source Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../quick-start.html#transform-model">Transform Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../quick-start.html#config-jobs">Config Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../quick-start.html#submit-jobs">Submit Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../quick-start.html#result-analysis">Result Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../data-sources.html">Data Sources</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../data-sources.html#generic-power-flow-models">Generic Power Flow Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data-sources.html#sourcetree1-model">SourceTree1 Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data-sources.html#sourcetree2-model">SourceTree2 Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data-sources.html#gem-model">GEM Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data-sources.html#epri-model">EPRI Model</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../pv-deployments.html">PV Deployments</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../pv-deployments.html#sourcetree1-pv-deployments">SourceTree1 PV Deployments</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../transform-models.html">Transform Models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../transform-models.html#transform-model-help">Transform Model Help</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../transform-models.html#disco-model-in-depth">DISCO Model in Depth</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="../analysis-workflows.html">Analysis Workflows</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Hosting Capacity Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="upgrade-cost-analysis.html">Upgrade Cost Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="impact-analysis.html">Impact Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../pipelines.html">Pipelines</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines.html#sourcetree1model">SourceTree1Model</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../debugging-issues.html">Debugging Issues</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../debugging-issues.html#disco-return-codes">DISCO Return Codes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../debugging-issues.html#using-jade">Using JADE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../debugging-issues.html#using-pydss">Using PyDSS</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../data-ingestion.html">Data Ingestion</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../data-ingestion.html#ingest-to-new-database">Ingest to New Database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data-ingestion.html#ingest-to-existing-database">Ingest to Existing Database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data-ingestion.html#run-database-queries">Run Database Queries</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../advanced-guide.html">Advanced Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../advanced-guide/upgrade-cost-analysis-generic-models.html">Upgrade Cost Analysis JSON Schemas</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../build-docs.html">Build docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DISCO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../analysis-workflows.html">Analysis Workflows</a></li>
+      <li class="breadcrumb-item active">Hosting Capacity Analysis</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/analysis-workflows/hosting-capacity-analysis.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hosting-capacity-analysis">
+<h1>Hosting Capacity Analysis<a class="headerlink" href="#hosting-capacity-analysis" title="Link to this heading">¶</a></h1>
+<p>This section shows how to conduct <em>hosting capacity analysis</em> using DISCO pipeline with <em>snapshot</em>
+and <em>time-series</em> models as inputs. This tutorial assumes there’s an existing <code class="docutils literal notranslate"><span class="pre">snapshot-feeder-models</span></code>
+directory generated from the <code class="docutils literal notranslate"><span class="pre">transform-model</span></code> command as below. The workflow below can also be
+applied to <code class="docutils literal notranslate"><span class="pre">time-series-feeder-models</span></code>.</p>
+<p><strong>1. Config Pipeline</strong></p>
+<p>Check the <code class="docutils literal notranslate"><span class="pre">--help</span></code> option for creating pipeline template.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>create-pipeline<span class="w"> </span>template<span class="w"> </span>--help
+Usage:<span class="w"> </span>disco<span class="w"> </span>create-pipeline<span class="w"> </span>template<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span><span class="w"> </span>INPUTS
+
+Create<span class="w"> </span>pipeline<span class="w"> </span>template<span class="w"> </span>file
+
+Options:
+-T,<span class="w"> </span>--task-name<span class="w"> </span>TEXT<span class="w">            </span>The<span class="w"> </span>task<span class="w"> </span>name<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>simulation/analysis
+<span class="w">                                </span><span class="o">[</span>required<span class="o">]</span>
+-P,<span class="w"> </span>--preconfigured<span class="w">             </span>Whether<span class="w"> </span>inputs<span class="w"> </span>models<span class="w"> </span>are<span class="w"> </span>preconfigured
+<span class="w">                                </span><span class="o">[</span>default:<span class="w"> </span>False<span class="o">]</span>
+-s,<span class="w"> </span>--simulation-type<span class="w"> </span><span class="o">[</span>snapshot<span class="p">|</span>time-series<span class="p">|</span>upgrade<span class="o">]</span>
+<span class="w">                                </span>Choose<span class="w"> </span>a<span class="w"> </span>DISCO<span class="w"> </span>simulation<span class="w"> </span><span class="nb">type</span><span class="w">  </span><span class="o">[</span>default:
+<span class="w">                                </span>snapshot<span class="o">]</span>
+--with-loadshape<span class="w"> </span>/<span class="w"> </span>--no-with-loadshape
+<span class="w">                                </span>Indicate<span class="w"> </span><span class="k">if</span><span class="w"> </span>loadshape<span class="w"> </span>file<span class="w"> </span>used<span class="w"> </span><span class="k">for</span><span class="w"> </span>Snapshot
+<span class="w">                                </span>simulation.
+--auto-select-time-points<span class="w"> </span>/<span class="w"> </span>--no-auto-select-time-points
+<span class="w">                                </span>Automatically<span class="w"> </span><span class="k">select</span><span class="w"> </span>the<span class="w"> </span><span class="nb">time</span><span class="w"> </span>point<span class="w"> </span>based<span class="w"> </span>on
+<span class="w">                                </span>max<span class="w"> </span>PV-load<span class="w"> </span>ratio<span class="w"> </span><span class="k">for</span><span class="w"> </span>snapshot<span class="w"> </span>simulations.
+<span class="w">                                </span>Only<span class="w"> </span>applicable<span class="w"> </span><span class="k">if</span><span class="w"> </span>--with-loadshape.
+<span class="w">                                </span><span class="o">[</span>default:<span class="w"> </span>auto-select-time-points<span class="o">]</span>
+-d,<span class="w"> </span>--auto-select-time-points-search-duration-days<span class="w"> </span>INTEGER
+<span class="w">                                </span>Search<span class="w"> </span>duration<span class="w"> </span><span class="k">in</span><span class="w"> </span>days.<span class="w"> </span>Only<span class="w"> </span>applicable
+<span class="w">                                </span>with<span class="w"> </span>--auto-select-time-points.<span class="w">  </span><span class="o">[</span>default:
+<span class="w">                                </span><span class="m">365</span><span class="o">]</span>
+-i,<span class="w"> </span>--impact-analysis<span class="w">           </span>Enable<span class="w"> </span>impact<span class="w"> </span>analysis<span class="w"> </span>computations
+<span class="w">                                </span><span class="o">[</span>default:<span class="w"> </span>False<span class="o">]</span>
+-h,<span class="w"> </span>--hosting-capacity<span class="w">          </span>Enable<span class="w"> </span>hosting<span class="w"> </span>capacity<span class="w"> </span>computations
+<span class="w">                                </span><span class="o">[</span>default:<span class="w"> </span>False<span class="o">]</span>
+-u,<span class="w"> </span>--upgrade-analysis<span class="w">          </span>Enable<span class="w"> </span>upgrade<span class="w"> </span>cost<span class="w"> </span>computations<span class="w">  </span><span class="o">[</span>default:
+<span class="w">                                </span>False<span class="o">]</span>
+-c,<span class="w"> </span>--cost-benefit<span class="w">              </span>Enable<span class="w"> </span>cost<span class="w"> </span>benefit<span class="w"> </span>computations<span class="w">  </span><span class="o">[</span>default:
+<span class="w">                                </span>False<span class="o">]</span>
+-p,<span class="w"> </span>--prescreen<span class="w">                 </span>Enable<span class="w"> </span>PV<span class="w"> </span>penetration<span class="w"> </span>level<span class="w"> </span>prescreening
+<span class="w">                                </span><span class="o">[</span>default:<span class="w"> </span>False<span class="o">]</span>
+-t,<span class="w"> </span>--template-file<span class="w"> </span>TEXT<span class="w">        </span>Output<span class="w"> </span>pipeline<span class="w"> </span>template<span class="w"> </span>file<span class="w">  </span><span class="o">[</span>default:
+<span class="w">                                </span>pipeline-template.toml<span class="o">]</span>
+-r,<span class="w"> </span>--reports-filename<span class="w"> </span>TEXT<span class="w">     </span>PyDSS<span class="w"> </span>report<span class="w"> </span>options.<span class="w"> </span>If<span class="w"> </span>None,<span class="w"> </span>use<span class="w"> </span>the
+<span class="w">                                </span>default<span class="w"> </span><span class="k">for</span><span class="w"> </span>the<span class="w"> </span>simulation<span class="w"> </span>type.
+-S,<span class="w"> </span>--enable-singularity<span class="w">        </span>Add<span class="w"> </span>Singularity<span class="w"> </span>parameters<span class="w"> </span>and<span class="w"> </span><span class="nb">set</span><span class="w"> </span>the
+<span class="w">                                </span>config<span class="w"> </span>to<span class="w"> </span>run<span class="w"> </span><span class="k">in</span><span class="w"> </span>a<span class="w"> </span>container.<span class="w">  </span><span class="o">[</span>default:
+<span class="w">                                </span>False<span class="o">]</span>
+-C,<span class="w"> </span>--container<span class="w"> </span>PATH<span class="w">            </span>Path<span class="w"> </span>to<span class="w"> </span>container
+-D,<span class="w"> </span>--database<span class="w"> </span>PATH<span class="w">             </span>The<span class="w"> </span>path<span class="w"> </span>of<span class="w"> </span>new<span class="w"> </span>or<span class="w"> </span>existing<span class="w"> </span>SQLite<span class="w"> </span>database
+<span class="w">                                </span><span class="o">[</span>default:<span class="w"> </span>results.sqlite<span class="o">]</span>
+-l,<span class="w"> </span>--local<span class="w">                     </span>Run<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="nb">local</span><span class="w"> </span>mode<span class="w"> </span><span class="o">(</span>non-HPC<span class="o">)</span>.<span class="w">  </span><span class="o">[</span>default:
+<span class="w">                                </span>False<span class="o">]</span>
+--help<span class="w">                          </span>Show<span class="w"> </span>this<span class="w"> </span>message<span class="w"> </span>and<span class="w"> </span>exit.
+</pre></div>
+</div>
+<p>Given an output directory from <code class="docutils literal notranslate"><span class="pre">transform-model</span></code>, we use this command with <code class="docutils literal notranslate"><span class="pre">--preconfigured</span></code> option
+to create the template.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>create-pipeline<span class="w"> </span>template<span class="w"> </span>-T<span class="w"> </span>SnapshotTask<span class="w"> </span>-s<span class="w"> </span>snapshot<span class="w"> </span>-h<span class="w"> </span>-P<span class="w"> </span>snapshot-feeder-models<span class="w"> </span>--with-loadshape
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For configuring a dynamic hosting capacity pipeline, use <code class="docutils literal notranslate"><span class="pre">-s</span> <span class="pre">time-series</span></code></p>
+</div>
+<p>It creates <code class="docutils literal notranslate"><span class="pre">pipeline-template.toml</span></code> with configurable parameters of different sections. Update
+parameter values if needed. Then run</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>create-pipeline<span class="w"> </span>config<span class="w"> </span>pipeline-template.toml
+</pre></div>
+</div>
+<p>This command creates a <code class="docutils literal notranslate"><span class="pre">pipeline.json</span></code> file containing two stages:</p>
+<ul class="simple">
+<li><p>stage 1 - simulation</p></li>
+<li><p>stage 2 - post-process</p></li>
+</ul>
+<p>Accordingly, there will be an output directory for each stage,</p>
+<ul class="simple">
+<li><p>output-stage1</p></li>
+<li><p>output-stage2</p></li>
+</ul>
+<p><strong>2. Submit Pipeline</strong></p>
+<p>With a configured DISCO pipeline in <code class="docutils literal notranslate"><span class="pre">pipeline.json</span></code> the next step is to submit the pipeline with
+JADE:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>jade<span class="w"> </span>pipeline<span class="w"> </span>submit<span class="w"> </span>pipeline.json<span class="w"> </span>-o<span class="w"> </span>output
+</pre></div>
+</div>
+<p>What does each stage do?</p>
+<ul class="simple">
+<li><p>In the simulation stage DISCO runs a power flow simulation for each job through PyDSS and stores
+per-job metrics.</p></li>
+<li><p>In the post-process stage DISCO aggregates the metrics from each simulation job, calculates
+the hosting capacity, and then ingests results into a SQLite database.</p></li>
+</ul>
+<p><strong>3. Check Results</strong></p>
+<p>The post-process stage aggregates metrics in the following tables in <code class="docutils literal notranslate"><span class="pre">output/output-stage1</span></code>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">feeder_head_table.csv</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">feeder_losses_table.csv</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">metadata_table.csv</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">thermal_metrics_table.csv</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">voltage_metrics_table.csv</span></code></p></li>
+</ul>
+<p>Each table contains metrics related to the <em>snapshot</em> or <em>time-series</em> simulation. DISCO
+computes hosting capacity results from these metrics and then writes them to the following files,
+also in <code class="docutils literal notranslate"><span class="pre">output/output-stage1</span></code>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">hosting_capacity_summary__&lt;scenario_name&gt;.json</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hosting_capacity_overall__&lt;scenario_name&gt;.json</span></code></p></li>
+</ul>
+<p>The scenario name will be <code class="docutils literal notranslate"><span class="pre">scenario</span></code>, <code class="docutils literal notranslate"><span class="pre">pf1</span></code> and/or <code class="docutils literal notranslate"><span class="pre">control_mode</span></code>, depending on your
+simulation type and/or <code class="docutils literal notranslate"><span class="pre">--with-loadshape</span></code> option.</p>
+<p>Note that DISCO also produces prototypical visualizations for hosting capacity automatically after each run:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">hca__{scenario_name}.png</span></code></p></li>
+</ul>
+<a class="reference internal image-reference" href="../_images/hca__pf1.png"><img alt="../_images/hca__pf1.png" src="../_images/hca__pf1.png" style="width: 480.0px; height: 480.0px;" /></a>
+<p>The voltage plot examples for the first feeder comparing pf1 vs. voltvar and comparing primary and secondary voltages:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">max_voltage_pf1_voltvar.png</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_voltage_pri_sec.png</span></code></p></li>
+</ul>
+<a class="reference internal image-reference" href="../_images/max_voltage_pri_sec.png"><img alt="../_images/max_voltage_pri_sec.png" src="../_images/max_voltage_pri_sec.png" style="width: 480.0px; height: 480.0px;" /></a>
+<p><strong>4. Results database</strong></p>
+<p>DISCO ingests the hosting capacity results and report metrics into a SQLite database named
+<code class="docutils literal notranslate"><span class="pre">output/output-stage1/results.sqlite</span></code>. You can use standard SQL to query data, and perform
+further analysis.</p>
+<p>If you want to ingest the results into an existing database, please specify the absolute path
+of the database in <code class="docutils literal notranslate"><span class="pre">pipeline.toml</span></code>.</p>
+<p>For sqlite query examples, please refer to the Jupyter notebook <code class="docutils literal notranslate"><span class="pre">notebooks/db-query.ipynb</span></code> in
+the source code repo.</p>
+<p>If you would like to use the CLI tool <code class="docutils literal notranslate"><span class="pre">sqlite3</span></code> directly, here are some examples. Note that in
+this case the database contains the results from a single task, and so the queries are not first
+pre-filtering the tables.</p>
+<p>If you don’t already have <code class="docutils literal notranslate"><span class="pre">sqlite3</span></code> installed, please refer to their
+<a class="reference external" href="https://www.sqlite.org/download.html">website</a>.</p>
+<p>Run this command to start the CLI utility:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>sqlite3<span class="w"> </span>-table<span class="w"> </span>&lt;path-to-db.sqlite&gt;
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If your version of sqlite3 doesn’t support <code class="docutils literal notranslate"><span class="pre">-table</span></code>, use <code class="docutils literal notranslate"><span class="pre">-header</span> <span class="pre">-column</span></code> instead.</p>
+</div>
+<ol class="arabic simple">
+<li><p>View DISCO’s hosting capacity results for all feeders.</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sqlite&gt;<span class="w"> </span>SELECT<span class="w"> </span>*<span class="w"> </span>from<span class="w"> </span>hosting_capacity<span class="w"> </span>WHERE<span class="w"> </span><span class="nv">hc_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;overall&#39;</span><span class="p">;</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p>View voltage violations for one feeder and scenario.</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sqlite&gt;<span class="w"> </span>SELECT<span class="w"> </span>feeder,<span class="w"> </span>scenario,<span class="w"> </span>sample,<span class="w"> </span>penetration_level,<span class="w"> </span>node_type,<span class="w"> </span>min_voltage,<span class="w"> </span>max_voltage
+<span class="w">        </span>FROM<span class="w"> </span>voltage_metrics
+<span class="w">        </span>WHERE<span class="w"> </span><span class="o">(</span>max_voltage<span class="w"> </span>&gt;<span class="w"> </span><span class="m">1</span>.05<span class="w"> </span>or<span class="w"> </span>min_voltage<span class="w"> </span>&lt;<span class="w"> </span><span class="m">0</span>.95<span class="o">)</span>
+<span class="w">        </span>AND<span class="w"> </span><span class="nv">scenario</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;pf1&#39;</span>
+<span class="w">        </span>AND<span class="w"> </span><span class="nv">feeder</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;p19udt14287&#39;</span><span class="p">;</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p>View the min and max voltages for each penetration_level (across samples) for one feeder.</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sqlite&gt;<span class="w"> </span>SELECT<span class="w"> </span>feeder,<span class="w"> </span>sample,<span class="w"> </span>penetration_level
+<span class="w">        </span>,MIN<span class="o">(</span>min_voltage<span class="o">)</span><span class="w"> </span>as<span class="w"> </span>min_voltage_overall
+<span class="w">        </span>,MAX<span class="o">(</span>max_voltage<span class="o">)</span><span class="w"> </span>as<span class="w"> </span>max_voltage_overall
+<span class="w">        </span>,MAX<span class="o">(</span>num_nodes_any_outside_ansi_b<span class="o">)</span><span class="w"> </span>as<span class="w"> </span>num_nodes_any_outside_ansi_b_overall
+<span class="w">        </span>,MAX<span class="o">(</span>num_time_points_with_ansi_b_violations<span class="o">)</span><span class="w"> </span>as<span class="w"> </span>num_time_points_with_ansi_b_violations_overall
+<span class="w">        </span>FROM<span class="w"> </span>voltage_metrics
+<span class="w">        </span>WHERE<span class="w"> </span><span class="nv">scenario</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;pf1&#39;</span>
+<span class="w">        </span>AND<span class="w"> </span><span class="nv">feeder</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;p19udt14287&#39;</span>
+<span class="w">        </span>GROUP<span class="w"> </span>BY<span class="w"> </span>feeder,<span class="w"> </span>penetration_level<span class="p">;</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="4">
+<li><p>View the max thermal loadings for each penetration_level (across samples) for one feeder.</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sqlite&gt;<span class="w"> </span>SELECT<span class="w"> </span>feeder,<span class="w"> </span>sample,<span class="w"> </span>penetration_level
+<span class="w">        </span>,MAX<span class="o">(</span>line_max_instantaneous_loading_pct<span class="o">)</span><span class="w"> </span>as<span class="w"> </span>line_max_inst
+<span class="w">        </span>,MAX<span class="o">(</span>line_max_moving_average_loading_pct<span class="o">)</span><span class="w"> </span>as<span class="w"> </span>line_max_mavg
+<span class="w">        </span>,MAX<span class="o">(</span>line_num_time_points_with_instantaneous_violations<span class="o">)</span><span class="w"> </span>as<span class="w"> </span>line_num_inst
+<span class="w">        </span>,MAX<span class="o">(</span>line_num_time_points_with_moving_average_violations<span class="o">)</span><span class="w"> </span>as<span class="w"> </span>line_num_mavg
+<span class="w">        </span>,MAX<span class="o">(</span>transformer_max_instantaneous_loading_pct<span class="o">)</span><span class="w"> </span>as<span class="w"> </span>xfmr_max_inst
+<span class="w">        </span>,MAX<span class="o">(</span>transformer_max_moving_average_loading_pct<span class="o">)</span><span class="w"> </span>as<span class="w"> </span>xfmr_max_mavg
+<span class="w">        </span>,MAX<span class="o">(</span>transformer_num_time_points_with_instantaneous_violations<span class="o">)</span><span class="w"> </span>as<span class="w"> </span>xfmr_num_inst
+<span class="w">        </span>,MAX<span class="o">(</span>transformer_num_time_points_with_moving_average_violations<span class="o">)</span><span class="w"> </span>as<span class="w"> </span>xfmr_num_mavg
+<span class="w">        </span>FROM<span class="w"> </span>thermal_metrics
+<span class="w">        </span>WHERE<span class="w"> </span><span class="nv">scenario</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;pf1&#39;</span>
+<span class="w">        </span>AND<span class="w"> </span><span class="nv">feeder</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;p19udt14287&#39;</span>
+<span class="w">        </span>GROUP<span class="w"> </span>BY<span class="w"> </span>feeder,<span class="w"> </span>penetration_level<span class="p">;</span>
+</pre></div>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../analysis-workflows.html" class="btn btn-neutral float-left" title="Analysis Workflows" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="upgrade-cost-analysis.html" class="btn btn-neutral float-right" title="Upgrade Cost Analysis" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2019, NREL.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

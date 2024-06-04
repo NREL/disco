@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quick Start &mdash; DISCO 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/documentation_options.js?v=2709fde1"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Data Sources" href="data-sources.html" />
+    <link rel="prev" title="Overview" href="overview.html" />
+    <link href="_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            DISCO
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#conda-installation">Conda Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#developer-installation">Developer Installation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#data-sources">Data Sources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#transform-model">Transform Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#config-jobs">Config Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#submit-jobs">Submit Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#result-analysis">Result Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#source-data">Source Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#transform-model">Transform Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#config-jobs">Config Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#submit-jobs">Submit Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#result-analysis">Result Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="data-sources.html">Data Sources</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data-sources.html#generic-power-flow-models">Generic Power Flow Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-sources.html#sourcetree1-model">SourceTree1 Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-sources.html#sourcetree2-model">SourceTree2 Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-sources.html#gem-model">GEM Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-sources.html#epri-model">EPRI Model</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pv-deployments.html">PV Deployments</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pv-deployments.html#sourcetree1-pv-deployments">SourceTree1 PV Deployments</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="transform-models.html">Transform Models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="transform-models.html#transform-model-help">Transform Model Help</a></li>
+<li class="toctree-l2"><a class="reference internal" href="transform-models.html#disco-model-in-depth">DISCO Model in Depth</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="analysis-workflows.html">Analysis Workflows</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="analysis-workflows/hosting-capacity-analysis.html">Hosting Capacity Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis-workflows/upgrade-cost-analysis.html">Upgrade Cost Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis-workflows/impact-analysis.html">Impact Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pipelines.html">Pipelines</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pipelines.html#sourcetree1model">SourceTree1Model</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="debugging-issues.html">Debugging Issues</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="debugging-issues.html#disco-return-codes">DISCO Return Codes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="debugging-issues.html#using-jade">Using JADE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="debugging-issues.html#using-pydss">Using PyDSS</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="data-ingestion.html">Data Ingestion</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data-ingestion.html#ingest-to-new-database">Ingest to New Database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-ingestion.html#ingest-to-existing-database">Ingest to Existing Database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-ingestion.html#run-database-queries">Run Database Queries</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="advanced-guide.html">Advanced Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="advanced-guide/upgrade-cost-analysis-generic-models.html">Upgrade Cost Analysis JSON Schemas</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="build-docs.html">Build docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DISCO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Quick Start</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/quick-start.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="quick-start">
+<h1>Quick Start<a class="headerlink" href="#quick-start" title="Link to this heading">¶</a></h1>
+<p>This tutorial will show an example by using <a class="reference external" href="https://www.nrel.gov/grid/smart-ds.html">SMART-DS</a>
+models with snapshot impact analysis. Note that you could generally substitute “time-series” for
+“snapshot” for that type of simulation.</p>
+<section id="source-data">
+<h2>Source Data<a class="headerlink" href="#source-data" title="Link to this heading">¶</a></h2>
+<p>Suppose the DISCO repo is downloaded to the <code class="docutils literal notranslate"><span class="pre">~/disco</span></code> directory, where the
+SMART-DS data is located in the directory <code class="docutils literal notranslate"><span class="pre">tests/data/smart-ds/substations/</span></code>.</p>
+</section>
+<section id="transform-model">
+<h2>Transform Model<a class="headerlink" href="#transform-model" title="Link to this heading">¶</a></h2>
+<p>DISCO transforms the SMART-DS models into DISCO models with this command.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>transform-model<span class="w"> </span>~/disco/tests/data/smart-ds/substations/<span class="w"> </span>snapshot
+Transformed<span class="w"> </span>data<span class="w"> </span>from<span class="w"> </span>~/disco/tests/data/smart-ds/substations/<span class="w"> </span>to<span class="w"> </span>snapshot-feeder-models<span class="w"> </span><span class="k">for</span><span class="w"> </span>Snapshot<span class="w"> </span>Analysis.
+</pre></div>
+</div>
+<p>By default, it generates a directory named <code class="docutils literal notranslate"><span class="pre">snapshot-feeder-models</span></code> with transformed models.</p>
+</section>
+<section id="config-jobs">
+<h2>Config Jobs<a class="headerlink" href="#config-jobs" title="Link to this heading">¶</a></h2>
+<p>Configure jobs for execution through JADE with this command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>config<span class="w"> </span>snapshot<span class="w"> </span>./snapshot-feeder-models
+Created<span class="w"> </span>config.json<span class="w"> </span><span class="k">for</span><span class="w"> </span>Snapshot<span class="w"> </span>Analysis
+</pre></div>
+</div>
+<p>A job config file named <code class="docutils literal notranslate"><span class="pre">config.json</span></code> was created.</p>
+<p>Parameters that you may want to configure:</p>
+<ul class="simple">
+<li><p>By default, the PyDSS-exported circuit element properties are taken from
+<a class="reference external" href="https://github.com/NREL/disco/blob/main/disco/pydss/config/snapshot-exports.toml">snapshot-exports.toml</a>.
+Specify a different file with <code class="docutils literal notranslate"><span class="pre">-e</span> <span class="pre">&lt;your-file&gt;</span></code>.</p></li>
+<li><p>PyDSS will not automatically export results to CSV files by default.
+You can set <code class="docutils literal notranslate"><span class="pre">export_data_tables</span></code> to <code class="docutils literal notranslate"><span class="pre">true</span></code> in <code class="docutils literal notranslate"><span class="pre">config.json</span></code>.</p></li>
+<li><p>DISCO applies a DC-AC ratio of 1.15 to all PVSystems by default. You can customize it with the
+option <code class="docutils literal notranslate"><span class="pre">--dc-ac-ratio</span></code>. Set it to <code class="docutils literal notranslate"><span class="pre">1.0</span></code> to prevent any changes to your models.</p></li>
+<li><p>DISCO uses a standard IEEE volt-var curve by default. You can customize the value with the option
+<code class="docutils literal notranslate"><span class="pre">--volt-var-curve</span></code>. This must be a controller name registered with PyDSS.
+Run <code class="docutils literal notranslate"><span class="pre">pydss</span> <span class="pre">controllers</span> <span class="pre">show</span></code> to see the registered controllers.</p></li>
+<li><p>DISCO does not store per-element data in reports by default. For example, it stores max/min
+voltages across all buses and not the max/min voltages for each bus.
+You can set <code class="docutils literal notranslate"><span class="pre">store_per_element_data</span></code> to <code class="docutils literal notranslate"><span class="pre">true</span></code> in <code class="docutils literal notranslate"><span class="pre">config.json</span></code>.</p></li>
+<li><p>Other PyDSS parameters: Refer to the <code class="docutils literal notranslate"><span class="pre">pydss_inputs</span></code> section of <code class="docutils literal notranslate"><span class="pre">config.json</span></code>.
+<a class="reference external" href="https://nrel.github.io/PyDSS/simulation_settings.html">PyDSS documentation</a></p></li>
+</ul>
+</section>
+<section id="submit-jobs">
+<h2>Submit Jobs<a class="headerlink" href="#submit-jobs" title="Link to this heading">¶</a></h2>
+<p>Then batch of jobs in <code class="docutils literal notranslate"><span class="pre">config.json</span></code> can be submitted through JADE. Two examples are shown below:
+one on a local machine and one on an HPC.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>jade<span class="w"> </span>submit-jobs<span class="w"> </span>--local<span class="w"> </span>config.json
+$<span class="w"> </span>jade<span class="w"> </span>submit-jobs<span class="w"> </span>-h<span class="w"> </span>hpc_config.toml<span class="w"> </span>config.json
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Create hpc_config.toml with <code class="docutils literal notranslate"><span class="pre">jade</span> <span class="pre">config</span> <span class="pre">hpc</span></code> and modify it as necessary.
+Refer to <a class="reference external" href="https://nrel.github.io/jade/tutorial.html#cli-execution">JADE instructions</a>
+for additional information on how to customize execution.</p>
+</div>
+<p>The submitted jobs run to completion and generate an output directory named <code class="docutils literal notranslate"><span class="pre">output</span></code>.</p>
+</section>
+<section id="result-analysis">
+<h2>Result Analysis<a class="headerlink" href="#result-analysis" title="Link to this heading">¶</a></h2>
+<p>To get a quick summary of job results using JADE:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>jade<span class="w"> </span>show-results
+Results<span class="w"> </span>from<span class="w"> </span>directory:<span class="w"> </span>output
+JADE<span class="w"> </span>Version:<span class="w"> </span><span class="m">0</span>.1.1
+<span class="m">01</span>/04/2021<span class="w"> </span><span class="m">08</span>:52:36
+
++-----------------------------------------+-------------+----------+--------------------+----------------------------+
+<span class="p">|</span><span class="w">                 </span>Job<span class="w"> </span>Name<span class="w">                </span><span class="p">|</span><span class="w"> </span>Return<span class="w"> </span>Code<span class="w"> </span><span class="p">|</span><span class="w">  </span>Status<span class="w">  </span><span class="p">|</span><span class="w"> </span>Execution<span class="w"> </span>Time<span class="w"> </span><span class="o">(</span>s<span class="o">)</span><span class="w"> </span><span class="p">|</span><span class="w">      </span>Completion<span class="w"> </span>Time<span class="w">       </span><span class="p">|</span>
++-----------------------------------------+-------------+----------+--------------------+----------------------------+
+<span class="p">|</span><span class="w">  </span>p1uhs10_1247__p1udt14394__random__1__5<span class="w"> </span><span class="p">|</span><span class="w">      </span><span class="m">0</span><span class="w">      </span><span class="p">|</span><span class="w"> </span>finished<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="m">23</span>.069955110549927<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="m">2021</span>-01-04<span class="w"> </span><span class="m">08</span>:52:35.939785<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>p1uhs10_1247__p1udt14394__random__1__10<span class="w"> </span><span class="p">|</span><span class="w">      </span><span class="m">0</span><span class="w">      </span><span class="p">|</span><span class="w"> </span>finished<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="m">23</span>.06603503227234<span class="w">  </span><span class="p">|</span><span class="w"> </span><span class="m">2021</span>-01-04<span class="w"> </span><span class="m">08</span>:52:35.942345<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w">  </span>p1uhs10_1247__p1udt14394__random__2__5<span class="w"> </span><span class="p">|</span><span class="w">      </span><span class="m">0</span><span class="w">      </span><span class="p">|</span><span class="w"> </span>finished<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="m">23</span>.062479972839355<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="m">2021</span>-01-04<span class="w"> </span><span class="m">08</span>:52:35.943899<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>p1uhs10_1247__p1udt14394__random__2__10<span class="w"> </span><span class="p">|</span><span class="w">      </span><span class="m">0</span><span class="w">      </span><span class="p">|</span><span class="w"> </span>finished<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="m">23</span>.05748414993286<span class="w">  </span><span class="p">|</span><span class="w"> </span><span class="m">2021</span>-01-04<span class="w"> </span><span class="m">08</span>:52:35.944780<span class="w"> </span><span class="p">|</span>
++-----------------------------------------+-------------+----------+--------------------+----------------------------+
+
+Num<span class="w"> </span>successful:<span class="w"> </span><span class="m">4</span>
+Num<span class="w"> </span>failed:<span class="w"> </span><span class="m">0</span>
+Total:<span class="w"> </span><span class="m">4</span>
+
+Avg<span class="w"> </span>execution<span class="w"> </span><span class="nb">time</span><span class="w"> </span><span class="o">(</span>s<span class="o">)</span>:<span class="w"> </span><span class="m">23</span>.06
+Min<span class="w"> </span>execution<span class="w"> </span><span class="nb">time</span><span class="w"> </span><span class="o">(</span>s<span class="o">)</span>:<span class="w"> </span><span class="m">23</span>.06
+Max<span class="w"> </span>execution<span class="w"> </span><span class="nb">time</span><span class="w"> </span><span class="o">(</span>s<span class="o">)</span>:<span class="w"> </span><span class="m">23</span>.07
+</pre></div>
+</div>
+<p>Each job output directory contains PyDSS-exported data and reports.</p>
+<ul class="simple">
+<li><p>Reports (ex: thermal_metrics.json, voltage_metrics.json) are stored in <code class="docutils literal notranslate"><span class="pre">&lt;output-dir&gt;/job-outputs/&lt;job-name&gt;/pydss_project/project.zip</span></code> in the <code class="docutils literal notranslate"><span class="pre">Results</span></code> sub-directory.</p></li>
+<li><p>Exported data tables, if enabled, are stored in the <code class="docutils literal notranslate"><span class="pre">Exports</span></code> sub-directory.</p></li>
+<li><p>You can access the PyDSS-exported data in a Jupyter notebook data-viewer UI or programmatically
+as shown in this <a class="reference external" href="https://nrel.github.io/PyDSS/tutorial.html#analyze-results">documentation</a>.</p></li>
+</ul>
+<p>This is the complete workflow for conducting snapshot impact analysis on SMART_DS feeders.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="overview.html" class="btn btn-neutral float-left" title="Overview" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="data-sources.html" class="btn btn-neutral float-right" title="Data Sources" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2019, NREL.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

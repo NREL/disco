@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PV Deployments &mdash; DISCO 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/documentation_options.js?v=2709fde1"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Transform Models" href="transform-models.html" />
+    <link rel="prev" title="SMART-DS OpenDSS Model Preparation" href="data-sources/smart-ds-model-preparation.html" />
+    <link href="_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            DISCO
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#conda-installation">Conda Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#developer-installation">Developer Installation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#data-sources">Data Sources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#transform-model">Transform Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#config-jobs">Config Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#submit-jobs">Submit Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#result-analysis">Result Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quick-start.html">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#source-data">Source Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#transform-model">Transform Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#config-jobs">Config Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#submit-jobs">Submit Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#result-analysis">Result Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="data-sources.html">Data Sources</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data-sources.html#generic-power-flow-models">Generic Power Flow Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-sources.html#sourcetree1-model">SourceTree1 Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-sources.html#sourcetree2-model">SourceTree2 Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-sources.html#gem-model">GEM Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-sources.html#epri-model">EPRI Model</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">PV Deployments</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#sourcetree1-pv-deployments">SourceTree1 PV Deployments</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="transform-models.html">Transform Models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="transform-models.html#transform-model-help">Transform Model Help</a></li>
+<li class="toctree-l2"><a class="reference internal" href="transform-models.html#disco-model-in-depth">DISCO Model in Depth</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="analysis-workflows.html">Analysis Workflows</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="analysis-workflows/hosting-capacity-analysis.html">Hosting Capacity Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis-workflows/upgrade-cost-analysis.html">Upgrade Cost Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis-workflows/impact-analysis.html">Impact Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pipelines.html">Pipelines</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pipelines.html#sourcetree1model">SourceTree1Model</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="debugging-issues.html">Debugging Issues</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="debugging-issues.html#disco-return-codes">DISCO Return Codes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="debugging-issues.html#using-jade">Using JADE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="debugging-issues.html#using-pydss">Using PyDSS</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="data-ingestion.html">Data Ingestion</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data-ingestion.html#ingest-to-new-database">Ingest to New Database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-ingestion.html#ingest-to-existing-database">Ingest to Existing Database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-ingestion.html#run-database-queries">Run Database Queries</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="advanced-guide.html">Advanced Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="advanced-guide/upgrade-cost-analysis-generic-models.html">Upgrade Cost Analysis JSON Schemas</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="build-docs.html">Build docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DISCO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">PV Deployments</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/pv-deployments.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pv-deployments">
+<span id="pvdeployments"></span><h1>PV Deployments<a class="headerlink" href="#pv-deployments" title="Link to this heading">¶</a></h1>
+<p>This section shows how to generate DISCO PV deployments from raw opendss models.</p>
+<section id="sourcetree1-pv-deployments">
+<span id="sourcetree1pvdeployments"></span><h2>SourceTree1 PV Deployments<a class="headerlink" href="#sourcetree1-pv-deployments" title="Link to this heading">¶</a></h2>
+<p>The main command going to be used is the one below,</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>pv-deployments<span class="w"> </span>source-tree-1<span class="w"> </span>--action<span class="w"> </span>&lt;action-name&gt;<span class="w"> </span>--hierarchy<span class="w"> </span>&lt;hierarchy&gt;<span class="w"> </span>--placement<span class="w"> </span>&lt;placement<span class="w"> </span>type&gt;<span class="w"> </span>INPUT_PATH
+</pre></div>
+</div>
+<p>There are several actions here related to PV deployments manipulation, including</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">transform-loads</span></code>: Transform Loads.dss file before conducting PV deployments.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">redirect-pvshapes</span></code>: Redirect PVShape.dss in both substation and feeder Master.dss files.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">generate-jobs</span></code>: Help generate <code class="docutils literal notranslate"><span class="pre">create-pv</span></code> and <code class="docutils literal notranslate"><span class="pre">create-configs</span></code> jobs in JSON, i.e., jade config.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">restore-feeders</span></code>: Before and during PV deployments, Loads.dss and Master.dss files were modified, need to restore after that.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">create-pv</span></code>: create PV deployments on feeders based on <cite>placement</cite>, <cite>sample</cite> and <cite>penetration</cite> levels.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">check-pv</span></code>: check if there are PV deployments missing at each <cite>placement</cite>, <cite>sample</cite> and <cite>penetration</cite> level.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">remove-pv</span></code>: delete PV deployments in case there’s something wrong.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">create-configs</span></code>: create PV config files at each <cite>sample</cite> deployment level.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">check-configs</span></code>: check if there are PV config files missing in deployment directories.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">remove-configs</span></code>: remove PV config files in case there’s something wrong.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">list-feeders</span></code>: list feeder paths given input of region, substation or feeder.</p></li>
+</ul>
+<section id="transform-loads">
+<h3>Transform Loads<a class="headerlink" href="#transform-loads" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">Loads.dss</span></code> files need to be transformed before generating PV deployments.</p>
+<ul class="simple">
+<li><p>Loads may need to be changed to use suitable center-tap schema.</p></li>
+<li><p>Temporarily disconnect load shapes. The generation process compiles the OpenDSS circuit.
+If load shapes are present, OpenDSS has to load the data and that can take significant
+amounts of time. Load shapes are not needed by the generation process, and so it disables
+them in the OpenDSS text files. A later step re-enables them.</p></li>
+</ul>
+<p>The command to run this is,</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>pv-deployments<span class="w"> </span>source-tree-1<span class="w"> </span>-a<span class="w"> </span>transform-loads<span class="w"> </span>-h<span class="w"> </span>&lt;hierarchy&gt;<span class="w"> </span>INPUT_PATH
+</pre></div>
+</div>
+</section>
+<section id="redirect-pvshapes">
+<h3>Redirect PVShapes<a class="headerlink" href="#redirect-pvshapes" title="Link to this heading">¶</a></h3>
+<p>This workflow will generate OpenDSS files with varying counts and sizes of PVSystems. It will
+assign load shape profiles to those PVSystems from a pool of profiles. You must define these
+profiles in a <code class="docutils literal notranslate"><span class="pre">PVShapes.dss</span></code> file and copy that files to all substation and/or feeder
+directories.</p>
+<p>All <code class="docutils literal notranslate"><span class="pre">Master.dss</span></code> need to redirect to <code class="docutils literal notranslate"><span class="pre">PVShapes.dss</span></code>. We recommend that you add these lines to
+your files. If you do that, you can skip to the next section.</p>
+<p>If your directory structure aligns with the <code class="docutils literal notranslate"><span class="pre">source-tree-1</span></code> expectations, the disco CLI command
+below will add the redirects automatically.</p>
+<div class="admonition-todo admonition" id="id1">
+<p class="admonition-title">Todo</p>
+<p>Make this code handle all cases generically.</p>
+</div>
+<p>Run this command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>pv-deployments<span class="w"> </span>source-tree-1<span class="w"> </span>-a<span class="w"> </span>redirect-pvshapes<span class="w"> </span>-h<span class="w"> </span>&lt;hierarchy&gt;<span class="w"> </span>INPUT_PATH
+</pre></div>
+</div>
+</section>
+<section id="generate-jobs">
+<h3>Generate Jobs<a class="headerlink" href="#generate-jobs" title="Link to this heading">¶</a></h3>
+<p>DISCO provides a command to help generate JADE jobs config files for PV deployments and PV configs, that is,</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>pv-deployments<span class="w"> </span>source-tree-1<span class="w"> </span>-a<span class="w"> </span>generate-jobs<span class="w"> </span>-h<span class="w"> </span>&lt;hierarchy&gt;<span class="w"> </span>INPUT_PATH
+</pre></div>
+</div>
+<p>The hierarchy options are:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">city</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">region</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">substation</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">feeder</span></code></p></li>
+</ul>
+</div></blockquote>
+<p>We recommand to run this <code class="docutils literal notranslate"><span class="pre">generate-jobs</span></code> command with <code class="docutils literal notranslate"><span class="pre">--hierarchy=city</span></code> and generate jobs on all
+feeders within the city path, if your simulation/analysis jobs run relatively stable, this way can help avoid
+the repeated job generation work on regions, substations, or feeders.
+For test or debug purpose,it’s good to specify <code class="docutils literal notranslate"><span class="pre">--hierarchy=feeder</span></code> for generating config file with one job,
+or <code class="docutils literal notranslate"><span class="pre">--hierarchy=substation</span></code> with a few jobs.</p>
+<p>This command will generate two JADE config files:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">create-pv-jobs.json</span></code> contains jobs for PV deployments.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">create-config-jobs.json</span></code> contains jobs for PV configs</p></li>
+</ul>
+</div></blockquote>
+<p>And, you can submit the jobs via <code class="docutils literal notranslate"><span class="pre">jade</span> <span class="pre">submit-jobs</span> <span class="pre">&lt;config_file&gt;</span></code> command.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Since PV configs are based on the result of PV deployments, so you will need to wait PV deployment
+jobs to complete, before to submit PV config jobs.</p>
+</div>
+</section>
+<section id="id2">
+<h3>PV Deployments<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<section id="submit-jobs">
+<h4>Submit Jobs<a class="headerlink" href="#submit-jobs" title="Link to this heading">¶</a></h4>
+<p>To generate PV deployments, you will need to submit the jobs via JADE, that is,</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>jade<span class="w"> </span>submit-jobs<span class="w"> </span>&lt;OPTIONS&gt;<span class="w"> </span>create-pv-jobs.json
+</pre></div>
+</div>
+<p>If the jobs pass, then the PV deployments task is done. If you’d like to explore details
+about <code class="docutils literal notranslate"><span class="pre">create-pv</span></code> action based on your hierarchy and according input path, please check the section below.</p>
+</section>
+<section id="details-exploration">
+<h4>Details Exploration<a class="headerlink" href="#details-exploration" title="Link to this heading">¶</a></h4>
+<p>Here are some example commands showing how to create, check and remove PV deployments.</p>
+<ol class="arabic simple">
+<li><p>Create PV deployments on feeder1 with <code class="docutils literal notranslate"><span class="pre">--placement</span> <span class="pre">random</span></code>.</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>pv-deployments<span class="w"> </span>source-tree-1<span class="w"> </span>-a<span class="w"> </span>create-pv<span class="w"> </span>-h<span class="w"> </span>feeder<span class="w"> </span>-p<span class="w"> </span>random<span class="w"> </span>--pv-upscale<span class="w"> </span>&lt;feeder1_path&gt;
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p>Create PV deployments on substation1 with  a few feeders.</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>pv-deployments<span class="w"> </span>source-tree-1<span class="w"> </span>-a<span class="w"> </span>create-pv<span class="w"> </span>-h<span class="w"> </span>substation<span class="w"> </span>-p<span class="w"> </span>random<span class="w"> </span>--pv-upscale<span class="w"> </span>&lt;substation1_path&gt;
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p>Create PV deployments on region1 with many feeders in parallel by using JADE.</p></li>
+</ol>
+<p>As each region has a large number of feeders, it is recommended to use JADE to parallize the jobs.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>pv-deployments<span class="w"> </span>source-tree-1<span class="w"> </span>-a<span class="w"> </span>list-feeders<span class="w"> </span>-h<span class="w"> </span>region<span class="w"> </span>&lt;region1_path&gt;
+<span class="c1"># Create a &lt;commands.txt&gt; file which contains create-pv commands on feeders as above.</span>
+$<span class="w"> </span>jade<span class="w"> </span>config<span class="w"> </span>create<span class="w"> </span>&lt;commands.txt&gt;<span class="w"> </span>-c<span class="w"> </span>config1.json
+$<span class="w"> </span>jade<span class="w"> </span>submit-jobs<span class="w"> </span>config1.json
+</pre></div>
+</div>
+<ol class="arabic simple" start="4">
+<li><p>If you like to check which PV deployments are missing due to job failures,</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>pv-deployments<span class="w"> </span>source-tree-1<span class="w"> </span>-a<span class="w"> </span>check-pv<span class="w"> </span>-h<span class="w"> </span>feeder<span class="w"> </span>-p<span class="w"> </span>random<span class="w"> </span>&lt;feeder1_path&gt;
+$<span class="w"> </span>disco<span class="w"> </span>pv-deployments<span class="w"> </span>source-tree-1<span class="w"> </span>-a<span class="w"> </span>check-pv<span class="w"> </span>-h<span class="w"> </span>substation<span class="w">  </span>-p<span class="w"> </span>random<span class="w"> </span>&lt;substation1_path&gt;
+$<span class="w"> </span>disco<span class="w"> </span>pv-deployments<span class="w"> </span>source-tree-1<span class="w"> </span>-a<span class="w"> </span>check-pv<span class="w"> </span>-h<span class="w"> </span>region<span class="w">  </span>-p<span class="w"> </span>random<span class="w"> </span>&lt;region1_path&gt;
+</pre></div>
+</div>
+<p>It returns the missing samples and penetrations on each feeder. If don’t have <code class="docutils literal notranslate"><span class="pre">--placement</span></code> specified,
+the result would include <cite>placement</cite> missing information on each feeder.</p>
+<ol class="arabic simple" start="5">
+<li><p>If you found some issues with the PV deployments, and like to delete them, here are example commands,</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>pv-deployments<span class="w"> </span>source-tree-1<span class="w"> </span>-a<span class="w"> </span>remove-pv<span class="w"> </span>-h<span class="w"> </span>feeder<span class="w">  </span>-p<span class="w"> </span>random<span class="w"> </span>&lt;feeder1_path&gt;
+$<span class="w"> </span>disco<span class="w"> </span>pv-deployments<span class="w"> </span>source-tree-1<span class="w"> </span>-a<span class="w"> </span>remove-pv<span class="w"> </span>-h<span class="w"> </span>substation<span class="w">  </span>-p<span class="w"> </span>random<span class="w"> </span>&lt;substation1_path&gt;
+$<span class="w"> </span>disco<span class="w"> </span>pv-deployments<span class="w"> </span>source-tree-1<span class="w"> </span>-a<span class="w"> </span>remove-pv<span class="w"> </span>-h<span class="w"> </span>region<span class="w">  </span>-p<span class="w"> </span>random<span class="w"> </span>&lt;region1_path&gt;
+</pre></div>
+</div>
+</section>
+</section>
+<section id="pv-configs">
+<h3>PV Configs<a class="headerlink" href="#pv-configs" title="Link to this heading">¶</a></h3>
+<section id="id3">
+<h4>Submit Jobs<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h4>
+<p>To generate PV configs, you will need to submit the jobs via JADE, that is,</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>jade<span class="w"> </span>submit-jobs<span class="w"> </span>&lt;OPTIONS&gt;<span class="w"> </span>create-config-jobs.json
+</pre></div>
+</div>
+<p>If the jobs pass, then the PV configs task is done. If you’d like to explore details
+about <code class="docutils literal notranslate"><span class="pre">create-configs</span></code> action based on your hierarchy and according input path, please check the section below.</p>
+</section>
+<section id="id4">
+<h4>Details Exploration<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h4>
+<p>After creating PV deployments we need to generate PV config files that define a load shape
+profile for each PV system. The config files get created in <code class="docutils literal notranslate"><span class="pre">sample</span></code> directories.
+The examples below show commands for creating, checking or removing PV config files.</p>
+<ol class="arabic simple">
+<li><p>Create PV configs on feeder1 based on PV deployments data.</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>pv-deployments<span class="w"> </span>source-tree-1<span class="w"> </span>-a<span class="w"> </span>create-configs<span class="w"> </span>-h<span class="w"> </span>feeder<span class="w"> </span>&lt;feeder1_path&gt;
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p>Create PV configs on substation1 with a few feeders.</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>pv-deployments<span class="w"> </span>source-tree-1<span class="w"> </span>-a<span class="w"> </span>create-configs<span class="w"> </span>-h<span class="w"> </span>substation<span class="w"> </span>&lt;substation1_path&gt;
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The option <code class="docutils literal notranslate"><span class="pre">-p</span></code> or <code class="docutils literal notranslate"><span class="pre">--placement</span></code> does not apply to <code class="docutils literal notranslate"><span class="pre">create-configs</span></code> action, as after all
+pv configs created in each feeder, a sum group file based on customer types would be created
+based on the pv configs of the feeder.</p>
+</div>
+<ol class="arabic simple" start="3">
+<li><p>Create PV configs on region1 with many feeders in parallel by using JADE.</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>pv-deployments<span class="w"> </span>source-tree-1<span class="w"> </span>-a<span class="w"> </span>list-feeders<span class="w"> </span>-h<span class="w"> </span>region<span class="w"> </span>&lt;region1_path&gt;
+<span class="c1"># Create a &lt;commands.txt&gt; file which contains create-configs commands on feeders as above.</span>
+$<span class="w"> </span>jade<span class="w"> </span>config<span class="w"> </span>create<span class="w"> </span>&lt;commands.txt&gt;<span class="w"> </span>-c<span class="w"> </span>config2.json
+$<span class="w"> </span>jade<span class="w"> </span>submit-jobs<span class="w"> </span>config2.json
+</pre></div>
+</div>
+<ol class="arabic simple" start="4">
+<li><p>Check if any feeder is missing PV config files.</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>pv-deployments<span class="w"> </span>source-tree-1<span class="w"> </span>-a<span class="w"> </span>check-configs<span class="w"> </span>-h<span class="w"> </span>feeder<span class="w"> </span>-p<span class="w"> </span>random<span class="w"> </span>&lt;feeder1_path&gt;
+$<span class="w"> </span>disco<span class="w"> </span>pv-deployments<span class="w"> </span>source-tree-1<span class="w"> </span>-a<span class="w"> </span>check-configs<span class="w"> </span>-h<span class="w"> </span>substation<span class="w"> </span>-p<span class="w"> </span>random<span class="w"> </span>&lt;substation1_path&gt;
+$<span class="w"> </span>disco<span class="w"> </span>pv-deployments<span class="w"> </span>source-tree-1<span class="w"> </span>-a<span class="w"> </span>check-configs<span class="w"> </span>-h<span class="w"> </span>region<span class="w"> </span>-p<span class="w"> </span>random<span class="w"> </span>&lt;region1_path&gt;
+</pre></div>
+</div>
+<ol class="arabic simple" start="5">
+<li><p>Remove PV configs if something is wrong.</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>pv-deployments<span class="w"> </span>source-tree-1<span class="w"> </span>-a<span class="w"> </span>remove-configs<span class="w"> </span>-h<span class="w"> </span>feeder<span class="w"> </span>-p<span class="w"> </span>random<span class="w"> </span>&lt;feeder1_path&gt;
+$<span class="w"> </span>disco<span class="w"> </span>pv-deployments<span class="w"> </span>source-tree-1<span class="w"> </span>-a<span class="w"> </span>remove-configs<span class="w"> </span>-h<span class="w"> </span>substation<span class="w"> </span>-p<span class="w"> </span>random<span class="w"> </span>&lt;substation1_path&gt;
+$<span class="w"> </span>disco<span class="w"> </span>pv-deployments<span class="w"> </span>source-tree-1<span class="w"> </span>-a<span class="w"> </span>remove-configs<span class="w"> </span>-h<span class="w"> </span>region<span class="w"> </span>-p<span class="w"> </span>random<span class="w"> </span>&lt;region1_path&gt;
+</pre></div>
+</div>
+</section>
+</section>
+<section id="restore-feeders">
+<h3>Restore Feeders<a class="headerlink" href="#restore-feeders" title="Link to this heading">¶</a></h3>
+<p>As the <code class="docutils literal notranslate"><span class="pre">Loads.dss</span></code> in SourceTree1 models needs to be transformed during PV deployments, and the
+content of <code class="docutils literal notranslate"><span class="pre">Loads.dss</span></code> was modified. However, we backed up the original <code class="docutils literal notranslate"><span class="pre">Loads.dss</span></code> before
+PV deployments, so we can rename back after that. Simply, the steps look like this.</p>
+<p>One more thing, to speed up PV deployments, we commented out <code class="docutils literal notranslate"><span class="pre">LoadShapes.dss</span></code> before PV deployments in master
+files, we need to revert it back after PV deployments.</p>
+<ol class="arabic simple">
+<li><p>Before PV deployments:</p></li>
+</ol>
+<ul class="simple">
+<li><p>Rename raw <code class="docutils literal notranslate"><span class="pre">Loads.dss</span></code> into <code class="docutils literal notranslate"><span class="pre">Original_Loads.dss</span></code>.</p></li>
+</ul>
+<ol class="arabic simple" start="2">
+<li><p>During PV deployments:</p></li>
+</ol>
+<ul class="simple">
+<li><p>DISCO PV deployment program transformed <code class="docutils literal notranslate"><span class="pre">Loads.dss</span></code> in place.</p></li>
+<li><p>and, stripped <code class="docutils literal notranslate"><span class="pre">yearly=&lt;pv-profile&gt;</span></code> from the load lines.</p></li>
+</ul>
+<ol class="arabic simple" start="3">
+<li><p>After PV deployments:</p></li>
+</ol>
+<ul class="simple">
+<li><p>Rename transformed <code class="docutils literal notranslate"><span class="pre">Loads.dss</span></code> file into <code class="docutils literal notranslate"><span class="pre">PV_Loads.dss</span></code>.</p></li>
+<li><p>Rename <code class="docutils literal notranslate"><span class="pre">Original_Loads.dss</span></code> back to <code class="docutils literal notranslate"><span class="pre">Loads.dss</span></code>.</p></li>
+</ul>
+<p>Run the command below to rename <code class="docutils literal notranslate"><span class="pre">Loads.dss</span></code> file and related,</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>pv-deployments<span class="w"> </span>source-tree-1<span class="w"> </span>-a<span class="w"> </span>restore-feeders<span class="w"> </span>-h<span class="w"> </span>&lt;hierarchy&gt;<span class="w"> </span>INPUT_PATH
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="data-sources/smart-ds-model-preparation.html" class="btn btn-neutral float-left" title="SMART-DS OpenDSS Model Preparation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="transform-models.html" class="btn btn-neutral float-right" title="Transform Models" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2019, NREL.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

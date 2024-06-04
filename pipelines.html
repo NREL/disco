@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pipelines &mdash; DISCO 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/documentation_options.js?v=2709fde1"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Debugging Issues" href="debugging-issues.html" />
+    <link rel="prev" title="Impact Analysis" href="analysis-workflows/impact-analysis.html" />
+    <link href="_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            DISCO
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#conda-installation">Conda Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#developer-installation">Developer Installation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#data-sources">Data Sources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#transform-model">Transform Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#config-jobs">Config Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#submit-jobs">Submit Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#result-analysis">Result Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quick-start.html">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#source-data">Source Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#transform-model">Transform Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#config-jobs">Config Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#submit-jobs">Submit Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#result-analysis">Result Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="data-sources.html">Data Sources</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data-sources.html#generic-power-flow-models">Generic Power Flow Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-sources.html#sourcetree1-model">SourceTree1 Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-sources.html#sourcetree2-model">SourceTree2 Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-sources.html#gem-model">GEM Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-sources.html#epri-model">EPRI Model</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pv-deployments.html">PV Deployments</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pv-deployments.html#sourcetree1-pv-deployments">SourceTree1 PV Deployments</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="transform-models.html">Transform Models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="transform-models.html#transform-model-help">Transform Model Help</a></li>
+<li class="toctree-l2"><a class="reference internal" href="transform-models.html#disco-model-in-depth">DISCO Model in Depth</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="analysis-workflows.html">Analysis Workflows</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="analysis-workflows/hosting-capacity-analysis.html">Hosting Capacity Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis-workflows/upgrade-cost-analysis.html">Upgrade Cost Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis-workflows/impact-analysis.html">Impact Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Pipelines</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#sourcetree1model">SourceTree1Model</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="debugging-issues.html">Debugging Issues</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="debugging-issues.html#disco-return-codes">DISCO Return Codes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="debugging-issues.html#using-jade">Using JADE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="debugging-issues.html#using-pydss">Using PyDSS</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="data-ingestion.html">Data Ingestion</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data-ingestion.html#ingest-to-new-database">Ingest to New Database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-ingestion.html#ingest-to-existing-database">Ingest to Existing Database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-ingestion.html#run-database-queries">Run Database Queries</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="advanced-guide.html">Advanced Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="advanced-guide/upgrade-cost-analysis-generic-models.html">Upgrade Cost Analysis JSON Schemas</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="build-docs.html">Build docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DISCO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Pipelines</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/pipelines.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pipelines">
+<h1>Pipelines<a class="headerlink" href="#pipelines" title="Link to this heading">¶</a></h1>
+<p>To conduct power flow simulations and analysis, people normally need to perform several steps, including
+transform model, create configurations, submit jobs, and run post-processing scripts/commands. To streamline this workflow, DISCO leverages the power of
+JADE pipeline and manage the steps using stages in simpler manner.</p>
+<p>A pipeline can contain one or more stages, each stage can perform config and submit jobs
+to generate stage results. The result output from prior stage can be passed to its subsequent stage
+as inputs, so that produces further results. DISCO uses pipeline <code class="docutils literal notranslate"><span class="pre">template</span></code> and pipeline
+<code class="docutils literal notranslate"><span class="pre">config</span></code> to manage the DISCO analysis workflow.</p>
+<p>To generate a pipeline template file and create a pipeline config file based on it,
+use this group command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>create-pipeline<span class="w"> </span>--help
+</pre></div>
+</div>
+<p>The source models that DISCO pipeline currently supports include:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><a class="reference internal" href="data-sources.html#sourcetree1model"><span class="std std-ref">SourceTree1 Model</span></a></p></li>
+</ul>
+</div></blockquote>
+<section id="sourcetree1model">
+<h2>SourceTree1Model<a class="headerlink" href="#sourcetree1model" title="Link to this heading">¶</a></h2>
+<section id="snapshot-hosting-capacity-analysis">
+<h3>Snapshot Hosting Capacity Analysis<a class="headerlink" href="#snapshot-hosting-capacity-analysis" title="Link to this heading">¶</a></h3>
+<p><strong>1. Create Pipeline Template File</strong></p>
+<p>To create pipeline template, use this command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>create-pipeline<span class="w"> </span>template<span class="w"> </span>&lt;INPUTS&gt;
+</pre></div>
+</div>
+<p>The opendss model inputs - <code class="docutils literal notranslate"><span class="pre">&lt;INPUTS&gt;</span></code>  can be source models or preconfigured models.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When creating the pipeline template for snapshot simulation the flag <code class="docutils literal notranslate"><span class="pre">--with-loadshape</span></code>
+or <code class="docutils literal notranslate"><span class="pre">--no-with-loadshape</span></code> must be set according to whether the Loads or PVSystems in the
+models use load shapes.</p>
+<ul class="simple">
+<li><p>if <code class="docutils literal notranslate"><span class="pre">--no-with-loadshape</span></code>, DISCO runs snapshot simulation by using <code class="docutils literal notranslate"><span class="pre">Snapshot</span></code> mode.</p></li>
+<li><p>if <code class="docutils literal notranslate"><span class="pre">--with-loadshape</span></code>, DISCO runs snapshot simulation by using <code class="docutils literal notranslate"><span class="pre">QSTS</span></code> mode with only one timestamp.</p></li>
+</ul>
+</div>
+<ol class="loweralpha simple">
+<li><p>Source Model Inputs</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>create-pipeline<span class="w"> </span>template<span class="w"> </span>tests/data/smart-ds/substations<span class="w"> </span>--task-name<span class="w"> </span>TestTask<span class="w"> </span>-s<span class="w"> </span>snapshot<span class="w"> </span>--hosting-capacity<span class="w"> </span>-t<span class="w"> </span>pipeline-template.toml
+</pre></div>
+</div>
+<ol class="loweralpha simple" start="2">
+<li><p>Preconfigured Model Inputs</p></li>
+</ol>
+<p>Create preconfigured models:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>transform-model<span class="w"> </span>tests/data/smart-ds/substations<span class="w"> </span>snapshot<span class="w"> </span>-o<span class="w"> </span>snapshot-feeder-models
+</pre></div>
+</div>
+<p>Then, use <code class="docutils literal notranslate"><span class="pre">--preconfigured</span></code> flag to indicate the input models <code class="docutils literal notranslate"><span class="pre">snapshot-feeder-models</span></code> are preconfigured.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>create-pipeline<span class="w"> </span>template<span class="w"> </span>snapshot-feeder-models<span class="w">  </span>--task-name<span class="w"> </span>TestTask<span class="w"> </span>--preconfigured<span class="w"> </span>-s<span class="w"> </span>snapshot<span class="w"> </span>--hosting-capacity<span class="w"> </span>-t<span class="w"> </span>pipeline-template.toml
+</pre></div>
+</div>
+<p>The commands above create a pipeline template file named <code class="docutils literal notranslate"><span class="pre">pipeline-template.toml</span></code>.</p>
+<p><strong>2. Update Pipeline Template File</strong></p>
+<p>In the template generated above, there are 3 sections, including:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">model</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">simulation</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">postprocess</span></code></p></li>
+</ul>
+</div></blockquote>
+<p>You can modify the different types of parameters in each section based on your task requirements
+on model transform, config/submit jobs, and postprocess. To check the meaning of each parameter,
+run <code class="docutils literal notranslate"><span class="pre">--help</span></code> on its command.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">model.transform-params</span></code> from <code class="docutils literal notranslate"><span class="pre">disco</span> <span class="pre">transform-model</span> <span class="pre">&lt;INPUTS&gt;</span> <span class="pre">snapshot</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">simulation.config-params</span></code> from <code class="docutils literal notranslate"><span class="pre">disco</span> <span class="pre">config</span> <span class="pre">snapshot</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">simulation.submitter-params</span></code> from <code class="docutils literal notranslate"><span class="pre">jade</span> <span class="pre">submit-jobs</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">postprocess.config-params</span></code> from <code class="docutils literal notranslate"><span class="pre">jade</span> <span class="pre">config</span> <span class="pre">create</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">postprocess.submitter-params</span></code> from <code class="docutils literal notranslate"><span class="pre">jade</span> <span class="pre">submit-jobs</span></code></p></li>
+</ul>
+</div></blockquote>
+<p>Note that simulation and postprocess can use different JADE submitter parameters. Check the default values
+chosen by DISCO and consider whether they can be optimized for your run. If you’re not familiar with the terms
+used in this section, please refer to <a class="reference external" href="https://nrel.github.io/jade/tutorial.html">JADE docs</a>.</p>
+<p>For snapshot simulations DISCO uses a default value for <code class="docutils literal notranslate"><span class="pre">per-node-batch-size</span></code>. You may be able to pick
+a better value for the simulation stage.</p>
+<p>For time-series simulations DISCO estimates job runtimes and then uses JADE time-based-batching. So, you
+should not need to worry about <code class="docutils literal notranslate"><span class="pre">per-node-batch-size</span></code>. However, you might need to adjust the <code class="docutils literal notranslate"><span class="pre">walltime</span></code>
+value in <code class="docutils literal notranslate"><span class="pre">hpc_config.toml</span></code> to account for your longest jobs.</p>
+<p><strong>3. Create Pipeline Config File</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>create-pipeline<span class="w"> </span>config<span class="w"> </span>pipeline-template.toml<span class="w"> </span>-c<span class="w"> </span>pipeline.json
+</pre></div>
+</div>
+<p>This step creates the pipeline config file named <code class="docutils literal notranslate"><span class="pre">pipeline.json</span></code>, which contains the stage
+information. In this example, there are 2 stages, JADE run each of the stage in order, and manages
+the status of each util it completes the whole workflow.</p>
+<p><strong>4. Sumbit Pipeline Using JADE</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>jade<span class="w"> </span>pipeline<span class="w"> </span>submit<span class="w"> </span>pipeline.json<span class="w"> </span>-o<span class="w"> </span>snapshot-pipeline-output
+</pre></div>
+</div>
+<p>Pipeline output directory is <code class="docutils literal notranslate"><span class="pre">snapshot-pipeline-output</span></code> in this example,
+which contains two stages’ results, as shown below:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">$tree</span><span class="w"> </span>snapshot-pipeline-output/<span class="w"> </span>-L<span class="w"> </span><span class="m">2</span>
+snapshot-pipeline-output/
+├──<span class="w"> </span>config-stage1.json
+├──<span class="w"> </span>config-stage2.json
+├──<span class="w"> </span>output-stage1
+│<span class="w">   </span>├──<span class="w"> </span>config.json
+│<span class="w">   </span>├──<span class="w"> </span>disco-diff.patch
+│<span class="w">   </span>├──<span class="w"> </span>errors.txt
+│<span class="w">   </span>├──<span class="w"> </span>events
+│<span class="w">   </span>├──<span class="w"> </span>feeder_head_table.csv
+│<span class="w">   </span>├──<span class="w"> </span>feeder_losses_table.csv
+│<span class="w">   </span>├──<span class="w"> </span>jade-diff.patch
+│<span class="w">   </span>├──<span class="w"> </span>job-outputs
+│<span class="w">   </span>├──<span class="w"> </span>metadata_table.csv
+│<span class="w">   </span>├──<span class="w"> </span>processed_results.csv
+│<span class="w">   </span>├──<span class="w"> </span>results.csv
+│<span class="w">   </span>├──<span class="w"> </span>results.json
+│<span class="w">   </span>├──<span class="w"> </span>results.txt
+│<span class="w">   </span>├──<span class="w"> </span>run_jobs_batch_0_events.log
+│<span class="w">   </span>├──<span class="w"> </span>thermal_metrics_table.csv
+│<span class="w">   </span>└──<span class="w"> </span>voltage_metrics_table.csv
+├──<span class="w"> </span>output-stage2
+│<span class="w">   </span>├──<span class="w"> </span>config.json
+│<span class="w">   </span>├──<span class="w"> </span>disco-diff.patch
+│<span class="w">   </span>├──<span class="w"> </span>errors.txt
+│<span class="w">   </span>├──<span class="w"> </span>events
+│<span class="w">   </span>├──<span class="w"> </span>jade-diff.patch
+│<span class="w">   </span>├──<span class="w"> </span>job-outputs
+│<span class="w">   </span>├──<span class="w"> </span>processed_results.csv
+│<span class="w">   </span>├──<span class="w"> </span>results.csv
+│<span class="w">   </span>├──<span class="w"> </span>results.json
+│<span class="w">   </span>├──<span class="w"> </span>results.txt
+│<span class="w">   </span>└──<span class="w"> </span>run_jobs_batch_0_events.log
+├──<span class="w"> </span>pipeline.json
+└──<span class="w"> </span>pipeline_submit.log
+</pre></div>
+</div>
+<p>From the result tree, the metrics summary tables <code class="docutils literal notranslate"><span class="pre">*.csv</span></code> were created in <code class="docutils literal notranslate"><span class="pre">output-stage1</span></code>
+by the postprocess job from stage 2.</p>
+</section>
+<section id="time-series-hosting-capacity-analysis">
+<h3>Time-series Hosting Capacity Analysis<a class="headerlink" href="#time-series-hosting-capacity-analysis" title="Link to this heading">¶</a></h3>
+<p>Similarly, you can run time-series hosting capacity analysis using pipeline.
+However, there is a difference for time-series pipeline, where one more
+stage named <code class="docutils literal notranslate"><span class="pre">prescreen</span></code> could be enabled, so that to prescreen pv penetration levels
+and avoid running jobs with higher failure potentials, which could help reduce the consumption of
+HPC compute node hours.</p>
+<p><strong>1. Create Pipeline Template File</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>create-pipeline<span class="w"> </span>template<span class="w"> </span>tests/data/smart-ds/substations<span class="w">  </span>--task-name<span class="w"> </span>TestTask<span class="w"> </span>-s<span class="w"> </span>time-series<span class="w"> </span>--hosting-capacity<span class="w"> </span>-t<span class="w"> </span>pipeline-template.toml
+</pre></div>
+</div>
+<p>If you need to prescreen PV penetration levels, use the flag <code class="docutils literal notranslate"><span class="pre">--prescreen</span></code> to create the template.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>create-pipeline<span class="w"> </span>template<span class="w"> </span>tests/data/smart-ds/substations<span class="w">  </span>--task-name<span class="w"> </span>TestTask<span class="w"> </span>-s<span class="w"> </span>time-series<span class="w"> </span>--prescreen<span class="w"> </span>--hosting-capacity<span class="w"> </span>-t<span class="w"> </span>pipeline-template.toml
+</pre></div>
+</div>
+<p>This step create the <code class="docutils literal notranslate"><span class="pre">pipeline-template.toml</span></code> file.</p>
+<p><strong>2. Update Pipeline Tempalte File</strong></p>
+<dl class="simple">
+<dt>There are 3 (or 4, with <code class="docutils literal notranslate"><span class="pre">--prescreen</span></code> enabled) sections in the template file generated above.</dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">model</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">prescreen</span></code> (optional)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">simulation</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">postprocess</span></code></p></li>
+</ul>
+</dd>
+</dl>
+<p>Update the params in each section based on your task requirements,</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">model.transform-params</span></code> from <code class="docutils literal notranslate"><span class="pre">disco</span> <span class="pre">transform-model</span> <span class="pre">&lt;INPUTS&gt;</span> <span class="pre">time-series</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">prescreen.config-params</span></code> from <code class="docutils literal notranslate"><span class="pre">disco</span> <span class="pre">config</span> <span class="pre">time-series</span></code></p></li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">prescreen.prescreen-params</span></code> from <code class="docutils literal notranslate"><span class="pre">disco</span> <span class="pre">prescreen-pv-penetration-levels</span> <span class="pre">create</span></code></dt><dd><p>and <code class="docutils literal notranslate"><span class="pre">disco</span> <span class="pre">prescreen-pv-penetration-levels</span> <span class="pre">filter-config</span></code>.</p>
+</dd>
+</dl>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">simulation.submitter-params</span></code> from <code class="docutils literal notranslate"><span class="pre">jade</span> <span class="pre">submit-jobs</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">postprocess.config-params</span></code> from <code class="docutils literal notranslate"><span class="pre">jade</span> <span class="pre">config</span> <span class="pre">create</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">postprocess.submitter-params</span></code> from <code class="docutils literal notranslate"><span class="pre">jade</span> <span class="pre">submit-jobs</span></code></p></li>
+</ul>
+</div></blockquote>
+<p>then save it.</p>
+<p><strong>3. Create Pipeline Config File</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>create-pipeline<span class="w"> </span>config<span class="w"> </span>pipeline-template.toml<span class="w"> </span>-c<span class="w"> </span>pipeline.json
+</pre></div>
+</div>
+<p>This command creates the pipeline config file named <code class="docutils literal notranslate"><span class="pre">pipeline.json</span></code>, there are 3 stages if
+you have <code class="docutils literal notranslate"><span class="pre">--prescreen</span></code> enabled, otherwise, 2 stages - <code class="docutils literal notranslate"><span class="pre">simulation</span></code> and <code class="docutils literal notranslate"><span class="pre">postprocess</span></code>.</p>
+<p><strong>4. Submit Pipeline Using JADE</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>jade<span class="w"> </span>pipeline<span class="w"> </span>submit<span class="w"> </span>pipeline.json<span class="w"> </span>-o<span class="w"> </span>time-series-pipeline-output
+</pre></div>
+</div>
+<p>Pipeline output directory is <code class="docutils literal notranslate"><span class="pre">time-series-pipeline-output</span></code> in this example,
+which contains the results of 3 stages with <code class="docutils literal notranslate"><span class="pre">--prescreen</span></code> enabled.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">$tree</span><span class="w"> </span>time-series-pipeline-output/<span class="w"> </span>-L<span class="w"> </span><span class="m">2</span>
+time-series-pipeline-output
+├──<span class="w"> </span>config-stage1.json
+├──<span class="w"> </span>config-stage2.json
+├──<span class="w"> </span>config-stage3.json
+├──<span class="w"> </span>output-stage1
+│<span class="w">   </span>├──<span class="w"> </span>config.json
+│<span class="w">   </span>├──<span class="w"> </span>disco-diff.patch
+│<span class="w">   </span>├──<span class="w"> </span>errors.txt
+│<span class="w">   </span>├──<span class="w"> </span>events
+│<span class="w">   </span>├──<span class="w"> </span>filter_prescreened_jobs.log
+│<span class="w">   </span>├──<span class="w"> </span>jade-diff.patch
+│<span class="w">   </span>├──<span class="w"> </span>job-outputs
+│<span class="w">   </span>├──<span class="w"> </span>processed_results.csv
+│<span class="w">   </span>├──<span class="w"> </span>results.csv
+│<span class="w">   </span>├──<span class="w"> </span>results.json
+│<span class="w">   </span>├──<span class="w"> </span>results.txt
+│<span class="w">   </span>└──<span class="w"> </span>run_jobs_batch_0_events.log
+│<span class="w">   </span>├──<span class="w"> </span>output-stage2
+│<span class="w">   </span>├──<span class="w"> </span>config.json
+│<span class="w">   </span>├──<span class="w"> </span>disco-diff.patch
+│<span class="w">   </span>├──<span class="w"> </span>errors.txt
+│<span class="w">   </span>├──<span class="w"> </span>events
+│<span class="w">   </span>├──<span class="w"> </span>feeder_head_table.csv
+│<span class="w">   </span>├──<span class="w"> </span>feeder_losses_table.csv
+│<span class="w">   </span>├──<span class="w"> </span>jade-diff.patch
+│<span class="w">   </span>├──<span class="w"> </span>job-outputs
+│<span class="w">   </span>├──<span class="w"> </span>metadata_table.csv
+│<span class="w">   </span>├──<span class="w"> </span>processed_results.csv
+│<span class="w">   </span>├──<span class="w"> </span>results.csv
+│<span class="w">   </span>├──<span class="w"> </span>results.json
+│<span class="w">   </span>├──<span class="w"> </span>results.txt
+│<span class="w">   </span>├──<span class="w"> </span>run_jobs_batch_0_events.log
+│<span class="w">   </span>├──<span class="w"> </span>thermal_metrics_table.csv
+│<span class="w">   </span>└──<span class="w"> </span>voltage_metrics_table.csv
+├──<span class="w"> </span>output-stage3
+│<span class="w">   </span>├──<span class="w"> </span>config.json
+│<span class="w">   </span>├──<span class="w"> </span>disco-diff.patch
+│<span class="w">   </span>├──<span class="w"> </span>errors.txt
+│<span class="w">   </span>├──<span class="w"> </span>events
+│<span class="w">   </span>├──<span class="w"> </span>jade-diff.patch
+│<span class="w">   </span>├──<span class="w"> </span>job-outputs
+│<span class="w">   </span>├──<span class="w"> </span>processed_results.csv
+│<span class="w">   </span>├──<span class="w"> </span>results.csv
+│<span class="w">   </span>├──<span class="w"> </span>results.json
+│<span class="w">   </span>├──<span class="w"> </span>results.txt
+│<span class="w">   </span>└──<span class="w"> </span>run_jobs_batch_0_events.log
+├──<span class="w"> </span>pipeline.json
+└──<span class="w"> </span>pipeline_submit.log
+</pre></div>
+</div>
+<p>As shown above, the metrics summary tables <code class="docutils literal notranslate"><span class="pre">*.csv</span></code> were created in <code class="docutils literal notranslate"><span class="pre">output-stage2</span></code>
+by postprocess job from stage 3.</p>
+<p><strong>5. Check Results and Plots</strong></p>
+<p>Based on the metrics results, DISCO integrate plot functions which help create 3 plots.</p>
+<ol class="arabic simple">
+<li><p>compare voltage primary and secondary on the first feeder.</p></li>
+<li><p>compare pf1 and volt-var on the first feeder.</p></li>
+<li><p>heatmap for max and min hosting capacity for all feeders.</p></li>
+</ol>
+<p>These visualizations show the feeder operational conditions under different PV penetration levels.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="analysis-workflows/impact-analysis.html" class="btn btn-neutral float-left" title="Impact Analysis" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="debugging-issues.html" class="btn btn-neutral float-right" title="Debugging Issues" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2019, NREL.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

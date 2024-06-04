@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transform Models &mdash; DISCO 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/documentation_options.js?v=2709fde1"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Analysis Workflows" href="analysis-workflows.html" />
+    <link rel="prev" title="PV Deployments" href="pv-deployments.html" />
+    <link href="_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            DISCO
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#conda-installation">Conda Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#developer-installation">Developer Installation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#data-sources">Data Sources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#transform-model">Transform Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#config-jobs">Config Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#submit-jobs">Submit Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#result-analysis">Result Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quick-start.html">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#source-data">Source Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#transform-model">Transform Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#config-jobs">Config Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#submit-jobs">Submit Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#result-analysis">Result Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="data-sources.html">Data Sources</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data-sources.html#generic-power-flow-models">Generic Power Flow Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-sources.html#sourcetree1-model">SourceTree1 Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-sources.html#sourcetree2-model">SourceTree2 Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-sources.html#gem-model">GEM Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-sources.html#epri-model">EPRI Model</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pv-deployments.html">PV Deployments</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pv-deployments.html#sourcetree1-pv-deployments">SourceTree1 PV Deployments</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Transform Models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#transform-model-help">Transform Model Help</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#disco-model-in-depth">DISCO Model in Depth</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="analysis-workflows.html">Analysis Workflows</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="analysis-workflows/hosting-capacity-analysis.html">Hosting Capacity Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis-workflows/upgrade-cost-analysis.html">Upgrade Cost Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis-workflows/impact-analysis.html">Impact Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pipelines.html">Pipelines</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pipelines.html#sourcetree1model">SourceTree1Model</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="debugging-issues.html">Debugging Issues</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="debugging-issues.html#disco-return-codes">DISCO Return Codes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="debugging-issues.html#using-jade">Using JADE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="debugging-issues.html#using-pydss">Using PyDSS</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="data-ingestion.html">Data Ingestion</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data-ingestion.html#ingest-to-new-database">Ingest to New Database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-ingestion.html#ingest-to-existing-database">Ingest to Existing Database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-ingestion.html#run-database-queries">Run Database Queries</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="advanced-guide.html">Advanced Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="advanced-guide/upgrade-cost-analysis-generic-models.html">Upgrade Cost Analysis JSON Schemas</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="build-docs.html">Build docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DISCO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Transform Models</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/transform-models.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="transform-models">
+<h1>Transform Models<a class="headerlink" href="#transform-models" title="Link to this heading">¶</a></h1>
+<section id="transform-model-help">
+<h2>Transform Model Help<a class="headerlink" href="#transform-model-help" title="Link to this heading">¶</a></h2>
+<p>This process transforms user OpenDSS models into a format understood by DISCO
+so that it can perform simulation and analysis with the models.</p>
+<p>Given an input path of source data DISCO can determine the types of analysis
+it supports. The input path can be one of:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>a GEM config file; the JSON schema definition is here - <a class="reference internal" href="data-sources.html#gem-json-schema"><span class="std std-ref">GEM Model</span></a>.</p></li>
+<li><p>a directory path which contains a <code class="docutils literal notranslate"><span class="pre">format.toml</span></code> with a source type definition.
+The source types are:</p>
+<ul>
+<li><p>EpriModel</p></li>
+<li><p>SourceTree1Model</p></li>
+<li><p>SourceTree2Model</p></li>
+</ul>
+</li>
+</ul>
+</div></blockquote>
+<section id="input-file">
+<h3>Input File<a class="headerlink" href="#input-file" title="Link to this heading">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">--help</span></code> option displays the types of analysis the source models support.
+For example, if the input path is a GEM file:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>transform-model<span class="w"> </span>./gem-file.json<span class="w"> </span>--help
+
+Available<span class="w"> </span>analysis<span class="w"> </span>types:<span class="w"> </span>snapshot
+
+For<span class="w"> </span>additional<span class="w"> </span><span class="nb">help</span><span class="w"> </span>run<span class="w"> </span>one<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>following:
+<span class="w">    </span>disco<span class="w"> </span>transform-model<span class="w"> </span>./gem-file.json<span class="w"> </span>snapshot<span class="w"> </span>--help
+</pre></div>
+</div>
+</section>
+<section id="input-directory">
+<h3>Input Directory<a class="headerlink" href="#input-directory" title="Link to this heading">¶</a></h3>
+<p>If the input path is a directory, for example, with <code class="docutils literal notranslate"><span class="pre">type</span> <span class="pre">=</span> <span class="pre">SourceTree1Model</span></code>
+in <em>format.toml</em>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>transform-model<span class="w"> </span>tests/data/smart-ds/substations/<span class="w"> </span>--help
+
+Available<span class="w"> </span>analysis<span class="w"> </span>types:<span class="w"> </span>snapshot<span class="w"> </span>time-series
+
+For<span class="w"> </span>additional<span class="w"> </span><span class="nb">help</span><span class="w"> </span>run<span class="w"> </span>one<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>following:
+<span class="w">    </span>disco<span class="w"> </span>transform-model<span class="w"> </span>tests/data/smart-ds/substations/<span class="w"> </span>snapshot<span class="w"> </span>--help
+<span class="w">    </span>disco<span class="w"> </span>transform-model<span class="w"> </span>tests/data/smart-ds/substations/<span class="w"> </span>time-series<span class="w"> </span>--help
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>By default, the name of PV deployments directory is <code class="docutils literal notranslate"><span class="pre">hc_pv_deployments</span></code>, if the PV deployments
+are located in another directory, please specify the right directory by using option <code class="docutils literal notranslate"><span class="pre">-P/--pv-deployments-dirname</span></code>
+in the <code class="docutils literal notranslate"><span class="pre">transform-model</span></code> command.</p>
+</div>
+</section>
+<section id="load-shape-data-files">
+<h3>Load Shape Data files<a class="headerlink" href="#load-shape-data-files" title="Link to this heading">¶</a></h3>
+<p>By default, DISCO replaces relative paths to load shape data files with absolute
+paths and does not copy them. This reduces time and consumed storage space.
+However, it also makes the directory non-portable to other systems.</p>
+<p>If you want to create a portable directory with copies of these files, add
+this flag to the command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>transform-model<span class="w"> </span>tests/data/smart-ds/substations<span class="w"> </span>time-series<span class="w"> </span>-c
+$<span class="w"> </span>disco<span class="w"> </span>transform-model<span class="w"> </span>tests/data/smart-ds/substations<span class="w"> </span>time-series<span class="w"> </span>--copy-load-shape-data-files
+</pre></div>
+</div>
+</section>
+</section>
+<section id="disco-model-in-depth">
+<h2>DISCO Model in Depth<a class="headerlink" href="#disco-model-in-depth" title="Link to this heading">¶</a></h2>
+<section id="pydss-controllers">
+<h3>PyDSS Controllers<a class="headerlink" href="#pydss-controllers" title="Link to this heading">¶</a></h3>
+<p>If you have custom <em>controllers</em> that need to be applied to simulation,
+please make the controllers are registered via PyDSS first.</p>
+<p>Suppose we have particular controller settings defined in a <code class="docutils literal notranslate"><span class="pre">my-custom-controllers.toml</span></code> file:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">my_volt_var_curve</span><span class="p">]</span>
+<span class="n">Control1</span> <span class="o">=</span> <span class="s2">&quot;VVar&quot;</span>
+<span class="n">Control2</span> <span class="o">=</span> <span class="s2">&quot;None&quot;</span>
+<span class="n">Control3</span> <span class="o">=</span> <span class="s2">&quot;None&quot;</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>pydss<span class="w"> </span>controllers<span class="w"> </span>register<span class="w"> </span>PvController<span class="w"> </span>/path/my-custom-controllers.toml
+</pre></div>
+</div>
+<p>Once registered, the following information could be used to create the input
+config related to <code class="docutils literal notranslate"><span class="pre">pydss_controllers</span></code>.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;project123&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;controller_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PvController&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>By default, the target PyDSS file that the PyDSS controller would be applied to
+is the deployment file, you do not need to specify the target DSS files. However,
+if you want to specify the target DSS files here, other than the deployment file,</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;project123&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;controller_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PvController&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;targets&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;/data/dss/file1.dss&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;/data/dss/file2.dss&quot;</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>And, <code class="docutils literal notranslate"><span class="pre">pydss_controllers</span></code> supports multiple PyDSS controllers here,</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;project123&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;controller_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PvController&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;project123&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;StorageController&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="model-schema">
+<h3>Model Schema<a class="headerlink" href="#model-schema" title="Link to this heading">¶</a></h3>
+<p>DISCO uses <a class="reference external" href="https://pydantic-docs.helpmanual.io/">pydantic</a>
+models to define the schema of model inputs for each type of analysis. Given a
+type of analysis in DISCO, the schema shows all attributes used to define
+the analysis models.</p>
+<p><em>Show Schema</em></p>
+<p>The input configurations in JSON should meet the specifications defined
+by DISCO. To show the schema of a given analysis type, for example,
+<code class="docutils literal notranslate"><span class="pre">SnapshotImpactAnalysisModel</span></code> using this command with <code class="docutils literal notranslate"><span class="pre">--mode</span> <span class="pre">show-schema</span></code>
+option,</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>simulation-models<span class="w"> </span>--mode<span class="w"> </span>show-schema<span class="w"> </span>SnapshotImpactAnalysisModel
+</pre></div>
+</div>
+<p><em>Show Example</em></p>
+<p>A data example may be more straightforward, use <code class="docutils literal notranslate"><span class="pre">--mode</span> <span class="pre">show-example</span></code> option,</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>simulation-models<span class="w"> </span>--mode<span class="w"> </span>show-example<span class="w"> </span>SnapshotImpactAnalysisModel<span class="w"> </span>--output-file<span class="o">=</span>disco-models/configurations.json
+$<span class="w"> </span>cat<span class="w"> </span>disco-models/configurations.json
+<span class="o">[</span>
+<span class="w">    </span><span class="o">{</span>
+<span class="w">        </span><span class="s2">&quot;feeder&quot;</span>:<span class="w"> </span><span class="s2">&quot;J1&quot;</span>,
+<span class="w">        </span><span class="s2">&quot;tag&quot;</span>:<span class="w"> </span><span class="s2">&quot;2010&quot;</span>,
+<span class="w">        </span><span class="s2">&quot;deployment&quot;</span>:<span class="w"> </span><span class="o">{</span>
+<span class="w">            </span><span class="s2">&quot;name&quot;</span>:<span class="w"> </span><span class="s2">&quot;deployment_001.dss&quot;</span>,
+<span class="w">            </span><span class="s2">&quot;dc_ac_ratio&quot;</span>:<span class="w"> </span><span class="m">1</span>.15,
+<span class="w">            </span><span class="s2">&quot;directory&quot;</span>:<span class="w"> </span><span class="s2">&quot;disco-models&quot;</span>,
+<span class="w">            </span><span class="s2">&quot;kva_to_kw_rating&quot;</span>:<span class="w"> </span><span class="m">1</span>.0,
+<span class="w">            </span><span class="s2">&quot;project_data&quot;</span>:<span class="w"> </span><span class="o">{}</span>,
+<span class="w">            </span><span class="s2">&quot;pv_locations&quot;</span>:<span class="w"> </span><span class="o">[]</span>,
+<span class="w">            </span><span class="s2">&quot;pydss_controllers&quot;</span>:<span class="w"> </span>null
+<span class="w">        </span><span class="o">}</span>,
+<span class="w">        </span><span class="s2">&quot;simulation&quot;</span>:<span class="w"> </span><span class="o">{</span>
+<span class="w">            </span><span class="s2">&quot;start_time&quot;</span>:<span class="w"> </span><span class="s2">&quot;2013-06-17T15:00:00.000&quot;</span>,
+<span class="w">            </span><span class="s2">&quot;end_time&quot;</span>:<span class="w"> </span><span class="s2">&quot;2014-06-17T15:00:00.000&quot;</span>,
+<span class="w">            </span><span class="s2">&quot;step_resolution&quot;</span>:<span class="w"> </span><span class="m">900</span>,
+<span class="w">            </span><span class="s2">&quot;simulation_type&quot;</span>:<span class="w"> </span><span class="s2">&quot;Snapshot&quot;</span>
+<span class="w">        </span><span class="o">}</span>,
+<span class="w">        </span><span class="s2">&quot;name&quot;</span>:<span class="w"> </span><span class="s2">&quot;J1_123_Sim_456&quot;</span>,
+<span class="w">        </span><span class="s2">&quot;base_case&quot;</span>:<span class="w"> </span>null,
+<span class="w">        </span><span class="s2">&quot;include_voltage_deviation&quot;</span>:<span class="w"> </span>false,
+<span class="w">        </span><span class="s2">&quot;blocked_by&quot;</span>:<span class="w"> </span><span class="o">[]</span>,
+<span class="w">        </span><span class="s2">&quot;job_order&quot;</span>:<span class="w"> </span>null
+<span class="w">    </span><span class="o">}</span>
+<span class="o">]</span>
+</pre></div>
+</div>
+</section>
+<section id="validate-inputs">
+<h3>Validate Inputs<a class="headerlink" href="#validate-inputs" title="Link to this heading">¶</a></h3>
+<p>If you want to prepare the models manually then you must generate them in a
+JSON file and then validate them to make sure they match the schema.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>disco<span class="w"> </span>simulation-models<span class="w"> </span>validate-file<span class="w"> </span>disco-models/configurations.json
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">ValidationError</span></code> will be raised if any input does not meet the
+specification defined by DISCO. The error messages should provide corrective
+action.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pv-deployments.html" class="btn btn-neutral float-left" title="PV Deployments" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="analysis-workflows.html" class="btn btn-neutral float-right" title="Analysis Workflows" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2019, NREL.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
