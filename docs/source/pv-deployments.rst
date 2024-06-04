@@ -19,8 +19,8 @@ The main command going to be used is the one below,
 
 There are several actions here related to PV deployments manipulation, including
 
-* ``redirect-pvshapes``: Redirect PVShape.dss in both substation and feeder Master.dss files.
 * ``transform-loads``: Transform Loads.dss file before conducting PV deployments.
+* ``redirect-pvshapes``: Redirect PVShape.dss in both substation and feeder Master.dss files.
 * ``generate-jobs``: Help generate ``create-pv`` and ``create-configs`` jobs in JSON, i.e., jade config.
 * ``restore-feeders``: Before and during PV deployments, Loads.dss and Master.dss files were modified, need to restore after that.
 * ``create-pv``: create PV deployments on feeders based on `placement`, `sample` and `penetration` levels.
@@ -30,6 +30,23 @@ There are several actions here related to PV deployments manipulation, including
 * ``check-configs``: check if there are PV config files missing in deployment directories.
 * ``remove-configs``: remove PV config files in case there's something wrong.
 * ``list-feeders``: list feeder paths given input of region, substation or feeder.
+
+
+Transform Loads
+---------------
+``Loads.dss`` files need to be transformed before generating PV deployments.
+
+- Loads may need to be changed to use suitable center-tap schema.
+- Temporarily disconnect load shapes. The generation process compiles the OpenDSS circuit.
+  If load shapes are present, OpenDSS has to load the data and that can take significant
+  amounts of time. Load shapes are not needed by the generation process, and so it disables
+  them in the OpenDSS text files. A later step re-enables them.
+
+The command to run this is,
+
+.. code-block:: bash
+
+    $ disco pv-deployments source-tree-1 -a transform-loads -h <hierarchy> INPUT_PATH
 
 
 Redirect PVShapes
@@ -52,16 +69,6 @@ Run this command:
 .. code-block:: bash
 
     $ disco pv-deployments source-tree-1 -a redirect-pvshapes -h <hierarchy> INPUT_PATH
-
-
-Transform Loads
----------------
-Also, ``Loads.dss`` file under the feeder needs to be transformed before PV deployments, so that to
-change load model to suitable center-tap schema if needed. The command to run this is,
-
-.. code-block:: bash
-
-    $ disco pv-deployments source-tree-1 -a transform-loads -h <hierarchy> INPUT_PATH
 
 
 Generate Jobs
