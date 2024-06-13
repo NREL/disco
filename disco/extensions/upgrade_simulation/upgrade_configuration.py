@@ -30,8 +30,8 @@ class UpgradeConfiguration(PyDssConfigurationBase):
         self._pydss_inputs = self.get_default_pydss_config()
 
         # Customize pydss config
-        if "enable_pydss_solve" in kwargs:
-            self.enable_pydss_solve(kwargs["enable_pydss_solve"])
+        if "enable_pydss_controllers" in kwargs:
+            self.enable_pydss_controllers(kwargs["enable_pydss_controllers"])
 
     @classmethod
     def auto_config(cls, inputs, **kwargs):
@@ -59,8 +59,8 @@ class UpgradeConfiguration(PyDssConfigurationBase):
         # this method not in use, simply return an empty dict.
         return {}
 
-    def enable_pydss_solve(self, value: bool):
-        self._pydss_inputs[ConfigType.SIMULATION_CONFIG]["default"]["enable_pydss_solve"] = value
+    def enable_pydss_controllers(self, value: bool):
+        self._pydss_inputs[ConfigType.SIMULATION_CONFIG]["default"]["enable_pydss_controllers"] = value
         if value is True:
             message = "Enable PyDSS solve."
         else:
