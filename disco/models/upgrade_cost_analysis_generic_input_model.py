@@ -307,6 +307,9 @@ class ThermalUpgradeParamsModel(UpgradeParamsBaseModel):
     )
 
     # Optional fields
+    perform_thermal_upgrades: Optional[bool] = Field(
+        title="perform_thermal_upgrades", description="Flag to enable or disable thermal upgrades", default=True
+    )
     create_plots: Optional[bool] = Field(
         title="create_plots", description="Flag to enable or disable figure creation", default=True
     )

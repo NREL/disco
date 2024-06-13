@@ -143,6 +143,7 @@ def determine_voltage_upgrades(
     else:
         overall_outputs = {"violation_summary": [temp_results]}
     dump_data(overall_outputs, overall_output_summary_filepath, indent=2, allow_nan=False)
+    check_circuit(initial_results=initial_results)  # check circuit before running upgrades
     circuit_source = orig_ckt_info["source_bus"]
     bus_voltages_df, undervoltage_bus_list, overvoltage_bus_list, buses_with_violations = get_bus_voltages(
                 voltage_upper_limit=voltage_upper_limit, voltage_lower_limit=voltage_lower_limit, **simulation_params)    
