@@ -747,7 +747,7 @@ def compile_circuit(master_file: Path, with_probes: bool = False) -> None:
     logger.debug("Compile circuit from %s", master_file)
     orig = os.getcwd()
     try:
-        dss.Text.Command(f"Compile {master_file}")
+        dss.Text.Command(f"Compile [{master_file}]")
         dss.Text.Command("Set ControlMode=OFF") # wenbo added, to freeze control
         _ensure_energymeter_at_source()
         if with_probes:

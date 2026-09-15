@@ -18,6 +18,7 @@ def levels_of_charger(output_file):
     lvl1 = []
     for i in range(len(output_file)):
         #load_ = output_file["Load"][i]
+        no_of_xfc = no_of_lvl2 = no_of_lvl1 = 0
         bus_ = output_file["Bus"][i]
         tmp_data = output_file["Maximum_kW"][i] - output_file["Initial_kW"][i]
 
@@ -41,7 +42,7 @@ def levels_of_charger(output_file):
 
             elif tmp_diff >= 3.3 and tmp_diff < 7.2:  # then number of lvl-1
                 no_of_lvl2 = 0
-                n1 = tmp_d / 3.3
+                n1 = tmp_diff / 3.3
                 no_of_lvl1 = int(n1)
             else:
                 no_of_lvl2 = 0
